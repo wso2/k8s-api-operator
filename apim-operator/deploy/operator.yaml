@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: apim-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: apim-operator
+  template:
+    metadata:
+      labels:
+        name: apim-operator
+    spec:
+      serviceAccountName: apim-operator
+      containers:
+        - name: apim-operator
+          # Replace this with the built image name
+          image: pubudu/apim-operator:1.0.0
+          command:
+          - apim-operator
+          imagePullPolicy: Always
+          env:
+            - name: WATCH_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: OPERATOR_NAME
+              value: "apim-operator"
