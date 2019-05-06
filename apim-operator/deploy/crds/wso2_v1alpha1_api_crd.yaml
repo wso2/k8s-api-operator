@@ -10,6 +10,8 @@ spec:
     plural: apis
     singular: api
   scope: Namespaced
+  subresources:
+    status: {}
   validation:
     openAPIV3Schema:
       properties:
@@ -26,6 +28,172 @@ spec:
         metadata:
           type: object
         spec:
+          properties:
+            advancedThrottlingPolicy:
+              type: string
+            apiProperties:
+              items:
+                properties:
+                  name:
+                    type: string
+                  value:
+                    type: string
+                required:
+                - name
+                - value
+                type: object
+              type: array
+            authorizationHeader:
+              type: string
+            businessInformation:
+              properties:
+                businessOwner:
+                  type: string
+                businessOwnerEmail:
+                  type: string
+                technicalOwner:
+                  type: string
+                technicalOwnerEmail:
+                  type: string
+              required:
+              - businessOwner
+              - businessOwnerEmail
+              - technicalOwner
+              - technicalOwnerEmail
+              type: object
+            context:
+              type: string
+            description:
+              type: string
+            endpoints:
+              items:
+                properties:
+                  dockerImage:
+                    type: string
+                  endpointName:
+                    type: string
+                  hostname:
+                    type: string
+                  port:
+                    format: int32
+                    type: integer
+                  protocol:
+                    type: string
+                  type:
+                    type: string
+                required:
+                - type
+                - protocol
+                - hostname
+                - port
+                - dockerImage
+                - endpointName
+                type: object
+              type: array
+            labels:
+              items:
+                type: string
+              type: array
+            mode:
+              type: string
+            name:
+              description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+                Important: Run "operator-sdk generate k8s" to regenerate code after
+                modifying this file Add custom validation using kubebuilder tags:
+                https://book.kubebuilder.io/beyond_basics/generating_crd.html'
+              type: string
+            replicaCount:
+              format: int32
+              type: integer
+            requestInterceptor:
+              type: string
+            responseInterceptor:
+              type: string
+            security:
+              items:
+                type: string
+              type: array
+            subscriptionTiers:
+              items:
+                type: string
+              type: array
+            tags:
+              items:
+                type: string
+              type: array
+            urlPatterns:
+              items:
+                properties:
+                  advancedThrottlingPolicy:
+                    type: string
+                  endpoints:
+                    items:
+                      properties:
+                        dockerImage:
+                          type: string
+                        endpointName:
+                          type: string
+                        hostname:
+                          type: string
+                        port:
+                          format: int32
+                          type: integer
+                        protocol:
+                          type: string
+                        type:
+                          type: string
+                      required:
+                      - type
+                      - protocol
+                      - hostname
+                      - port
+                      - dockerImage
+                      - endpointName
+                      type: object
+                    type: array
+                  method:
+                    type: string
+                  path:
+                    type: string
+                  requestInterceptor:
+                    type: string
+                  responseInterceptor:
+                    type: string
+                  scopes:
+                    items:
+                      type: string
+                    type: array
+                required:
+                - path
+                - method
+                - scopes
+                - requestInterceptor
+                - responseInterceptor
+                - endpoints
+                - advancedThrottlingPolicy
+                type: object
+              type: array
+            version:
+              type: string
+          required:
+          - name
+          - context
+          - version
+          - description
+          - tags
+          - endpoints
+          - requestInterceptor
+          - responseInterceptor
+          - authorizationHeader
+          - labels
+          - urlPatterns
+          - security
+          - subscriptionTiers
+          - advancedThrottlingPolicy
+          - businessInformation
+          - apiProperties
+          - mode
+          - replicaCount
           type: object
         status:
           type: object

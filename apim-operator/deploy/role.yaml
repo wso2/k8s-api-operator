@@ -44,5 +44,6 @@ rules:
   - wso2.com
   resources:
   - '*'
+  - ratelimitings
   verbs:
   - '*'

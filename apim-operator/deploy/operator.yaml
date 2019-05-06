@@ -16,7 +16,7 @@ spec:
       containers:
         - name: apim-operator
           # Replace this with the built image name
-          image: pubudu/apim-operator:1.0.0
+          image: rameshakaru/api-operator:v0.0.1
           command:
           - apim-operator
           imagePullPolicy: Always

@@ -1,0 +1,26 @@
+apiVersion: wso2.com/v1alpha1
+kind: RateLimiting
+metadata:
+  name: bronze-ratelimiting
+spec:
+  # Add fields here
+  #size: 3
+  type: advanced             # application ,subscription
+  description: Allow 1000 requests per minute
+  timeUnit: min
+  unitTime: 1
+  requestCount:
+   limit: 1000
+  bandwidth:
+   dataAmount: ""
+   dataUnit: ""
+  conditions:  # not required for application and subscription policies
+    headerCondition:
+      headerName: “host”
+      headerValue: “abc.com”
+    ipCondition:
+      type: ipRange
+      specificIp: ""
+      negation : no
+      startIp: 10.100.7.2
+      endIp: 10.100.7.255
