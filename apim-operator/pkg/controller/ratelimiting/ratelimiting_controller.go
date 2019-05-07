@@ -1,7 +1,6 @@
 package ratelimiting
 
 import (
-	//"k8s.io/client-go/kubernetes"
 	"context"
 
 	wso2v1alpha1 "github.com/apim-crd/apim-operator/pkg/apis/wso2/v1alpha1"
@@ -13,7 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -142,97 +141,40 @@ func (r *ReconcileRateLimiting) Reconcile(request reconcile.Request) (reconcile.
 	//CREATE CONFIG MAP
 
 	confmap, confEr := createConfigMap(output, name, instance)
-	fmt.Println(confmap)
-	log.Error(confEr, "Error in config map structure creation")
-
-	//confmapCreate, confEr :=kubernetes.Interface.CoreV1().ConfigMap(instance.Namespace).Create(confmap)
-	// confEr = r.client.Create(context.TODO(), confmap)
-	//log.Error(confEr, "Error in config map instance creation")
+	if confEr != nil {
+		log.Error(confEr, "Error in config map structure creation")
+	}
 
 	// Check if this configmap already exists
 	foundmap := &corev1.ConfigMap{}
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: confmap.Name, Namespace: confmap.Namespace}, foundmap)
-	log.Error(err, "error 1")
+
 	if err != nil && errors.IsNotFound(err) {
 		reqLogger.Info("Creating a new Config map", "confmap.Namespace", confmap.Namespace, "confmap.Name", confmap.Name)
 		err = r.client.Create(context.TODO(), confmap)
 		if err != nil {
-			log.Error(err, "error 2")
-			//return reconcile.Result{}, err
-		}
-
-		// confmap created successfully - don't requeue
-		//return reconcile.Result{}, nil
-	} else if err != nil {
-		//return reconcile.Result{}, err
-		log.Error(err, "error 3")
-	}
-
-	// Define a new Pod object
-	pod := newPodForCR(instance)
-
-	// Set RateLimiting instance as the owner and controller
-	if err := controllerutil.SetControllerReference(instance, pod, r.scheme); err != nil {
-		return reconcile.Result{}, err
-	}
-
-	// Check if this Pod already exists
-	found := &corev1.Pod{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pod.Name, Namespace: pod.Namespace}, found)
-	if err != nil && errors.IsNotFound(err) {
-		reqLogger.Info("Creating a new Pod", "Pod.Namespace", pod.Namespace, "Pod.Name", pod.Name)
-		err = r.client.Create(context.TODO(), pod)
-		if err != nil {
+			log.Error(err, "error ")
 			return reconcile.Result{}, err
 		}
 
-		// Pod created successfully - don't requeue
+		// confmap created successfully - don't requeue
 		return reconcile.Result{}, nil
 	} else if err != nil {
+		log.Error(err, "error ")
 		return reconcile.Result{}, err
 	}
-
-	// Pod already exists - don't requeue
-	reqLogger.Info("Skip reconcile: Pod already exists", "Pod.Namespace", found.Namespace, "Pod.Name", found.Name)
+	reqLogger.Info("Skip reconcile: map already exists", "confmap.Namespace", foundmap.Namespace, "confmap.Name", foundmap.Name)
 	return reconcile.Result{}, nil
-}
 
-// newPodForCR returns a busybox pod with the same name/namespace as the cr
-func newPodForCR(cr *wso2v1alpha1.RateLimiting) *corev1.Pod {
-	labels := map[string]string{
-		"app": cr.Name,
-	}
-	return &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      cr.Name + "-pod",
-			Namespace: cr.Namespace,
-			Labels:    labels,
-		},
-		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					Name:    "busybox",
-					Image:   "busybox",
-					Command: []string{"sleep", "3600"},
-				},
-			},
-		},
-	}
 }
 
 // createConfigMap creates a config file with the generated code
 func createConfigMap(output string, name string, cr *wso2v1alpha1.RateLimiting) (*corev1.ConfigMap, error) {
 
-	//mapName := name + "ConfMap"
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: cr.Name + "-configmap",
+			Name:      cr.Name + "-configmap",
 			Namespace: cr.Namespace,
-			// Namespace: gateway.Namespace,
-			// Labels:    createGatewayLabels(gateway),
-			// OwnerReferences: []metav1.OwnerReference{
-			// 	*controller.CreateGatewayOwnerRef(gateway),
-			// },
 		},
 		Data: map[string]string{
 			"Code": output,

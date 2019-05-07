@@ -1,7 +1,7 @@
 apiVersion: wso2.com/v1alpha1
 kind: RateLimiting
 metadata:
-  name: silver-ratelimiting
+  name: bronze-ratelimiting
 spec:
   # Add fields here
   #size: 3
