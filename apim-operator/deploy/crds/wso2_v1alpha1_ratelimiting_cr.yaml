@@ -1,11 +1,11 @@
 apiVersion: wso2.com/v1alpha1
 kind: RateLimiting
 metadata:
-  name: bronze-ratelimiting
+  name: silver-ratelimiting
 spec:
   # Add fields here
   #size: 3
-  type: advanced             # application ,subscription
+  type: Subscription             # application ,subscription
   description: Allow 1000 requests per minute
   timeUnit: min
   unitTime: 1

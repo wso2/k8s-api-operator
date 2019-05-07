@@ -1,6 +1,7 @@
 package ratelimiting
 
 import (
+	//"k8s.io/client-go/kubernetes"
 	"context"
 
 	wso2v1alpha1 "github.com/apim-crd/apim-operator/pkg/apis/wso2/v1alpha1"
@@ -18,6 +19,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+
+	"strconv"
+	"strings"
+
+	"fmt"
+
+	mustache "github.com/cbroglie/mustache"
 )
 
 var log = logf.Log.WithName("controller_ratelimiting")
@@ -100,6 +108,66 @@ func (r *ReconcileRateLimiting) Reconcile(request reconcile.Request) (reconcile.
 		return reconcile.Result{}, err
 	}
 
+	// GENERATE POLICY CODE USING CRD INSTANCE
+
+	nameArray := strings.Split(instance.ObjectMeta.Name, "-")
+	name := nameArray[0]
+	log.Info(name)
+
+	funcName := "init" + instance.Spec.Type + name + "Policy"
+	log.Info(funcName)
+
+	tierType := instance.Spec.Type + "Tier"
+	log.Info(tierType)
+
+	policyKey := instance.Spec.Type + "Key"
+	log.Info(policyKey)
+
+	unitTime := strconv.Itoa(instance.Spec.UnitTime)
+	log.Info(unitTime)
+
+	count := strconv.Itoa(instance.Spec.RequestCount.Limit)
+	log.Info(count)
+
+	filename := "/usr/local/bin/policy.mustache"
+	output, err := mustache.RenderFile(filename, map[string]string{"name": name, "funcName": funcName, "tierType": tierType, "policyKey": policyKey, "unitTime": unitTime, "stopOnQuotaReach": "true", "count": count})
+
+	log.Info(output)
+	fmt.Println(output)
+
+	if err != nil {
+		log.Error(err, "error in rendering ")
+	}
+
+	//CREATE CONFIG MAP
+
+	confmap, confEr := createConfigMap(output, name, instance)
+	fmt.Println(confmap)
+	log.Error(confEr, "Error in config map structure creation")
+
+	//confmapCreate, confEr :=kubernetes.Interface.CoreV1().ConfigMap(instance.Namespace).Create(confmap)
+	// confEr = r.client.Create(context.TODO(), confmap)
+	//log.Error(confEr, "Error in config map instance creation")
+
+	// Check if this configmap already exists
+	foundmap := &corev1.ConfigMap{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: confmap.Name, Namespace: confmap.Namespace}, foundmap)
+	log.Error(err, "error 1")
+	if err != nil && errors.IsNotFound(err) {
+		reqLogger.Info("Creating a new Config map", "confmap.Namespace", confmap.Namespace, "confmap.Name", confmap.Name)
+		err = r.client.Create(context.TODO(), confmap)
+		if err != nil {
+			log.Error(err, "error 2")
+			//return reconcile.Result{}, err
+		}
+
+		// confmap created successfully - don't requeue
+		//return reconcile.Result{}, nil
+	} else if err != nil {
+		//return reconcile.Result{}, err
+		log.Error(err, "error 3")
+	}
+
 	// Define a new Pod object
 	pod := newPodForCR(instance)
 
@@ -150,4 +218,24 @@ func newPodForCR(cr *wso2v1alpha1.RateLimiting) *corev1.Pod {
 			},
 		},
 	}
+}
+
+// createConfigMap creates a config file with the generated code
+func createConfigMap(output string, name string, cr *wso2v1alpha1.RateLimiting) (*corev1.ConfigMap, error) {
+
+	//mapName := name + "ConfMap"
+	return &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: cr.Name + "-configmap",
+			Namespace: cr.Namespace,
+			// Namespace: gateway.Namespace,
+			// Labels:    createGatewayLabels(gateway),
+			// OwnerReferences: []metav1.OwnerReference{
+			// 	*controller.CreateGatewayOwnerRef(gateway),
+			// },
+		},
+		Data: map[string]string{
+			"Code": output,
+		},
+	}, nil
 }
