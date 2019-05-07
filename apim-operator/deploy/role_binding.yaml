@@ -1,11 +1,13 @@
-kind: RoleBinding
+kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: apim-operator
 subjects:
 - kind: ServiceAccount
   name: apim-operator
+  # Replace this with the namespace the operator is deployed in.
+  namespace: wso2system
 roleRef:
-  kind: Role
+  kind: ClusterRole
   name: apim-operator
   apiGroup: rbac.authorization.k8s.io
