@@ -128,6 +128,10 @@ func (r *ReconcileRateLimiting) Reconcile(request reconcile.Request) (reconcile.
 	count := strconv.Itoa(instance.Spec.RequestCount.Limit)
 	log.Info(count)
 
+	stopOnQuotaReach := strconv.FormatBool(instance.Spec.StopOnQuotaReach)
+	log.Info("QUOTAREACH")
+	log.Info(stopOnQuotaReach)
+
 	filename := "/usr/local/bin/policy.mustache"
 	output, err := mustache.RenderFile(filename, map[string]string{"name": name, "funcName": funcName, "tierType": tierType, "policyKey": policyKey, "unitTime": unitTime, "stopOnQuotaReach": "true", "count": count})
 

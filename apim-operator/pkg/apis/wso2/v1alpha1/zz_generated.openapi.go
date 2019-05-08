@@ -296,12 +296,6 @@ func schema_pkg_apis_wso2_v1alpha1_RateLimitingSpec(ref common.ReferenceCallback
 							Format: "",
 						},
 					},
-					"description": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
 					"timeUnit": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
@@ -319,22 +313,18 @@ func schema_pkg_apis_wso2_v1alpha1_RateLimitingSpec(ref common.ReferenceCallback
 							Ref: ref("github.com/apim-crd/apim-operator/pkg/apis/wso2/v1alpha1.RequestCount"),
 						},
 					},
-					"bandwidth": {
+					"stopOnQuotaReach": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/apim-crd/apim-operator/pkg/apis/wso2/v1alpha1.Bandwidth"),
-						},
-					},
-					"conditions": {
-						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/apim-crd/apim-operator/pkg/apis/wso2/v1alpha1.Conditions"),
+							Type:   []string{"boolean"},
+							Format: "",
 						},
 					},
 				},
-				Required: []string{"type", "description", "timeUnit", "unitTime", "requestCount", "bandwidth", "conditions"},
+				Required: []string{"type", "timeUnit", "unitTime", "requestCount"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/apim-crd/apim-operator/pkg/apis/wso2/v1alpha1.Bandwidth", "github.com/apim-crd/apim-operator/pkg/apis/wso2/v1alpha1.Conditions", "github.com/apim-crd/apim-operator/pkg/apis/wso2/v1alpha1.RequestCount"},
+			"github.com/apim-crd/apim-operator/pkg/apis/wso2/v1alpha1.RequestCount"},
 	}
 }
 

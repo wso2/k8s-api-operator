@@ -14,13 +14,14 @@ type RateLimitingSpec struct {
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
 
-	Type         string       `json:"type"`
-	Description  string       `json:"description"`
-	TimeUnit     string       `json:"timeUnit"`
-	UnitTime     int          `json:"unitTime"`
-	RequestCount RequestCount `json:"requestCount"`
-	Bandwidth    Bandwidth    `json:"bandwidth"`
-	Conditions   Conditions   `json:"conditions"`
+	Type             string       `json:"type"`
+	TimeUnit         string       `json:"timeUnit"`
+	UnitTime         int          `json:"unitTime"`
+	RequestCount     RequestCount `json:"requestCount"`
+	StopOnQuotaReach bool         `json:"stopOnQuotaReach"`
+	//Description  string       `json:"description"`
+	//Bandwidth    Bandwidth    `json:"bandwidth"`
+	//Conditions   Conditions   `json:"conditions"`
 }
 
 //RequestCount is exported type in Ratelimiting Spec
@@ -29,31 +30,31 @@ type RequestCount struct {
 }
 
 //Bandwidth is exported type in Ratelimiting Spec
-type Bandwidth struct {
-	DataAmount string `json:"dataAmount"`
-	DataUnit   string `json:"dataUnit"`
-}
+// type Bandwidth struct {
+// 	DataAmount string `json:"dataAmount"`
+// 	DataUnit   string `json:"dataUnit"`
+// }
 
 //Conditions is exported type in Ratelimiting Spec
-type Conditions struct {
-	HeaderCondition HeaderCondition `json:"headerCondition"`
-	IPCondition     IPCondition     `json:"ipCondition"`
-}
+// type Conditions struct {
+// 	HeaderCondition HeaderCondition `json:"headerCondition"`
+// 	IPCondition     IPCondition     `json:"ipCondition"`
+// }
 
 //HeaderCondition is exported type in Ratelimiting Spec
-type HeaderCondition struct {
-	HeaderName  string `json:"headerName"`
-	HeaderValue string `json:"headerValue"`
-}
+// type HeaderCondition struct {
+// 	HeaderName  string `json:"headerName"`
+// 	HeaderValue string `json:"headerValue"`
+// }
 
 //IPCondition is exported type in Ratelimiting Spec
-type IPCondition struct {
-	Type       string `json:"type"`
-	SpecificIP string `json:"specificIp"`
-	Negation   bool   `json:"negation"`
-	StartIP    string `json:"startIp"`
-	EndIP      string `json:"endIp"`
-}
+// type IPCondition struct {
+// 	Type       string `json:"type"`
+// 	SpecificIP string `json:"specificIp"`
+// 	Negation   bool   `json:"negation"`
+// 	StartIP    string `json:"startIp"`
+// 	EndIP      string `json:"endIp"`
+// }
 
 // RateLimitingStatus defines the observed state of RateLimiting
 // +k8s:openapi-gen=true
@@ -71,7 +72,7 @@ type RateLimiting struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   RateLimitingSpec   `json:"spec,omitempty"`
+	Spec RateLimitingSpec `json:"spec,omitempty"`
 	//Status RateLimitingStatus `json:"status,omitempty"`
 }
 

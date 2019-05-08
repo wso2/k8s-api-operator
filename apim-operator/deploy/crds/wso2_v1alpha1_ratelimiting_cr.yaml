@@ -1,26 +1,25 @@
 apiVersion: wso2.com/v1alpha1
 kind: RateLimiting
 metadata:
-  name: test-ratelimiting
+  name: testing2-ratelimiting
 spec:
-  # Add fields here
-  #size: 3
   type: Subscription             # application ,subscription
-  description: Allow 1000 requests per minute
+  #description: Allow 1000 requests per minute
   timeUnit: min
   unitTime: 1
   requestCount:
-   limit: 1000
+   limit: 2000
   bandwidth:
    dataAmount: ""
    dataUnit: ""
-  conditions:  # not required for application and subscription policies
-    headerCondition:
-      headerName: “host”
-      headerValue: “abc.com”
-    ipCondition:
-      type: ipRange
-      specificIp: ""
-      negation : no
-      startIp: 10.100.7.2
-      endIp: 10.100.7.255
+  #stopOnQuotaReach: true
+  # conditions:  # not required for application and subscription policies
+  #   headerCondition:
+  #     headerName: “host”
+  #     headerValue: “abc.com”
+  #   ipCondition:
+  #     type: ipRange
+  #     specificIp: ""
+  #     negation : no
+  #     startIp: 10.100.7.2
+  #     endIp: 10.100.7.255

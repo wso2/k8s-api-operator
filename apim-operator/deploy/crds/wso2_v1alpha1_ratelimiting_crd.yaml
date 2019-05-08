@@ -29,53 +29,6 @@ spec:
           type: object
         spec:
           properties:
-            bandwidth:
-              properties:
-                dataAmount:
-                  type: string
-                dataUnit:
-                  type: string
-              required:
-              - dataAmount
-              - dataUnit
-              type: object
-            conditions:
-              properties:
-                headerCondition:
-                  properties:
-                    headerName:
-                      type: string
-                    headerValue:
-                      type: string
-                  required:
-                  - headerName
-                  - headerValue
-                  type: object
-                ipCondition:
-                  properties:
-                    endIp:
-                      type: string
-                    negation:
-                      type: boolean
-                    specificIp:
-                      type: string
-                    startIp:
-                      type: string
-                    type:
-                      type: string
-                  required:
-                  - type
-                  - specificIp
-                  - negation
-                  - startIp
-                  - endIp
-                  type: object
-              required:
-              - headerCondition
-              - ipCondition
-              type: object
-            description:
-              type: string
             requestCount:
               properties:
                 limit:
@@ -84,6 +37,8 @@ spec:
               required:
               - limit
               type: object
+            stopOnQuotaReach:
+              type: boolean
             timeUnit:
               type: string
             type:
@@ -93,12 +48,9 @@ spec:
               type: integer
           required:
           - type
-          - description
           - timeUnit
           - unitTime
           - requestCount
-          - bandwidth
-          - conditions
           type: object
   version: v1alpha1
   versions:
