@@ -6,7 +6,7 @@ subjects:
 - kind: ServiceAccount
   name: apim-operator
   # Replace this with the namespace the operator is deployed in.
-  namespace: wso2system
+  namespace: wso2-system
 roleRef:
   kind: ClusterRole
   name: apim-operator
