@@ -19,9 +19,9 @@ type RateLimitingSpec struct {
 	UnitTime         int          `json:"unitTime"`
 	RequestCount     RequestCount `json:"requestCount"`
 	StopOnQuotaReach bool         `json:"stopOnQuotaReach"`
-	//Description  string       `json:"description"`
-	//Bandwidth    Bandwidth    `json:"bandwidth"`
-	//Conditions   Conditions   `json:"conditions"`
+	Description      string       `json:"description"`
+	Bandwidth        Bandwidth    `json:"bandwidth"`
+	Conditions       Conditions   `json:"conditions"`
 }
 
 //RequestCount is exported type in Ratelimiting Spec
@@ -30,31 +30,31 @@ type RequestCount struct {
 }
 
 //Bandwidth is exported type in Ratelimiting Spec
-// type Bandwidth struct {
-// 	DataAmount string `json:"dataAmount"`
-// 	DataUnit   string `json:"dataUnit"`
-// }
+type Bandwidth struct {
+	DataAmount string `json:"dataAmount"`
+	DataUnit   string `json:"dataUnit"`
+}
 
 //Conditions is exported type in Ratelimiting Spec
-// type Conditions struct {
-// 	HeaderCondition HeaderCondition `json:"headerCondition"`
-// 	IPCondition     IPCondition     `json:"ipCondition"`
-// }
+type Conditions struct {
+	HeaderCondition HeaderCondition `json:"headerCondition"`
+	IPCondition     IPCondition     `json:"ipCondition"`
+}
 
 //HeaderCondition is exported type in Ratelimiting Spec
-// type HeaderCondition struct {
-// 	HeaderName  string `json:"headerName"`
-// 	HeaderValue string `json:"headerValue"`
-// }
+type HeaderCondition struct {
+	HeaderName  string `json:"headerName"`
+	HeaderValue string `json:"headerValue"`
+}
 
 //IPCondition is exported type in Ratelimiting Spec
-// type IPCondition struct {
-// 	Type       string `json:"type"`
-// 	SpecificIP string `json:"specificIp"`
-// 	Negation   bool   `json:"negation"`
-// 	StartIP    string `json:"startIp"`
-// 	EndIP      string `json:"endIp"`
-// }
+type IPCondition struct {
+	Type       string `json:"type"`
+	SpecificIP string `json:"specificIp"`
+	Negation   bool   `json:"negation"`
+	StartIP    string `json:"startIp"`
+	EndIP      string `json:"endIp"`
+}
 
 // RateLimitingStatus defines the observed state of RateLimiting
 // +k8s:openapi-gen=true
