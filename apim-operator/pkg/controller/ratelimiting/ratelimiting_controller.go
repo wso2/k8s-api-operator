@@ -12,7 +12,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -21,8 +20,6 @@ import (
 
 	"strconv"
 	"strings"
-
-	"fmt"
 
 	mustache "github.com/cbroglie/mustache"
 )
@@ -114,10 +111,13 @@ func (r *ReconcileRateLimiting) Reconcile(request reconcile.Request) (reconcile.
 	log.Info(name)
 
 	policyType := instance.Spec.Type
-	if policyType == "subscription" {
+	if policyType == "subscription" || policyType == "Subscription" {
 		policyType = "Subscription"
-	} else if policyType == "application" {
+	} else if policyType == "application" || policyType == "Application" {
 		policyType = "Application"
+	} else {
+		log.Info("INVALID policy type. Use application or subscription in crd object for type")
+		return reconcile.Result{}, nil
 	}
 
 	funcName := "init" + policyType + name + "Policy"
@@ -125,7 +125,6 @@ func (r *ReconcileRateLimiting) Reconcile(request reconcile.Request) (reconcile.
 
 	var tierType string
 	var policyKey string
-	tierType = instance.Spec.Type + "Tier"
 	if policyType == "Application" {
 		tierType = "appTier"
 		policyKey = "appKey"
@@ -153,14 +152,12 @@ func (r *ReconcileRateLimiting) Reconcile(request reconcile.Request) (reconcile.
 	} else {
 		stopOnQuotaReach = "true"
 	}
-	log.Info("QUOTAREACH")
 	log.Info(stopOnQuotaReach)
 
 	filename := "/usr/local/bin/policy.mustache"
 	output, err := mustache.RenderFile(filename, map[string]string{"name": name, "funcName": funcName, "tierType": tierType, "policyKey": policyKey, "unitTime": unitTime, "stopOnQuotaReach": stopOnQuotaReach, "count": count})
 
 	log.Info(output)
-	fmt.Println(output)
 
 	if err != nil {
 		log.Error(err, "error in rendering ")
