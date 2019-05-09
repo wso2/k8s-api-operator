@@ -188,7 +188,13 @@ func (r *ReconcileRateLimiting) Reconcile(request reconcile.Request) (reconcile.
 		log.Error(err, "error ")
 		return reconcile.Result{}, err
 	}
-	reqLogger.Info("Skip reconcile: map already exists", "confmap.Namespace", foundmap.Namespace, "confmap.Name", foundmap.Name)
+	reqLogger.Info("Map already exists", "confmap.Namespace", foundmap.Namespace, "confmap.Name", foundmap.Name)
+	reqLogger.Info("Updating Config map", "confmap.Namespace", confmap.Namespace, "confmap.Name", confmap.Name)
+	err = r.client.Update(context.TODO(), confmap)
+		if err != nil {
+			log.Error(err, "error ")
+			return reconcile.Result{}, err
+		}
 	return reconcile.Result{}, nil
 
 }
