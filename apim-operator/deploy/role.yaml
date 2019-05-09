@@ -3,6 +3,7 @@ kind: ClusterRole
 metadata:
   creationTimestamp: null
   name: apim-operator
+  namespace: wso2-system
 rules:
 - apiGroups:
   - ""

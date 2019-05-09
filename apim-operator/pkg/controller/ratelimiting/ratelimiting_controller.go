@@ -113,27 +113,51 @@ func (r *ReconcileRateLimiting) Reconcile(request reconcile.Request) (reconcile.
 	name := nameArray[0]
 	log.Info(name)
 
-	funcName := "init" + instance.Spec.Type + name + "Policy"
+	policyType := instance.Spec.Type
+	if policyType == "subscription" {
+		policyType = "Subscription"
+	} else if policyType == "application" {
+		policyType = "Application"
+	}
+
+	funcName := "init" + policyType + name + "Policy"
 	log.Info(funcName)
 
-	tierType := instance.Spec.Type + "Tier"
+	var tierType string
+	var policyKey string
+	tierType = instance.Spec.Type + "Tier"
+	if policyType == "Application" {
+		tierType = "appTier"
+		policyKey = "appKey"
+	} else if policyType == "Subscription" {
+		tierType = "subscriptionTier"
+		policyKey = "subscriptionKey"
+	}
 	log.Info(tierType)
-
-	policyKey := instance.Spec.Type + "Key"
 	log.Info(policyKey)
 
-	unitTime := strconv.Itoa(instance.Spec.UnitTime)
+	var unitTime string
+	if instance.Spec.TimeUnit == "sec" || instance.Spec.TimeUnit == "seconds" {
+		unitTime = strconv.Itoa(instance.Spec.UnitTime)
+	} else {
+		unitTime = strconv.Itoa(instance.Spec.UnitTime * 60000)
+	}
 	log.Info(unitTime)
 
 	count := strconv.Itoa(instance.Spec.RequestCount.Limit)
 	log.Info(count)
 
-	stopOnQuotaReach := strconv.FormatBool(instance.Spec.StopOnQuotaReach)
+	var stopOnQuotaReach string
+	if policyType == "Subscription" {
+		stopOnQuotaReach = strconv.FormatBool(instance.Spec.StopOnQuotaReach)
+	} else {
+		stopOnQuotaReach = "true"
+	}
 	log.Info("QUOTAREACH")
 	log.Info(stopOnQuotaReach)
 
 	filename := "/usr/local/bin/policy.mustache"
-	output, err := mustache.RenderFile(filename, map[string]string{"name": name, "funcName": funcName, "tierType": tierType, "policyKey": policyKey, "unitTime": unitTime, "stopOnQuotaReach": "true", "count": count})
+	output, err := mustache.RenderFile(filename, map[string]string{"name": name, "funcName": funcName, "tierType": tierType, "policyKey": policyKey, "unitTime": unitTime, "stopOnQuotaReach": stopOnQuotaReach, "count": count})
 
 	log.Info(output)
 	fmt.Println(output)
