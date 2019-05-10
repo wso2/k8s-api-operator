@@ -6,6 +6,7 @@ ENV OPERATOR=/usr/local/bin/apim-operator \
 
 # install operator binary
 COPY build/_output/bin/apim-operator ${OPERATOR}
+COPY build/policy.mustache /usr/local/bin
 
 COPY build/bin /usr/local/bin
 RUN  /usr/local/bin/user_setup

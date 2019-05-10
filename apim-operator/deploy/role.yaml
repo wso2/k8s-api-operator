@@ -1,8 +1,9 @@
 apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
+kind: ClusterRole
 metadata:
   creationTimestamp: null
   name: apim-operator
+  namespace: wso2-system
 rules:
 - apiGroups:
   - ""
@@ -44,5 +45,6 @@ rules:
   - wso2.com
   resources:
   - '*'
+  - ratelimitings
   verbs:
   - '*'
