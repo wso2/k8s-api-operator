@@ -1,0 +1,24 @@
+apiVersion: wso2.com/v1alpha1
+kind: API
+metadata:
+  name: example-api
+spec:
+  # Add fields here
+  name: testapi
+  context: /testapi
+  version: v1alpha1
+  description: description
+  tags:
+    - abc
+    - test
+  endpoints:
+    - type: production
+      protocol: https
+      hostname: test.com
+      port: 443
+  businessInformation:
+    businessOwner: wso2
+  apiProperties:
+    - name: prop1
+      value: value1
+  mode: privateJetfds
