@@ -10,8 +10,6 @@ spec:
     plural: apis
     singular: api
   scope: Namespaced
-  subresources:
-    status: {}
   validation:
     openAPIV3Schema:
       properties:

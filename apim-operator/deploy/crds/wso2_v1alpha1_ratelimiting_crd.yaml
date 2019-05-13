@@ -10,8 +10,6 @@ spec:
     plural: ratelimitings
     singular: ratelimiting
   scope: Namespaced
-  subresources:
-    status: {}
   validation:
     openAPIV3Schema:
       properties:
@@ -98,6 +96,10 @@ spec:
           - timeUnit
           - unitTime
           - requestCount
+          - stopOnQuotaReach
+          - description
+          - bandwidth
+          - conditions
           type: object
   version: v1alpha1
   versions:
