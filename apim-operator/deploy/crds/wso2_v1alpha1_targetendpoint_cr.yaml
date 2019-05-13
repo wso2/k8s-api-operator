@@ -2,11 +2,11 @@ apiVersion: wso2.com/v1alpha1
 kind: TargetEndpoint
 metadata:
   name: endpoint-pizza
+  namespace: default
   labels:
     app: wso2
 spec:
   protocol: https
-  hostname: pizzaProdSvc
   port: 443
   deploy:
     name: myservice

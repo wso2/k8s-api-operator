@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"github.com/example-inc/k8s-apim-operator/apim-operator/pkg/controller/targetendpoint"
+	"github.com/wso2/k8s-apim-operator/apim-operator/pkg/controller/targetendpoint"
 )
 
 func init() {
