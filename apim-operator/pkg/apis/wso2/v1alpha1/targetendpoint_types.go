@@ -13,13 +13,13 @@ type TargetEndpointSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
-	Type         		string 				`json:"type"`
-	Protocol     		string 				`json:"protocol"`
-	Hostname     		string 				`json:"hostname"`
-	Port         		int32  				`json:"port"`
-	Deploy  		    Deploy 				`json:"deploy"`
-	EndpointName 		string 				`json:"endpointName"`
-	EndpointSecurity 	EndpointSecurity 	`json:"endpointSecurity"`
+	Type             string           `json:"type"`
+	Protocol         string           `json:"protocol"`
+	Hostname         string           `json:"hostname"`
+	Port             int32            `json:"port"`
+	Deploy           Deploy           `json:"deploy"`
+	EndpointName     string           `json:"endpointName"`
+	EndpointSecurity EndpointSecurity `json:"endpointSecurity"`
 }
 
 // TargetEndpointStatus defines the observed state of TargetEndpoint
@@ -30,17 +30,16 @@ type TargetEndpointStatus struct {
 	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
 }
 
-
 type EndpointSecurity struct {
-	Username    string	`json:"username"`
-	Password    string  `json:"password"`
-	Type     	string  `json:"type"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+	Type     string `json:"type"`
 }
 
 type Deploy struct {
-	Name 		   string	`json:"name"`
-	DockerImage    string	`json:"dockerImage"`
-	Count    	   int32    `json:"count"`
+	Name        string `json:"name"`
+	DockerImage string `json:"dockerImage"`
+	Count       int32  `json:"count"`
 }
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
