@@ -1,7 +1,7 @@
 package apis
 
 import (
-	"github.com/apim-crd/apim-operator/pkg/apis/wso2/v1alpha1"
+	"github.com/example-inc/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1"
 )
 
 func init() {

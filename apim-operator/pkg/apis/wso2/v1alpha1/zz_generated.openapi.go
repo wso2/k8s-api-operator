@@ -13,12 +13,15 @@ import (
 
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
-		"github.com/apim-crd/apim-operator/pkg/apis/wso2/v1alpha1.API":                schema_pkg_apis_wso2_v1alpha1_API(ref),
-		"github.com/apim-crd/apim-operator/pkg/apis/wso2/v1alpha1.APISpec":            schema_pkg_apis_wso2_v1alpha1_APISpec(ref),
-		"github.com/apim-crd/apim-operator/pkg/apis/wso2/v1alpha1.APIStatus":          schema_pkg_apis_wso2_v1alpha1_APIStatus(ref),
-		"github.com/apim-crd/apim-operator/pkg/apis/wso2/v1alpha1.RateLimiting":       schema_pkg_apis_wso2_v1alpha1_RateLimiting(ref),
-		"github.com/apim-crd/apim-operator/pkg/apis/wso2/v1alpha1.RateLimitingSpec":   schema_pkg_apis_wso2_v1alpha1_RateLimitingSpec(ref),
-		"github.com/apim-crd/apim-operator/pkg/apis/wso2/v1alpha1.RateLimitingStatus": schema_pkg_apis_wso2_v1alpha1_RateLimitingStatus(ref),
+		"github.com/example-inc/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.API":                  schema_pkg_apis_wso2_v1alpha1_API(ref),
+		"github.com/example-inc/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.APISpec":              schema_pkg_apis_wso2_v1alpha1_APISpec(ref),
+		"github.com/example-inc/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.APIStatus":            schema_pkg_apis_wso2_v1alpha1_APIStatus(ref),
+		"github.com/example-inc/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.RateLimiting":         schema_pkg_apis_wso2_v1alpha1_RateLimiting(ref),
+		"github.com/example-inc/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.RateLimitingSpec":     schema_pkg_apis_wso2_v1alpha1_RateLimitingSpec(ref),
+		"github.com/example-inc/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.RateLimitingStatus":   schema_pkg_apis_wso2_v1alpha1_RateLimitingStatus(ref),
+		"github.com/example-inc/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.TargetEndpoint":       schema_pkg_apis_wso2_v1alpha1_TargetEndpoint(ref),
+		"github.com/example-inc/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.TargetEndpointSpec":   schema_pkg_apis_wso2_v1alpha1_TargetEndpointSpec(ref),
+		"github.com/example-inc/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.TargetEndpointStatus": schema_pkg_apis_wso2_v1alpha1_TargetEndpointStatus(ref),
 	}
 }
 
@@ -49,19 +52,19 @@ func schema_pkg_apis_wso2_v1alpha1_API(ref common.ReferenceCallback) common.Open
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/apim-crd/apim-operator/pkg/apis/wso2/v1alpha1.APISpec"),
+							Ref: ref("github.com/example-inc/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.APISpec"),
 						},
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/apim-crd/apim-operator/pkg/apis/wso2/v1alpha1.APIStatus"),
+							Ref: ref("github.com/example-inc/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.APIStatus"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/apim-crd/apim-operator/pkg/apis/wso2/v1alpha1.APISpec", "github.com/apim-crd/apim-operator/pkg/apis/wso2/v1alpha1.APIStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/example-inc/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.APISpec", "github.com/example-inc/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.APIStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -115,7 +118,7 @@ func schema_pkg_apis_wso2_v1alpha1_APISpec(ref common.ReferenceCallback) common.
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/apim-crd/apim-operator/pkg/apis/wso2/v1alpha1.Endpoint"),
+										Ref: ref("github.com/example-inc/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.Endpoint"),
 									},
 								},
 							},
@@ -158,7 +161,7 @@ func schema_pkg_apis_wso2_v1alpha1_APISpec(ref common.ReferenceCallback) common.
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/apim-crd/apim-operator/pkg/apis/wso2/v1alpha1.URLPattern"),
+										Ref: ref("github.com/example-inc/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.URLPattern"),
 									},
 								},
 							},
@@ -198,7 +201,7 @@ func schema_pkg_apis_wso2_v1alpha1_APISpec(ref common.ReferenceCallback) common.
 					},
 					"businessInformation": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/apim-crd/apim-operator/pkg/apis/wso2/v1alpha1.BusinessInformation"),
+							Ref: ref("github.com/example-inc/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.BusinessInformation"),
 						},
 					},
 					"apiProperties": {
@@ -207,7 +210,7 @@ func schema_pkg_apis_wso2_v1alpha1_APISpec(ref common.ReferenceCallback) common.
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/apim-crd/apim-operator/pkg/apis/wso2/v1alpha1.APIProperty"),
+										Ref: ref("github.com/example-inc/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.APIProperty"),
 									},
 								},
 							},
@@ -230,7 +233,7 @@ func schema_pkg_apis_wso2_v1alpha1_APISpec(ref common.ReferenceCallback) common.
 			},
 		},
 		Dependencies: []string{
-			"github.com/apim-crd/apim-operator/pkg/apis/wso2/v1alpha1.APIProperty", "github.com/apim-crd/apim-operator/pkg/apis/wso2/v1alpha1.BusinessInformation", "github.com/apim-crd/apim-operator/pkg/apis/wso2/v1alpha1.Endpoint", "github.com/apim-crd/apim-operator/pkg/apis/wso2/v1alpha1.URLPattern"},
+			"github.com/example-inc/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.APIProperty", "github.com/example-inc/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.BusinessInformation", "github.com/example-inc/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.Endpoint", "github.com/example-inc/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.URLPattern"},
 	}
 }
 
@@ -273,14 +276,14 @@ func schema_pkg_apis_wso2_v1alpha1_RateLimiting(ref common.ReferenceCallback) co
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/apim-crd/apim-operator/pkg/apis/wso2/v1alpha1.RateLimitingSpec"),
+							Ref: ref("github.com/example-inc/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.RateLimitingSpec"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/apim-crd/apim-operator/pkg/apis/wso2/v1alpha1.RateLimitingSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/example-inc/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.RateLimitingSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -310,7 +313,7 @@ func schema_pkg_apis_wso2_v1alpha1_RateLimitingSpec(ref common.ReferenceCallback
 					},
 					"requestCount": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/apim-crd/apim-operator/pkg/apis/wso2/v1alpha1.RequestCount"),
+							Ref: ref("github.com/example-inc/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.RequestCount"),
 						},
 					},
 					"stopOnQuotaReach": {
@@ -327,12 +330,12 @@ func schema_pkg_apis_wso2_v1alpha1_RateLimitingSpec(ref common.ReferenceCallback
 					},
 					"bandwidth": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/apim-crd/apim-operator/pkg/apis/wso2/v1alpha1.Bandwidth"),
+							Ref: ref("github.com/example-inc/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.Bandwidth"),
 						},
 					},
 					"conditions": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/apim-crd/apim-operator/pkg/apis/wso2/v1alpha1.Conditions"),
+							Ref: ref("github.com/example-inc/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.Conditions"),
 						},
 					},
 				},
@@ -340,7 +343,7 @@ func schema_pkg_apis_wso2_v1alpha1_RateLimitingSpec(ref common.ReferenceCallback
 			},
 		},
 		Dependencies: []string{
-			"github.com/apim-crd/apim-operator/pkg/apis/wso2/v1alpha1.Bandwidth", "github.com/apim-crd/apim-operator/pkg/apis/wso2/v1alpha1.Conditions", "github.com/apim-crd/apim-operator/pkg/apis/wso2/v1alpha1.RequestCount"},
+			"github.com/example-inc/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.Bandwidth", "github.com/example-inc/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.Conditions", "github.com/example-inc/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.RequestCount"},
 	}
 }
 
@@ -349,6 +352,73 @@ func schema_pkg_apis_wso2_v1alpha1_RateLimitingStatus(ref common.ReferenceCallba
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "RateLimitingStatus defines the observed state of RateLimiting",
+				Properties:  map[string]spec.Schema{},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_pkg_apis_wso2_v1alpha1_TargetEndpoint(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "TargetEndpoint is the Schema for the targetendpoints API",
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/example-inc/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.TargetEndpointSpec"),
+						},
+					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/example-inc/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.TargetEndpointStatus"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/example-inc/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.TargetEndpointSpec", "github.com/example-inc/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.TargetEndpointStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+	}
+}
+
+func schema_pkg_apis_wso2_v1alpha1_TargetEndpointSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "TargetEndpointSpec defines the desired state of TargetEndpoint",
+				Properties:  map[string]spec.Schema{},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_pkg_apis_wso2_v1alpha1_TargetEndpointStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "TargetEndpointStatus defines the observed state of TargetEndpoint",
 				Properties:  map[string]spec.Schema{},
 			},
 		},
