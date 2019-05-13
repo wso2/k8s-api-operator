@@ -3,8 +3,8 @@ package targetendpoint
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"reflect"
 
 	wso2v1alpha1 "github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1"
 
@@ -108,7 +108,6 @@ func (r *ReconcileTargetEndpoint) Reconcile(request reconcile.Request) (reconcil
 		return reconcile.Result{}, err
 	}
 
-
 	if err := r.reconcileService(instance); err != nil {
 		return reconcile.Result{}, err
 	}
@@ -140,7 +139,7 @@ func newPodForCR(cr *wso2v1alpha1.TargetEndpoint) *corev1.Pod {
 }
 
 // Create newDeploymentForCR method to create a deployment.
-func (r *ReconcileTargetEndpoint) newDeploymentForCR(m *wso2v1alpha1.TargetEndpoint) *appsv1.Deployment{
+func (r *ReconcileTargetEndpoint) newDeploymentForCR(m *wso2v1alpha1.TargetEndpoint) *appsv1.Deployment {
 	replicas := m.Spec.Deploy.Count
 	dep := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
@@ -162,8 +161,8 @@ func (r *ReconcileTargetEndpoint) newDeploymentForCR(m *wso2v1alpha1.TargetEndpo
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{{
-						Image:   m.Spec.Deploy.DockerImage,
-						Name:    m.Spec.Deploy.Name,
+						Image: m.Spec.Deploy.DockerImage,
+						Name:  m.Spec.Deploy.Name,
 						Ports: []corev1.ContainerPort{{
 							ContainerPort: m.Spec.Port,
 						}},
@@ -191,7 +190,8 @@ func (r *ReconcileTargetEndpoint) reconcileService(m *wso2v1alpha1.TargetEndpoin
 	}
 
 	currentService := &corev1.Service{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: newService.Namespace, Name: newService.Name}, currentService)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: newService.Namespace,
+		Name: newService.Name}, currentService)
 
 	if err != nil {
 		return fmt.Errorf("failed to retrieve Service resource: %v", err)
@@ -220,13 +220,13 @@ func (r *ReconcileTargetEndpoint) reconcileDeployment(m *wso2v1alpha1.TargetEndp
 		// Deployment created successfully - return and requeue
 	} else if err != nil {
 		log.WithValues("Failed to get Deployment: %v\n", err)
-		return  err
+		return err
 	}
 	return nil
 }
 
 // NewService assembles the ClusterIP service for the Nginx
-func(r *ReconcileTargetEndpoint) newServiceForCR(m *wso2v1alpha1.TargetEndpoint) *corev1.Service {
+func (r *ReconcileTargetEndpoint) newServiceForCR(m *wso2v1alpha1.TargetEndpoint) *corev1.Service {
 	var port int
 	port = int(m.Spec.Port)
 	service := corev1.Service{
