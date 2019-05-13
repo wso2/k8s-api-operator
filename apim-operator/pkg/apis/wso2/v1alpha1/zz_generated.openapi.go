@@ -339,7 +339,7 @@ func schema_pkg_apis_wso2_v1alpha1_RateLimitingSpec(ref common.ReferenceCallback
 						},
 					},
 				},
-				Required: []string{"type", "timeUnit", "unitTime", "requestCount", "stopOnQuotaReach", "description", "bandwidth", "conditions"},
+				Required: []string{"type", "timeUnit", "unitTime", "requestCount"},
 			},
 		},
 		Dependencies: []string{
