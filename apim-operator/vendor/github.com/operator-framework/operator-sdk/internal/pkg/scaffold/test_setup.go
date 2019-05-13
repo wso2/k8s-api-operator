@@ -29,7 +29,7 @@ import (
 const (
 	// test constants describing an app operator project
 	appProjectName = "app-operator"
-	appRepo        = "github.com" + filePathSep + "example-inc" + filePathSep + appProjectName
+	appRepo        = "github.com" + filePathSep + "wso2" + filePathSep + appProjectName
 	appApiVersion  = "app.example.com/v1alpha1"
 	appKind        = "AppService"
 )

@@ -85,7 +85,7 @@ func (e ErrUnknownOperatorType) Error() string {
 }
 
 // MustInProjectRoot checks if the current dir is the project root and returns
-// the current repo's import path, ex github.com/example-inc/app-operator
+// the current repo's import path, ex github.com/wso2/app-operator
 func MustInProjectRoot() {
 	// If the current directory has a "build/dockerfile", then it is safe to say
 	// we are at the project root.
@@ -113,7 +113,7 @@ func MustGetwd() string {
 }
 
 // CheckAndGetProjectGoPkg checks if this project's repository path is rooted under $GOPATH and returns the current directory's import path
-// e.g: "github.com/example-inc/app-operator"
+// e.g: "github.com/wso2/app-operator"
 func CheckAndGetProjectGoPkg() string {
 	gopath := MustSetGopath(MustGetGopath())
 	goSrc := filepath.Join(gopath, SrcDir)
