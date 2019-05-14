@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"github.com/apim-crd/apim-operator/pkg/controller/ratelimiting"
+	"github.com/wso2/k8s-apim-operator/apim-operator/pkg/controller/ratelimiting"
 )
 
 func init() {

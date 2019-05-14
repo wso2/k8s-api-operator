@@ -104,14 +104,16 @@ func (r *ReconcileTargetEndpoint) Reconcile(request reconcile.Request) (reconcil
 		return reconcile.Result{}, err
 	}
 
-	if err := r.reconcileDeployment(instance); err != nil {
-		return reconcile.Result{}, err
-	}
+	if instance.Spec.Deploy.DockerImage != "" {
+		if err := r.reconcileDeployment(instance); err != nil {
+			return reconcile.Result{}, err
+		}
 
-	if err := r.reconcileService(instance); err != nil {
-		return reconcile.Result{}, err
-	}
+		if err := r.reconcileService(instance); err != nil {
+			return reconcile.Result{}, err
+		}
 
+	}
 	return reconcile.Result{Requeue: true}, nil
 }
 
