@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 
+	"github.com/cbroglie/mustache"
 	wso2v1alpha1 "github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1"
 
 	corev1 "k8s.io/api/core/v1"
@@ -18,6 +19,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+
+	"fmt"
 )
 
 var log = logf.Log.WithName("controller_api")
@@ -100,6 +103,39 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		return reconcile.Result{}, err
 	}
 
+	// gets the data from analytics secret
+	analyticsData, err := getSecretData(r)
+
+	//writes into the conf file
+	analyticsEnabled := "false"
+	analyticsUsername := "admin"
+	analyticsPassword := "admin"
+
+	if err == nil && analyticsData != nil && analyticsData["username"] != nil &&
+		analyticsData["password"] != nil {
+		analyticsEnabled = "true"
+		analyticsUsername = string(analyticsData["username"])
+		analyticsPassword = string(analyticsData["password"])
+	}
+
+	filename := "/usr/local/bin/microgwconf.mustache"
+	output, err := mustache.RenderFile(filename, map[string]string{"analytics_enabled": analyticsEnabled,
+		"analytics_username": analyticsUsername, "analytics_password": analyticsPassword})
+
+	fmt.Println(output)
+
+	if err != nil {
+		log.Error(err, "error in rendering ")
+	}
+
+	//writes the created conf file to secret
+	errCreateSecret := createMGWSecret(r, output)
+	if errCreateSecret != nil {
+		log.Error(errCreateSecret, "Error in creating conf secret")
+	} else {
+		log.Info("Successfully created secret")
+	}
+
 	// Define a new Pod object
 	pod := newPodForCR(instance)
 
@@ -150,4 +186,59 @@ func newPodForCR(cr *wso2v1alpha1.API) *corev1.Pod {
 			},
 		},
 	}
+}
+
+// gets the data from analytics secret
+func getSecretData(r *ReconcileAPI) (map[string][]byte, error) {
+	var analyticsData map[string][]byte
+	// Check if this secret exists
+	analyticsSecret := &corev1.Secret{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: "analytics-secret", Namespace: "wso2-system"}, analyticsSecret)
+
+	if err != nil && errors.IsNotFound(err) {
+		log.Error(err, "Analytics Secret is not found")
+		return analyticsData, err
+
+	} else if err != nil {
+		log.Error(err, "error ")
+		return analyticsData, err
+
+	}
+
+	analyticsData = analyticsSecret.Data
+	log.Info("Analytics Secret exists")
+	fmt.Println("DATA")
+	fmt.Println(string(analyticsData["username"]))
+	fmt.Println(string(analyticsData["password"]))
+	fmt.Println("END")
+	return analyticsData, nil
+
+}
+
+func createMGWSecret(r *ReconcileAPI, confData string) error {
+	var apimSecret *corev1.Secret
+
+	apimSecret = &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "mgw-secret",
+			Namespace: "wso2-system",
+		},
+	}
+
+	apimSecret.Data = map[string][]byte{
+		"confData": []byte(confData),
+	}
+
+	// Check if this secret exists
+	checkSecret := &corev1.Secret{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: "mgw-secret", Namespace: "wso2-system"}, checkSecret)
+
+	if err != nil && errors.IsNotFound(err) {
+		log.Info("Creating secret ")
+		errSecret := r.client.Create(context.TODO(), apimSecret)
+		return errSecret
+	} else {
+		return err
+	}
+
 }
