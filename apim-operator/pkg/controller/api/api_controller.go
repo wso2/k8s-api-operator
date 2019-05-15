@@ -249,8 +249,13 @@ func createMGWSecret(r *ReconcileAPI, confData string) error {
 		log.Info("Creating secret ")
 		errSecret := r.client.Create(context.TODO(), apimSecret)
 		return errSecret
-	} else {
+	} else if err != nil {
+		log.Error(err, "error ")
 		return err
+	} else {
+		log.Info("Updating secret")
+		errSecret := r.client.Update(context.TODO(), apimSecret)
+		return errSecret
 	}
 
 }
