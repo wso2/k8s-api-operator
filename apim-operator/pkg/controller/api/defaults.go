@@ -25,4 +25,8 @@ var (
 
 	//throttlingConfig
 	enabledGlobalTMEventPublishing string = "false"
+
+	//basic authentication
+	basicUsername string = "generalUser1"
+	basicPassword string = "5BAA61E4C9B93F3F0682250B6CF8331B7EE68FD8"
 )

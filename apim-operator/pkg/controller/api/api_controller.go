@@ -128,6 +128,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		"audience":                       audience,
 		"certificateAlias":               certificateAlias,
 		"enabledGlobalTMEventPublishing": enabledGlobalTMEventPublishing,
+		"basicUsername":                  basicUsername,
+		"basicPassword":                  basicPassword,
 		"analyticsEnabled":               analyticsEnabled,
 		"analyticsUsername":              analyticsUsername,
 		"analyticsPassword":              analyticsPassword})
