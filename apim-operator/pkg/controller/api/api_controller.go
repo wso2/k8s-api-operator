@@ -107,9 +107,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	analyticsData, err := getSecretData(r)
 
 	//writes into the conf file
-	analyticsEnabled := "false"
-	analyticsUsername := "admin"
-	analyticsPassword := "admin"
 
 	if err == nil && analyticsData != nil && analyticsData["username"] != nil &&
 		analyticsData["password"] != nil {
@@ -119,8 +116,23 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	filename := "/usr/local/bin/microgwconf.mustache"
-	output, err := mustache.RenderFile(filename, map[string]string{"analytics_enabled": analyticsEnabled,
-		"analytics_username": analyticsUsername, "analytics_password": analyticsPassword})
+	output, err := mustache.RenderFile(filename, map[string]string{
+		"keystorePath":                   keystorePath,
+		"keystorePassword":               keystorePassword,
+		"truststorePath":                 truststorePath,
+		"truststorePassword":             truststorePassword,
+		"keymanagerServerurl":            keymanagerServerurl,
+		"keymanagerUsername":             keymanagerUsername,
+		"keymanagerPassword":             keymanagerPassword,
+		"issuer":                         issuer,
+		"audience":                       audience,
+		"certificateAlias":               certificateAlias,
+		"enabledGlobalTMEventPublishing": enabledGlobalTMEventPublishing,
+		"basicUsername":                  basicUsername,
+		"basicPassword":                  basicPassword,
+		"analyticsEnabled":               analyticsEnabled,
+		"analyticsUsername":              analyticsUsername,
+		"analyticsPassword":              analyticsPassword})
 
 	fmt.Println(output)
 
@@ -237,8 +249,13 @@ func createMGWSecret(r *ReconcileAPI, confData string) error {
 		log.Info("Creating secret ")
 		errSecret := r.client.Create(context.TODO(), apimSecret)
 		return errSecret
-	} else {
+	} else if err != nil {
+		log.Error(err, "error ")
 		return err
+	} else {
+		log.Info("Updating secret")
+		errSecret := r.client.Update(context.TODO(), apimSecret)
+		return errSecret
 	}
 
 }
