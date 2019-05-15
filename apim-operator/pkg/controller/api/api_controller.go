@@ -3,8 +3,8 @@ package api
 import (
 	"context"
 
-	wso2v1alpha1 "github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1"
 	"github.com/cbroglie/mustache"
+	wso2v1alpha1 "github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -111,14 +111,16 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	analyticsUsername := "admin"
 	analyticsPassword := "admin"
 
-	if err == nil && analyticsData != nil && analyticsData["username"] != nil && analyticsData["password"] != nil {
+	if err == nil && analyticsData != nil && analyticsData["username"] != nil &&
+		analyticsData["password"] != nil {
 		analyticsEnabled = "true"
 		analyticsUsername = string(analyticsData["username"])
 		analyticsPassword = string(analyticsData["password"])
 	}
 
 	filename := "/usr/local/bin/microgwconf.mustache"
-	output, err := mustache.RenderFile(filename, map[string]string{"analytics_enabled": analyticsEnabled, "analytics_username": analyticsUsername, "analytics_password": analyticsPassword})
+	output, err := mustache.RenderFile(filename, map[string]string{"analytics_enabled": analyticsEnabled,
+		"analytics_username": analyticsUsername, "analytics_password": analyticsPassword})
 
 	fmt.Println(output)
 
@@ -215,6 +217,7 @@ func getSecretData(r *ReconcileAPI) (map[string][]byte, error) {
 
 func createMGWSecret(r *ReconcileAPI, confData string) error {
 	var apimSecret *corev1.Secret
+
 	apimSecret = &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "mgw-secret",
@@ -226,8 +229,16 @@ func createMGWSecret(r *ReconcileAPI, confData string) error {
 		"confData": []byte(confData),
 	}
 
-	log.Info("Creating secret ")
-	errSecret := r.client.Create(context.TODO(), apimSecret)
-	return errSecret
-}
+	// Check if this secret exists
+	checkSecret := &corev1.Secret{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: "mgw-secret", Namespace: "wso2-system"}, checkSecret)
 
+	if err != nil && errors.IsNotFound(err) {
+		log.Info("Creating secret ")
+		errSecret := r.client.Create(context.TODO(), apimSecret)
+		return errSecret
+	} else {
+		return err
+	}
+
+}
