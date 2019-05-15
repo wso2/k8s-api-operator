@@ -2,10 +2,10 @@
 host="0.0.0.0"
 httpPort=9090
 httpsPort=9095
-keyStore.path="${ballerina.home}/bre/security/ballerinaKeystore.p12"
-keyStore.password="ballerina"
-trustStore.path="${ballerina.home}/bre/security/ballerinaTruststore.p12"
-trustStore.password="ballerina"
+keyStore.path={{keystorePath}}
+keyStore.password={{keystorePassword}}
+trustStore.path={{truststorePath}}
+trustStore.password={{truststorePassword}}
 tokenListenerPort=9096
 
 [authConfig]
@@ -13,17 +13,17 @@ authorizationHeader="Authorization"
 removeAuthHeaderFromOutMessage=true
 
 [keyManager]
-serverUrl="https://localhost:9443"
-username="admin"
-password="admin"
+serverUrl={{keymanagerServerurl}}
+username={{keymanagerUsername}}
+password={{keymanagerPassword}}
 tokenContext="oauth2"
 timestampSkew=5000
 verifyHostname=true
 
 [jwtTokenConfig]
-issuer="https://localhost:9443/oauth2/token"
-audience="http://org.wso2.apimgt/gateway"
-certificateAlias="wso2apim"
+issuer={{issuer}}
+audience={{audience}}
+certificateAlias={{certificateAlias}}
 
 
 [jwtConfig]
@@ -36,13 +36,13 @@ tokenCache.capacity=10000
 tokenCache.evictionFactor=0.25
 
 [analytics]
-enable={{analytics_enabled}}
+enable={{analyticsEnabled}}
 uploadingTimeSpanInMillis=600000
 uploadingEndpoint="https://localhost:9444/analytics/v1.0/usage/upload-file"
 rotatingPeriod=600000
 task.uploadFiles=true
-username={{analytics_username}}
-password={{analytics_password}}
+username={{analyticsUsername}}
+password={{analyticsPassword}}
 verifyHostname=true
 
 [http2]
@@ -65,7 +65,7 @@ absolutePathToSwagger = " "
 
 
 [throttlingConfig]
-enabledGlobalTMEventPublishing = false
+enabledGlobalTMEventPublishing = {{enabledGlobalTMEventPublishing}}
 jmsConnectioninitialContextFactory = "bmbInitialContextFactory"
 jmsConnectionProviderUrl= "amqp://admin:admin@carbon/carbon?brokerlist='tcp://localhost:5672'"
 jmsConnectionUsername = ""
