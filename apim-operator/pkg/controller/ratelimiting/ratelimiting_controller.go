@@ -3,7 +3,7 @@ package ratelimiting
 import (
 	"context"
 
-	wso2v1alpha1 "github.com/apim-crd/apim-operator/pkg/apis/wso2/v1alpha1"
+	wso2v1alpha1 "github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"

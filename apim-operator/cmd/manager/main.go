@@ -10,8 +10,8 @@ import (
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
-	"github.com/apim-crd/apim-operator/pkg/apis"
-	"github.com/apim-crd/apim-operator/pkg/controller"
+	"github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis"
+	"github.com/wso2/k8s-apim-operator/apim-operator/pkg/controller"
 
 	"github.com/operator-framework/operator-sdk/pkg/leader"
 	"github.com/operator-framework/operator-sdk/pkg/log/zap"
