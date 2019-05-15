@@ -74,146 +74,10 @@ func schema_pkg_apis_wso2_v1alpha1_APISpec(ref common.ReferenceCallback) common.
 			SchemaProps: spec.SchemaProps{
 				Description: "APISpec defines the desired state of API",
 				Properties: map[string]spec.Schema{
-					"name": {
+					"definition": {
 						SchemaProps: spec.SchemaProps{
 							Description: "INSERT ADDITIONAL SPEC FIELDS - desired state of cluster Important: Run \"operator-sdk generate k8s\" to regenerate code after modifying this file Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"context": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"version": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"description": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"tags": {
-						SchemaProps: spec.SchemaProps{
-							Type: []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Type:   []string{"string"},
-										Format: "",
-									},
-								},
-							},
-						},
-					},
-					"endpoints": {
-						SchemaProps: spec.SchemaProps{
-							Type: []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.Endpoint"),
-									},
-								},
-							},
-						},
-					},
-					"requestInterceptor": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"responseInterceptor": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"authorizationHeader": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"labels": {
-						SchemaProps: spec.SchemaProps{
-							Type: []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Type:   []string{"string"},
-										Format: "",
-									},
-								},
-							},
-						},
-					},
-					"urlPatterns": {
-						SchemaProps: spec.SchemaProps{
-							Type: []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.URLPattern"),
-									},
-								},
-							},
-						},
-					},
-					"security": {
-						SchemaProps: spec.SchemaProps{
-							Type: []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Type:   []string{"string"},
-										Format: "",
-									},
-								},
-							},
-						},
-					},
-					"subscriptionTiers": {
-						SchemaProps: spec.SchemaProps{
-							Type: []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Type:   []string{"string"},
-										Format: "",
-									},
-								},
-							},
-						},
-					},
-					"advancedThrottlingPolicy": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"businessInformation": {
-						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.BusinessInformation"),
-						},
-					},
-					"apiProperties": {
-						SchemaProps: spec.SchemaProps{
-							Type: []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.APIProperty"),
-									},
-								},
-							},
+							Ref:         ref("github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.Definition"),
 						},
 					},
 					"mode": {
@@ -222,18 +86,12 @@ func schema_pkg_apis_wso2_v1alpha1_APISpec(ref common.ReferenceCallback) common.
 							Format: "",
 						},
 					},
-					"replicaCount": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"integer"},
-							Format: "int32",
-						},
-					},
 				},
-				Required: []string{"name", "context", "version", "description", "tags", "endpoints", "requestInterceptor", "responseInterceptor", "authorizationHeader", "labels", "urlPatterns", "security", "subscriptionTiers", "advancedThrottlingPolicy", "businessInformation", "apiProperties", "mode", "replicaCount"},
+				Required: []string{"definition", "mode"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.APIProperty", "github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.BusinessInformation", "github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.Endpoint", "github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.URLPattern"},
+			"github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.Definition"},
 	}
 }
 
@@ -339,7 +197,7 @@ func schema_pkg_apis_wso2_v1alpha1_RateLimitingSpec(ref common.ReferenceCallback
 						},
 					},
 				},
-				Required: []string{"type", "timeUnit", "unitTime", "requestCount"},
+				Required: []string{"type", "timeUnit", "unitTime", "requestCount", "stopOnQuotaReach", "description", "bandwidth", "conditions"},
 			},
 		},
 		Dependencies: []string{
@@ -407,10 +265,54 @@ func schema_pkg_apis_wso2_v1alpha1_TargetEndpointSpec(ref common.ReferenceCallba
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "TargetEndpointSpec defines the desired state of TargetEndpoint",
-				Properties:  map[string]spec.Schema{},
+				Properties: map[string]spec.Schema{
+					"type": {
+						SchemaProps: spec.SchemaProps{
+							Description: "INSERT ADDITIONAL SPEC FIELDS - desired state of cluster Important: Run \"operator-sdk generate k8s\" to regenerate code after modifying this file Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"protocol": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"hostname": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"port": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"integer"},
+							Format: "int32",
+						},
+					},
+					"deploy": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.Deploy"),
+						},
+					},
+					"endpointName": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"endpointSecurity": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.EndpointSecurity"),
+						},
+					},
+				},
+				Required: []string{"type", "protocol", "hostname", "port", "deploy", "endpointName", "endpointSecurity"},
 			},
 		},
-		Dependencies: []string{},
+		Dependencies: []string{
+			"github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.Deploy", "github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.EndpointSecurity"},
 	}
 }
 
