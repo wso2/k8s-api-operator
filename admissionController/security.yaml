@@ -1,7 +1,7 @@
 apiVersion: cache.example.com/v1alpha1
 kind: Security
 metadata:
-  name: securitytest-example7
+  name: securitytest-example
 spec:
   type: JWT
   alias: wso2carbon
