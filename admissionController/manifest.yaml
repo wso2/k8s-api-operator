@@ -1,0 +1,81 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: validation
+  namespace: wso2-system
+  labels:
+    name: validation
+spec:
+  ports:
+    - name: webhook
+      port: 443
+      targetPort: 8080
+  selector:
+    name: validation
+---
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: validation
+  namespace: wso2-system
+  labels:
+    name: validation
+spec:
+  replicas: 1
+  template:
+    metadata:
+      name: validation
+      labels:
+        name: validation
+    spec:
+      serviceAccountName: secret-reader
+      containers:
+        - name: webhook
+          image: shehani123/validation-controller:1.0.0
+          imagePullPolicy: IfNotPresent
+          args:
+            - -alsologtostderr
+            - --log_dir=/
+            - -v=10
+            - 2>&1
+          resources:
+            limits:
+              memory: 50Mi
+              cpu: 300m
+            requests:
+              memory: 00Mi
+              cpu: 300m
+          volumeMounts:
+            - name: webhook-certs
+              mountPath: /etc/certs
+              readOnly: true
+            - name: logs
+              mountPath: /tmp
+          securityContext:
+            readOnlyRootFilesystem: true
+      volumes:
+        - name: webhook-certs
+          secret:
+            secretName: validation
+        - name: logs
+          emptyDir: {}
+---
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: validation
+webhooks:
+  - name: validation.shehani123.org
+    clientConfig:
+      service:
+        name: validation
+        namespace: wso2-system
+        path: "/validate"
+      caBundle: "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUQ3akNDQXRZQ0NRRHZSOFJ3TGYxald6QU5CZ2txaGtpRzl3MEJBUTBGQURDQnVERUxNQWtHQTFVRUJoTUMKVEVzeEVEQU9CZ05WQkFnTUIwTnZiRzl0WW04eEVEQU9CZ05WQkFjTUIwTnZiRzl0WW04eER6QU5CZ05WQkJFTQpCalF3TkRBME1ERVVNQklHQTFVRUNRd0xTR0ZzYkc4Z0lERTJNREF4RFRBTEJnTlZCQW9NQkhkemJ6SXhHVEFYCkJnTlZCQXNNRUVWdGIycDVJRVJsY0dGeWRHMWxiblF4RWpBUUJnTlZCQU1NQ1haM2MyOHlMbU52YlRFZ01CNEcKQ1NxR1NJYjNEUUVKQVJZUmJtOHRjbVZ3YkhsQWQzTnZNaTVqYjIwd0hoY05NVGt3TlRFMU1URXdNRFE1V2hjTgpNVGt3TmpFME1URXdNRFE1V2pDQnVERUxNQWtHQTFVRUJoTUNURXN4RURBT0JnTlZCQWdNQjBOdmJHOXRZbTh4CkVEQU9CZ05WQkFjTUIwTnZiRzl0WW04eER6QU5CZ05WQkJFTUJqUXdOREEwTURFVU1CSUdBMVVFQ1F3TFNHRnMKYkc4Z0lERTJNREF4RFRBTEJnTlZCQW9NQkhkemJ6SXhHVEFYQmdOVkJBc01FRVZ0YjJwNUlFUmxjR0Z5ZEcxbApiblF4RWpBUUJnTlZCQU1NQ1haM2MyOHlMbU52YlRFZ01CNEdDU3FHU0liM0RRRUpBUllSYm04dGNtVndiSGxBCmQzTnZNaTVqYjIwd2dnRWlNQTBHQ1NxR1NJYjNEUUVCQVFVQUE0SUJEd0F3Z2dFS0FvSUJBUURRZXVubDMwUlkKclV3dmFRNS96bWNqNUNDaG5Jcko5WjhPUHo3Sit4SXhNcE1IdlFCWVhPeEhGaVFMTk1MYllRZ1FjUUJaUVVlKwoxRGNkN1FKdUVQeHFCdHFjL1NuN3pKaDU5VG5tVUdLZDZra3o4SDZDZ1FLZ1hhWEowRTh6dHArbUQwMVp1aU14CjNScTNnTXM3czB6N1M4UWhxdnhxako1REYyQ3laVWtCeCtPUGxaWlRpM2lHZTBiYTNLRXBoQ3BlRm5uNjlJaFIKMW03eWF1WWs5YXMrNE8xdTZ6SkhCTHIwdUN6dGE1YU5MRGpXamV3TzJSdVUwNlIrU2JSQWswczd4U3RjMkxTWgp6Mm1LWWt3TDM1a2p5UU5DRGtlNjM1WkpqajJmNmF6OEhWNU5acHVBaGp6QUNvNHVkSEVDaU5YLzhzaXFNSFNlCncyZWxlV1FseTJaUEFnTUJBQUV3RFFZSktvWklodmNOQVFFTkJRQURnZ0VCQUhRRE03b2RYUjdtdGxTNDhlSUYKN3krcWZPazFxRW1WQkhwN1ErWloyYng2bXNPWmxVQXgvSkt2dG1VaCtBemFyTGU2T3Z1WFJoY0xJVG1LeWYwYwpSa0NPZjVtNkc3MW1FUGM3cGF2UjZXTUJEeEJiNEZHL08rTU11RXp1MkJMTGhFVlMyYzdSeDRScVdSWUJlOUZzCnQ3MWpTZkYydHAwTU41M3ZhNWlmNFcvejNsWGk2NFEzNXJaNzh2T3owZ05OMm5mUjlKK1E4eEk4VGhSZDhwNlAKZ0dsREs5WHJ2SG9HTFpCNjVCOVhtamdESWRmMlRURkorSUhDakdEME5RMkJTbkh4cHZ0QTZJV1FVQUdzcWkreQpBc05IZnZOWTZjb1R2QXFUemQycVlmZXdQMjNRSlExeHFrL1EwK1pWZDl1b3JFM2EwbE5CSENPSS9uSVB3dWxkCk9kUT0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo="
+    rules:
+      - operations: ["CREATE","UPDATE"]
+        apiGroups: ["cache.example.com"]
+        apiVersions: ["v1alpha1"]
+        resources:
+          - securities
+    failurePolicy: Ignore

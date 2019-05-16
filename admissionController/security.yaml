@@ -1,0 +1,10 @@
+apiVersion: cache.example.com/v1alpha1
+kind: Security
+metadata:
+  name: securitytest-example7
+spec:
+  type: JWT
+  alias: wso2carbon
+  endpoint: https://wso2apim.wso2.svc:9443
+  credentials: secret
+  certificate: example-certificate

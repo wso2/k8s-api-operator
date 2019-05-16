@@ -1,0 +1,15 @@
+[req]
+req_extensions = v3_req
+distinguished_name = req_distinguished_name
+[ req_distinguished_name ]
+[ v3_req ]
+basicConstraints=CA:FALSE
+subjectAltName=@alt_names
+keyUsage = nonRepudiation, digitalSignature, keyEncipherment
+extendedKeyUsage = serverAuth
+
+[ alt_names ]
+DNS.1 = validation
+DNS.2 = validation.wso2-system
+DNS.3 = validation.wso2-system.svc
+DNS.4 = validation.wso2-system.svc.cluster.local

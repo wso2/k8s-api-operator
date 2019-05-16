@@ -1,0 +1,13 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: read-secrets
+  namespace: wso2-system #default # This only grants permissions within the "wso2-system" namespace.
+subjects:
+  - kind: ServiceAccount
+    name: secret-reader # Name is case sensitive
+    namespace: wso2-system
+roleRef:
+  kind: ClusterRole
+  name: secret-reader
+  apiGroup: rbac.authorization.k8s.io

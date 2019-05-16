@@ -1,0 +1,21 @@
+[ req ]
+default_bits       = 2048
+default_md         = sha512
+default_keyfile    = ca.key
+prompt             = no
+encrypt_key        = yes
+
+# base request
+distinguished_name = req_distinguished_name
+
+# distinguished_name
+[ req_distinguished_name ]
+countryName            = "LK"                     # C=
+stateOrProvinceName    = "Colombo"                # ST=
+localityName           = "Colombo"                # L=
+postalCode             = "404040"                 # L/postalcode=
+streetAddress          = "Hallo  1600"            # L/street=
+organizationName       = "wso2"                   # O=
+organizationalUnitName = "Emojy Department"       # OU=
+commonName             = "vwso2.com"              # CN=
+emailAddress           = "no-reply@wso2.com"      # CN/emailAddress=
