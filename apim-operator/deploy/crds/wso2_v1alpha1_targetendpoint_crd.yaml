@@ -26,57 +26,6 @@ spec:
         metadata:
           type: object
         spec:
-          properties:
-            deploy:
-              properties:
-                count:
-                  format: int32
-                  type: integer
-                dockerImage:
-                  type: string
-                name:
-                  type: string
-              required:
-              - name
-              - dockerImage
-              - count
-              type: object
-            endpointName:
-              type: string
-            endpointSecurity:
-              properties:
-                password:
-                  type: string
-                type:
-                  type: string
-                username:
-                  type: string
-              required:
-              - username
-              - password
-              - type
-              type: object
-            hostname:
-              type: string
-            port:
-              format: int32
-              type: integer
-            protocol:
-              type: string
-            type:
-              description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-                Important: Run "operator-sdk generate k8s" to regenerate code after
-                modifying this file Add custom validation using kubebuilder tags:
-                https://book.kubebuilder.io/beyond_basics/generating_crd.html'
-              type: string
-          required:
-          - type
-          - protocol
-          - hostname
-          - port
-          - deploy
-          - endpointName
-          - endpointSecurity
           type: object
         status:
           type: object
