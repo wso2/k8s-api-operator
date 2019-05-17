@@ -21,6 +21,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"fmt"
+	"strings"
+	"encoding/json"
+	"gopkg.in/yaml.v2"
 )
 
 var log = logf.Log.WithName("controller_api")
@@ -101,6 +104,55 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		}
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
+	}
+
+	//Check if the configmap mentioned in crd object exist
+	apiConfigMapRef := instance.Spec.Definition.ConfigMapKeyRef.Name
+	log.Info(apiConfigMapRef)
+
+	apiConfigMap := &corev1.ConfigMap{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: apiConfigMapRef, Namespace: "default"}, apiConfigMap)
+
+	if err != nil && errors.IsNotFound(err) {
+		log.Error(err, "Specified configmap is not found: %s", apiConfigMapRef)
+		return reconcile.Result{}, err
+	} else if err != nil {
+		log.Error(err, "error ")
+		return reconcile.Result{}, err
+	}
+
+	//Fetch swagger data from configmap
+	swaggerDataMap := apiConfigMap.Data
+	var swaggerData string
+	var swaggerDataType string
+	for key, value := range swaggerDataMap {
+		swaggerData = value
+		swaggerTemp := strings.Split(key, ".")
+		swaggerDataType = swaggerTemp[1]
+	}
+
+	fmt.Println("swagger data type : ", swaggerDataType)
+	fmt.Println(swaggerData)
+
+	var swaggerStruct SwaggerStruct
+
+	if swaggerDataType == "yaml" {
+		log.Info("Unmarshalling yaml")
+		err = yaml.Unmarshal([]byte(swaggerData), &swaggerStruct)
+		if err != nil {
+			log.Error(err, "Yaml unmarshal error ")
+		}
+
+		fmt.Println("..............yaml")
+		fmt.Println(swaggerStruct.Info.Description)
+	} else if swaggerDataType == "json" {
+		log.Info("Unmarshalling json")
+		err = json.Unmarshal([]byte(swaggerData), &swaggerStruct)
+		if err != nil {
+			log.Error(err, "Json unmarshal error ")
+		}
+		fmt.Println("..............json")
+		fmt.Println(swaggerStruct.Info.Description)
 	}
 
 	// gets the data from analytics secret

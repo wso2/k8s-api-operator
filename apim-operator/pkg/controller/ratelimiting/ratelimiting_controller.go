@@ -205,7 +205,7 @@ func createConfigMap(output string, name string, cr *wso2v1alpha1.RateLimiting) 
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cr.Name + "-configmap",
-			Namespace: cr.Namespace,
+			Namespace: "wso2-system",
 		},
 		Data: map[string]string{
 			"Code": output,
