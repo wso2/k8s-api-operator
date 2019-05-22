@@ -1,0 +1,2 @@
+//create a secret with cert
+kubectl create secret generic validation -n default --from-file=key.pem=certs/validation-key.pem --from-file=cert.pem=certs/validation-crt.pem
