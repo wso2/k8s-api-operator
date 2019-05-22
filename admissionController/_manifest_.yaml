@@ -65,7 +65,7 @@ kind: ValidatingWebhookConfiguration
 metadata:
   name: validation
 webhooks:
-  - name: validation.shehani123.org
+  - name: validation.wso2.com
     clientConfig:
       service:
         name: validation
