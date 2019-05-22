@@ -1,7 +1,7 @@
 apiVersion: wso2.com/v1alpha1
 kind: Security
 metadata:
-  name: example-security
+  name: example-security-test-oauth
 spec:
   # Add fields here #secret-test-certificate
   type: Oauth
