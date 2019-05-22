@@ -20,10 +20,13 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
+	"encoding/json"
 	"fmt"
 	"strings"
-	"encoding/json"
-	"gopkg.in/yaml.v2"
+
+	//"gopkg.in/yaml.v2"
+
+	"github.com/getkin/kin-openapi/openapi3"
 )
 
 var log = logf.Log.WithName("controller_api")
@@ -130,30 +133,49 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		swaggerTemp := strings.Split(key, ".")
 		swaggerDataType = swaggerTemp[1]
 	}
-
 	fmt.Println("swagger data type : ", swaggerDataType)
-	fmt.Println(swaggerData)
-
-	var swaggerStruct SwaggerStruct
-
-	if swaggerDataType == "yaml" {
-		log.Info("Unmarshalling yaml")
-		err = yaml.Unmarshal([]byte(swaggerData), &swaggerStruct)
-		if err != nil {
-			log.Error(err, "Yaml unmarshal error ")
-		}
-
-		fmt.Println("..............yaml")
-		fmt.Println(swaggerStruct.Info.Description)
-	} else if swaggerDataType == "json" {
-		log.Info("Unmarshalling json")
-		err = json.Unmarshal([]byte(swaggerData), &swaggerStruct)
-		if err != nil {
-			log.Error(err, "Json unmarshal error ")
-		}
-		fmt.Println("..............json")
-		fmt.Println(swaggerStruct.Info.Description)
+	swagger, err := openapi3.NewSwaggerLoader().LoadSwaggerFromData([]byte(swaggerData))
+	if err != nil {
+		log.Error(err, "Swagger loading error ")
 	}
+
+	//get endpoint from swagger and replace it with targetendpoint kind service endpoint
+	data, ok := swagger.Extensions["x-mgw-production-endpoints"]
+	if ok {
+		prodEp := XMGWProductionEndpoints{}
+		serviceEp := ServiceEndpoints{}
+		var endPoint string
+		datax, ok1 := data.(json.RawMessage)
+		fmt.Println(ok1)
+		if ok1 {
+			err = json.Unmarshal(datax, &serviceEp)
+
+			if err == nil {
+				endPoint = "https://" + serviceEp.ServiceName
+				checkt := []string{endPoint}
+				prodEp.Urls = checkt
+
+				currentService := &corev1.Service{}
+				err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: "default",
+					Name: serviceEp.ServiceName}, currentService)
+
+				if err != nil && errors.IsNotFound(err) {
+					log.Error(err, "Service CRD object is not found")
+				} else if err != nil {
+					log.Error(err, "Error in getting service")
+				} else {
+					swagger.Extensions["x-mgw-production-endpoints"] = prodEp
+				}
+
+			}
+		}
+	}
+
+	//get throttling tiers and replace with ratelimiting kind
+
+
+	final, err := swagger.MarshalJSON()
+	fmt.Println(string(final))
 
 	// gets the data from analytics secret
 	analyticsData, err := getSecretData(r)
@@ -186,7 +208,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		"analyticsUsername":              analyticsUsername,
 		"analyticsPassword":              analyticsPassword})
 
-	fmt.Println(output)
+	//fmt.Println(output)
 
 	if err != nil {
 		log.Error(err, "error in rendering ")
