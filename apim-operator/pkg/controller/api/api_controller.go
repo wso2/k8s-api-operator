@@ -148,8 +148,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		log.Info("Successfully created secret")
 	}
 
-	// Define a new Pod object
-	pod := newPodForCR(instance)
+	//todo: make a deployment
+	pod := createMicroGatewayDeployment(instance)
 
 	// Set API instance as the owner and controller
 	if err := controllerutil.SetControllerReference(instance, pod, r.scheme); err != nil {
@@ -258,4 +258,89 @@ func createMGWSecret(r *ReconcileAPI, confData string) error {
 		return errSecret
 	}
 
+}
+
+//microgateway deployment within init container
+func createMicroGatewayDeployment(cr *wso2v1alpha1.API) *corev1.Pod {
+	labels := map[string]string{
+		"app": cr.Name,
+	}
+
+	return &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      cr.Name + "-pod",
+			Namespace: cr.Namespace,
+			Labels:    labels,
+		},
+		Spec: corev1.PodSpec{
+			InitContainers: []corev1.Container{
+				{
+					Name:  "gen-balx",
+					Image: "dinushad/bal:v3",
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      "swagger-volume",
+							MountPath: "/usr/wso2/swagger/",
+							ReadOnly:  true,
+						},
+						{
+							Name:      "mgw-volume",
+							MountPath: "/usr/wso2/mgw/",
+						},
+						{
+							Name:      "balx-volume",
+							MountPath: "/home/exec/",
+						},
+					},
+				},
+			},
+			Containers: []corev1.Container{
+				{
+					Name:  "micro-gateway",
+					Image: "wso2/wso2micro-gw:3.0.0-beta2",
+					Env: []corev1.EnvVar{
+						{
+							Name: "project",
+							//todo: pass the API name/mgw project name
+							Value: "dummy",
+						},
+					},
+					Ports: []corev1.ContainerPort{{
+						ContainerPort: 80,
+					}},
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      "balx-volume",
+							MountPath: "/home/exec/",
+						},
+					},
+				},
+			},
+			Volumes: []corev1.Volume{
+				{
+					Name: "swagger-volume",
+					VolumeSource: corev1.VolumeSource{
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								//todo: get the configmap name from the API name or mgw project name
+								Name: "swaggerdef",
+							},
+						},
+					},
+				},
+				{
+					Name: "balx-volume",
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{},
+					},
+				},
+				{
+					Name: "mgw-volume",
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{},
+					},
+				},
+			},
+		},
+	}
 }
