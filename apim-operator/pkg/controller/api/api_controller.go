@@ -169,9 +169,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		}
 	}
 
-	//get throttling tiers and replace with ratelimiting kind
-
-
 	final, err := swagger.MarshalJSON()
 	fmt.Println(string(final))
 
