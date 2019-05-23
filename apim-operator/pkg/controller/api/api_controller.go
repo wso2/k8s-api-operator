@@ -24,8 +24,6 @@ import (
 	"fmt"
 	"strings"
 
-	//"gopkg.in/yaml.v2"
-
 	"github.com/getkin/kin-openapi/openapi3"
 )
 
@@ -207,8 +205,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		"analyticsEnabled":               analyticsEnabled,
 		"analyticsUsername":              analyticsUsername,
 		"analyticsPassword":              analyticsPassword})
-
-	//fmt.Println(output)
 
 	if err != nil {
 		log.Error(err, "error in rendering ")
