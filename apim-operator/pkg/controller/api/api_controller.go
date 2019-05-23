@@ -29,10 +29,10 @@ import (
 
 var log = logf.Log.WithName("controller_api")
 
-/**
-* USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
-* business logic.  Delete these comments after modifying this file.*
- */
+//XMGWProductionEndpoints represents the structure of endpoint
+type XMGWProductionEndpoints struct {
+	Urls []string `yaml:"urls"`
+}
 
 // Add creates a new API Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
@@ -300,7 +300,7 @@ func getSecretData(r *ReconcileAPI) (map[string][]byte, error) {
 		return analyticsData, err
 
 	}
-
+	
 	analyticsData = analyticsSecret.Data
 	log.Info("Analytics Secret exists")
 	fmt.Println("DATA")
