@@ -18,10 +18,10 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	"strconv"
+	"fmt"
 	"strings"
 
-	mustache "github.com/cbroglie/mustache"
+	"gopkg.in/yaml.v2"
 )
 
 var log = logf.Log.WithName("controller_ratelimiting")
@@ -104,7 +104,7 @@ func (r *ReconcileRateLimiting) Reconcile(request reconcile.Request) (reconcile.
 		return reconcile.Result{}, err
 	}
 
-	// GENERATE POLICY CODE USING CRD INSTANCE
+	// GENERATE POLICY YAML USING CRD INSTANCE
 
 	nameArray := strings.Split(instance.ObjectMeta.Name, "-")
 	name := nameArray[0]
@@ -115,100 +115,197 @@ func (r *ReconcileRateLimiting) Reconcile(request reconcile.Request) (reconcile.
 		policyType = "Subscription"
 	} else if policyType == "application" || policyType == "Application" {
 		policyType = "Application"
+	} else if policyType == "advance" || policyType == "Advance" {
+		policyType = "Resource"
 	} else {
 		log.Info("INVALID policy type. Use application or subscription in crd object for type")
 		return reconcile.Result{}, nil
 	}
 
-	funcName := "init" + policyType + name + "Policy"
-	log.Info(funcName)
-
-	var tierType string
-	var policyKey string
-	if policyType == "Application" {
-		tierType = "appTier"
-		policyKey = "appKey"
-	} else if policyType == "Subscription" {
-		tierType = "subscriptionTier"
-		policyKey = "subscriptionKey"
-	}
-	log.Info(tierType)
-	log.Info(policyKey)
-
-	var unitTime string
-	if instance.Spec.TimeUnit == "sec" || instance.Spec.TimeUnit == "seconds" {
-		unitTime = strconv.Itoa(instance.Spec.UnitTime)
-	} else {
-		unitTime = strconv.Itoa(instance.Spec.UnitTime * 60000)
-	}
-	log.Info(unitTime)
-
-	count := strconv.Itoa(instance.Spec.RequestCount.Limit)
-	log.Info(count)
-
-	var stopOnQuotaReach string
-	if policyType == "Subscription" {
-		stopOnQuotaReach = strconv.FormatBool(instance.Spec.StopOnQuotaReach)
-	} else {
-		stopOnQuotaReach = "true"
-	}
-	log.Info(stopOnQuotaReach)
-
-	filename := "/usr/local/bin/policy.mustache"
-	output, err := mustache.RenderFile(filename, map[string]string{"name": name, "funcName": funcName, "tierType": tierType, "policyKey": policyKey, "unitTime": unitTime, "stopOnQuotaReach": stopOnQuotaReach, "count": count})
-
-	log.Info(output)
-
-	if err != nil {
-		log.Error(err, "error in rendering ")
-	}
-
-	//CREATE CONFIG MAP
-
-	confmap, confEr := createConfigMap(output, name, instance)
-	if confEr != nil {
-		log.Error(confEr, "Error in config map structure creation")
-	}
-
-	// Check if this configmap already exists
-	foundmap := &corev1.ConfigMap{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: confmap.Name, Namespace: confmap.Namespace}, foundmap)
+	//Check if policy configmap is available
+	foundmapc := &corev1.ConfigMap{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "policy-configmap", Namespace: "wso2-system"}, foundmapc)
 
 	if err != nil && errors.IsNotFound(err) {
-		reqLogger.Info("Creating a new Config map", "confmap.Namespace", confmap.Namespace, "confmap.Name", confmap.Name)
+		//create new map with default policies if a map is not found
+		reqLogger.Info("Creating a config map with default policies", "Namespace", "wso2-system", "Name", "policy-configmap")
+
+		defaultval := createDefault()
+		fmt.Println(defaultval)
+
+		confmap, confer := createConfigMap(defaultval, instance)
+		if confer != nil {
+			log.Error(confer, "Error in default config map structure creation")
+		}
+		foundmapc = confmap
 		err = r.client.Create(context.TODO(), confmap)
 		if err != nil {
 			log.Error(err, "error ")
 			return reconcile.Result{}, err
 		}
 
-		// confmap created successfully - don't requeue
-		return reconcile.Result{}, nil
 	} else if err != nil {
 		log.Error(err, "error ")
 		return reconcile.Result{}, err
 	}
-	reqLogger.Info("Map already exists", "confmap.Namespace", foundmap.Namespace, "confmap.Name", foundmap.Name)
+
+	oldmap := foundmapc.Data
+	olddata := oldmap["Code"]
+	count := instance.Spec.RequestCount.Limit
+	unitTime := instance.Spec.UnitTime
+	timeUnit := instance.Spec.TimeUnit
+	policyobj := Policy{Count: count, UnitTime: unitTime, TimeUnit: timeUnit}
+	newPolObj := map[string]Policy{
+		name: policyobj,
+	}
+	oldStruct := PolicyYaml{}
+	unmarshalEr := yaml.Unmarshal([]byte(olddata), &oldStruct)
+
+	if unmarshalEr != nil {
+		log.Error(unmarshalEr, "Conf map data unmarshal error")
+	}
+
+	oldRes := oldStruct.ResourcePolicies
+	oldSub := oldStruct.SubscriptionPolicies
+	oldApp := oldStruct.ApplicationPolicies
+	var newRes []map[string]Policy
+	var newSub []map[string]Policy
+	var newApp []map[string]Policy
+
+	if policyType == "Resource" {
+		newRes = append(oldRes, newPolObj)
+		newSub = oldSub
+		newApp = oldApp
+	} else if policyType == "Subscription" {
+		newRes = oldRes
+		newSub = append(oldSub, newPolObj)
+		newApp = oldApp
+	} else if policyType == "Application" {
+		newRes = oldRes
+		newSub = oldSub
+		newApp = append(oldApp, newPolObj)
+	}
+
+	outbyte, yamler := yaml.Marshal(&PolicyYaml{ResourcePolicies: newRes, SubscriptionPolicies: newSub, ApplicationPolicies: newApp})
+	var output string
+	if yamler == nil {
+		output = string(outbyte)
+	} else {
+		log.Error(yamler, "yaml marshal error")
+	}
+
+	fmt.Println(output)
+
+	//CREATE CONFIG MAP OF POLICY YAML
+
+	confmap, confEr := createConfigMap(output, instance)
+	if confEr != nil {
+		log.Error(confEr, "Error in config map structure creation")
+	}
+
+	//Updating the policy yaml configmap
 	reqLogger.Info("Updating Config map", "confmap.Namespace", confmap.Namespace, "confmap.Name", confmap.Name)
 	err = r.client.Update(context.TODO(), confmap)
-		if err != nil {
-			log.Error(err, "error ")
-			return reconcile.Result{}, err
-		}
+	if err != nil {
+		log.Error(err, "error ")
+		return reconcile.Result{}, err
+	}
 	return reconcile.Result{}, nil
 
 }
 
 // createConfigMap creates a config file with the generated code
-func createConfigMap(output string, name string, cr *wso2v1alpha1.RateLimiting) (*corev1.ConfigMap, error) {
+func createConfigMap(output string, cr *wso2v1alpha1.RateLimiting) (*corev1.ConfigMap, error) {
 
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      cr.Name + "-configmap",
+			Name:      "policy-configmap",
 			Namespace: "wso2-system",
 		},
 		Data: map[string]string{
 			"Code": output,
 		},
 	}, nil
+}
+
+func createDefault() string {
+	res1 := Policy{Count: 50000, UnitTime: 1, TimeUnit: "min"}
+	res2 := Policy{Count: 20000, UnitTime: 1, TimeUnit: "min"}
+	res3 := Policy{Count: 10000, UnitTime: 1, TimeUnit: "min"}
+
+	app1 := Policy{Count: 50, UnitTime: 1, TimeUnit: "min"}
+	app2 := Policy{Count: 20, UnitTime: 1, TimeUnit: "min"}
+	app3 := Policy{Count: 10, UnitTime: 1, TimeUnit: "min"}
+
+	sub1 := Policy{Count: 5000, UnitTime: 1, TimeUnit: "min"}
+	sub2 := Policy{Count: 2000, UnitTime: 1, TimeUnit: "min"}
+	sub3 := Policy{Count: 1000, UnitTime: 1, TimeUnit: "min"}
+	sub4 := Policy{Count: 500, UnitTime: 1, TimeUnit: "min"}
+
+	res := make([]map[string]Policy, 3)
+	app := make([]map[string]Policy, 3)
+	sub := make([]map[string]Policy, 4)
+
+	res[0] = map[string]Policy{
+		"50kPerMin": res1,
+	}
+
+	res[1] = map[string]Policy{
+		"20kPerMin": res2,
+	}
+
+	res[2] = map[string]Policy{
+		"10kPerMin": res3,
+	}
+
+	app[0] = map[string]Policy{
+		"50PerMin": app1,
+	}
+
+	app[1] = map[string]Policy{
+		"20PerMin": app2,
+	}
+
+	app[2] = map[string]Policy{
+		"10PerMin": app3,
+	}
+
+	sub[0] = map[string]Policy{
+		"Gold": sub1,
+	}
+
+	sub[1] = map[string]Policy{
+		"Silver": sub2,
+	}
+
+	sub[2] = map[string]Policy{
+		"Bronze": sub3,
+	}
+
+	sub[3] = map[string]Policy{
+		"Unauthenticated": sub4,
+	}
+
+	polyout, yamler := yaml.Marshal(&PolicyYaml{ResourcePolicies: res, ApplicationPolicies: app, SubscriptionPolicies: sub})
+
+	if yamler != nil {
+		fmt.Println("error in creating default values ")
+	}
+
+	return string(polyout)
+
+}
+
+//PolicyYaml is the struct of Policy yaml
+type PolicyYaml struct {
+	ResourcePolicies     []map[string]Policy `yaml:"resourcePolicies"`
+	ApplicationPolicies  []map[string]Policy `yaml:"applicationPolicies"`
+	SubscriptionPolicies []map[string]Policy `yaml:"subscriptionPolicies"`
+}
+
+//Policy is the struct of one policy
+type Policy struct {
+	Count    int    `yaml:"count"`
+	UnitTime int    `yaml:"unitTime"`
+	TimeUnit string `yaml:"timeUnit"`
 }
