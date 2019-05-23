@@ -2,10 +2,10 @@ package api
 
 import (
 	"context"
-
+	"crypto/sha1"
+	"encoding/hex"
 	"github.com/cbroglie/mustache"
 	wso2v1alpha1 "github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1"
-
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -19,6 +19,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+	"strings"
 
 	"fmt"
 )
@@ -113,6 +114,38 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		analyticsEnabled = "true"
 		analyticsUsername = string(analyticsData["username"])
 		analyticsPassword = string(analyticsData["password"])
+	}
+
+	reqLogger.Info("getting security instance")
+
+	//get security instance. sample secret name is hard coded for now.
+	security := &wso2v1alpha1.Security{}
+	errGetSec := r.client.Get(context.TODO(), types.NamespacedName{Name: "example-security-test-oauth", Namespace: "wso2-system"}, security)
+
+	if errGetSec != nil && errors.IsNotFound(errGetSec) {
+		reqLogger.Info("defined security instance is not found")
+		return reconcile.Result{}, errGetSec
+	}
+
+	//get certificate
+	certificateSecret := &corev1.Secret{}
+	errc := r.client.Get(context.TODO(), types.NamespacedName{Name: security.Spec.Certificate, Namespace: "wso2-system"}, certificateSecret)
+
+	if errc != nil && errors.IsNotFound(errc) {
+		reqLogger.Info("defined cretificate is not found")
+		return reconcile.Result{}, errc
+	}
+
+	if security.Spec.Type == "Oauth" {
+
+		//fetch credentials from the secret created
+		errGetCredentials := getCredentials(r, security.Spec.Credentials)
+
+		if errGetCredentials != nil {
+			log.Error(errGetCredentials, "Error occured when retriving credentials")
+		} else {
+			log.Info("Credentials successfully retrived")
+		}
 	}
 
 	filename := "/usr/local/bin/microgwconf.mustache"
@@ -258,6 +291,44 @@ func createMGWSecret(r *ReconcileAPI, confData string) error {
 		return errSecret
 	}
 
+}
+
+func getCredentials(r *ReconcileAPI, name string) error {
+
+	hasher := sha1.New()
+
+	//get the secret included credentials
+	credentialSecret := &corev1.Secret{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: "wso2-system"}, credentialSecret)
+
+	if err != nil && errors.IsNotFound(err) {
+		fmt.Println("secret not found")
+		return err
+	}
+
+	//get the username and the password
+	for k, v := range credentialSecret.Data {
+		if strings.EqualFold(k, "username") {
+			basicUsername = string(v)
+			fmt.Println("basic username")
+			fmt.Println(basicUsername)
+		}
+		if strings.EqualFold(k, "password") {
+
+			//encode password to sha1
+			_, err := hasher.Write([]byte(v))
+			if err != nil {
+				return err
+			}
+
+			//convert encoded password to a hex string
+			basicPassword = hex.EncodeToString(hasher.Sum(nil))
+
+			fmt.Printf("%x\n", hasher.Sum(nil))
+
+		}
+	}
+	return nil
 }
 
 //microgateway deployment within init container

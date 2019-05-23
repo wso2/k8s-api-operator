@@ -17,7 +17,7 @@ spec:
       containers:
         - name: apim-operator
           # Replace this with the built image name
-          image: harsha89/api-operator:v0.0.2
+          image: shehani123/api-operator:v0.0.6
           command:
           - apim-operator
           imagePullPolicy: Always

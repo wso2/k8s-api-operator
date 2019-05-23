@@ -1,0 +1,11 @@
+apiVersion: wso2.com/v1alpha1
+kind: Security
+metadata:
+  name: example-security-test-oauth
+spec:
+  # Add fields here #secret-test-certificate
+  type: Oauth
+  certificate: validation
+  alias: xyz
+  endpoint: https://wso2apim.wso2.svc:9443
+  credentials: secret-test

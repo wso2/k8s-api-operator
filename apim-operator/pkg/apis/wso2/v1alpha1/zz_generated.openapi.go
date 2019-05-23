@@ -19,6 +19,9 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.RateLimiting":         schema_pkg_apis_wso2_v1alpha1_RateLimiting(ref),
 		"github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.RateLimitingSpec":     schema_pkg_apis_wso2_v1alpha1_RateLimitingSpec(ref),
 		"github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.RateLimitingStatus":   schema_pkg_apis_wso2_v1alpha1_RateLimitingStatus(ref),
+		"github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.Security":             schema_pkg_apis_wso2_v1alpha1_Security(ref),
+		"github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.SecuritySpec":         schema_pkg_apis_wso2_v1alpha1_SecuritySpec(ref),
+		"github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.SecurityStatus":       schema_pkg_apis_wso2_v1alpha1_SecurityStatus(ref),
 		"github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.TargetEndpoint":       schema_pkg_apis_wso2_v1alpha1_TargetEndpoint(ref),
 		"github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.TargetEndpointSpec":   schema_pkg_apis_wso2_v1alpha1_TargetEndpointSpec(ref),
 		"github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.TargetEndpointStatus": schema_pkg_apis_wso2_v1alpha1_TargetEndpointStatus(ref),
@@ -210,6 +213,106 @@ func schema_pkg_apis_wso2_v1alpha1_RateLimitingStatus(ref common.ReferenceCallba
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "RateLimitingStatus defines the observed state of RateLimiting",
+				Properties:  map[string]spec.Schema{},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_pkg_apis_wso2_v1alpha1_Security(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Security is the Schema for the securities API",
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.SecuritySpec"),
+						},
+					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.SecurityStatus"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.SecuritySpec", "github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.SecurityStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+	}
+}
+
+func schema_pkg_apis_wso2_v1alpha1_SecuritySpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "SecuritySpec defines the desired state of Security",
+				Properties: map[string]spec.Schema{
+					"type": {
+						SchemaProps: spec.SchemaProps{
+							Description: "INSERT ADDITIONAL SPEC FIELDS - desired state of cluster Important: Run \"operator-sdk generate k8s\" to regenerate code after modifying this file Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"certificate": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"alias": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"endpoint": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"credentials": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+				Required: []string{"type", "certificate"},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_pkg_apis_wso2_v1alpha1_SecurityStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "SecurityStatus defines the observed state of Security",
 				Properties:  map[string]spec.Schema{},
 			},
 		},
