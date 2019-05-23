@@ -22,6 +22,7 @@ import (
 
 	"encoding/json"
 	"fmt"
+	"bytes"
 
 	"github.com/getkin/kin-openapi/openapi3"
 )
@@ -142,7 +143,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		prodEp := XMGWProductionEndpoints{}
 		var endPoint string
 		datax, ok1 := data.(json.RawMessage)
-		fmt.Println(ok1)
+
 		if ok1 {
 			err = json.Unmarshal(datax, &endPoint)
 			if err == nil {
@@ -164,9 +165,15 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			}
 		}
 	}
-
+	//reformatting swagger
 	final, err := swagger.MarshalJSON()
-	newSwagger := string(final)
+	var prettyJSON bytes.Buffer
+    errIndent := json.Indent(&prettyJSON, final, "", "  ")
+    if errIndent != nil {
+        log.Error(errIndent, "Error in pretty json")
+    }
+
+    newSwagger := string(prettyJSON.Bytes())
 	fmt.Println(newSwagger)
 
 	//update configmap with modified swagger
