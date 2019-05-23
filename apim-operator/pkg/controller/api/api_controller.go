@@ -323,9 +323,6 @@ func getCredentials(r *ReconcileAPI, name string) error {
 
 			//convert encoded password to a hex string
 			basicPassword = hex.EncodeToString(hasher.Sum(nil))
-			fmt.Println("password hasher sum")
-			fmt.Println("basic password")
-			fmt.Println(basicPassword)
 
 			fmt.Printf("%x\n", hasher.Sum(nil))
 
