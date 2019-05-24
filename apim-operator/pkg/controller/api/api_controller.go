@@ -4,6 +4,8 @@ import (
 	"context"
 	"crypto/sha1"
 	"encoding/hex"
+	"strings"
+
 	"github.com/cbroglie/mustache"
 	wso2v1alpha1 "github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
@@ -19,7 +21,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	"strings"
 
 	"bytes"
 	"encoding/json"
@@ -108,108 +109,45 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		return reconcile.Result{}, err
 	}
 
+	//get configurations file for the controller
+	controlConf, err := getConfigmap(r, "controller-config", "wso2-system")
+	if err != nil {
+		if errors.IsNotFound(err) {
+			// Controller configmap is not found, could have been deleted after reconcile request.
+			// Return and don't requeue
+			return reconcile.Result{}, nil
+		}
+		// Error reading the object - requeue the request.
+		return reconcile.Result{}, err
+	}
+
+	controlConfigData := controlConf.Data
+	replicas := controlConfigData["replicas"]
+	mgwToolkitImg := controlConfigData["mgwToolkitImg"]
+	mgwRuntimeImg := controlConfigData["mgwRuntimeImg"]
+	kanikoImg := controlConfigData["kanikoImg"]
+	dockerRegistry := controlConfigData["dockerRegistry"]
+	userNameSpace := controlConfigData["userNameSpace"]
+	reqLogger.Info("replicas", replicas, "mgwToolkitImg", mgwToolkitImg, "mgwRuntimeImg", mgwRuntimeImg,
+	 "kanikoImg", kanikoImg, "dockerRegistry", dockerRegistry, "userNameSpace", userNameSpace)
+
 	//Check if the configmap mentioned in crd object exist
 	apiConfigMapRef := instance.Spec.Definition.ConfigMapKeyRef.Name
 	log.Info(apiConfigMapRef)
-
-	apiConfigMap := &corev1.ConfigMap{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: apiConfigMapRef, Namespace: "default"}, apiConfigMap)
-
-	if err != nil && errors.IsNotFound(err) {
-		log.Error(err, "Specified configmap is not found: %s", apiConfigMapRef)
-		return reconcile.Result{}, err
-	} else if err != nil {
-		log.Error(err, "error ")
-		return reconcile.Result{}, err
-	}
-
-	//Fetch swagger data from configmap
-	swaggerDataMap := apiConfigMap.Data
-	var swaggerData string
-	var swaggerDataFile string
-	for key, value := range swaggerDataMap {
-		swaggerData = value
-		swaggerDataFile = key
-	}
-	fmt.Println("swagger data file : ", swaggerDataFile)
-
-	swagger, err := openapi3.NewSwaggerLoader().LoadSwaggerFromData([]byte(swaggerData))
+	apiConfigMap, err := getConfigmap(r, apiConfigMapRef, "default")
 	if err != nil {
-		log.Error(err, "Swagger loading error ")
-	}
-
-	//Get endpoint from swagger and replace it with targetendpoint kind service endpoint
-
-	//api level endpoint
-	data, ok := swagger.Extensions["x-mgw-production-endpoints"]
-	if ok {
-		prodEp := XMGWProductionEndpoints{}
-		var endPoint string
-		datax, ok1 := data.(json.RawMessage)
-
-		if ok1 {
-			err = json.Unmarshal(datax, &endPoint)
-			if err == nil {
-				//check if service is available
-				currentService := &corev1.Service{}
-				err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: "default",
-					Name: endPoint}, currentService)
-
-				if err != nil && errors.IsNotFound(err) {
-					log.Error(err, "Service CRD object is not found")
-				} else if err != nil {
-					log.Error(err, "Error in getting service")
-				} else {
-					endPoint = "https://" + endPoint
-					checkt := []string{endPoint}
-					prodEp.Urls = checkt
-					swagger.Extensions["x-mgw-production-endpoints"] = prodEp
-				}
-			}
+		if errors.IsNotFound(err) {
+			// Swagger configmap is not found, could have been deleted after reconcile request.
+			// Return and don't requeue
+			return reconcile.Result{}, nil
 		}
+		// Error reading the object - requeue the request.
+		return reconcile.Result{}, err
 	}
 
-	//resource level endpoint
-	for url, p := range swagger.Paths {
-		fmt.Println(url)
-		data1, c1 := p.Get.Extensions["x-mgw-production-endpoints"]
-		if c1 {
-			prodEp := XMGWProductionEndpoints{}
-			var endPoint string
-			datax, ok1 := data1.(json.RawMessage)
-			if ok1 {
-				err = json.Unmarshal(datax, &endPoint)
-				if err == nil {
-					//check if service is available
-					currentService := &corev1.Service{}
-					err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: "default",
-						Name: endPoint}, currentService)
-
-					if err != nil && errors.IsNotFound(err) {
-						log.Error(err, "Service CRD object is not found")
-					} else if err != nil {
-						log.Error(err, "Error in getting service")
-					} else {
-						endPoint = "https://" + endPoint
-						checkt := []string{endPoint}
-						prodEp.Urls = checkt
-						p.Get.Extensions["x-mgw-production-endpoints"] = prodEp
-					}
-				}
-			}
-		}
-	}
-
-	//reformatting swagger
-	final, err := swagger.MarshalJSON()
-	var prettyJSON bytes.Buffer
-	errIndent := json.Indent(&prettyJSON, final, "", "  ")
-	if errIndent != nil {
-		log.Error(errIndent, "Error in pretty json")
-	}
-
-	newSwagger := string(prettyJSON.Bytes())
-	fmt.Println(newSwagger)
+	//Fetch swagger data from configmap, reads and modifies swagger
+	swaggerDataMap := apiConfigMap.Data
+	newSwagger, swaggerDataFile := mgwSwaggerHandler(r, swaggerDataMap)
 
 	//update configmap with modified swagger
 
@@ -359,7 +297,7 @@ func getSecretData(r *ReconcileAPI) (map[string][]byte, error) {
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: "analytics-secret", Namespace: "wso2-system"}, analyticsSecret)
 
 	if err != nil && errors.IsNotFound(err) {
-		log.Error(err, "Analytics Secret is not found")
+		log.Info("Analytics Secret is not found")
 		return analyticsData, err
 
 	} else if err != nil {
@@ -411,6 +349,23 @@ func createMGWSecret(r *ReconcileAPI, confData string) error {
 
 }
 
+//get configmap
+func getConfigmap(r *ReconcileAPI, mapName string, ns string) (*corev1.ConfigMap, error) {
+	apiConfigMap := &corev1.ConfigMap{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: mapName, Namespace: ns}, apiConfigMap)
+
+	if err != nil && errors.IsNotFound(err) {
+		log.Error(err, "Specified configmap is not found: %s", mapName)
+		return apiConfigMap, err
+	} else if err != nil {
+		log.Error(err, "error ")
+		return apiConfigMap, err
+	} else {
+		return apiConfigMap, nil
+	}
+
+}
+
 // createConfigMap creates a config file with the swagger
 func createConfigMap(apiConfigMapRef string, swaggerDataFile string, newSwagger string) (*corev1.ConfigMap, error) {
 
@@ -423,6 +378,98 @@ func createConfigMap(apiConfigMapRef string, swaggerDataFile string, newSwagger 
 			swaggerDataFile: newSwagger,
 		},
 	}, nil
+}
+
+//Swagger handling
+func mgwSwaggerHandler(r *ReconcileAPI, swaggerDataMap map[string]string) (string, string) {
+	var swaggerData string
+	var swaggerDataFile string
+	for key, value := range swaggerDataMap {
+		swaggerData = value
+		swaggerDataFile = key
+	}
+	fmt.Println("swagger data file : ", swaggerDataFile)
+
+	swagger, err := openapi3.NewSwaggerLoader().LoadSwaggerFromData([]byte(swaggerData))
+	if err != nil {
+		log.Error(err, "Swagger loading error ")
+	}
+
+	//Get endpoint from swagger and replace it with targetendpoint kind service endpoint
+
+	//api level endpoint
+	data, ok := swagger.Extensions["x-mgw-production-endpoints"]
+	if ok {
+		prodEp := XMGWProductionEndpoints{}
+		var endPoint string
+		datax, ok1 := data.(json.RawMessage)
+
+		if ok1 {
+			err = json.Unmarshal(datax, &endPoint)
+			if err == nil {
+				//check if service is available
+				currentService := &corev1.Service{}
+				err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: "default",
+					Name: endPoint}, currentService)
+
+				if err != nil && errors.IsNotFound(err) {
+					log.Error(err, "Service CRD object is not found")
+				} else if err != nil {
+					log.Error(err, "Error in getting service")
+				} else {
+					endPoint = "https://" + endPoint
+					checkt := []string{endPoint}
+					prodEp.Urls = checkt
+					swagger.Extensions["x-mgw-production-endpoints"] = prodEp
+				}
+			}
+		}
+	}
+
+	//resource level endpoint
+	for url, p := range swagger.Paths {
+		fmt.Println(url)
+		data1, c1 := p.Get.Extensions["x-mgw-production-endpoints"]
+		if c1 {
+			prodEp := XMGWProductionEndpoints{}
+			var endPoint string
+			datax, ok1 := data1.(json.RawMessage)
+			if ok1 {
+				err = json.Unmarshal(datax, &endPoint)
+				if err == nil {
+					//check if service is available
+					currentService := &corev1.Service{}
+					err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: "default",
+						Name: endPoint}, currentService)
+
+					if err != nil && errors.IsNotFound(err) {
+						log.Error(err, "Service CRD object is not found")
+					} else if err != nil {
+						log.Error(err, "Error in getting service")
+					} else {
+						endPoint = "https://" + endPoint
+						checkt := []string{endPoint}
+						prodEp.Urls = checkt
+						p.Get.Extensions["x-mgw-production-endpoints"] = prodEp
+					}
+				}
+			}
+		}
+	}
+
+	//reformatting swagger
+	final, err := swagger.MarshalJSON()
+	var prettyJSON bytes.Buffer
+	errIndent := json.Indent(&prettyJSON, final, "", "  ")
+	if errIndent != nil {
+		log.Error(errIndent, "Error in pretty json")
+	}
+
+	newSwagger := string(prettyJSON.Bytes())
+	fmt.Println(newSwagger)
+
+	return newSwagger, swaggerDataFile
+
 }
 
 func getCredentials(r *ReconcileAPI, name string) error {
