@@ -47,5 +47,6 @@ rules:
   - '*'
   - ratelimitings
   - targetendpoints
+  - securities
   verbs:
   - '*'

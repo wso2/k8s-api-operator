@@ -1,9 +1,9 @@
 apiVersion: wso2.com/v1alpha1
 kind: API
 metadata:
-  name: test
+  name: myyaml8-api
 spec:
   definition:
     configMapKeyRef:
-      name: test
+      name: myyaml8
   mode: shared

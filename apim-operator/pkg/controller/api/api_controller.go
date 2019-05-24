@@ -2,10 +2,10 @@ package api
 
 import (
 	"context"
-
+	"crypto/sha1"
+	"encoding/hex"
 	"github.com/cbroglie/mustache"
 	wso2v1alpha1 "github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1"
-
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -19,6 +19,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+	"strings"
 
 	"bytes"
 	"encoding/json"
@@ -235,6 +236,38 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		analyticsPassword = string(analyticsData["password"])
 	}
 
+	reqLogger.Info("getting security instance")
+
+	//get security instance. sample secret name is hard coded for now.
+	security := &wso2v1alpha1.Security{}
+	errGetSec := r.client.Get(context.TODO(), types.NamespacedName{Name: "example-security-test-oauth", Namespace: "wso2-system"}, security)
+
+	if errGetSec != nil && errors.IsNotFound(errGetSec) {
+		reqLogger.Info("defined security instance is not found")
+		return reconcile.Result{}, errGetSec
+	}
+
+	//get certificate
+	certificateSecret := &corev1.Secret{}
+	errc := r.client.Get(context.TODO(), types.NamespacedName{Name: security.Spec.Certificate, Namespace: "wso2-system"}, certificateSecret)
+
+	if errc != nil && errors.IsNotFound(errc) {
+		reqLogger.Info("defined cretificate is not found")
+		return reconcile.Result{}, errc
+	}
+
+	if security.Spec.Type == "Oauth" {
+
+		//fetch credentials from the secret created
+		errGetCredentials := getCredentials(r, security.Spec.Credentials)
+
+		if errGetCredentials != nil {
+			log.Error(errGetCredentials, "Error occured when retriving credentials")
+		} else {
+			log.Info("Credentials successfully retrived")
+		}
+	}
+
 	filename := "/usr/local/bin/microgwconf.mustache"
 	output, err := mustache.RenderFile(filename, map[string]string{
 		"keystorePath":                   keystorePath,
@@ -266,8 +299,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		log.Info("Successfully created secret")
 	}
 
-	// Define a new Pod object
-	pod := newPodForCR(instance)
+	//todo: make a deployment
+	pod := createMicroGatewayDeployment(instance)
 
 	// Set API instance as the owner and controller
 	if err := controllerutil.SetControllerReference(instance, pod, r.scheme); err != nil {
@@ -390,4 +423,127 @@ func createConfigMap(apiConfigMapRef string, swaggerDataFile string, newSwagger 
 			swaggerDataFile: newSwagger,
 		},
 	}, nil
+}
+
+func getCredentials(r *ReconcileAPI, name string) error {
+
+	hasher := sha1.New()
+
+	//get the secret included credentials
+	credentialSecret := &corev1.Secret{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: "wso2-system"}, credentialSecret)
+
+	if err != nil && errors.IsNotFound(err) {
+		fmt.Println("secret not found")
+		return err
+	}
+
+	//get the username and the password
+	for k, v := range credentialSecret.Data {
+		if strings.EqualFold(k, "username") {
+			basicUsername = string(v)
+			fmt.Println("basic username")
+			fmt.Println(basicUsername)
+		}
+		if strings.EqualFold(k, "password") {
+
+			//encode password to sha1
+			_, err := hasher.Write([]byte(v))
+			if err != nil {
+				return err
+			}
+
+			//convert encoded password to a hex string
+			basicPassword = hex.EncodeToString(hasher.Sum(nil))
+
+			fmt.Printf("%x\n", hasher.Sum(nil))
+
+		}
+	}
+	return nil
+}
+
+//microgateway deployment within init container
+func createMicroGatewayDeployment(cr *wso2v1alpha1.API) *corev1.Pod {
+	labels := map[string]string{
+		"app": cr.Name,
+	}
+
+	return &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      cr.Name + "-pod",
+			Namespace: cr.Namespace,
+			Labels:    labels,
+		},
+		Spec: corev1.PodSpec{
+			InitContainers: []corev1.Container{
+				{
+					Name:  "gen-balx",
+					Image: "dinushad/bal:v3",
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      "swagger-volume",
+							MountPath: "/usr/wso2/swagger/",
+							ReadOnly:  true,
+						},
+						{
+							Name:      "mgw-volume",
+							MountPath: "/usr/wso2/mgw/",
+						},
+						{
+							Name:      "balx-volume",
+							MountPath: "/home/exec/",
+						},
+					},
+				},
+			},
+			Containers: []corev1.Container{
+				{
+					Name:  "micro-gateway",
+					Image: "wso2/wso2micro-gw:3.0.0-beta2",
+					Env: []corev1.EnvVar{
+						{
+							Name: "project",
+							//todo: pass the API name/mgw project name
+							Value: "dummy",
+						},
+					},
+					Ports: []corev1.ContainerPort{{
+						ContainerPort: 80,
+					}},
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      "balx-volume",
+							MountPath: "/home/exec/",
+						},
+					},
+				},
+			},
+			Volumes: []corev1.Volume{
+				{
+					Name: "swagger-volume",
+					VolumeSource: corev1.VolumeSource{
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								//todo: get the configmap name from the API name or mgw project name
+								Name: "swaggerdef",
+							},
+						},
+					},
+				},
+				{
+					Name: "balx-volume",
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{},
+					},
+				},
+				{
+					Name: "mgw-volume",
+					VolumeSource: corev1.VolumeSource{
+						EmptyDir: &corev1.EmptyDirVolumeSource{},
+					},
+				},
+			},
+		},
+	}
 }

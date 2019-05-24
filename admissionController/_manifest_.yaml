@@ -1,0 +1,81 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: validation
+  namespace: wso2-system
+  labels:
+    name: validation
+spec:
+  ports:
+    - name: webhook
+      port: 443
+      targetPort: 8080
+  selector:
+    name: validation
+---
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: validation
+  namespace: wso2-system
+  labels:
+    name: validation
+spec:
+  replicas: 1
+  template:
+    metadata:
+      name: validation
+      labels:
+        name: validation
+    spec:
+      serviceAccountName: secret-reader
+      containers:
+        - name: webhook
+          image: shehani123/validation-controller:1.0.0
+          imagePullPolicy: IfNotPresent
+          args:
+            - -alsologtostderr
+            - --log_dir=/
+            - -v=10
+            - 2>&1
+          resources:
+            limits:
+              memory: 50Mi
+              cpu: 300m
+            requests:
+              memory: 00Mi
+              cpu: 300m
+          volumeMounts:
+            - name: webhook-certs
+              mountPath: /etc/certs
+              readOnly: true
+            - name: logs
+              mountPath: /tmp
+          securityContext:
+            readOnlyRootFilesystem: true
+      volumes:
+        - name: webhook-certs
+          secret:
+            secretName: validation
+        - name: logs
+          emptyDir: {}
+---
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: validation
+webhooks:
+  - name: validation.wso2.com
+    clientConfig:
+      service:
+        name: validation
+        namespace: wso2-system
+        path: "/validate"
+      caBundle: "${CA_BUNDLE}"
+    rules:
+      - operations: ["CREATE","UPDATE"]
+        apiGroups: ["cache.example.com"]
+        apiVersions: ["v1alpha1"]
+        resources:
+          - securities
+    failurePolicy: Ignore
