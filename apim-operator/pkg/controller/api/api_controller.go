@@ -20,9 +20,9 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
+	"bytes"
 	"encoding/json"
 	"fmt"
-	"bytes"
 
 	"github.com/getkin/kin-openapi/openapi3"
 )
@@ -137,7 +137,9 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		log.Error(err, "Swagger loading error ")
 	}
 
-	//get endpoint from swagger and replace it with targetendpoint kind service endpoint
+	//Get endpoint from swagger and replace it with targetendpoint kind service endpoint
+
+	//api level endpoint
 	data, ok := swagger.Extensions["x-mgw-production-endpoints"]
 	if ok {
 		prodEp := XMGWProductionEndpoints{}
@@ -165,15 +167,47 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			}
 		}
 	}
+
+	//resource level endpoint
+	for url, p := range swagger.Paths {
+		fmt.Println(url)
+		data1, c1 := p.Get.Extensions["x-mgw-production-endpoints"]
+		if c1 {
+			prodEp := XMGWProductionEndpoints{}
+			var endPoint string
+			datax, ok1 := data1.(json.RawMessage)
+			if ok1 {
+				err = json.Unmarshal(datax, &endPoint)
+				if err == nil {
+					//check if service is available
+					currentService := &corev1.Service{}
+					err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: "default",
+						Name: endPoint}, currentService)
+
+					if err != nil && errors.IsNotFound(err) {
+						log.Error(err, "Service CRD object is not found")
+					} else if err != nil {
+						log.Error(err, "Error in getting service")
+					} else {
+						endPoint = "https://" + endPoint
+						checkt := []string{endPoint}
+						prodEp.Urls = checkt
+						p.Get.Extensions["x-mgw-production-endpoints"] = prodEp
+					}
+				}
+			}
+		}
+	}
+
 	//reformatting swagger
 	final, err := swagger.MarshalJSON()
 	var prettyJSON bytes.Buffer
-    errIndent := json.Indent(&prettyJSON, final, "", "  ")
-    if errIndent != nil {
-        log.Error(errIndent, "Error in pretty json")
-    }
+	errIndent := json.Indent(&prettyJSON, final, "", "  ")
+	if errIndent != nil {
+		log.Error(errIndent, "Error in pretty json")
+	}
 
-    newSwagger := string(prettyJSON.Bytes())
+	newSwagger := string(prettyJSON.Bytes())
 	fmt.Println(newSwagger)
 
 	//update configmap with modified swagger
@@ -300,7 +334,7 @@ func getSecretData(r *ReconcileAPI) (map[string][]byte, error) {
 		return analyticsData, err
 
 	}
-	
+
 	analyticsData = analyticsSecret.Data
 	log.Info("Analytics Secret exists")
 	fmt.Println("DATA")
