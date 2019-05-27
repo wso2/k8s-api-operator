@@ -128,6 +128,17 @@
   version = "v2.9.3"
 
 [[projects]]
+  digest = "1:74640c160d5cf7a66ad7b964663624b3177f1603844e2870017c7969932bb3e6"
+  name = "github.com/getkin/kin-openapi"
+  packages = [
+    "jsoninfo",
+    "openapi3",
+  ]
+  pruneopts = "NT"
+  revision = "90a7df014b4e7699507bf82aa5601503a9ba85da"
+  version = "v0.2.0"
+
+[[projects]]
   digest = "1:81466b4218bf6adddac2572a30ac733a9255919bc2f470b4827a317bd4ee1756"
   name = "github.com/ghodss/yaml"
   packages = ["."]
@@ -1094,6 +1105,7 @@
   analyzer-version = 1
   input-imports = [
     "github.com/cbroglie/mustache",
+    "github.com/getkin/kin-openapi/openapi3",
     "github.com/go-openapi/spec",
     "github.com/operator-framework/operator-sdk/pkg/leader",
     "github.com/operator-framework/operator-sdk/pkg/log/zap",
@@ -1101,6 +1113,7 @@
     "github.com/operator-framework/operator-sdk/pkg/restmapper",
     "github.com/operator-framework/operator-sdk/version",
     "github.com/spf13/pflag",
+    "gopkg.in/yaml.v2",
     "k8s.io/api/apps/v1",
     "k8s.io/api/core/v1",
     "k8s.io/apimachinery/pkg/api/errors",

@@ -4,8 +4,8 @@ metadata:
   name: example-security-test-oauth
 spec:
   # Add fields here #secret-test-certificate
-  type: Oauth
+  type: JWT
   certificate: validation
-  alias: xyz
   endpoint: https://wso2apim.wso2.svc:9443
   credentials: secret-test
+  issuer: https://localhost:9443/oauth2/token

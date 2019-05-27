@@ -29,11 +29,15 @@ spec:
           properties:
             alias:
               type: string
+            audience:
+              type: string
             certificate:
               type: string
             credentials:
               type: string
             endpoint:
+              type: string
+            issuer:
               type: string
             type:
               description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
@@ -44,6 +48,11 @@ spec:
           required:
           - type
           - certificate
+          - alias
+          - endpoint
+          - credentials
+          - issuer
+          - audience
           type: object
         status:
           type: object
