@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"github.com/cbroglie/mustache"
 	wso2v1alpha1 "github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -127,6 +128,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	swaggerDataMap := apiConfigMap.Data
 	var swaggerData string
 	var swaggerDataFile string
+	var imageName string
 	for key, value := range swaggerDataMap {
 		swaggerData = value
 		swaggerDataFile = key
@@ -137,6 +139,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	if err != nil {
 		log.Error(err, "Swagger loading error ")
 	}
+
+	imageName =  strings.ReplaceAll(swagger.Info.Title, " ", "") + ":" + swagger.Info.Version
 
 	//Get endpoint from swagger and replace it with targetendpoint kind service endpoint
 
@@ -300,7 +304,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	//todo: make a deployment
-	pod := createMicroGatewayDeployment(instance)
+	pod := generateMgwImage(instance, imageName)
 
 	// Set API instance as the owner and controller
 	if err := controllerutil.SetControllerReference(instance, pod, r.scheme); err != nil {
@@ -316,13 +320,13 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		if err != nil {
 			return reconcile.Result{}, err
 		}
-
 		// Pod created successfully - don't requeue
 		return reconcile.Result{}, nil
 	} else if err != nil {
 		return reconcile.Result{}, err
 	}
-
+	dep := createMgwDeployment(instance, imageName);
+	reqLogger.Info("Dep", dep.Name)
 	// Pod already exists - don't requeue
 	reqLogger.Info("Skip reconcile: Pod already exists", "Pod.Namespace", found.Namespace, "Pod.Name", found.Name)
 	return reconcile.Result{}, nil
@@ -463,12 +467,13 @@ func getCredentials(r *ReconcileAPI, name string) error {
 	return nil
 }
 
-//microgateway deployment within init container
-func createMicroGatewayDeployment(cr *wso2v1alpha1.API) *corev1.Pod {
+//Generate micro-gateway image and push into the registry
+func generateMgwImage(cr *wso2v1alpha1.API, imageName string) *corev1.Pod {
+
 	labels := map[string]string{
 		"app": cr.Name,
 	}
-
+	apiConfMap := cr.Spec.Definition.ConfigMapKeyRef.Name;
 	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cr.Name + "-pod",
@@ -476,71 +481,102 @@ func createMicroGatewayDeployment(cr *wso2v1alpha1.API) *corev1.Pod {
 			Labels:    labels,
 		},
 		Spec: corev1.PodSpec{
-			InitContainers: []corev1.Container{
+			Containers: []corev1.Container{
 				{
-					Name:  "gen-balx",
-					Image: "dinushad/bal:v3",
+					Name:  "gen-container" + cr.Name,
+					Image: "gcr.io/kaniko-project/executor:latest",
 					VolumeMounts: []corev1.VolumeMount{
 						{
-							Name:      "swagger-volume",
-							MountPath: "/usr/wso2/swagger/",
+							Name:      swaggerVolume,
+							MountPath: swaggerLocation,
 							ReadOnly:  true,
 						},
 						{
-							Name:      "mgw-volume",
-							MountPath: "/usr/wso2/mgw/",
+							Name:      mgwDockerFile,
+							MountPath: dockerFileLocation,
 						},
 						{
-							Name:      "balx-volume",
-							MountPath: "/home/exec/",
+							Name:      dockerConfig,
+							MountPath: dockerConfLocation,
+							ReadOnly:  true,
 						},
 					},
-				},
-			},
-			Containers: []corev1.Container{
-				{
-					Name:  "micro-gateway",
-					Image: "wso2/wso2micro-gw:3.0.0-beta2",
-					Env: []corev1.EnvVar{
-						{
-							Name: "project",
-							//todo: pass the API name/mgw project name
-							Value: "dummy",
-						},
-					},
-					Ports: []corev1.ContainerPort{{
-						ContainerPort: 80,
-					}},
-					VolumeMounts: []corev1.VolumeMount{
-						{
-							Name:      "balx-volume",
-							MountPath: "/home/exec/",
-						},
+					Args: []string{
+						"--dockerfile=/usr/wso2/dockerfile/Dockerfile",
+						"--context=/usr/wso2/",
+						"--destination=dinushad/" + imageName,
 					},
 				},
 			},
 			Volumes: []corev1.Volume{
 				{
-					Name: "swagger-volume",
+					Name: swaggerVolume,
 					VolumeSource: corev1.VolumeSource{
 						ConfigMap: &corev1.ConfigMapVolumeSource{
 							LocalObjectReference: corev1.LocalObjectReference{
-								//todo: get the configmap name from the API name or mgw project name
-								Name: "swaggerdef",
+								Name: apiConfMap,
 							},
 						},
 					},
 				},
 				{
-					Name: "balx-volume",
+					Name: dockerConfig,
 					VolumeSource: corev1.VolumeSource{
-						EmptyDir: &corev1.EmptyDirVolumeSource{},
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: dockerConfig,
+							},
+						},
 					},
 				},
 				{
-					Name: "mgw-volume",
+					Name: mgwDockerFile,
 					VolumeSource: corev1.VolumeSource{
-						EmptyDir: &corev1.EmptyDirVolumeSource{},
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: dockerFile,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+// generate relevant MGW deployment/services for the given API definition
+func createMgwDeployment(cr *wso2v1alpha1.API, imageName string) *appsv1.Deployment {
+	labels := map[string]string{
+		"app": cr.Name,
+	}
+	one := int32(1)
+
+	return &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      cr.Name,
+			Namespace: cr.Namespace,
+			Labels:    labels,
+		},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: &one,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: labels,
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: labels,
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  "micro-gateway",
+							//todo: docker registry has to be taken from configuration map
+							Image: "dinushad/" + imageName,
+
+							Ports: []corev1.ContainerPort{{
+								ContainerPort: 80,
+							}},
+						},
 					},
 				},
 			},
