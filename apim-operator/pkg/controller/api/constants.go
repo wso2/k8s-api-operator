@@ -10,4 +10,11 @@ const (
 	dockerConfLocation = "/kaniko/.docker"
 	dockerFile = "docker-file"
 
+	replicasConst = "replicas"
+	mgwToolkitImgConst = "mgwToolkitImg"
+	mgwRuntimeImgConst = "mgwRuntimeImg"
+	kanikoImgConst = "kanikoImg"
+	dockerRegistryConst = "dockerRegistry"
+	userNameSpaceConst = "userNameSpace"
+
 )
