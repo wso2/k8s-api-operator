@@ -26,6 +26,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 
 	"github.com/getkin/kin-openapi/openapi3"
 )
@@ -132,6 +133,14 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	reqLogger.Info("replicas", replicas, "mgwToolkitImg", mgwToolkitImg, "mgwRuntimeImg", mgwRuntimeImg,
 		"kanikoImg", kanikoImg, "dockerRegistry", dockerRegistry, "userNameSpace", userNameSpace)
 
+
+	//Handles the creation of dockerfile configmap
+	dockerfileConfmap, errDocker := dockerfileHandler(r)
+	if errDocker != nil {
+		log.Error(errDocker, "error in docker configmap creation")
+	}
+	fmt.Println(dockerfileConfmap.Data["code"])
+
 	//Check if the configmap mentioned in crd object exist
 	apiConfigMapRef := instance.Spec.Definition.ConfigMapKeyRef.Name
 	log.Info(apiConfigMapRef)
@@ -160,7 +169,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	//update configmap with modified swagger
 
-	swaggerConfMap, err := createConfigMap(apiConfigMapRef, swaggerDataFile, newSwagger)
+	swaggerConfMap, err := createConfigMap(apiConfigMapRef, swaggerDataFile, newSwagger, "default")
 	if err != nil {
 		log.Error(err, "Error in modified swagger configmap structure")
 	}
@@ -375,16 +384,16 @@ func getConfigmap(r *ReconcileAPI, mapName string, ns string) (*corev1.ConfigMap
 
 }
 
-// createConfigMap creates a config file with the swagger
-func createConfigMap(apiConfigMapRef string, swaggerDataFile string, newSwagger string) (*corev1.ConfigMap, error) {
+// createConfigMap creates a config file with the given data
+func createConfigMap(apiConfigMapRef string, key string, value string, ns string) (*corev1.ConfigMap, error) {
 
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      apiConfigMapRef,
-			Namespace: "default",
+			Namespace: ns,
 		},
 		Data: map[string]string{
-			swaggerDataFile: newSwagger,
+			key: value,
 		},
 	}, nil
 }
@@ -651,4 +660,30 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string) *appsv1.Deploym
 			},
 		},
 	}
+}
+
+//Handles dockermap configmap creation
+func dockerfileHandler(r *ReconcileAPI) (*corev1.ConfigMap, error) {
+	//Check if the configmap with dockerfile for mgw creation exists
+	dockerfileConfmap, err := getConfigmap(r, "dockerfile", "wso2-system")
+	if err != nil && errors.IsNotFound(err) {
+		dockerFilePath := "/usr/local/bin/Dockerfile"
+		dockerFileRaw, errRead := ioutil.ReadFile(dockerFilePath)
+		if errRead != nil {
+			log.Error(errRead, "error in reading docker file resource")
+			return dockerfileConfmap, errRead
+		}
+
+		dockerConf, er := createConfigMap("dockerfile", "code", string(dockerFileRaw), "wso2-system")
+		if er != nil {
+			log.Error(er, "error in docker configmap creation")
+			return dockerfileConfmap, er
+		}
+		errorMap := r.client.Create(context.TODO(), dockerConf)
+		return dockerfileConfmap, errorMap
+	} else if err != nil {
+		return dockerfileConfmap, err
+	}
+	
+	return dockerfileConfmap, err
 }
