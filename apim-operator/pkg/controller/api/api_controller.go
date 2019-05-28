@@ -137,7 +137,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	//Handles the creation of dockerfile configmap
 	dockerfileConfmap, errDocker := dockerfileHandler(r)
 	if errDocker != nil {
-		log.Error(errDocker, "error in docker configmap creation")
+		log.Error(errDocker, "error in docker configmap handling")
 	}
 	fmt.Println(dockerfileConfmap.Data["code"])
 
@@ -680,7 +680,10 @@ func dockerfileHandler(r *ReconcileAPI) (*corev1.ConfigMap, error) {
 			return dockerfileConfmap, er
 		}
 		errorMap := r.client.Create(context.TODO(), dockerConf)
-		return dockerfileConfmap, errorMap
+		if errorMap != nil {
+			return dockerfileConfmap, errorMap
+		}
+		return dockerConf, nil
 	} else if err != nil {
 		return dockerfileConfmap, err
 	}
