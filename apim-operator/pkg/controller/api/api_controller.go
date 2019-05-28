@@ -401,14 +401,14 @@ func mgwSwaggerHandler(r *ReconcileAPI, swaggerDataMap map[string]string) (strin
 	//Get endpoint from swagger and replace it with targetendpoint kind service endpoint
 
 	//api level endpoint
-	data, ok := swagger.Extensions["x-mgw-production-endpoints"]
-	if ok {
+	endpointData, checkEndpoint := swagger.Extensions["x-mgw-production-endpoints"]
+	if checkEndpoint {
 		prodEp := XMGWProductionEndpoints{}
 		var endPoint string
-		datax, ok1 := data.(json.RawMessage)
+		endpointJson, checkJsonRaw := endpointData.(json.RawMessage)
 
-		if ok1 {
-			err = json.Unmarshal(datax, &endPoint)
+		if checkJsonRaw {
+			err = json.Unmarshal(endpointJson, &endPoint)
 			if err == nil {
 				//check if service & targetendpoint cr object are available
 				currentService := &corev1.Service{}
@@ -437,15 +437,15 @@ func mgwSwaggerHandler(r *ReconcileAPI, swaggerDataMap map[string]string) (strin
 	}
 
 	//resource level endpoint
-	for url, p := range swagger.Paths {
+	for url, path := range swagger.Paths {
 		fmt.Println(url)
-		data1, c1 := p.Get.Extensions["x-mgw-production-endpoints"]
-		if c1 {
+		resourceEndpointData, checkResourceEP := path.Get.Extensions["x-mgw-production-endpoints"]
+		if checkResourceEP {
 			prodEp := XMGWProductionEndpoints{}
 			var endPoint string
-			datax, ok1 := data1.(json.RawMessage)
-			if ok1 {
-				err = json.Unmarshal(datax, &endPoint)
+			ResourceEndpointJson, checkJsonResource := resourceEndpointData.(json.RawMessage)
+			if checkJsonResource {
+				err = json.Unmarshal(ResourceEndpointJson, &endPoint)
 				if err == nil {
 					//check if service & targetendpoint cr object are available
 					currentService := &corev1.Service{}
@@ -467,7 +467,7 @@ func mgwSwaggerHandler(r *ReconcileAPI, swaggerDataMap map[string]string) (strin
 						endPoint = protocol + "://" + endPoint
 						checkt := []string{endPoint}
 						prodEp.Urls = checkt
-						p.Get.Extensions["x-mgw-production-endpoints"] = prodEp
+						path.Get.Extensions["x-mgw-production-endpoints"] = prodEp
 					}
 				}
 			}
