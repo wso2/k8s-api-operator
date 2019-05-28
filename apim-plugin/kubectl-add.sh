@@ -1,10 +1,36 @@
 #!/bin/bash
 # Please copy this file to /usr/local/bin and give executable permissions
-# Sample usage : kubectl add api api-name --from-file=/home/harsha/Downloads/boomi/non-weborders/order_swagger.json
+# Sample usage : kubectl add api api-name --from-file=/home/harsha/Downloads/boomi/non-weborders/order_swagger.json --replicas=3
 if [[ "$1" == "api" ]]
 then
 
+for var in "$@"
+do
+    if [[ $var == *"--from-file"* ]]; then
+      fromFile=$var
+    fi
+
+    if [[ $var == *"--replicas"* ]]; then
+      replicasArg=$var
+    fi
+done
+
+IFS='=';
+
+count=0
+replicas=1
+
+for i in $replicasArg;
+do
+    echo $i
+    ((count++))
+    if [[ $count == 2 ]]; then
+          replicas=$i
+    fi
+done
+
 apiName=$2
+
 echo -e "\nDeleteting configmap if exists with name "$apiName
     kubectl delete configmap $2
 
@@ -21,6 +47,7 @@ spec:
  definition:
    configMapKeyRef:
      name: "${apiName}"
+   replicas: "${replicas}"
  mode: shared
 EOF
 
