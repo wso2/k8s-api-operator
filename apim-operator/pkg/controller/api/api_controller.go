@@ -34,7 +34,7 @@ var log = logf.Log.WithName("controller_api")
 
 //XMGWProductionEndpoints represents the structure of endpoint
 type XMGWProductionEndpoints struct {
-	Urls []string `yaml:"urls"`
+	Urls []string `yaml:"urls" json:"urls"`
 }
 
 // Add creates a new API Controller and adds it to the Manager. The Manager will set fields on the Controller
