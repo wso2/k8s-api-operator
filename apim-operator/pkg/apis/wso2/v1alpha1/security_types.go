@@ -18,6 +18,8 @@ type SecuritySpec struct {
 	Alias       string `json:"alias"`
 	Endpoint    string `json:"endpoint"`
 	Credentials string `json:"credentials"`
+	Issuer      string `json:"issuer"`
+	Audience    string `json:"audience"`
 }
 
 // SecurityStatus defines the observed state of Security

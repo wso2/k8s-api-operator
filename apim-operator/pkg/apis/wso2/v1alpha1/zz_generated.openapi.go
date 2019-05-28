@@ -300,6 +300,18 @@ func schema_pkg_apis_wso2_v1alpha1_SecuritySpec(ref common.ReferenceCallback) co
 							Format: "",
 						},
 					},
+					"issuer": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"audience": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
 				},
 				Required: []string{"type", "certificate"},
 			},

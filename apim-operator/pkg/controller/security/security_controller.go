@@ -99,15 +99,15 @@ func (r *ReconcileSecurity) Reconcile(request reconcile.Request) (reconcile.Resu
 
 	if instance.Spec.Type == "JWT" {
 		log.Info("security type JWT")
-		if instance.Spec.Alias == "" {
-			reqLogger.Info("Alias filed is missing")
+		if instance.Spec.Alias == "" || instance.Spec.Issuer == "" || instance.Spec.Audience == "" {
+			reqLogger.Info("Required fields are missing")
 			return reconcile.Result{}, nil
 		}
 	}
 
 	if instance.Spec.Type == "Oauth" {
 		log.Info("security type Oauth")
-		if instance.Spec.Credentials == "" && instance.Spec.Endpoint == "" {
+		if instance.Spec.Credentials == "" || instance.Spec.Endpoint == "" {
 			reqLogger.Info("required fields are missing")
 			return reconcile.Result{}, nil
 		}

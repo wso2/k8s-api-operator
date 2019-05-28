@@ -224,6 +224,18 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		}
 	}
 
+	if security.Spec.Type == "JWT" {
+
+		certificateAlias = security.Name + "alias"
+
+		if security.Spec.Issuer != "" {
+			issuer = security.Spec.Issuer
+		}
+		if security.Spec.Audience != "" {
+			audience = security.Spec.Audience
+		}
+	}
+
 	filename := "/usr/local/bin/microgwconf.mustache"
 	output, err := mustache.RenderFile(filename, map[string]string{
 		"keystorePath":                   keystorePath,
@@ -524,22 +536,16 @@ func getCredentials(r *ReconcileAPI, name string) error {
 	for k, v := range credentialSecret.Data {
 		if strings.EqualFold(k, "username") {
 			basicUsername = string(v)
-			fmt.Println("basic username")
-			fmt.Println(basicUsername)
 		}
 		if strings.EqualFold(k, "password") {
-
 			//encode password to sha1
 			_, err := hasher.Write([]byte(v))
 			if err != nil {
+				fmt.Println("error in encoding password")
 				return err
 			}
-
 			//convert encoded password to a hex string
 			basicPassword = hex.EncodeToString(hasher.Sum(nil))
-
-			fmt.Printf("%x\n", hasher.Sum(nil))
-
 		}
 	}
 	return nil
