@@ -130,7 +130,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	dockerRegistry := controlConfigData["dockerRegistry"]
 	userNameSpace := controlConfigData["userNameSpace"]
 	reqLogger.Info("replicas", replicas, "mgwToolkitImg", mgwToolkitImg, "mgwRuntimeImg", mgwRuntimeImg,
-	 "kanikoImg", kanikoImg, "dockerRegistry", dockerRegistry, "userNameSpace", userNameSpace)
+		"kanikoImg", kanikoImg, "dockerRegistry", dockerRegistry, "userNameSpace", userNameSpace)
 
 	//Check if the configmap mentioned in crd object exist
 	apiConfigMapRef := instance.Spec.Definition.ConfigMapKeyRef.Name
@@ -260,7 +260,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	} else if err != nil {
 		return reconcile.Result{}, err
 	}
-	dep := createMgwDeployment(instance, imageName);
+	dep := createMgwDeployment(instance, imageName)
 	reqLogger.Info("Dep", dep.Name)
 	// Pod already exists - don't requeue
 	reqLogger.Info("Skip reconcile: Pod already exists", "Pod.Namespace", found.Namespace, "Pod.Name", found.Name)
@@ -396,7 +396,7 @@ func mgwSwaggerHandler(r *ReconcileAPI, swaggerDataMap map[string]string) (strin
 		log.Error(err, "Swagger loading error ")
 	}
 
-	imageName :=  strings.ReplaceAll(swagger.Info.Title, " ", "") + ":" + swagger.Info.Version
+	imageName := strings.ReplaceAll(swagger.Info.Title, " ", "") + ":" + swagger.Info.Version
 
 	//Get endpoint from swagger and replace it with targetendpoint kind service endpoint
 
@@ -410,17 +410,24 @@ func mgwSwaggerHandler(r *ReconcileAPI, swaggerDataMap map[string]string) (strin
 		if ok1 {
 			err = json.Unmarshal(datax, &endPoint)
 			if err == nil {
-				//check if service is available
+				//check if service & targetendpoint cr object are available
 				currentService := &corev1.Service{}
+				targetEndpointCr := &wso2v1alpha1.TargetEndpoint{}
 				err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: "default",
 					Name: endPoint}, currentService)
+				erCr := r.client.Get(context.TODO(), types.NamespacedName{Namespace: "default", Name: endPoint}, targetEndpointCr)
 
 				if err != nil && errors.IsNotFound(err) {
-					log.Error(err, "Service CRD object is not found")
+					log.Error(err, "Service is not found")
+				} else if erCr != nil && errors.IsNotFound(erCr) {
+					log.Error(err, "targetendpoint CRD object is not found")
 				} else if err != nil {
 					log.Error(err, "Error in getting service")
+				} else if erCr != nil {
+					log.Error(err, "Error in getting targetendpoint CRD object")
 				} else {
-					endPoint = "https://" + endPoint
+					protocol := targetEndpointCr.Spec.Protocol
+					endPoint = protocol + "://" + endPoint
 					checkt := []string{endPoint}
 					prodEp.Urls = checkt
 					swagger.Extensions["x-mgw-production-endpoints"] = prodEp
@@ -440,17 +447,24 @@ func mgwSwaggerHandler(r *ReconcileAPI, swaggerDataMap map[string]string) (strin
 			if ok1 {
 				err = json.Unmarshal(datax, &endPoint)
 				if err == nil {
-					//check if service is available
+					//check if service & targetendpoint cr object are available
 					currentService := &corev1.Service{}
+					targetEndpointCr := &wso2v1alpha1.TargetEndpoint{}
 					err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: "default",
 						Name: endPoint}, currentService)
+					erCr := r.client.Get(context.TODO(), types.NamespacedName{Namespace: "default", Name: endPoint}, targetEndpointCr)
 
 					if err != nil && errors.IsNotFound(err) {
-						log.Error(err, "Service CRD object is not found")
+						log.Error(err, "Service is not found")
+					} else if erCr != nil && errors.IsNotFound(erCr) {
+						log.Error(err, "targetendpoint CRD object is not found")
 					} else if err != nil {
 						log.Error(err, "Error in getting service")
+					} else if erCr != nil {
+						log.Error(err, "Error in getting targetendpoint CRD object")
 					} else {
-						endPoint = "https://" + endPoint
+						protocol := targetEndpointCr.Spec.Protocol
+						endPoint = protocol + "://" + endPoint
 						checkt := []string{endPoint}
 						prodEp.Urls = checkt
 						p.Get.Extensions["x-mgw-production-endpoints"] = prodEp
@@ -519,7 +533,7 @@ func generateMgwImage(cr *wso2v1alpha1.API, imageName string) *corev1.Pod {
 	labels := map[string]string{
 		"app": cr.Name,
 	}
-	apiConfMap := cr.Spec.Definition.ConfigMapKeyRef.Name;
+	apiConfMap := cr.Spec.Definition.ConfigMapKeyRef.Name
 	return &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cr.Name + "-pod",
@@ -615,7 +629,7 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string) *appsv1.Deploym
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:  "micro-gateway",
+							Name: "micro-gateway",
 							//todo: docker registry has to be taken from configuration map
 							Image: "dinushad/" + imageName,
 
