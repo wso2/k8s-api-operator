@@ -123,12 +123,12 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	controlConfigData := controlConf.Data
-	replicas := controlConfigData["replicas"]
-	mgwToolkitImg := controlConfigData["mgwToolkitImg"]
-	mgwRuntimeImg := controlConfigData["mgwRuntimeImg"]
-	kanikoImg := controlConfigData["kanikoImg"]
-	dockerRegistry := controlConfigData["dockerRegistry"]
-	userNameSpace := controlConfigData["userNameSpace"]
+	replicas := controlConfigData[replicasConst]
+	mgwToolkitImg := controlConfigData[mgwToolkitImgConst]
+	mgwRuntimeImg := controlConfigData[mgwRuntimeImgConst]
+	kanikoImg := controlConfigData[kanikoImgConst]
+	dockerRegistry := controlConfigData[dockerRegistryConst]
+	userNameSpace := controlConfigData[userNameSpaceConst]
 	reqLogger.Info("replicas", replicas, "mgwToolkitImg", mgwToolkitImg, "mgwRuntimeImg", mgwRuntimeImg,
 		"kanikoImg", kanikoImg, "dockerRegistry", dockerRegistry, "userNameSpace", userNameSpace)
 
@@ -148,7 +148,15 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	//Fetch swagger data from configmap, reads and modifies swagger
 	swaggerDataMap := apiConfigMap.Data
-	newSwagger, swaggerDataFile, imageName := mgwSwaggerHandler(r, swaggerDataMap)
+	//newSwagger, swaggerDataFile, imageName := mgwSwaggerHandler(r, swaggerDataMap)
+	swagger, swaggerDataFile, err := mgwSwaggerLoader(swaggerDataMap)
+	if err != nil {
+		log.Error(err, "Swagger loading error ")
+	}
+
+	imageName := strings.ReplaceAll(swagger.Info.Title, " ", "") + ":" + swagger.Info.Version
+
+	newSwagger := mgwSwaggerHandler(r, swagger)
 
 	//update configmap with modified swagger
 
@@ -382,7 +390,7 @@ func createConfigMap(apiConfigMapRef string, swaggerDataFile string, newSwagger 
 }
 
 //Swagger handling
-func mgwSwaggerHandler(r *ReconcileAPI, swaggerDataMap map[string]string) (string, string, string) {
+func mgwSwaggerLoader(swaggerDataMap map[string]string) (*openapi3.Swagger, string, error) {
 	var swaggerData string
 	var swaggerDataFile string
 	for key, value := range swaggerDataMap {
@@ -392,13 +400,11 @@ func mgwSwaggerHandler(r *ReconcileAPI, swaggerDataMap map[string]string) (strin
 	fmt.Println("swagger data file : ", swaggerDataFile)
 
 	swagger, err := openapi3.NewSwaggerLoader().LoadSwaggerFromData([]byte(swaggerData))
-	if err != nil {
-		log.Error(err, "Swagger loading error ")
-	}
+	return swagger, swaggerDataFile, err
+}
 
-	imageName := strings.ReplaceAll(swagger.Info.Title, " ", "") + ":" + swagger.Info.Version
-
-	//Get endpoint from swagger and replace it with targetendpoint kind service endpoint
+//Get endpoint from swagger and replace it with targetendpoint kind service endpoint
+func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger) string {
 
 	//api level endpoint
 	endpointData, checkEndpoint := swagger.Extensions["x-mgw-production-endpoints"]
@@ -408,7 +414,7 @@ func mgwSwaggerHandler(r *ReconcileAPI, swaggerDataMap map[string]string) (strin
 		endpointJson, checkJsonRaw := endpointData.(json.RawMessage)
 
 		if checkJsonRaw {
-			err = json.Unmarshal(endpointJson, &endPoint)
+			err := json.Unmarshal(endpointJson, &endPoint)
 			if err == nil {
 				//check if service & targetendpoint cr object are available
 				currentService := &corev1.Service{}
@@ -445,7 +451,7 @@ func mgwSwaggerHandler(r *ReconcileAPI, swaggerDataMap map[string]string) (strin
 			var endPoint string
 			ResourceEndpointJson, checkJsonResource := resourceEndpointData.(json.RawMessage)
 			if checkJsonResource {
-				err = json.Unmarshal(ResourceEndpointJson, &endPoint)
+				err := json.Unmarshal(ResourceEndpointJson, &endPoint)
 				if err == nil {
 					//check if service & targetendpoint cr object are available
 					currentService := &corev1.Service{}
@@ -475,8 +481,11 @@ func mgwSwaggerHandler(r *ReconcileAPI, swaggerDataMap map[string]string) (strin
 	}
 
 	//reformatting swagger
-	final, err := swagger.MarshalJSON()
 	var prettyJSON bytes.Buffer
+	final, err := swagger.MarshalJSON()
+	if err != nil {
+		log.Error(err, "swagger marshal error")
+	}
 	errIndent := json.Indent(&prettyJSON, final, "", "  ")
 	if errIndent != nil {
 		log.Error(errIndent, "Error in pretty json")
@@ -485,7 +494,7 @@ func mgwSwaggerHandler(r *ReconcileAPI, swaggerDataMap map[string]string) (strin
 	newSwagger := string(prettyJSON.Bytes())
 	fmt.Println(newSwagger)
 
-	return newSwagger, swaggerDataFile, imageName
+	return newSwagger
 
 }
 
