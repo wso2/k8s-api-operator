@@ -8,6 +8,7 @@ ENV OPERATOR=/usr/local/bin/apim-operator \
 COPY build/_output/bin/apim-operator ${OPERATOR}
 
 COPY build/microgwconf.mustache /usr/local/bin
+COPY build/controller_resources/Dockerfile /usr/local/bin
 
 COPY build/bin /usr/local/bin
 RUN  /usr/local/bin/user_setup
