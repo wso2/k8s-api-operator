@@ -27,7 +27,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-
+	ratelimiting "github.com/wso2/k8s-apim-operator/apim-operator/pkg/controller/ratelimiting"
 	"github.com/getkin/kin-openapi/openapi3"
 )
 
@@ -133,13 +133,20 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	reqLogger.Info("replicas", replicas, "mgwToolkitImg", mgwToolkitImg, "mgwRuntimeImg", mgwRuntimeImg,
 		"kanikoImg", kanikoImg, "dockerRegistry", dockerRegistry, "userNameSpace", userNameSpace)
 
-
 	//Handles the creation of dockerfile configmap
 	dockerfileConfmap, errDocker := dockerfileHandler(r)
 	if errDocker != nil {
 		log.Error(errDocker, "error in docker configmap handling")
 	}
 	fmt.Println(dockerfileConfmap.Data["code"])
+
+	//Handles policy.yaml. 
+	//If there aren't any ratelimiting objects deployed, new policy.yaml configmap will be created with default policies
+
+	policyEr := policyHandler(r)
+	if policyEr != nil {
+		log.Error(policyEr, "Error in default policy map creation")
+	}
 
 	//Check if the configmap mentioned in crd object exist
 	apiConfigMapRef := instance.Spec.Definition.ConfigMapKeyRef.Name
@@ -687,6 +694,36 @@ func dockerfileHandler(r *ReconcileAPI) (*corev1.ConfigMap, error) {
 	} else if err != nil {
 		return dockerfileConfmap, err
 	}
-	
+
 	return dockerfileConfmap, err
+}
+
+func policyHandler(r *ReconcileAPI) error {
+	//Check if policy configmap is available
+	foundmapc := &corev1.ConfigMap{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: "policy-configmap", Namespace: "wso2-system"}, foundmapc)
+
+	if err != nil && errors.IsNotFound(err) {
+		//create new map with default policies if a map is not found
+		log.Info("Creating a config map with default policies", "Namespace", "wso2-system", "Name", "policy-configmap")
+
+		defaultval := ratelimiting.CreateDefault()
+		fmt.Println(defaultval)
+
+		confmap, confer := ratelimiting.CreatePolicyConfigMap(defaultval)
+		if confer != nil {
+			log.Error(confer, "Error in default config map structure creation")
+			return confer
+		}
+		foundmapc = confmap
+		err = r.client.Create(context.TODO(), confmap)
+		if err != nil {
+			log.Error(err, "error ")
+			return err
+		}
+	} else if err != nil {
+		log.Error(err, "error ")
+		return err
+	}
+	return nil
 }

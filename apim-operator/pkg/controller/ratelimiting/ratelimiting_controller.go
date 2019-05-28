@@ -130,10 +130,10 @@ func (r *ReconcileRateLimiting) Reconcile(request reconcile.Request) (reconcile.
 		//create new map with default policies if a map is not found
 		reqLogger.Info("Creating a config map with default policies", "Namespace", "wso2-system", "Name", "policy-configmap")
 
-		defaultval := createDefault()
+		defaultval := CreateDefault()
 		fmt.Println(defaultval)
 
-		confmap, confer := createConfigMap(defaultval, instance)
+		confmap, confer := CreatePolicyConfigMap(defaultval)
 		if confer != nil {
 			log.Error(confer, "Error in default config map structure creation")
 		}
@@ -198,7 +198,7 @@ func (r *ReconcileRateLimiting) Reconcile(request reconcile.Request) (reconcile.
 
 	//CREATE CONFIG MAP OF POLICY YAML
 
-	confmap, confEr := createConfigMap(output, instance)
+	confmap, confEr := CreatePolicyConfigMap(output)
 	if confEr != nil {
 		log.Error(confEr, "Error in config map structure creation")
 	}
@@ -214,8 +214,8 @@ func (r *ReconcileRateLimiting) Reconcile(request reconcile.Request) (reconcile.
 
 }
 
-// createConfigMap creates a config file with the generated code
-func createConfigMap(output string, cr *wso2v1alpha1.RateLimiting) (*corev1.ConfigMap, error) {
+// CreateConfigMap creates a config file with the generated code
+func CreatePolicyConfigMap(output string) (*corev1.ConfigMap, error) {
 
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -228,7 +228,8 @@ func createConfigMap(output string, cr *wso2v1alpha1.RateLimiting) (*corev1.Conf
 	}, nil
 }
 
-func createDefault() string {
+// CreateDefault creates the structure of policy yaml with default policies
+func CreateDefault() string {
 	res1 := Policy{Count: 50000, UnitTime: 1, TimeUnit: "min"}
 	res2 := Policy{Count: 20000, UnitTime: 1, TimeUnit: "min"}
 	res3 := Policy{Count: 10000, UnitTime: 1, TimeUnit: "min"}
