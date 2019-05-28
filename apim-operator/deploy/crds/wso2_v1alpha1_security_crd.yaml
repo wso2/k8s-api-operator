@@ -48,11 +48,6 @@ spec:
           required:
           - type
           - certificate
-          - alias
-          - endpoint
-          - credentials
-          - issuer
-          - audience
           type: object
         status:
           type: object
