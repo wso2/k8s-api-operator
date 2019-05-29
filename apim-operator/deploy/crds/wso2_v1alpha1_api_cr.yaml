@@ -6,4 +6,6 @@ spec:
   definition:
     configMapKeyRef:
       name: myyaml8
+    replicas: 3
+    swagger:
   mode: shared

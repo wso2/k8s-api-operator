@@ -20,6 +20,7 @@ type TargetEndpointSpec struct {
 	Deploy           Deploy           `json:"deploy"`
 	EndpointName     string           `json:"endpointName"`
 	EndpointSecurity EndpointSecurity `json:"endpointSecurity"`
+	Mode             Mode             `json:"mode"`
 }
 
 // TargetEndpointStatus defines the observed state of TargetEndpoint

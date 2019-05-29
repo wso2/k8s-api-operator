@@ -48,7 +48,7 @@ spec:
    configMapKeyRef:
      name: "${apiName}"
    replicas: "${replicas}"
- mode: shared
+ mode: privateJet
 EOF
 
     kubectl create -f wso2_v1alpha1_api_cr.yaml

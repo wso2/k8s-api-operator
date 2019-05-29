@@ -40,6 +40,10 @@ spec:
                   required:
                   - name
                   type: object
+                replicas:
+                  type: string
+                swagger:
+                  type: string
               required:
               - configMapKeyRef
               type: object
