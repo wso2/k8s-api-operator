@@ -112,7 +112,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	//get configurations file for the controller
-	controlConf, err := getConfigmap(r, "controller-config", "wso2-system")
+	controlConf, err := getConfigmap(r, "controller-config", wso2NameSpaceConst)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Controller configmap is not found, could have been deleted after reconcile request.
@@ -203,7 +203,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	//get security instance. sample secret name is hard coded for now.
 	security := &wso2v1alpha1.Security{}
-	errGetSec := r.client.Get(context.TODO(), types.NamespacedName{Name: "example-security-test-oauth", Namespace: "wso2-system"}, security)
+	errGetSec := r.client.Get(context.TODO(), types.NamespacedName{Name: "example-security-test-oauth", Namespace: wso2NameSpaceConst}, security)
 
 	if errGetSec != nil && errors.IsNotFound(errGetSec) {
 		reqLogger.Info("defined security instance is not found")
@@ -212,7 +212,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	//get certificate
 	certificateSecret := &corev1.Secret{}
-	errc := r.client.Get(context.TODO(), types.NamespacedName{Name: security.Spec.Certificate, Namespace: "wso2-system"}, certificateSecret)
+	errc := r.client.Get(context.TODO(), types.NamespacedName{Name: security.Spec.Certificate, Namespace: wso2NameSpaceConst}, certificateSecret)
 
 	if errc != nil && errors.IsNotFound(errc) {
 		reqLogger.Info("defined cretificate is not found")
@@ -319,7 +319,7 @@ func getSecretData(r *ReconcileAPI) (map[string][]byte, error) {
 	var analyticsData map[string][]byte
 	// Check if this secret exists
 	analyticsSecret := &corev1.Secret{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: "analytics-secret", Namespace: "wso2-system"}, analyticsSecret)
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: "analytics-secret", Namespace: wso2NameSpaceConst}, analyticsSecret)
 
 	if err != nil && errors.IsNotFound(err) {
 		log.Info("Analytics Secret is not found")
@@ -347,7 +347,7 @@ func createMGWSecret(r *ReconcileAPI, confData string) error {
 	apimSecret = &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "mgw-secret",
-			Namespace: "wso2-system",
+			Namespace: wso2NameSpaceConst,
 		},
 	}
 
@@ -357,7 +357,7 @@ func createMGWSecret(r *ReconcileAPI, confData string) error {
 
 	// Check if this secret exists
 	checkSecret := &corev1.Secret{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: "mgw-secret", Namespace: "wso2-system"}, checkSecret)
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: "mgw-secret", Namespace: wso2NameSpaceConst}, checkSecret)
 
 	if err != nil && errors.IsNotFound(err) {
 		log.Info("Creating secret ")
@@ -520,7 +520,7 @@ func getCredentials(r *ReconcileAPI, name string) error {
 
 	//get the secret included credentials
 	credentialSecret := &corev1.Secret{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: "wso2-system"}, credentialSecret)
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: wso2NameSpaceConst}, credentialSecret)
 
 	if err != nil && errors.IsNotFound(err) {
 		fmt.Println("secret not found")
@@ -672,7 +672,7 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string) *appsv1.Deploym
 //Handles dockermap configmap creation
 func dockerfileHandler(r *ReconcileAPI) (*corev1.ConfigMap, error) {
 	//Check if the configmap with dockerfile for mgw creation exists
-	dockerfileConfmap, err := getConfigmap(r, "dockerfile", "wso2-system")
+	dockerfileConfmap, err := getConfigmap(r, "dockerfile", wso2NameSpaceConst)
 	if err != nil && errors.IsNotFound(err) {
 		dockerFilePath := "/usr/local/bin/Dockerfile"
 		dockerFileRaw, errRead := ioutil.ReadFile(dockerFilePath)
@@ -681,7 +681,7 @@ func dockerfileHandler(r *ReconcileAPI) (*corev1.ConfigMap, error) {
 			return dockerfileConfmap, errRead
 		}
 
-		dockerConf, er := createConfigMap("dockerfile", "code", string(dockerFileRaw), "wso2-system")
+		dockerConf, er := createConfigMap("dockerfile", "code", string(dockerFileRaw), wso2NameSpaceConst)
 		if er != nil {
 			log.Error(er, "error in docker configmap creation")
 			return dockerfileConfmap, er
@@ -701,11 +701,11 @@ func dockerfileHandler(r *ReconcileAPI) (*corev1.ConfigMap, error) {
 func policyHandler(r *ReconcileAPI) error {
 	//Check if policy configmap is available
 	foundmapc := &corev1.ConfigMap{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: "policy-configmap", Namespace: "wso2-system"}, foundmapc)
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: policyConfigmap, Namespace: wso2NameSpaceConst}, foundmapc)
 
 	if err != nil && errors.IsNotFound(err) {
 		//create new map with default policies if a map is not found
-		log.Info("Creating a config map with default policies", "Namespace", "wso2-system", "Name", "policy-configmap")
+		log.Info("Creating a config map with default policies", "Namespace", wso2NameSpaceConst, "Name", policyConfigmap)
 
 		defaultval := ratelimiting.CreateDefault()
 		fmt.Println(defaultval)
