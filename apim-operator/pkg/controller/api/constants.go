@@ -17,4 +17,7 @@ const (
 	dockerRegistryConst = "dockerRegistry"
 	userNameSpaceConst = "userNameSpace"
 
+	wso2NameSpaceConst = "wso2-system"
+	policyConfigmap = "policy-configmap"
+
 )
