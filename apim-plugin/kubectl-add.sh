@@ -32,10 +32,10 @@ done
 apiName=$2
 
 echo -e "\nDeleteting configmap if exists with name "$apiName
-    kubectl delete configmap $2
+    kubectl delete configmap $2 -n=wso2-system
 
 echo -e "\nCreating configmap with name "$apiName
-    kubectl create configmap $2 $3
+    kubectl create configmap $2 $3 -n=wso2-system
     echo -e "\nGenerating a api kind"
 
 cat << EOF > wso2_v1alpha1_api_cr.yaml
@@ -43,6 +43,7 @@ apiVersion: wso2.com/v1alpha1
 kind: API
 metadata:
  name: "${apiName}"
+ namespace: wso2-system
 spec:
  definition:
    configMapKeyRef:

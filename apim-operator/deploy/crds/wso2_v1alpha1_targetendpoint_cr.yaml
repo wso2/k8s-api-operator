@@ -2,7 +2,7 @@ apiVersion: wso2.com/v1alpha1
 kind: TargetEndpoint
 metadata:
   name: endpoint-pizza
-  namespace: default
+  namespace: wso2-system
   labels:
     app: wso2
 spec:

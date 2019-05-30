@@ -2,6 +2,7 @@ apiVersion: wso2.com/v1alpha1
 kind: RateLimiting
 metadata:
   name: testing1-ratelimiting
+  namespace: wso2-system
 spec:
   type: subscription             # application ,subscription
   description: Allow 1000 requests per minute   # optional
