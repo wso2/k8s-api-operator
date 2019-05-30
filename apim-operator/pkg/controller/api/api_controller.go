@@ -156,7 +156,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	//Check if the configmap mentioned in crd object exist
 	apiConfigMapRef := instance.Spec.Definition.ConfigMapKeyRef.Name
 	log.Info(apiConfigMapRef)
-	apiConfigMap, err := getConfigmap(r, apiConfigMapRef, "default")
+	apiConfigMap, err := getConfigmap(r, apiConfigMapRef, wso2NameSpaceConst)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Swagger configmap is not found, could have been deleted after reconcile request.
@@ -190,7 +190,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	//update configmap with modified swagger
 
-	swaggerConfMap, err := createConfigMap(apiConfigMapRef, swaggerDataFile, newSwagger, "default")
+	swaggerConfMap, err := createConfigMap(apiConfigMapRef, swaggerDataFile, newSwagger, wso2NameSpaceConst)
 	if err != nil {
 		log.Error(err, "Error in modified swagger configmap structure")
 	}
@@ -289,7 +289,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	//Schedule Kaniko pod
-	job:= scheduleKanikoJob(instance)
+	job := scheduleKanikoJob(instance)
 	if err := controllerutil.SetControllerReference(instance, job, r.scheme); err != nil {
 		return reconcile.Result{}, err
 	}
@@ -480,9 +480,9 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger) string {
 				//check if service & targetendpoint cr object are available
 				currentService := &corev1.Service{}
 				targetEndpointCr := &wso2v1alpha1.TargetEndpoint{}
-				err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: "default",
+				err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: wso2NameSpaceConst,
 					Name: endPoint}, currentService)
-				erCr := r.client.Get(context.TODO(), types.NamespacedName{Namespace: "default", Name: endPoint}, targetEndpointCr)
+				erCr := r.client.Get(context.TODO(), types.NamespacedName{Namespace: wso2NameSpaceConst, Name: endPoint}, targetEndpointCr)
 
 				if err != nil && errors.IsNotFound(err) {
 					log.Error(err, "Service is not found")
@@ -517,9 +517,9 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger) string {
 					//check if service & targetendpoint cr object are available
 					currentService := &corev1.Service{}
 					targetEndpointCr := &wso2v1alpha1.TargetEndpoint{}
-					err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: "default",
+					err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: wso2NameSpaceConst,
 						Name: endPoint}, currentService)
-					erCr := r.client.Get(context.TODO(), types.NamespacedName{Namespace: "default", Name: endPoint}, targetEndpointCr)
+					erCr := r.client.Get(context.TODO(), types.NamespacedName{Namespace: wso2NameSpaceConst, Name: endPoint}, targetEndpointCr)
 
 					if err != nil && errors.IsNotFound(err) {
 						log.Error(err, "Service is not found")
@@ -739,10 +739,10 @@ func scheduleKanikoJob(cr *wso2v1alpha1.API) *batchv1.Job {
 
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:  "kaniko",
-			Namespace:cr.Namespace,
+			Name:      "kaniko",
+			Namespace: cr.Namespace,
 		},
-		Spec:batchv1.JobSpec{
+		Spec: batchv1.JobSpec{
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      cr.Name + "-job",
@@ -777,7 +777,7 @@ func scheduleKanikoJob(cr *wso2v1alpha1.API) *batchv1.Job {
 							},
 						},
 					},
-					RestartPolicy:"Never",
+					RestartPolicy: "Never",
 					Volumes: []corev1.Volume{
 						{
 							Name: swaggerVolume,

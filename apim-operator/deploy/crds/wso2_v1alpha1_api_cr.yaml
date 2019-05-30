@@ -2,6 +2,7 @@ apiVersion: wso2.com/v1alpha1
 kind: API
 metadata:
   name: myyaml8-api
+  namespace: wso2-system
 spec:
   definition:
     configMapKeyRef:
