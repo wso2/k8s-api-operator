@@ -20,4 +20,6 @@ const (
 	wso2NameSpaceConst = "wso2-system"
 	policyConfigmap = "policy-configmap"
 
+	dockerhubRegistryUrl = "https://registry-1.docker.io/"
+
 )

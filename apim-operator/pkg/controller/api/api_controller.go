@@ -4,9 +4,12 @@ import (
 	"context"
 	"crypto/sha1"
 	"encoding/hex"
+	"strconv"
 	"strings"
 
 	"github.com/cbroglie/mustache"
+	"github.com/heroku/docker-registry-client/registry"
+
 	wso2v1alpha1 "github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -27,8 +30,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	ratelimiting "github.com/wso2/k8s-apim-operator/apim-operator/pkg/controller/ratelimiting"
+
 	"github.com/getkin/kin-openapi/openapi3"
+	ratelimiting "github.com/wso2/k8s-apim-operator/apim-operator/pkg/controller/ratelimiting"
 )
 
 var log = logf.Log.WithName("controller_api")
@@ -140,7 +144,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 	fmt.Println(dockerfileConfmap.Data["code"])
 
-	//Handles policy.yaml. 
+	//Handles policy.yaml.
 	//If there aren't any ratelimiting objects deployed, new policy.yaml configmap will be created with default policies
 
 	policyEr := policyHandler(r)
@@ -170,7 +174,16 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		log.Error(err, "Swagger loading error ")
 	}
 
-	imageName := strings.ReplaceAll(swagger.Info.Title, " ", "") + ":" + swagger.Info.Version
+	image := strings.ReplaceAll(swagger.Info.Title, " ", "")
+	tag := swagger.Info.Version
+	imageName := image + ":" + tag
+
+	// check if the image already exists
+	imageExist, errImage := isImageExist(dockerRegistry+"/"+image, tag, r)
+	if errImage != nil {
+		log.Error(errImage, "Error in image finding")
+	}
+	log.Info("image exist? " + strconv.FormatBool(imageExist))
 
 	newSwagger := mgwSwaggerHandler(r, swagger)
 
@@ -732,4 +745,42 @@ func policyHandler(r *ReconcileAPI) error {
 		return err
 	}
 	return nil
+}
+
+// checks if the image exist in dockerhub
+func isImageExist(image string, tag string, r *ReconcileAPI) (bool, error) {
+	url := dockerhubRegistryUrl
+	username := ""
+	password := ""
+
+	//checks if docker secret is available
+	dockerSecret := &corev1.Secret{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: "docker-secret", Namespace: wso2NameSpaceConst}, dockerSecret)
+	if err != nil && errors.IsNotFound(err) {
+		log.Info("Docker Secret is not found")
+	} else if err != nil {
+		log.Error(err, "error ")
+	} else {
+		dockerData := dockerSecret.Data
+		username = string(dockerData["username"])
+		password = string(dockerData["password"])
+	}
+
+	hub, err := registry.New(url, username, password)
+	if err != nil {
+		log.Error(err, "error connecting to hub")
+		return false, err
+	}
+	tags, err := hub.Tags(image)
+	if err != nil {
+		log.Error(err, "error getting tags")
+		return false, err
+	}
+	for _, foundTag := range tags {
+		if foundTag == tag {
+			log.Info("found the image tag")
+			return true, nil
+		}
+	}
+	return false, nil
 }

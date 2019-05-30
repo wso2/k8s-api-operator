@@ -8,5 +8,5 @@ data:
   mgwToolkitImg: image
   mgwRuntimeImg: wso2/wso2micro-gw:3.0.0-beta2
   kanikoImg: gcr.io/kaniko-project/executor
-  dockerRegistry: rameshakaru/api-operator:v0.0.4
+  dockerRegistry: rameshakaru
   userNameSpace: default
