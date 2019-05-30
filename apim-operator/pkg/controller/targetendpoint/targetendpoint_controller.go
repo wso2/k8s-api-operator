@@ -104,7 +104,7 @@ func (r *ReconcileTargetEndpoint) Reconcile(request reconcile.Request) (reconcil
 		return reconcile.Result{}, err
 	}
 
-	if instance.Spec.Deploy.DockerImage != "" {
+	if instance.Spec.Deploy.DockerImage != "" && instance.Spec.Mode != "sidecar" {
 		if err := r.reconcileDeployment(instance); err != nil {
 			return reconcile.Result{}, err
 		}

@@ -422,6 +422,12 @@ func schema_pkg_apis_wso2_v1alpha1_TargetEndpointSpec(ref common.ReferenceCallba
 							Ref: ref("github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.EndpointSecurity"),
 						},
 					},
+					"mode": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
 				},
 				Required: []string{"type", "protocol", "hostname", "port", "deploy", "endpointName", "endpointSecurity"},
 			},

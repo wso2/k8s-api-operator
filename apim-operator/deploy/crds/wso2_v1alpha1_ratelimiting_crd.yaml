@@ -96,6 +96,10 @@ spec:
           - timeUnit
           - unitTime
           - requestCount
+          - stopOnQuotaReach
+          - description
+          - bandwidth
+          - conditions
           type: object
   version: v1alpha1
   versions:
