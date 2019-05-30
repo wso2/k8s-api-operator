@@ -33,7 +33,7 @@ import (
 	"io/ioutil"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	ratelimiting "github.com/wso2/k8s-apim-operator/apim-operator/pkg/controller/ratelimiting"
+	"github.com/wso2/k8s-apim-operator/apim-operator/pkg/controller/ratelimiting"
 )
 
 var log = logf.Log.WithName("controller_api")
@@ -215,9 +215,26 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	reqLogger.Info("getting security instance")
 
+	//get defined security cr from swagger
+	definedSecurity, checkSecuritykind := swagger.Extensions["x-mgw-security"]
+	var securityName string
+
+	if checkSecuritykind {
+		rawmsg := definedSecurity.(json.RawMessage)
+		errsec := json.Unmarshal(rawmsg, &securityName)
+
+		if errsec != nil {
+			log.Error(err, "error getting security kind from swagger ")
+			return reconcile.Result{}, errsec
+		}
+
+	} else {
+		//use default security cr
+		securityName = defaultSecurity
+	}
 	//get security instance. sample secret name is hard coded for now.
 	security := &wso2v1alpha1.Security{}
-	errGetSec := r.client.Get(context.TODO(), types.NamespacedName{Name: "example-security-test-oauth", Namespace: wso2NameSpaceConst}, security)
+	errGetSec := r.client.Get(context.TODO(), types.NamespacedName{Name: securityName, Namespace: wso2NameSpaceConst}, security)
 
 	if errGetSec != nil && errors.IsNotFound(errGetSec) {
 		reqLogger.Info("defined security instance is not found")
@@ -234,7 +251,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	if security.Spec.Type == "Oauth" {
-
 		//fetch credentials from the secret created
 		errGetCredentials := getCredentials(r, security.Spec.Credentials)
 
@@ -246,7 +262,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	if security.Spec.Type == "JWT" {
-
 		certificateAlias = security.Name + "alias"
 
 		if security.Spec.Issuer != "" {
