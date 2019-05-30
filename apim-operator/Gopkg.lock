@@ -117,6 +117,29 @@
   version = "v3.2.0"
 
 [[projects]]
+  digest = "1:91fb48882bdb6479c511b1d8c07ccf83b84c8c956870fe61daf7e82fe089aa51"
+  name = "github.com/docker/distribution"
+  packages = [
+    ".",
+    "digestset",
+    "manifest",
+    "manifest/schema1",
+    "manifest/schema2",
+    "reference",
+  ]
+  pruneopts = "NT"
+  revision = "2461543d988979529609e8cb6fca9ca190dc48da"
+  version = "v2.7.1"
+
+[[projects]]
+  branch = "master"
+  digest = "1:8b3f9d0a064879dc6db71fb0861831c596b8bcd0765bd8b3e1b79f83aee4fa11"
+  name = "github.com/docker/libtrust"
+  packages = ["."]
+  pruneopts = "NT"
+  revision = "aabc10ec26b754e797f9028f4589c5b7bd90dc20"
+
+[[projects]]
   digest = "1:1302bdd23af4264a095d48c2c28660a8ecf2e02454ce172cef5cb946029a1383"
   name = "github.com/emicklei/go-restful"
   packages = [
@@ -126,6 +149,17 @@
   pruneopts = "NT"
   revision = "b9bbc5664f49b6deec52393bd68f39830687a347"
   version = "v2.9.3"
+
+[[projects]]
+  digest = "1:74640c160d5cf7a66ad7b964663624b3177f1603844e2870017c7969932bb3e6"
+  name = "github.com/getkin/kin-openapi"
+  packages = [
+    "jsoninfo",
+    "openapi3",
+  ]
+  pruneopts = "NT"
+  revision = "90a7df014b4e7699507bf82aa5601503a9ba85da"
+  version = "v0.2.0"
 
 [[projects]]
   digest = "1:81466b4218bf6adddac2572a30ac733a9255919bc2f470b4827a317bd4ee1756"
@@ -326,6 +360,14 @@
   version = "v0.5.1"
 
 [[projects]]
+  branch = "master"
+  digest = "1:2b210e614403360f0922e86caee840c91c96c64db48aecddc33102d212cd949c"
+  name = "github.com/heroku/docker-registry-client"
+  packages = ["registry"]
+  pruneopts = "NT"
+  revision = "47ecf50fd8d4fba87593c00ca0959029c7d6b95c"
+
+[[projects]]
   digest = "1:aaa38889f11896ee3644d77e17dc7764cc47f5f3d3b488268df2af2b52541c5f"
   name = "github.com/imdario/mergo"
   packages = ["."]
@@ -348,6 +390,14 @@
   pruneopts = "NT"
   revision = "0ff49de124c6f76f8494e194af75bde0f1a49a29"
   version = "v1.1.6"
+
+[[projects]]
+  digest = "1:58999a98719fddbac6303cb17e8d85b945f60b72f48e3a2df6b950b97fa926f1"
+  name = "github.com/konsorten/go-windows-terminal-sequences"
+  packages = ["."]
+  pruneopts = "NT"
+  revision = "f55edac94c9bbba5d6182a4be46d86a2c9b5b50e"
+  version = "v1.0.2"
 
 [[projects]]
   branch = "master"
@@ -392,6 +442,25 @@
   pruneopts = "NT"
   revision = "4b7aa43c6742a2c18fdef89dd197aaae7dac7ccd"
   version = "1.0.1"
+
+[[projects]]
+  digest = "1:e0cc8395ea893c898ff5eb0850f4d9851c1f57c78c232304a026379a47a552d0"
+  name = "github.com/opencontainers/go-digest"
+  packages = ["."]
+  pruneopts = "NT"
+  revision = "279bed98673dd5bef374d3b6e4b09e2af76183bf"
+  version = "v1.0.0-rc1"
+
+[[projects]]
+  digest = "1:6a42064e69dda8ba8b3687f837719fb8e241986c54ad4515e55ea9ec11bf5242"
+  name = "github.com/opencontainers/image-spec"
+  packages = [
+    "specs-go",
+    "specs-go/v1",
+  ]
+  pruneopts = "NT"
+  revision = "d60099175f88c47cd379c4738d158884749ed235"
+  version = "v1.0.1"
 
 [[projects]]
   branch = "master"
@@ -494,6 +563,14 @@
   pruneopts = "NT"
   revision = "438578804ca6f31be148c27683afc419ce47c06e"
   version = "v1.3.0"
+
+[[projects]]
+  digest = "1:efe8ddffa78bddbd1d826faf622cca77dbf7ddc72df04077d69a688cac657148"
+  name = "github.com/sirupsen/logrus"
+  packages = ["."]
+  pruneopts = "NT"
+  revision = "839c75faf7f98a33d445d181f3018b5c3409a45e"
+  version = "v1.4.2"
 
 [[projects]]
   digest = "1:49b6e0d199dc20969bf7c9d14647313e1dd1b102178fad4ca999d8a9584edfab"
@@ -1094,13 +1171,16 @@
   analyzer-version = 1
   input-imports = [
     "github.com/cbroglie/mustache",
+    "github.com/getkin/kin-openapi/openapi3",
     "github.com/go-openapi/spec",
+    "github.com/heroku/docker-registry-client/registry",
     "github.com/operator-framework/operator-sdk/pkg/leader",
     "github.com/operator-framework/operator-sdk/pkg/log/zap",
     "github.com/operator-framework/operator-sdk/pkg/metrics",
     "github.com/operator-framework/operator-sdk/pkg/restmapper",
     "github.com/operator-framework/operator-sdk/version",
     "github.com/spf13/pflag",
+    "gopkg.in/yaml.v2",
     "k8s.io/api/apps/v1",
     "k8s.io/api/core/v1",
     "k8s.io/apimachinery/pkg/api/errors",
