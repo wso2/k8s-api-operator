@@ -289,7 +289,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	//Schedule Kaniko pod
-	job := scheduleKanikoJob(instance)
+	job:= scheduleKanikoJob(instance, imageName, controlConf)
 	if err := controllerutil.SetControllerReference(instance, job, r.scheme); err != nil {
 		return reconcile.Result{}, err
 	}
@@ -306,7 +306,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		return reconcile.Result{}, jobErr
 	}
 
-	dep := createMgwDeployment(instance, imageName)
+	dep := createMgwDeployment(instance, imageName, controlConf)
 	depFound := &appsv1.Deployment{}
 	deperr := r.client.Get(context.TODO(), types.NamespacedName{Name: dep.Name, Namespace: dep.Namespace}, depFound)
 	// if kaniko job is succeeded, create the deployment
@@ -592,11 +592,20 @@ func getCredentials(r *ReconcileAPI, name string) error {
 }
 
 // generate relevant MGW deployment/services for the given API definition
-func createMgwDeployment(cr *wso2v1alpha1.API, imageName string) *appsv1.Deployment {
+func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.ConfigMap) *appsv1.Deployment {
 	labels := map[string]string{
 		"app": cr.Name,
 	}
-	one := int32(1)
+
+	controlConfigData := conf.Data
+	replicas := controlConfigData[replicasConst]
+	dockerRegistry := controlConfigData[dockerRegistryConst]
+	//convert replica's config value and parse it to int32
+	one, err := strconv.Atoi(replicas)
+	var reps int32
+	if err != nil {
+		reps = int32(one)
+	}
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -605,7 +614,7 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string) *appsv1.Deploym
 			Labels:    labels,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: &one,
+			Replicas: &reps,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
 			},
@@ -616,9 +625,8 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string) *appsv1.Deploym
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name: "micro-gateway",
-							//todo: docker registry has to be taken from configuration map
-							Image: "dinushad/" + imageName,
+							Name: "mgw" + cr.Name,
+							Image: dockerRegistry + "/" + imageName,
 
 							Ports: []corev1.ContainerPort{{
 								ContainerPort: 80,
@@ -729,18 +737,21 @@ func isImageExist(image string, tag string, r *ReconcileAPI) (bool, error) {
 }
 
 //Schedule Kaniko Job to generate micro-gw image
-func scheduleKanikoJob(cr *wso2v1alpha1.API) *batchv1.Job {
+func scheduleKanikoJob(cr *wso2v1alpha1.API, imageName string, conf *corev1.ConfigMap) *batchv1.Job {
 
 	labels := map[string]string{
 		"app": cr.Name,
 	}
 
+	controlConfigData := conf.Data
+	kanikoImg := controlConfigData[kanikoImgConst]
+	dockerRegistry := controlConfigData[dockerRegistryConst]
 	apiConfMap := cr.Spec.Definition.ConfigMapKeyRef.Name
 
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kaniko",
-			Namespace: cr.Namespace,
+			Name:  cr.Name + "kaniko",
+			Namespace:cr.Namespace,
 		},
 		Spec: batchv1.JobSpec{
 			Template: corev1.PodTemplateSpec{
@@ -752,8 +763,8 @@ func scheduleKanikoJob(cr *wso2v1alpha1.API) *batchv1.Job {
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:  "gen-container",
-							Image: "gcr.io/kaniko-project/executor:latest",
+							Name:  cr.Name + "gen-container",
+							Image: kanikoImg,
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      swaggerVolume,
@@ -773,7 +784,7 @@ func scheduleKanikoJob(cr *wso2v1alpha1.API) *batchv1.Job {
 							Args: []string{
 								"--dockerfile=/usr/wso2/dockerfile/Dockerfile",
 								"--context=/usr/wso2/",
-								"--destination=dinushad/mgwimage:v10",
+								"--destination=" + dockerRegistry + "/" + imageName,
 							},
 						},
 					},

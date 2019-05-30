@@ -1,7 +1,7 @@
 #This image will be used by Kaniko pod to create the micro-gw image
 
 # Custom image with java and toolkit has been build for stage1
-FROM dinushad/toolkit:latest as pre
+FROM wso2am/wso2micro-gw-toolkit:3.0.0-beta2 as toolkit
 #init the micro-gw project
 RUN micro-gw init project
 #copy swagger definitions to the project location
@@ -18,7 +18,7 @@ FROM wso2/wso2micro-gw:3.0.0-beta2
 #change permission to create and copy the executable
 USER root
 RUN  mkdir -p /home/exec
-COPY --from=pre /home/exec /home/exec
+COPY --from=toolkit /home/exec /home/exec
 USER ballerina
 #project name has to be passed to the ballerina image as a env variable
 ENV project="project"
