@@ -12,6 +12,7 @@ import (
 
 	wso2v1alpha1 "github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -287,33 +288,52 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		log.Info("Successfully created secret")
 	}
 
-	//todo: make a deployment
-	pod := generateMgwImage(instance, imageName)
-
-	// Set API instance as the owner and controller
-	if err := controllerutil.SetControllerReference(instance, pod, r.scheme); err != nil {
+	//Schedule Kaniko pod
+	job:= scheduleKanikoJob(instance)
+	if err := controllerutil.SetControllerReference(instance, job, r.scheme); err != nil {
 		return reconcile.Result{}, err
 	}
-
-	// Check if this Pod already exists
-	found := &corev1.Pod{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pod.Name, Namespace: pod.Namespace}, found)
-	if err != nil && errors.IsNotFound(err) {
-		reqLogger.Info("Creating a new Pod", "Pod.Namespace", pod.Namespace, "Pod.Name", pod.Name)
-		err = r.client.Create(context.TODO(), pod)
-		if err != nil {
-			return reconcile.Result{}, err
+	kubeJob := &batchv1.Job{}
+	jobErr := r.client.Get(context.TODO(), types.NamespacedName{Name: job.Name, Namespace: job.Namespace}, kubeJob)
+	// if Job is not available
+	if jobErr != nil && errors.IsNotFound(jobErr) {
+		reqLogger.Info("Creating a new Job", "Job.Namespace", job.Namespace, "Job.Name", job.Name)
+		jobErr = r.client.Create(context.TODO(), job)
+		if jobErr != nil {
+			return reconcile.Result{}, jobErr
 		}
-		// Pod created successfully - don't requeue
-		return reconcile.Result{}, nil
-	} else if err != nil {
-		return reconcile.Result{}, err
+	} else if jobErr != nil {
+		return reconcile.Result{}, jobErr
 	}
+
 	dep := createMgwDeployment(instance, imageName)
-	reqLogger.Info("Dep", dep.Name)
-	// Pod already exists - don't requeue
-	reqLogger.Info("Skip reconcile: Pod already exists", "Pod.Namespace", found.Namespace, "Pod.Name", found.Name)
-	return reconcile.Result{}, nil
+	depFound := &appsv1.Deployment{}
+	deperr := r.client.Get(context.TODO(), types.NamespacedName{Name: dep.Name, Namespace: dep.Namespace}, depFound)
+	// if kaniko job is succeeded, create the deployment
+	if kubeJob.Status.Succeeded > 0 {
+		reqLogger.Info("Job completed successfully", "Job.Namespace", job.Namespace, "Job.Name", job.Name)
+		if deperr != nil && errors.IsNotFound(deperr) {
+			reqLogger.Info("Creating a new Dep", "Dep.Namespace", dep.Namespace, "Dep.Name", dep.Name)
+			deperr = r.client.Create(context.TODO(), dep)
+			if deperr != nil {
+				return reconcile.Result{}, deperr
+			}
+			// deployment created successfully - don't requeue
+			return reconcile.Result{}, nil
+		} else if deperr != nil {
+			return reconcile.Result{}, deperr
+		}
+		// if deployment already exsits
+		reqLogger.Info("Skip reconcile: Deploy already exists", "Deploy.Namespace",
+			depFound.Namespace, "Deploy.Name", depFound.Name)
+		return reconcile.Result{}, nil
+	} else {
+		reqLogger.Info("Job is still not completed.", "Job.Status", job.Status)
+		return reconcile.Result{}, deperr
+	}
+	// Job already exists - don't requeue
+	reqLogger.Info("Skip reconcile: Job already exists", "Job.Namespace", job.Namespace, "Job.Name", job.Name)
+	return reconcile.Result{}, jobErr
 }
 
 // newPodForCR returns a busybox pod with the same name/namespace as the cr
@@ -571,83 +591,6 @@ func getCredentials(r *ReconcileAPI, name string) error {
 	return nil
 }
 
-//Generate micro-gateway image and push into the registry
-func generateMgwImage(cr *wso2v1alpha1.API, imageName string) *corev1.Pod {
-
-	labels := map[string]string{
-		"app": cr.Name,
-	}
-	apiConfMap := cr.Spec.Definition.ConfigMapKeyRef.Name
-	return &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      cr.Name + "-pod",
-			Namespace: cr.Namespace,
-			Labels:    labels,
-		},
-		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					Name:  "gen-container" + cr.Name,
-					Image: "gcr.io/kaniko-project/executor:latest",
-					VolumeMounts: []corev1.VolumeMount{
-						{
-							Name:      swaggerVolume,
-							MountPath: swaggerLocation,
-							ReadOnly:  true,
-						},
-						{
-							Name:      mgwDockerFile,
-							MountPath: dockerFileLocation,
-						},
-						{
-							Name:      dockerConfig,
-							MountPath: dockerConfLocation,
-							ReadOnly:  true,
-						},
-					},
-					Args: []string{
-						"--dockerfile=/usr/wso2/dockerfile/Dockerfile",
-						"--context=/usr/wso2/",
-						"--destination=dinushad/" + imageName,
-					},
-				},
-			},
-			Volumes: []corev1.Volume{
-				{
-					Name: swaggerVolume,
-					VolumeSource: corev1.VolumeSource{
-						ConfigMap: &corev1.ConfigMapVolumeSource{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: apiConfMap,
-							},
-						},
-					},
-				},
-				{
-					Name: dockerConfig,
-					VolumeSource: corev1.VolumeSource{
-						ConfigMap: &corev1.ConfigMapVolumeSource{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: dockerConfig,
-							},
-						},
-					},
-				},
-				{
-					Name: mgwDockerFile,
-					VolumeSource: corev1.VolumeSource{
-						ConfigMap: &corev1.ConfigMapVolumeSource{
-							LocalObjectReference: corev1.LocalObjectReference{
-								Name: dockerFile,
-							},
-						},
-					},
-				},
-			},
-		},
-	}
-}
-
 // generate relevant MGW deployment/services for the given API definition
 func createMgwDeployment(cr *wso2v1alpha1.API, imageName string) *appsv1.Deployment {
 	labels := map[string]string{
@@ -783,4 +726,92 @@ func isImageExist(image string, tag string, r *ReconcileAPI) (bool, error) {
 		}
 	}
 	return false, nil
+}
+
+//Schedule Kaniko Job to generate micro-gw image
+func scheduleKanikoJob(cr *wso2v1alpha1.API) *batchv1.Job {
+
+	labels := map[string]string{
+		"app": cr.Name,
+	}
+
+	apiConfMap := cr.Spec.Definition.ConfigMapKeyRef.Name
+
+	return &batchv1.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:  "kaniko",
+			Namespace:cr.Namespace,
+		},
+		Spec:batchv1.JobSpec{
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      cr.Name + "-job",
+					Namespace: cr.Namespace,
+					Labels:    labels,
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  "gen-container",
+							Image: "gcr.io/kaniko-project/executor:latest",
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      swaggerVolume,
+									MountPath: swaggerLocation,
+									ReadOnly:  true,
+								},
+								{
+									Name:      mgwDockerFile,
+									MountPath: dockerFileLocation,
+								},
+								{
+									Name:      dockerConfig,
+									MountPath: dockerConfLocation,
+									ReadOnly:  true,
+								},
+							},
+							Args: []string{
+								"--dockerfile=/usr/wso2/dockerfile/Dockerfile",
+								"--context=/usr/wso2/",
+								"--destination=dinushad/mgwimage:v10",
+							},
+						},
+					},
+					RestartPolicy:"Never",
+					Volumes: []corev1.Volume{
+						{
+							Name: swaggerVolume,
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: apiConfMap,
+									},
+								},
+							},
+						},
+						{
+							Name: dockerConfig,
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: dockerConfig,
+									},
+								},
+							},
+						},
+						{
+							Name: mgwDockerFile,
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: dockerFile,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
 }
