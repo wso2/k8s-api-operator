@@ -17,10 +17,17 @@ const (
 	dockerRegistryConst = "dockerRegistry"
 	userNameSpaceConst  = "userNameSpace"
 
-	wso2NameSpaceConst = "wso2-system"
-	policyConfigmap = "policy-configmap"
+	wso2NameSpaceConst    = "wso2-system"
+	policyConfigmap       = "policy-configmap"
+	mgwConfSecretConst    = "mgw-secret"
+	analyticsSecretConst  = "analytics-secret"
+	dockerSecretNameConst = "docker-secret"
+	controllerConfName    = "controller-config"
+
+	usernameConst = "username"
+	passwordConst = "password"
 
 	dockerhubRegistryUrl = "https://registry-1.docker.io/"
-	defaultSecurity    = "default-security"
-	securityExtension = "x-mgw-security"
+	defaultSecurity      = "default-security"
+	securityExtension    = "x-mgw-security"
 )
