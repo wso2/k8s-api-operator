@@ -216,7 +216,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	reqLogger.Info("getting security instance")
 
 	//get defined security cr from swagger
-	definedSecurity, checkSecuritykind := swagger.Extensions["x-mgw-security"]
+	definedSecurity, checkSecuritykind := swagger.Extensions[securityExtension]
 	var securityName string
 
 	if checkSecuritykind {

@@ -22,4 +22,5 @@ const (
 
 	dockerhubRegistryUrl = "https://registry-1.docker.io/"
 	defaultSecurity    = "default-security"
+	securityExtension = "x-mgw-security"
 )
