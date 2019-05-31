@@ -2,6 +2,7 @@ apiVersion: wso2.com/v1alpha1
 kind: Security
 metadata:
   name: default-security
+  namespace: wso2-system
 spec:
   type: JWT
   certificate: secret-test

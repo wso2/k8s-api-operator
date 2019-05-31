@@ -4,8 +4,7 @@ metadata:
   name: controller-config
   namespace: wso2-system
 data:
-  replicas: "1"
-  mgwToolkitImg: image
+  mgwToolkitImg: wso2am/wso2micro-gw-toolkit:3.0.0-beta2
   mgwRuntimeImg: wso2/wso2micro-gw:3.0.0-beta2
   kanikoImg: gcr.io/kaniko-project/executor
   dockerRegistry: rameshakaru
