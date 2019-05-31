@@ -99,7 +99,7 @@ func (r *ReconcileSecurity) Reconcile(request reconcile.Request) (reconcile.Resu
 
 	if instance.Spec.Type == "JWT" {
 		log.Info("security type JWT")
-		if instance.Spec.Alias == "" || instance.Spec.Issuer == "" || instance.Spec.Audience == "" {
+		if instance.Spec.Issuer == "" || instance.Spec.Audience == "" {
 			reqLogger.Info("Required fields are missing")
 			return reconcile.Result{}, nil
 		}

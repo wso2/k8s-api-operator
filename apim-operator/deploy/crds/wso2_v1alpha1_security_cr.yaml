@@ -9,6 +9,3 @@ spec:
   certificate: secret-test
   endpoint: https://wso2apim.wso2.svc:9443
   credentials: secret-test-certificate
-  issuer: https://localhost:9443/oauth2/test
-  alias: my-alias
-  audience: https://localhost:9443/oauth2/test

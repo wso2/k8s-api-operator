@@ -1,0 +1,9 @@
+apiVersion: wso2.com/v1alpha1
+kind: Security
+metadata:
+  name: default-security
+spec:
+  type: JWT
+  certificate: secret-test
+  issuer: https://localhost:9443/oauth2/defaultTest
+  audience: https://localhost:9443/oauth2/defaultTest
