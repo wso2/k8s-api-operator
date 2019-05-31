@@ -205,28 +205,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		log.Error(err, "Error in modified swagger configmap update")
 	}
 
-	//get the volume mounts
-	jobVolumeMount, jobVolume := getVolumes(instance)
-
-	// gets the data from analytics secret
-	analyticsData, err := getSecretData(r)
-
-	if err == nil && analyticsData != nil && analyticsData[usernameConst] != nil &&
-		analyticsData[passwordConst] != nil && analyticsData[certConst] != nil {
-		analyticsEnabled = "true"
-		analyticsUsername = string(analyticsData[usernameConst])
-		analyticsPassword = string(analyticsData[passwordConst])
-		analyticsCertSecretName := string(analyticsData[certConst])
-
-		log.Info("Finding analytics cert secret " + analyticsCertSecretName)
-		// Check if this secret exists and append it to volumes
-		jobVolumeMountTemp, jobVolumeTemp, errCert := analyticsVolumeHandler(analyticsCertSecretName, r, jobVolumeMount, jobVolume)
-		if errCert == nil {
-			jobVolumeMount = jobVolumeMountTemp
-			jobVolume = jobVolumeTemp
-		}
-	}
-
 	reqLogger.Info("getting security instance")
 
 	//get defined security cr from swagger
@@ -276,13 +254,35 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	if security.Spec.Type == "JWT" {
-		certificateAlias = security.Name + "alias"
+		certificateAlias = certificateSecret.Name + "alias"
 
 		if security.Spec.Issuer != "" {
 			issuer = security.Spec.Issuer
 		}
 		if security.Spec.Audience != "" {
 			audience = security.Spec.Audience
+		}
+	}
+
+	//get the volume mounts
+	jobVolumeMount, jobVolume := getVolumes(instance, certificateSecret)
+
+	// gets the data from analytics secret
+	analyticsData, err := getSecretData(r)
+
+	if err == nil && analyticsData != nil && analyticsData[usernameConst] != nil &&
+		analyticsData[passwordConst] != nil && analyticsData[certConst] != nil {
+		analyticsEnabled = "true"
+		analyticsUsername = string(analyticsData[usernameConst])
+		analyticsPassword = string(analyticsData[passwordConst])
+		analyticsCertSecretName := string(analyticsData[certConst])
+
+		log.Info("Finding analytics cert secret " + analyticsCertSecretName)
+		// Check if this secret exists and append it to volumes
+		jobVolumeMountTemp, jobVolumeTemp, errCert := analyticsVolumeHandler(analyticsCertSecretName, r, jobVolumeMount, jobVolume)
+		if errCert == nil {
+			jobVolumeMount = jobVolumeMountTemp
+			jobVolume = jobVolumeTemp
 		}
 	}
 
@@ -772,7 +772,6 @@ func isImageExist(image string, tag string, r *ReconcileAPI) (bool, error) {
 //Schedule Kaniko Job to generate micro-gw image
 func scheduleKanikoJob(cr *wso2v1alpha1.API, imageName string, conf *corev1.ConfigMap, jobVolumeMount []corev1.VolumeMount,
 	jobVolume []corev1.Volume) *batchv1.Job {
-
 	labels := map[string]string{
 		"app": cr.Name,
 	}
@@ -928,7 +927,7 @@ func createMgwLBService(cr *wso2v1alpha1.API) *corev1.Service {
 }
 
 //default volume mounts for the kaniko job
-func getVolumes(cr *wso2v1alpha1.API) ([]corev1.VolumeMount, []corev1.Volume) {
+func getVolumes(cr *wso2v1alpha1.API, cert *corev1.Secret) ([]corev1.VolumeMount, []corev1.Volume) {
 
 	apiConfMap := cr.Spec.Definition.ConfigMapKeyRef.Name
 
@@ -956,6 +955,11 @@ func getVolumes(cr *wso2v1alpha1.API) ([]corev1.VolumeMount, []corev1.Volume) {
 			Name:      mgwConfFile,
 			MountPath: mgwConfLocation,
 			ReadOnly:  true,
+		},
+		{
+			Name: "apim-certs",
+			MountPath: "/usr/wso2/certs/" + cert.Name,
+			ReadOnly:true,
 		},
 	}
 
@@ -1008,6 +1012,14 @@ func getVolumes(cr *wso2v1alpha1.API) ([]corev1.VolumeMount, []corev1.Volume) {
 				},
 			},
 		},
+			{
+				Name:"apim-certs",
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName:cert.Name,
+					},
+				},
+			},
 	}
 	return jobVolumeMount, jobVolume
 

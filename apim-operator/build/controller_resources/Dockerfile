@@ -19,6 +19,9 @@ FROM wso2/wso2micro-gw:3.0.0-beta2
 USER root
 RUN  mkdir -p /home/exec
 COPY --from=toolkit /home/exec /home/exec
+
+RUN keytool -list -storepass ballerina -v -keystore /ballerina/runtime/bre/security/ballerinaTruststore.p12
+
 USER ballerina
 #project name has to be passed to the ballerina image as a env variable
 ENV project="project"
