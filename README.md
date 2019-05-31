@@ -5,6 +5,7 @@ How to try out the K8s API Manager Operator
 Copy the the kubectl-add.sh to /usr/local/bin/
 
 kubectl create -f deploy/namespace.yaml 
+kubectl create -f deploy/controller_conf.yaml 
 
 kubectl create -f deploy/service_account.yaml
 kubectl create -f deploy/role_binding.yaml
@@ -44,6 +45,7 @@ kubectl create -f deploy/crds/wso2_v1alpha1_api_cr.yaml
 
 Undeploy the changes
 
+
 kubectl delete -f deploy/crds/wso2_v1alpha1_targetendpoint_cr.yaml
 kubectl delete -f deploy/crds/wso2_v1alpha1_security_cr.yaml
 kubectl delete -f deploy/crds/wso2_v1alpha1_ratelimiting_cr.yaml
@@ -51,8 +53,9 @@ kubectl delete -f deploy/crds/wso2_v1alpha1_api_cr.yaml
 kubectl delete -f deploy/operator.yaml
 kubectl delete -f deploy/role.yaml
 kubectl delete -f deploy/role_binding.yaml
-kubectl delete -f deploy/service_account.yaml
+kubectl delete -f deploy/service_account.yam
 kubectl delete -f deploy/crds/app_v1alpha1_appservice_crd.yaml
+kubectl delete -f deploy/controller_conf.yaml
 
 kubectl delete -f deploy/controller_conf.yaml
 kubectl delete -f deploy/docker_secret_template.yaml
