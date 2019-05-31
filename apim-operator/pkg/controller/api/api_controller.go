@@ -117,7 +117,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	//get configurations file for the controller
-	controlConf, err := getConfigmap(r, "controller-config", wso2NameSpaceConst)
+	controlConf, err := getConfigmap(r, controllerConfName, wso2NameSpaceConst)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Controller configmap is not found, could have been deleted after reconcile request.
@@ -174,7 +174,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		log.Error(err, "Swagger loading error ")
 	}
 
-	image := strings.ReplaceAll(swagger.Info.Title, " ", "")
+	image := strings.ToLower(strings.ReplaceAll(swagger.Info.Title, " ", ""))
 	tag := swagger.Info.Version
 	imageName := image + ":" + tag
 
@@ -205,11 +205,11 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	//writes into the conf file
 
-	if err == nil && analyticsData != nil && analyticsData["username"] != nil &&
-		analyticsData["password"] != nil {
+	if err == nil && analyticsData != nil && analyticsData[usernameConst] != nil &&
+		analyticsData[passwordConst] != nil {
 		analyticsEnabled = "true"
-		analyticsUsername = string(analyticsData["username"])
-		analyticsPassword = string(analyticsData["password"])
+		analyticsUsername = string(analyticsData[usernameConst])
+		analyticsPassword = string(analyticsData[passwordConst])
 	}
 
 	reqLogger.Info("getting security instance")
@@ -378,7 +378,7 @@ func getSecretData(r *ReconcileAPI) (map[string][]byte, error) {
 	var analyticsData map[string][]byte
 	// Check if this secret exists
 	analyticsSecret := &corev1.Secret{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: "analytics-secret", Namespace: wso2NameSpaceConst}, analyticsSecret)
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: analyticsSecretConst, Namespace: wso2NameSpaceConst}, analyticsSecret)
 
 	if err != nil && errors.IsNotFound(err) {
 		log.Info("Analytics Secret is not found")
@@ -392,10 +392,6 @@ func getSecretData(r *ReconcileAPI) (map[string][]byte, error) {
 
 	analyticsData = analyticsSecret.Data
 	log.Info("Analytics Secret exists")
-	fmt.Println("DATA")
-	fmt.Println(string(analyticsData["username"]))
-	fmt.Println(string(analyticsData["password"]))
-	fmt.Println("END")
 	return analyticsData, nil
 
 }
@@ -405,7 +401,7 @@ func createMGWSecret(r *ReconcileAPI, confData string) error {
 
 	apimSecret = &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "mgw-secret",
+			Name:      mgwConfSecretConst,
 			Namespace: wso2NameSpaceConst,
 		},
 	}
@@ -416,7 +412,7 @@ func createMGWSecret(r *ReconcileAPI, confData string) error {
 
 	// Check if this secret exists
 	checkSecret := &corev1.Secret{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: "mgw-secret", Namespace: wso2NameSpaceConst}, checkSecret)
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: mgwConfSecretConst, Namespace: wso2NameSpaceConst}, checkSecret)
 
 	if err != nil && errors.IsNotFound(err) {
 		log.Info("Creating secret ")
@@ -714,7 +710,7 @@ func isImageExist(image string, tag string, r *ReconcileAPI) (bool, error) {
 
 	//checks if docker secret is available
 	dockerSecret := &corev1.Secret{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: "docker-secret", Namespace: wso2NameSpaceConst}, dockerSecret)
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: dockerSecretNameConst, Namespace: wso2NameSpaceConst}, dockerSecret)
 	if err != nil && errors.IsNotFound(err) {
 		log.Info("Docker Secret is not found")
 	} else if err != nil {
