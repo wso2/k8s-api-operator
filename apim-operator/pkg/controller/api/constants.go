@@ -8,7 +8,7 @@ const (
 	swaggerLocation    = "/usr/wso2/swagger/"
 	dockerFileLocation = "/usr/wso2/dockerfile/"
 	dockerConfLocation = "/kaniko/.docker"
-	dockerFile = "dockerfile"
+	dockerFile         = "dockerfile"
 
 	mgwToolkitImgConst  = "mgwToolkitImg"
 	mgwRuntimeImgConst  = "mgwRuntimeImg"
