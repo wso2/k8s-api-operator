@@ -174,8 +174,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		log.Error(err, "Swagger loading error ")
 	}
 
-	image := strings.ReplaceAll(swagger.Info.Title, " ", "")
-	image = strings.ToLower(image)
+	image := strings.ToLower(strings.ReplaceAll(swagger.Info.Title, " ", ""))
 	tag := swagger.Info.Version
 	imageName := image + ":" + tag
 
