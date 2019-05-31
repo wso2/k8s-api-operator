@@ -48,7 +48,7 @@ spec:
  definition:
    configMapKeyRef:
      name: "${apiName}"
-   replicas: "${replicas}"
+   replicas: ${replicas}
  mode: privateJet
 EOF
 

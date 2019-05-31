@@ -41,11 +41,13 @@ spec:
                   - name
                   type: object
                 replicas:
-                  type: string
+                  format: int64
+                  type: integer
                 swagger:
                   type: string
               required:
               - configMapKeyRef
+              - replicas
               type: object
             mode:
               type: string

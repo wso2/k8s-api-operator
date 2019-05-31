@@ -27,7 +27,7 @@ type APIStatus struct {
 
 type Definition struct {
 	ConfigMapKeyRef ConfigMapKeyRef `json:"configMapKeyRef"`
-	Replicas        string          `json:"replicas"`
+	Replicas        int             `json:"replicas"`
 	Swagger         string          `json:"swagger"`
 }
 
