@@ -129,13 +129,12 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	controlConfigData := controlConf.Data
-	replicas := controlConfigData[replicasConst]
 	mgwToolkitImg := controlConfigData[mgwToolkitImgConst]
 	mgwRuntimeImg := controlConfigData[mgwRuntimeImgConst]
 	kanikoImg := controlConfigData[kanikoImgConst]
 	dockerRegistry := controlConfigData[dockerRegistryConst]
 	userNameSpace := controlConfigData[userNameSpaceConst]
-	reqLogger.Info("replicas", replicas, "mgwToolkitImg", mgwToolkitImg, "mgwRuntimeImg", mgwRuntimeImg,
+	reqLogger.Info("Controller Configurations", "mgwToolkitImg", mgwToolkitImg, "mgwRuntimeImg", mgwRuntimeImg,
 		"kanikoImg", kanikoImg, "dockerRegistry", dockerRegistry, "userNameSpace", userNameSpace)
 
 	//Handles the creation of dockerfile configmap
@@ -613,14 +612,8 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 	}
 
 	controlConfigData := conf.Data
-	replicas := controlConfigData[replicasConst]
 	dockerRegistry := controlConfigData[dockerRegistryConst]
-	//convert replica's config value and parse it to int32
-	one, err := strconv.Atoi(replicas)
-	var reps int32
-	if err != nil {
-		reps = int32(one)
-	}
+	reps := int32(cr.Spec.Definition.Replicas)
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -657,7 +650,7 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 //Handles dockermap configmap creation
 func dockerfileHandler(r *ReconcileAPI) (*corev1.ConfigMap, error) {
 	//Check if the configmap with dockerfile for mgw creation exists
-	dockerfileConfmap, err := getConfigmap(r, "dockerfile", wso2NameSpaceConst)
+	dockerfileConfmap, err := getConfigmap(r, dockerFile, wso2NameSpaceConst)
 	if err != nil && errors.IsNotFound(err) {
 		dockerFilePath := "/usr/local/bin/Dockerfile"
 		dockerFileRaw, errRead := ioutil.ReadFile(dockerFilePath)
@@ -666,7 +659,7 @@ func dockerfileHandler(r *ReconcileAPI) (*corev1.ConfigMap, error) {
 			return dockerfileConfmap, errRead
 		}
 
-		dockerConf, er := createConfigMap("dockerfile", "code", string(dockerFileRaw), wso2NameSpaceConst)
+		dockerConf, er := createConfigMap(dockerFile, "Dockerfile", string(dockerFileRaw), wso2NameSpaceConst)
 		if er != nil {
 			log.Error(er, "error in docker configmap creation")
 			return dockerfileConfmap, er

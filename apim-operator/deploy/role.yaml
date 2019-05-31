@@ -50,3 +50,9 @@ rules:
   - securities
   verbs:
   - '*'
+- apiGroups:
+  - batch
+  resources:
+  - '*'
+  verbs:
+  - '*'
