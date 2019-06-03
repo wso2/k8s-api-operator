@@ -4,6 +4,8 @@
 
 ###### Deploy k8s client extension
 - Copy the ***kubectl-add.sh*** to ***/usr/local/bin/***
+- Give executable permission to the above file <br /> 
+    -  ***chmod +x /usr/local/bin/kubectl-add.sh***
 
 ###### Deploy k8s CRD artifacts
 > ##### Deploying wso2-system namespace in the k8s cluster
