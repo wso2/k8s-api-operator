@@ -5,10 +5,16 @@ const (
 	mgwDockerFile = "dockerfile-conf"
 	swaggerVolume = "swagger-volume"
 
-	swaggerLocation    = "/usr/wso2/swagger/"
-	dockerFileLocation = "/usr/wso2/dockerfile/"
-	dockerConfLocation = "/kaniko/.docker"
-	dockerFile         = "dockerfile"
+	swaggerLocation       = "/usr/wso2/swagger/"
+	dockerFileLocation    = "/usr/wso2/dockerfile/"
+	dockerConfLocation    = "/kaniko/.docker"
+	dockerFile            = "dockerfile"
+	policyyamlFile        = "policy-file"
+	policyyamlLocation    = "/usr/wso2/policy/"
+	mgwConfFile           = "conf-file"
+	mgwConfLocation       = "/usr/wso2/mgwconf/"
+	analyticsCertFile     = "analytics-cert"
+	analyticsCertLocation = "/usr/wso2/analyticscert/"
 
 	mgwToolkitImgConst  = "mgwToolkitImg"
 	mgwRuntimeImgConst  = "mgwRuntimeImg"
@@ -25,6 +31,7 @@ const (
 
 	usernameConst = "username"
 	passwordConst = "password"
+	certConst     = "cert_security"
 
 	dockerhubRegistryUrl = "https://registry-1.docker.io/"
 	defaultSecurity      = "default-security"

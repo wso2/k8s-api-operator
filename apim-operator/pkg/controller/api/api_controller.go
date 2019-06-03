@@ -143,7 +143,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	if errDocker != nil {
 		log.Error(errDocker, "error in docker configmap handling")
 	}
-	log.Info("docker file data "+ dockerfileConfmap.Data["Dockerfile"])
+	log.Info("docker file data " + dockerfileConfmap.Data["Dockerfile"])
 
 	dockerSecretEr := dockerConfigCreator(r)
 	if dockerSecretEr != nil {
@@ -205,16 +205,26 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		log.Error(err, "Error in modified swagger configmap update")
 	}
 
+	//get the volume mounts
+	jobVolumeMount, jobVolume := getVolumes(instance)
+
 	// gets the data from analytics secret
 	analyticsData, err := getSecretData(r)
 
-	//writes into the conf file
-
 	if err == nil && analyticsData != nil && analyticsData[usernameConst] != nil &&
-		analyticsData[passwordConst] != nil {
+		analyticsData[passwordConst] != nil && analyticsData[certConst] != nil {
 		analyticsEnabled = "true"
 		analyticsUsername = string(analyticsData[usernameConst])
 		analyticsPassword = string(analyticsData[passwordConst])
+		analyticsCertSecretName := string(analyticsData[certConst])
+
+		log.Info("Finding analytics cert secret " + analyticsCertSecretName)
+		// Check if this secret exists and append it to volumes
+		jobVolumeMountTemp, jobVolumeTemp, errCert := analyticsVolumeHandler(analyticsCertSecretName, r, jobVolumeMount, jobVolume)
+		if errCert == nil {
+			jobVolumeMount = jobVolumeMountTemp
+			jobVolume = jobVolumeTemp
+		}
 	}
 
 	reqLogger.Info("getting security instance")
@@ -276,6 +286,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		}
 	}
 
+	//writes into the conf file
+
 	filename := "/usr/local/bin/microgwconf.mustache"
 	output, err := mustache.RenderFile(filename, map[string]string{
 		"keystorePath":                   keystorePath,
@@ -308,7 +320,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	//Schedule Kaniko pod
-	job := scheduleKanikoJob(instance, imageName, controlConf)
+	job := scheduleKanikoJob(instance, imageName, controlConf, jobVolumeMount, jobVolume)
 	if err := controllerutil.SetControllerReference(instance, job, r.scheme); err != nil {
 		return reconcile.Result{}, err
 	}
@@ -489,7 +501,7 @@ func mgwSwaggerLoader(swaggerDataMap map[string]string) (*openapi3.Swagger, stri
 		swaggerData = value
 		swaggerDataFile = key
 	}
-	
+
 	swagger, err := openapi3.NewSwaggerLoader().LoadSwaggerFromData([]byte(swaggerData))
 	return swagger, swaggerDataFile, err
 }
@@ -758,7 +770,8 @@ func isImageExist(image string, tag string, r *ReconcileAPI) (bool, error) {
 }
 
 //Schedule Kaniko Job to generate micro-gw image
-func scheduleKanikoJob(cr *wso2v1alpha1.API, imageName string, conf *corev1.ConfigMap) *batchv1.Job {
+func scheduleKanikoJob(cr *wso2v1alpha1.API, imageName string, conf *corev1.ConfigMap, jobVolumeMount []corev1.VolumeMount,
+	jobVolume []corev1.Volume) *batchv1.Job {
 
 	labels := map[string]string{
 		"app": cr.Name,
@@ -767,7 +780,6 @@ func scheduleKanikoJob(cr *wso2v1alpha1.API, imageName string, conf *corev1.Conf
 	controlConfigData := conf.Data
 	kanikoImg := controlConfigData[kanikoImgConst]
 	dockerRegistry := controlConfigData[dockerRegistryConst]
-	apiConfMap := cr.Spec.Definition.ConfigMapKeyRef.Name
 
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
@@ -784,24 +796,9 @@ func scheduleKanikoJob(cr *wso2v1alpha1.API, imageName string, conf *corev1.Conf
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:  cr.Name + "gen-container",
-							Image: kanikoImg,
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      swaggerVolume,
-									MountPath: swaggerLocation,
-									ReadOnly:  true,
-								},
-								{
-									Name:      mgwDockerFile,
-									MountPath: dockerFileLocation,
-								},
-								{
-									Name:      dockerConfig,
-									MountPath: dockerConfLocation,
-									ReadOnly:  true,
-								},
-							},
+							Name:         cr.Name + "gen-container",
+							Image:        kanikoImg,
+							VolumeMounts: jobVolumeMount,
 							Args: []string{
 								"--dockerfile=/usr/wso2/dockerfile/Dockerfile",
 								"--context=/usr/wso2/",
@@ -810,38 +807,7 @@ func scheduleKanikoJob(cr *wso2v1alpha1.API, imageName string, conf *corev1.Conf
 						},
 					},
 					RestartPolicy: "Never",
-					Volumes: []corev1.Volume{
-						{
-							Name: swaggerVolume,
-							VolumeSource: corev1.VolumeSource{
-								ConfigMap: &corev1.ConfigMapVolumeSource{
-									LocalObjectReference: corev1.LocalObjectReference{
-										Name: apiConfMap,
-									},
-								},
-							},
-						},
-						{
-							Name: dockerConfig,
-							VolumeSource: corev1.VolumeSource{
-								ConfigMap: &corev1.ConfigMapVolumeSource{
-									LocalObjectReference: corev1.LocalObjectReference{
-										Name: dockerConfig,
-									},
-								},
-							},
-						},
-						{
-							Name: mgwDockerFile,
-							VolumeSource: corev1.VolumeSource{
-								ConfigMap: &corev1.ConfigMapVolumeSource{
-									LocalObjectReference: corev1.LocalObjectReference{
-										Name: dockerFile,
-									},
-								},
-							},
-						},
-					},
+					Volumes:       jobVolume,
 				},
 			},
 		},
@@ -959,4 +925,118 @@ func createMgwLBService(cr *wso2v1alpha1.API) *corev1.Service {
 			Selector: labels,
 		},
 	}
+}
+
+//default volume mounts for the kaniko job
+func getVolumes(cr *wso2v1alpha1.API) ([]corev1.VolumeMount, []corev1.Volume) {
+
+	apiConfMap := cr.Spec.Definition.ConfigMapKeyRef.Name
+
+	jobVolumeMount := []corev1.VolumeMount{
+		{
+			Name:      swaggerVolume,
+			MountPath: swaggerLocation,
+			ReadOnly:  true,
+		},
+		{
+			Name:      mgwDockerFile,
+			MountPath: dockerFileLocation,
+		},
+		{
+			Name:      dockerConfig,
+			MountPath: dockerConfLocation,
+			ReadOnly:  true,
+		},
+		{
+			Name:      policyyamlFile,
+			MountPath: policyyamlLocation,
+			ReadOnly:  true,
+		},
+		{
+			Name:      mgwConfFile,
+			MountPath: mgwConfLocation,
+			ReadOnly:  true,
+		},
+	}
+
+	jobVolume := []corev1.Volume{
+		{
+			Name: swaggerVolume,
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: apiConfMap,
+					},
+				},
+			},
+		},
+		{
+			Name: dockerConfig,
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: dockerConfig,
+					},
+				},
+			},
+		},
+		{
+			Name: mgwDockerFile,
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: dockerFile,
+					},
+				},
+			},
+		},
+		{
+			Name: policyyamlFile,
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: policyConfigmap,
+					},
+				},
+			},
+		},
+		{
+			Name: mgwConfFile,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: mgwConfSecretConst,
+				},
+			},
+		},
+	}
+	return jobVolumeMount, jobVolume
+
+}
+
+// Handles the mounting of analytics certificate
+func analyticsVolumeHandler(analyticsCertSecretName string, r *ReconcileAPI, jobVolumeMount []corev1.VolumeMount, jobVolume []corev1.Volume) ([]corev1.VolumeMount, []corev1.Volume, error) {
+	analyticsCertSecret := &corev1.Secret{}
+	//checks if the certificate exists
+	errCert := r.client.Get(context.TODO(), types.NamespacedName{Name: analyticsCertSecretName, Namespace: wso2NameSpaceConst}, analyticsCertSecret)
+
+	if errCert != nil {
+		log.Error(errCert, "Error in getting certificate secret specified in analytics")
+	} else {
+		log.Info("Analytics certificate found. Mounting it to volume.")
+		jobVolumeMount = append(jobVolumeMount, corev1.VolumeMount{
+			Name:      analyticsCertFile,
+			MountPath: analyticsCertLocation,
+			ReadOnly:  true,
+		})
+
+		jobVolume = append(jobVolume, corev1.Volume{
+			Name: analyticsCertFile,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: analyticsCertSecretName,
+				},
+			},
+		})
+	}
+	return jobVolumeMount, jobVolume, errCert
 }
