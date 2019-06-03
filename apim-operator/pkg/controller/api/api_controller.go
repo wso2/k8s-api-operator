@@ -28,8 +28,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"bytes"
+	b64 "encoding/base64"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 
 	"github.com/getkin/kin-openapi/openapi3"
@@ -142,7 +142,12 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	if errDocker != nil {
 		log.Error(errDocker, "error in docker configmap handling")
 	}
-	fmt.Println(dockerfileConfmap.Data["code"])
+	log.Info("docker file data "+ dockerfileConfmap.Data["Dockerfile"])
+
+	dockerSecretEr := dockerConfigCreator(r)
+	if dockerSecretEr != nil {
+		log.Error(dockerSecretEr, "Error in docker-config creation")
+	}
 
 	//Handles policy.yaml.
 	//If there aren't any ratelimiting objects deployed, new policy.yaml configmap will be created with default policies
@@ -168,7 +173,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	//Fetch swagger data from configmap, reads and modifies swagger
 	swaggerDataMap := apiConfigMap.Data
-	//newSwagger, swaggerDataFile, imageName := mgwSwaggerHandler(r, swaggerDataMap)
 	swagger, swaggerDataFile, err := mgwSwaggerLoader(swaggerDataMap)
 	if err != nil {
 		log.Error(err, "Swagger loading error ")
@@ -303,7 +307,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	//Schedule Kaniko pod
-	job:= scheduleKanikoJob(instance, imageName, controlConf)
+	job := scheduleKanikoJob(instance, imageName, controlConf)
 	if err := controllerutil.SetControllerReference(instance, job, r.scheme); err != nil {
 		return reconcile.Result{}, err
 	}
@@ -468,8 +472,7 @@ func mgwSwaggerLoader(swaggerDataMap map[string]string) (*openapi3.Swagger, stri
 		swaggerData = value
 		swaggerDataFile = key
 	}
-	fmt.Println("swagger data file : ", swaggerDataFile)
-
+	
 	swagger, err := openapi3.NewSwaggerLoader().LoadSwaggerFromData([]byte(swaggerData))
 	return swagger, swaggerDataFile, err
 }
@@ -514,8 +517,7 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger) string {
 	}
 
 	//resource level endpoint
-	for url, path := range swagger.Paths {
-		fmt.Println(url)
+	for _, path := range swagger.Paths {
 		resourceEndpointData, checkResourceEP := path.Get.Extensions["x-mgw-production-endpoints"]
 		if checkResourceEP {
 			prodEp := XMGWProductionEndpoints{}
@@ -563,7 +565,6 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger) string {
 	}
 
 	newSwagger := string(prettyJSON.Bytes())
-	fmt.Println(newSwagger)
 
 	return newSwagger
 
@@ -578,7 +579,7 @@ func getCredentials(r *ReconcileAPI, name string) error {
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: wso2NameSpaceConst}, credentialSecret)
 
 	if err != nil && errors.IsNotFound(err) {
-		fmt.Println("secret not found")
+		log.Info("secret not found")
 		return err
 	}
 
@@ -591,7 +592,7 @@ func getCredentials(r *ReconcileAPI, name string) error {
 			//encode password to sha1
 			_, err := hasher.Write([]byte(v))
 			if err != nil {
-				fmt.Println("error in encoding password")
+				log.Info("error in encoding password")
 				return err
 			}
 			//convert encoded password to a hex string
@@ -629,7 +630,7 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name: "mgw" + cr.Name,
+							Name:  "mgw" + cr.Name,
 							Image: dockerRegistry + "/" + imageName,
 
 							Ports: []corev1.ContainerPort{{
@@ -682,7 +683,6 @@ func policyHandler(r *ReconcileAPI) error {
 		log.Info("Creating a config map with default policies", "Namespace", wso2NameSpaceConst, "Name", policyConfigmap)
 
 		defaultval := ratelimiting.CreateDefault()
-		fmt.Println(defaultval)
 
 		confmap, confer := ratelimiting.CreatePolicyConfigMap(defaultval)
 		if confer != nil {
@@ -717,8 +717,8 @@ func isImageExist(image string, tag string, r *ReconcileAPI) (bool, error) {
 		log.Error(err, "error ")
 	} else {
 		dockerData := dockerSecret.Data
-		username = string(dockerData["username"])
-		password = string(dockerData["password"])
+		username = string(dockerData[usernameConst])
+		password = string(dockerData[passwordConst])
 	}
 
 	hub, err := registry.New(url, username, password)
@@ -754,8 +754,8 @@ func scheduleKanikoJob(cr *wso2v1alpha1.API, imageName string, conf *corev1.Conf
 
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:  cr.Name + "kaniko",
-			Namespace:cr.Namespace,
+			Name:      cr.Name + "kaniko",
+			Namespace: cr.Namespace,
 		},
 		Spec: batchv1.JobSpec{
 			Template: corev1.PodTemplateSpec{
@@ -829,4 +829,66 @@ func scheduleKanikoJob(cr *wso2v1alpha1.API, imageName string, conf *corev1.Conf
 			},
 		},
 	}
+}
+
+func dockerConfigCreator(r *ReconcileAPI) error {
+	//checks if docker secret is available
+	dockerSecret := &corev1.Secret{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: dockerSecretNameConst, Namespace: wso2NameSpaceConst}, dockerSecret)
+	if err != nil && errors.IsNotFound(err) {
+		log.Info("Docker Secret is not found")
+		return err
+	} else if err != nil {
+		log.Error(err, "error ")
+		return err
+	}
+	dockerData := dockerSecret.Data
+	dockerUsername := string(dockerData[usernameConst])
+	dockerPassword := string(dockerData[passwordConst])
+	rawCredentials := dockerUsername + ":" + dockerPassword
+	credentials := b64.StdEncoding.EncodeToString([]byte(rawCredentials))
+
+	//make the docker-config template
+	filename := "/usr/local/bin/dockerSecretTemplate.mustache"
+	output, err := mustache.RenderFile(filename, map[string]string{
+		"docker_url": "https://index.docker.io/v1/",
+		"credentials": credentials})
+	if err != nil {
+		log.Error(err, "error in rendering ")
+		return err
+	}
+	
+	//Writes the created template to a configmap
+	dockerConf, er := createConfigMap(dockerConfig, "config.json", output, wso2NameSpaceConst)
+		if er != nil {
+			log.Error(er, "error in docker-config configmap creation")
+			return er
+		}
+
+	// Check if this configmap already exists
+	foundmap := &corev1.ConfigMap{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: dockerConf.Name, Namespace: dockerConf.Namespace}, foundmap)
+
+	if err != nil && errors.IsNotFound(err) {
+		log.Info("Creating a new Config map", "Namespace", dockerConf.Namespace, "confmap.Name", dockerConf.Name)
+		err = r.client.Create(context.TODO(), dockerConf)
+		if err != nil {
+			log.Error(err, "error ")
+			return err
+		}
+		// confmap created successfully
+		return nil
+	} else if err != nil {
+		log.Error(err, "error ")
+		return err
+	}
+	log.Info("Map already exists", "confmap.Namespace", foundmap.Namespace, "confmap.Name", foundmap.Name)
+	log.Info("Updating Config map", "confmap.Namespace", dockerConf.Namespace, "confmap.Name", dockerConf.Name)
+	err = r.client.Update(context.TODO(), dockerConf)
+		if err != nil {
+			log.Error(err, "error ")
+			return err
+		}
+	return nil
+
 }
