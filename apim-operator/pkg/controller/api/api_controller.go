@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha1"
 	"encoding/hex"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"strconv"
 	"strings"
 
@@ -339,6 +340,11 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	dep := createMgwDeployment(instance, imageName, controlConf)
 	depFound := &appsv1.Deployment{}
 	deperr := r.client.Get(context.TODO(), types.NamespacedName{Name: dep.Name, Namespace: dep.Namespace}, depFound)
+
+	svc := createMgwService(instance)
+	svcFound := &corev1.Service{}
+	svcErr := r.client.Get(context.TODO(), types.NamespacedName{Name: svc.Name, Namespace: svc.Namespace}, svcFound)
+
 	// if kaniko job is succeeded, create the deployment
 	if kubeJob.Status.Succeeded > 0 {
 		reqLogger.Info("Job completed successfully", "Job.Namespace", job.Namespace, "Job.Name", job.Name)
@@ -348,14 +354,25 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			if deperr != nil {
 				return reconcile.Result{}, deperr
 			}
-			// deployment created successfully - don't requeue
-			return reconcile.Result{}, nil
+			// deployment created successfully - go to create service
 		} else if deperr != nil {
 			return reconcile.Result{}, deperr
 		}
-		// if deployment already exsits
-		reqLogger.Info("Skip reconcile: Deploy already exists", "Deploy.Namespace",
-			depFound.Namespace, "Deploy.Name", depFound.Name)
+
+		if svcErr != nil && errors.IsNotFound(svcErr) {
+			reqLogger.Info("Creating a new Service", "SVC.Namespace", svc.Namespace, "SVC.Name", svc.Name)
+			svcErr = r.client.Create(context.TODO(), svc)
+			if svcErr != nil {
+				return reconcile.Result{}, svcErr
+			}
+			//Service created successfully - don't requeue
+			return reconcile.Result{}, nil
+		} else if svcErr != nil {
+			return reconcile.Result{}, svcErr
+		}
+		// if service already exsits
+		reqLogger.Info("Skip reconcile: Service already exists", "SVC.Namespace",
+			svcFound.Namespace, "SVC.Name", svcFound.Name)
 		return reconcile.Result{}, nil
 	} else {
 		reqLogger.Info("Job is still not completed.", "Job.Status", job.Status)
@@ -856,7 +873,58 @@ func dockerConfigCreator(r *ReconcileAPI) error {
 		return err
 	}
 	return nil
+}
+//Service of the API
+//todo: This has to be changed to LB type
+func createMgwService(cr *wso2v1alpha1.API) *corev1.Service {
 
+	labels := map[string]string{
+		"app": cr.Name,
+	}
+
+	return &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      cr.Name,
+			Namespace: cr.Namespace,
+			Labels:    labels,
+		},
+		Spec: corev1.ServiceSpec{
+			Type:     "NodePort",
+			Ports: []corev1.ServicePort{{
+				Name:       "https",
+				Protocol:   corev1.ProtocolTCP,
+				Port:       80,
+				TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: 80},
+				NodePort: 30010,
+			}},
+			Selector: labels,
+		},
+	}
+}
+
+//Creating a LB balancer service to expose mgw
+func createMgwLBService(cr *wso2v1alpha1.API) *corev1.Service {
+
+	labels := map[string]string{
+		"app": cr.Name,
+	}
+
+	return &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      cr.Name,
+			Namespace: cr.Namespace,
+			Labels:    labels,
+		},
+		Spec: corev1.ServiceSpec{
+			Type:     "LoadBalancer",
+			Ports: []corev1.ServicePort{{
+				Port:       80,
+				TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: 80},
+				NodePort: 31000,
+			}},
+			Selector: labels,
+		},
+	}
 }
 
 //default volume mounts for the kaniko job

@@ -8,7 +8,7 @@ const (
 	swaggerLocation       = "/usr/wso2/swagger/"
 	dockerFileLocation    = "/usr/wso2/dockerfile/"
 	dockerConfLocation    = "/kaniko/.docker"
-	dockerFile            = "docker-file"
+	dockerFile            = "dockerfile"
 	policyyamlFile        = "policy-file"
 	policyyamlLocation    = "/usr/wso2/policy/"
 	mgwConfFile           = "conf-file"
@@ -16,7 +16,6 @@ const (
 	analyticsCertFile     = "analytics-cert"
 	analyticsCertLocation = "/usr/wso2/analyticscert/"
 
-	replicasConst       = "replicas"
 	mgwToolkitImgConst  = "mgwToolkitImg"
 	mgwRuntimeImgConst  = "mgwRuntimeImg"
 	kanikoImgConst      = "kanikoImg"
