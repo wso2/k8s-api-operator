@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha1"
 	"encoding/hex"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"strconv"
 	"strings"
 
@@ -327,6 +328,11 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	dep := createMgwDeployment(instance, imageName, controlConf)
 	depFound := &appsv1.Deployment{}
 	deperr := r.client.Get(context.TODO(), types.NamespacedName{Name: dep.Name, Namespace: dep.Namespace}, depFound)
+
+	svc := createMgwService(instance)
+	svcFound := &corev1.Service{}
+	svcErr := r.client.Get(context.TODO(), types.NamespacedName{Name: svc.Name, Namespace: svc.Namespace}, svcFound)
+
 	// if kaniko job is succeeded, create the deployment
 	if kubeJob.Status.Succeeded > 0 {
 		reqLogger.Info("Job completed successfully", "Job.Namespace", job.Namespace, "Job.Name", job.Name)
@@ -336,14 +342,25 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			if deperr != nil {
 				return reconcile.Result{}, deperr
 			}
-			// deployment created successfully - don't requeue
-			return reconcile.Result{}, nil
+			// deployment created successfully - go to create service
 		} else if deperr != nil {
 			return reconcile.Result{}, deperr
 		}
-		// if deployment already exsits
-		reqLogger.Info("Skip reconcile: Deploy already exists", "Deploy.Namespace",
-			depFound.Namespace, "Deploy.Name", depFound.Name)
+
+		if svcErr != nil && errors.IsNotFound(svcErr) {
+			reqLogger.Info("Creating a new Service", "SVC.Namespace", svc.Namespace, "SVC.Name", svc.Name)
+			svcErr = r.client.Create(context.TODO(), svc)
+			if svcErr != nil {
+				return reconcile.Result{}, svcErr
+			}
+			//Service created successfully - don't requeue
+			return reconcile.Result{}, nil
+		} else if svcErr != nil {
+			return reconcile.Result{}, svcErr
+		}
+		// if service already exsits
+		reqLogger.Info("Skip reconcile: Service already exists", "SVC.Namespace",
+			svcFound.Namespace, "SVC.Name", svcFound.Name)
 		return reconcile.Result{}, nil
 	} else {
 		reqLogger.Info("Job is still not completed.", "Job.Status", job.Status)
@@ -851,19 +868,19 @@ func dockerConfigCreator(r *ReconcileAPI) error {
 	//make the docker-config template
 	filename := "/usr/local/bin/dockerSecretTemplate.mustache"
 	output, err := mustache.RenderFile(filename, map[string]string{
-		"docker_url": "https://index.docker.io/v1/",
+		"docker_url":  "https://index.docker.io/v1/",
 		"credentials": credentials})
 	if err != nil {
 		log.Error(err, "error in rendering ")
 		return err
 	}
-	
+
 	//Writes the created template to a configmap
 	dockerConf, er := createConfigMap(dockerConfig, "config.json", output, wso2NameSpaceConst)
-		if er != nil {
-			log.Error(er, "error in docker-config configmap creation")
-			return er
-		}
+	if er != nil {
+		log.Error(er, "error in docker-config configmap creation")
+		return er
+	}
 
 	// Check if this configmap already exists
 	foundmap := &corev1.ConfigMap{}
@@ -885,10 +902,61 @@ func dockerConfigCreator(r *ReconcileAPI) error {
 	log.Info("Map already exists", "confmap.Namespace", foundmap.Namespace, "confmap.Name", foundmap.Name)
 	log.Info("Updating Config map", "confmap.Namespace", dockerConf.Namespace, "confmap.Name", dockerConf.Name)
 	err = r.client.Update(context.TODO(), dockerConf)
-		if err != nil {
-			log.Error(err, "error ")
-			return err
-		}
+	if err != nil {
+		log.Error(err, "error ")
+		return err
+	}
 	return nil
+}
+//Service of the API
+//todo: This has to be changed to LB type
+func createMgwService(cr *wso2v1alpha1.API) *corev1.Service {
 
+	labels := map[string]string{
+		"app": cr.Name,
+	}
+
+	return &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      cr.Name,
+			Namespace: cr.Namespace,
+			Labels:    labels,
+		},
+		Spec: corev1.ServiceSpec{
+			Type:     "NodePort",
+			Ports: []corev1.ServicePort{{
+				Name:       "https",
+				Protocol:   corev1.ProtocolTCP,
+				Port:       80,
+				TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: 80},
+				NodePort: 30010,
+			}},
+			Selector: labels,
+		},
+	}
+}
+
+//Creating a LB balancer service to expose mgw
+func createMgwLBService(cr *wso2v1alpha1.API) *corev1.Service {
+
+	labels := map[string]string{
+		"app": cr.Name,
+	}
+
+	return &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      cr.Name,
+			Namespace: cr.Namespace,
+			Labels:    labels,
+		},
+		Spec: corev1.ServiceSpec{
+			Type:     "LoadBalancer",
+			Ports: []corev1.ServicePort{{
+				Port:       80,
+				TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: 80},
+				NodePort: 31000,
+			}},
+			Selector: labels,
+		},
+	}
 }
