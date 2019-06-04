@@ -971,8 +971,8 @@ func getVolumes(cr *wso2v1alpha1.API, cert *corev1.Secret) ([]corev1.VolumeMount
 			ReadOnly:  true,
 		},
 		{
-			Name: "apim-certs",
-			MountPath: "/usr/wso2/certs/" + cert.Name,
+			Name: certConfig,
+			MountPath: certPath + cert.Name,
 			ReadOnly:true,
 		},
 	}
@@ -1027,7 +1027,7 @@ func getVolumes(cr *wso2v1alpha1.API, cert *corev1.Secret) ([]corev1.VolumeMount
 			},
 		},
 		{
-			Name:"apim-certs",
+			Name:certConfig,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName:cert.Name,
