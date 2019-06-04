@@ -34,6 +34,9 @@ const (
 	certConst     = "cert_security"
 
 	dockerhubRegistryUrl = "https://registry-1.docker.io/"
-	defaultSecurity      = "default-security"
-	securityExtension    = "x-mgw-security"
+	defaultSecurity    = "default-security"
+	securityExtension = "x-mgw-security"
+	certPath = "/usr/wso2/certs/"
+	dockertemplatepath = "/usr/local/bin/dockerFile.mustache"
+	certConfig = "apim-certs"
 )

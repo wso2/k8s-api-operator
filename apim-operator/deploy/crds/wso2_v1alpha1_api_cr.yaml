@@ -1,12 +1,12 @@
 apiVersion: wso2.com/v1alpha1
 kind: API
 metadata:
-  name: myyaml10-api
+  name: test-api
   namespace: wso2-system
 spec:
   definition:
     configMapKeyRef:
-      name: myyaml8
+      name: test-swagger-security
     replicas: 2
     swagger: swagger
   mode: shared
