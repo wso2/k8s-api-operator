@@ -1,7 +1,7 @@
 apiVersion: wso2.com/v1alpha1
 kind: API
 metadata:
-  name: myyaml11-api
+  name: sample-api
   namespace: wso2-system
 spec:
   definition:
