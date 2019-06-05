@@ -32,7 +32,6 @@ import (
 	"bytes"
 	b64 "encoding/base64"
 	"encoding/json"
-	"io/ioutil"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/wso2/k8s-apim-operator/apim-operator/pkg/controller/ratelimiting"
@@ -139,13 +138,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	reqLogger.Info("Controller Configurations", "mgwToolkitImg", mgwToolkitImg, "mgwRuntimeImg", mgwRuntimeImg,
 		"kanikoImg", kanikoImg, "dockerRegistry", dockerRegistry, "userNameSpace", userNameSpace)
 
-	//Handles the creation of dockerfile configmap
-	dockerfileConfmap, errDocker := dockerfileHandler(r)
-	if errDocker != nil {
-		log.Error(errDocker, "error in docker configmap handling")
-	}
-	log.Info("docker file data " + dockerfileConfmap.Data["Dockerfile"])
-
 	dockerSecretEr := dockerConfigCreator(r)
 	if dockerSecretEr != nil {
 		log.Error(dockerSecretEr, "Error in docker-config creation")
@@ -206,28 +198,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		log.Error(err, "Error in modified swagger configmap update")
 	}
 
-	//get the volume mounts
-	jobVolumeMount, jobVolume := getVolumes(instance)
-
-	// gets the data from analytics secret
-	analyticsData, err := getSecretData(r)
-
-	if err == nil && analyticsData != nil && analyticsData[usernameConst] != nil &&
-		analyticsData[passwordConst] != nil && analyticsData[certConst] != nil {
-		analyticsEnabled = "true"
-		analyticsUsername = string(analyticsData[usernameConst])
-		analyticsPassword = string(analyticsData[passwordConst])
-		analyticsCertSecretName := string(analyticsData[certConst])
-
-		log.Info("Finding analytics cert secret " + analyticsCertSecretName)
-		// Check if this secret exists and append it to volumes
-		jobVolumeMountTemp, jobVolumeTemp, errCert := analyticsVolumeHandler(analyticsCertSecretName, r, jobVolumeMount, jobVolume)
-		if errCert == nil {
-			jobVolumeMount = jobVolumeMountTemp
-			jobVolume = jobVolumeTemp
-		}
-	}
-
 	reqLogger.Info("getting security instance")
 
 	//get defined security cr from swagger
@@ -265,6 +235,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		return reconcile.Result{}, errc
 	}
 
+	alias := certificateSecret.Name + "alias"
+
 	if security.Spec.Type == "Oauth" {
 		//fetch credentials from the secret created
 		errGetCredentials := getCredentials(r, security.Spec.Credentials)
@@ -277,7 +249,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	if security.Spec.Type == "JWT" {
-		certificateAlias = security.Name + "alias"
+		certificateAlias = alias
 
 		if security.Spec.Issuer != "" {
 			issuer = security.Spec.Issuer
@@ -287,7 +259,35 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		}
 	}
 
+	//get the volume mounts
+	jobVolumeMount, jobVolume := getVolumes(instance, certificateSecret)
+
+	// gets the data from analytics secret
+	analyticsData, err := getSecretData(r)
+
+	if err == nil && analyticsData != nil && analyticsData[usernameConst] != nil &&
+		analyticsData[passwordConst] != nil && analyticsData[certConst] != nil {
+		analyticsEnabled = "true"
+		analyticsUsername = string(analyticsData[usernameConst])
+		analyticsPassword = string(analyticsData[passwordConst])
+		analyticsCertSecretName := string(analyticsData[certConst])
+
+		log.Info("Finding analytics cert secret " + analyticsCertSecretName)
+		// Check if this secret exists and append it to volumes
+		jobVolumeMountTemp, jobVolumeTemp, errCert := analyticsVolumeHandler(analyticsCertSecretName, r, jobVolumeMount, jobVolume)
+		if errCert == nil {
+			jobVolumeMount = jobVolumeMountTemp
+			jobVolume = jobVolumeTemp
+		}
+	}
+
 	//writes into the conf file
+	//Handles the creation of dockerfile configmap
+	dockerfileConfmap, errDocker := dockerfileHandler(r,certificateSecret, alias)
+	if errDocker != nil {
+		log.Error(errDocker, "error in docker configmap handling")
+	}
+	log.Info("docker file data " + dockerfileConfmap.Data["Dockerfile"])
 
 	filename := "/usr/local/bin/microgwconf.mustache"
 	output, err := mustache.RenderFile(filename, map[string]string{
@@ -690,18 +690,26 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 }
 
 //Handles dockermap configmap creation
-func dockerfileHandler(r *ReconcileAPI) (*corev1.ConfigMap, error) {
+func dockerfileHandler(r *ReconcileAPI, secret *corev1.Secret, alias string) (*corev1.ConfigMap, error) {
 	//Check if the configmap with dockerfile for mgw creation exists
+	var cretName string
+
+	for k, _ := range secret.Data {
+		cretName = k
+	}
+
+	dockertemplate := dockertemplatepath
+	dockerOutput, err := mustache.RenderFile(dockertemplate, map[string]string{
+		"certPath": certPath + secret.Name + "/" + cretName,
+		"alias": alias})
+	if err != nil{
+		log.Error(err,"error in rendering Dockerfile")
+	}
+
 	dockerfileConfmap, err := getConfigmap(r, dockerFile, wso2NameSpaceConst)
 	if err != nil && errors.IsNotFound(err) {
-		dockerFilePath := "/usr/local/bin/Dockerfile"
-		dockerFileRaw, errRead := ioutil.ReadFile(dockerFilePath)
-		if errRead != nil {
-			log.Error(errRead, "error in reading docker file resource")
-			return dockerfileConfmap, errRead
-		}
 
-		dockerConf, er := createConfigMap(dockerFile, "Dockerfile", string(dockerFileRaw), wso2NameSpaceConst)
+		dockerConf, er := createConfigMap(dockerFile, "Dockerfile", dockerOutput, wso2NameSpaceConst)
 		if er != nil {
 			log.Error(er, "error in docker configmap creation")
 			return dockerfileConfmap, er
@@ -713,6 +721,12 @@ func dockerfileHandler(r *ReconcileAPI) (*corev1.ConfigMap, error) {
 		return dockerConf, nil
 	} else if err != nil {
 		return dockerfileConfmap, err
+	}
+
+	dockerfileConfmap.Data["Dockerfile"] = dockerOutput
+	errorupdate := r.client.Update(context.TODO(), dockerfileConfmap )
+	if errorupdate != nil{
+		log.Error(errorupdate,"error in updating config map")
 	}
 
 	return dockerfileConfmap, err
@@ -788,7 +802,6 @@ func isImageExist(image string, tag string, r *ReconcileAPI) (bool, error) {
 //Schedule Kaniko Job to generate micro-gw image
 func scheduleKanikoJob(cr *wso2v1alpha1.API, imageName string, conf *corev1.ConfigMap, jobVolumeMount []corev1.VolumeMount,
 	jobVolume []corev1.Volume) *batchv1.Job {
-
 	labels := map[string]string{
 		"app": cr.Name,
 	}
@@ -945,7 +958,7 @@ func createMgwLBService(cr *wso2v1alpha1.API) *corev1.Service {
 }
 
 //default volume mounts for the kaniko job
-func getVolumes(cr *wso2v1alpha1.API) ([]corev1.VolumeMount, []corev1.Volume) {
+func getVolumes(cr *wso2v1alpha1.API, cert *corev1.Secret) ([]corev1.VolumeMount, []corev1.Volume) {
 
 	apiConfMap := cr.Spec.Definition.ConfigMapKeyRef.Name
 
@@ -973,6 +986,11 @@ func getVolumes(cr *wso2v1alpha1.API) ([]corev1.VolumeMount, []corev1.Volume) {
 			Name:      mgwConfFile,
 			MountPath: mgwConfLocation,
 			ReadOnly:  true,
+		},
+		{
+			Name: certConfig,
+			MountPath: certPath + cert.Name,
+			ReadOnly:true,
 		},
 	}
 
@@ -1022,6 +1040,14 @@ func getVolumes(cr *wso2v1alpha1.API) ([]corev1.VolumeMount, []corev1.Volume) {
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: mgwConfSecretConst,
+				},
+			},
+		},
+		{
+			Name:certConfig,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:cert.Name,
 				},
 			},
 		},

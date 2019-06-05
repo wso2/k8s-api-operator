@@ -6,7 +6,7 @@ metadata:
 spec:
   definition:
     configMapKeyRef:
-      name: myyaml8
+      name: test-swagger-security
     replicas: 2
     swagger: swagger
   mode: shared
