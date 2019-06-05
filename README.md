@@ -3,15 +3,15 @@
 #####Navigate to the k8s-apim-operator directory and execute the following command
 
 ###### Deploy k8s client extension
+- Give executable permission to the extension file <br /> 
+    -  ***chmod +x /deploy/kubectl-extension/kubectl-add.sh***
 - Copy the ***/deploy/kubectl-extension/kubectl-add.sh*** to ***/usr/local/bin/***
-    - ___cp kubectl-add.sh /usr/local/bin___
-- Give executable permission to the above file <br /> 
-    -  ***chmod +x /usr/local/bin/kubectl-add.sh***
+    - ___cp /deploy/kubectl-extension/kubectl-add.sh /usr/local/bin___
 
 ###### Deploy k8s CRD artifacts
 
-> ##### Before deploying the role you have to make yourself as a cluster admin
-- *kubectl create clusterrolebinding <email-address> --clusterrole=cluster-admin --user=<email-address>*
+> ##### Before deploying the role you have to make yourself as a cluster admin. (Replace "email-address" with the proper value)
+- *kubectl create clusterrolebinding email-address --clusterrole=cluster-admin --user=email-address*
 
 > ##### Deploying namespace, roles/role binding and service account associated with operator
 - _for i in ./deploy/controller-artifacts/*yaml; do kubectl apply -f $i; done_
