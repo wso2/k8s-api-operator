@@ -4,9 +4,10 @@ import (
 	"context"
 	"crypto/sha1"
 	"encoding/hex"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"strconv"
 	"strings"
+
+	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/cbroglie/mustache"
 	"github.com/heroku/docker-registry-client/registry"
@@ -337,7 +338,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		return reconcile.Result{}, jobErr
 	}
 
-	dep := createMgwDeployment(instance, imageName, controlConf)
+	analyticsEnabledBool, _ := strconv.ParseBool(analyticsEnabled)
+	dep := createMgwDeployment(instance, imageName, controlConf, analyticsEnabledBool, r)
 	depFound := &appsv1.Deployment{}
 	deperr := r.client.Get(context.TODO(), types.NamespacedName{Name: dep.Name, Namespace: dep.Namespace}, depFound)
 
@@ -632,7 +634,8 @@ func getCredentials(r *ReconcileAPI, name string) error {
 }
 
 // generate relevant MGW deployment/services for the given API definition
-func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.ConfigMap) *appsv1.Deployment {
+func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.ConfigMap, analyticsEnabled bool,
+	r *ReconcileAPI) *appsv1.Deployment {
 	labels := map[string]string{
 		"app": cr.Name,
 	}
@@ -640,6 +643,18 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 	controlConfigData := conf.Data
 	dockerRegistry := controlConfigData[dockerRegistryConst]
 	reps := int32(cr.Spec.Definition.Replicas)
+
+	deployVolumeMount := []corev1.VolumeMount{}
+	deployVolume := []corev1.Volume{}
+	if analyticsEnabled {
+		deployVolumeMountTemp, deployVolumeTemp, err := getAnalyticsPVClaim(r, deployVolumeMount, deployVolume)
+		if err != nil {
+			log.Error(err, "PVC mounting error")
+		}else{
+			deployVolumeMount = deployVolumeMountTemp
+			deployVolume = deployVolumeTemp
+		}
+	}
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -659,14 +674,15 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:  "mgw" + cr.Name,
-							Image: dockerRegistry + "/" + imageName,
-
+							Name:         "mgw" + cr.Name,
+							Image:        dockerRegistry + "/" + imageName,
+							VolumeMounts: deployVolumeMount,
 							Ports: []corev1.ContainerPort{{
 								ContainerPort: 9095,
 							}},
 						},
 					},
+					Volumes: deployVolume,
 				},
 			},
 		},
@@ -887,6 +903,7 @@ func dockerConfigCreator(r *ReconcileAPI) error {
 	}
 	return nil
 }
+
 //Service of the API
 //todo: This has to be changed to LB type
 func createMgwService(cr *wso2v1alpha1.API) *corev1.Service {
@@ -902,7 +919,7 @@ func createMgwService(cr *wso2v1alpha1.API) *corev1.Service {
 			Labels:    labels,
 		},
 		Spec: corev1.ServiceSpec{
-			Type:     "NodePort",
+			Type: "NodePort",
 			Ports: []corev1.ServicePort{{
 				Name:       "https",
 				Protocol:   corev1.ProtocolTCP,
@@ -929,7 +946,7 @@ func createMgwLBService(cr *wso2v1alpha1.API) *corev1.Service {
 			Labels:    labels,
 		},
 		Spec: corev1.ServiceSpec{
-			Type:     "LoadBalancer",
+			Type: "LoadBalancer",
 			Ports: []corev1.ServicePort{{
 				Port:       9095,
 				TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: 9095},
@@ -1065,4 +1082,39 @@ func analyticsVolumeHandler(analyticsCertSecretName string, r *ReconcileAPI, job
 		})
 	}
 	return jobVolumeMount, jobVolume, errCert
+}
+
+//Mounts the persistent volume claims to be used when analytics is enabled
+//To enable analytics, user should create an analytics claim with the name "analytics-pv-claim"
+//Templates for persistent volume and claim are provided for local kubernetes cluster
+//Modify the templates according to the cluster environment and required capacity
+func getAnalyticsPVClaim(r *ReconcileAPI, deployVolumeMount []corev1.VolumeMount, deployVolume []corev1.Volume) ([]corev1.VolumeMount, []corev1.Volume, error) {
+
+	pvClaim := &corev1.PersistentVolumeClaim{}
+	//checks if the claim is available
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: analyticsPVClaim, Namespace: wso2NameSpaceConst}, pvClaim)
+	if err != nil {
+		log.Error(err, "Error in analytics-pv-claim")
+	} else {
+		log.Info("Analytics persistent volume claim found. Mounting it to volume.")
+
+		deployVolumeMount = []corev1.VolumeMount{
+			{
+				Name:      analyticsVolumeName,
+				MountPath: analyticsVolumeLocation,
+				ReadOnly:  false,
+			},
+		}
+		deployVolume = []corev1.Volume{
+			{
+				Name: analyticsVolumeName,
+				VolumeSource: corev1.VolumeSource{
+					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+						ClaimName: analyticsPVClaim,
+					},
+				},
+			},
+		}
+	}
+	return deployVolumeMount, deployVolume, err
 }
