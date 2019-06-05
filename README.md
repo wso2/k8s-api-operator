@@ -3,47 +3,32 @@
 #####Navigate to the k8s-apim-operator directory and execute the following command
 
 ###### Deploy k8s client extension
-- Copy the ***kubectl-add.sh*** to ***/usr/local/bin/***
+- Copy the ***/deploy/kubectl-extension/kubectl-add.sh*** to ***/usr/local/bin/***
+    - ___cp kubectl-add.sh /usr/local/bin___
 - Give executable permission to the above file <br /> 
     -  ***chmod +x /usr/local/bin/kubectl-add.sh***
 
 ###### Deploy k8s CRD artifacts
-> ##### Deploying wso2-system namespace in the k8s cluster
-- *kubectl create -f deploy/namespace.yaml <br/>*
 
 > ##### Before deploying the role you have to make yourself as a cluster admin
-- *kubectl create clusterrolebinding harsz89@gmail.com --clusterrole=cluster-admin --user=harsz89@gmail.com*
+- *kubectl create clusterrolebinding <email-address> --clusterrole=cluster-admin --user=<email-address>*
 
-> ##### Deploying roles/role binding and service account associated with operator
-- *kubectl create -f deploy/role.yaml<br />*
-- *kubectl create -f deploy/service_account.yaml <br/>*
-- *kubectl create -f deploy/role_binding.yaml <br />*
+> ##### Deploying namespace, roles/role binding and service account associated with operator
+- _for i in ./deploy/controller-artifacts/*yaml; do kubectl apply -f $i; done_
 
 > ##### Deploying CRD for API, Target endpoint, Security, Ratelimiting
-- *kubectl create -f deploy/crds/wso2_v1alpha1_targetendpoint_crd.yaml*
-- *kubectl create -f deploy/crds/wso2_v1alpha1_security_crd.yaml*
-- *kubectl create -f deploy/crds/wso2_v1alpha1_ratelimiting_crd.yaml*
-- *kubectl create -f deploy/crds/wso2_v1alpha1_api_crd.yaml*
+- _for i in ./deploy/crd/*yaml; do kubectl apply -f $i; done_
 
-> ##### Operator level configuration 
-- *kubectl create -f deploy/controller_conf.yaml*
 
-> ##### Add your user name and password as a secret. A template is provided.
-- *kubectl create -f deploy/docker_secret_template.yaml*
-
-> ##### Modify the below yaml and deploy, if you need to use analytics
-- *kubectl create -f deploy/analytics_secret_template.yaml*
-
-> ##### Deploying operator in the k8s cluster
-- *kubectl create -f deploy/operator.yaml*
+> ##### Deploying controller level configuration
+>> "controller-configs" contains the configuration user would have to
+change.  
+- _for i in ./deploy/controller-configs/*yaml; do kubectl apply -f $i; done_
 
 > ###### Deploy sample custom resources on the kubernetes cluster
-- *kubectl create -f deploy/crds/wso2_v1alpha1_targetendpoint_cr.yaml*
-- *kubectl create -f deploy/crds/wso2_v1alpha1_security_cr.yaml*
-- *kubectl create -f deploy/crds/wso2_v1alpha1_ratelimiting_cr.yaml*
-- *kubectl create -f deploy/crds/wso2_v1alpha1_api_cr.yaml*
+- _for i in ./deploy/sample-crs/*yaml; do kubectl apply -f $i; done_
 
-> ###### Undeploy the changes
+> ###### Undeploy the changes (one by one)
 
 - *kubectl delete -f deploy/crds/wso2_v1alpha1_targetendpoint_cr.yaml*
 - *kubectl delete -f deploy/crds/wso2_v1alpha1_security_cr.yaml*
