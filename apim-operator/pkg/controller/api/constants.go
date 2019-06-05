@@ -42,4 +42,7 @@ const (
 	certPath = "/usr/wso2/certs/"
 	dockertemplatepath = "/usr/local/bin/dockerFile.mustache"
 	certConfig = "apim-certs"
+	encodedTrustsorePassword = "YmFsbGVyaW5h"
+	truststoreSecretName = "truststorepass"
+	truststoreSecretData = "password"
 )

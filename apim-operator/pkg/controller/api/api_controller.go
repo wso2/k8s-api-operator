@@ -698,10 +698,12 @@ func dockerfileHandler(r *ReconcileAPI, secret *corev1.Secret, alias string) (*c
 		cretName = k
 	}
 
+	truststorePass := getTruststorePassword(r)
 	dockertemplate := dockertemplatepath
 	dockerOutput, err := mustache.RenderFile(dockertemplate, map[string]string{
 		"certPath": certPath + secret.Name + "/" + cretName,
-		"alias": alias})
+		"alias": alias,
+		"password": truststorePass})
 	if err != nil{
 		log.Error(err,"error in rendering Dockerfile")
 	}
@@ -1117,4 +1119,59 @@ func getAnalyticsPVClaim(r *ReconcileAPI, deployVolumeMount []corev1.VolumeMount
 		}
 	}
 	return deployVolumeMount, deployVolume, err
+}
+
+func getTruststorePassword(r *ReconcileAPI) string {
+
+	var password string;
+
+	//get secret if available
+	secret := &corev1.Secret{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: truststoreSecretName, Namespace: wso2NameSpaceConst}, secret)
+
+	if err != nil && errors.IsNotFound(err){
+
+		encodedpassword := encodedTrustsorePassword
+
+		//decode and get the password to append to the dockerfile
+		decodedpass, err := b64.StdEncoding.DecodeString(encodedpassword)
+
+		if err != nil {
+			log.Error(err,"error decoding truststore password")
+		}
+
+		password = string(decodedpass)
+
+		log.Info("creataing new secret")
+
+		var truststoresecret *corev1.Secret
+
+		//create a new secret with password
+		truststoresecret = &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      truststoreSecretName,
+				Namespace: wso2NameSpaceConst,
+			},
+		}
+		truststoresecret.Data = map[string][]byte{
+			truststoreSecretData: []byte(encodedpassword),
+		}
+
+		errsecret := r.client.Create(context.TODO(), truststoresecret)
+		log.Error(errsecret ,"error in creating trustsote password")
+		return password
+
+	}
+
+	//get password from the secret
+	foundpassword := string(secret.Data[truststoreSecretData])
+	getpass, err := b64.StdEncoding.DecodeString(foundpassword)
+
+	if err != nil {
+		log.Error(err,"error decoding truststore password")
+	}
+
+	password = string(getpass)
+
+	return password
 }
