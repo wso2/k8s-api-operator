@@ -1,12 +1,12 @@
 # k8s-apim-operator
 
-#####Navigate to the k8s-apim-operator directory and execute the following command
+##### Navigate to the k8s-apim-operator/apim-operators/ directory and execute the following command
 
 ###### Deploy k8s client extension
 - Give executable permission to the extension file <br /> 
-    -  ***chmod +x /deploy/kubectl-extension/kubectl-add.sh***
+    -  ***chmod +x ./deploy/kubectl-extension/kubectl-add.sh***
 - Copy the ***/deploy/kubectl-extension/kubectl-add.sh*** to ***/usr/local/bin/***
-    - ___cp /deploy/kubectl-extension/kubectl-add.sh /usr/local/bin___
+    - ___cp ./deploy/kubectl-extension/kubectl-add.sh /usr/local/bin___
 
 ###### Deploy k8s CRD artifacts
 
