@@ -678,7 +678,7 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 							Image:        dockerRegistry + "/" + imageName,
 							VolumeMounts: deployVolumeMount,
 							Ports: []corev1.ContainerPort{{
-								ContainerPort: 80,
+								ContainerPort: 9095,
 							}},
 						},
 					},
@@ -923,9 +923,9 @@ func createMgwService(cr *wso2v1alpha1.API) *corev1.Service {
 			Ports: []corev1.ServicePort{{
 				Name:       "https",
 				Protocol:   corev1.ProtocolTCP,
-				Port:       80,
-				TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: 80},
-				NodePort:   30010,
+				Port:       9095,
+				TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: 9095},
+				NodePort: 30010,
 			}},
 			Selector: labels,
 		},
@@ -948,9 +948,9 @@ func createMgwLBService(cr *wso2v1alpha1.API) *corev1.Service {
 		Spec: corev1.ServiceSpec{
 			Type: "LoadBalancer",
 			Ports: []corev1.ServicePort{{
-				Port:       80,
-				TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: 80},
-				NodePort:   31000,
+				Port:       9095,
+				TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: 9095},
+				NodePort: 31000,
 			}},
 			Selector: labels,
 		},
