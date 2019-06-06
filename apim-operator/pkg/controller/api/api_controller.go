@@ -1124,28 +1124,20 @@ func getAnalyticsPVClaim(r *ReconcileAPI, deployVolumeMount []corev1.VolumeMount
 func getTruststorePassword(r *ReconcileAPI) string {
 
 	var password string;
-
 	//get secret if available
 	secret := &corev1.Secret{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: truststoreSecretName, Namespace: wso2NameSpaceConst}, secret)
-
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: truststoreSecretName, Namespace: wso2NameSpaceConst},
+	secret)
 	if err != nil && errors.IsNotFound(err){
-
 		encodedpassword := encodedTrustsorePassword
-
 		//decode and get the password to append to the dockerfile
 		decodedpass, err := b64.StdEncoding.DecodeString(encodedpassword)
-
 		if err != nil {
 			log.Error(err,"error decoding truststore password")
 		}
-
 		password = string(decodedpass)
-
-		log.Info("creataing new secret")
-
+		log.Info("creating new secret for truststore password")
 		var truststoresecret *corev1.Secret
-
 		//create a new secret with password
 		truststoresecret = &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
@@ -1156,22 +1148,16 @@ func getTruststorePassword(r *ReconcileAPI) string {
 		truststoresecret.Data = map[string][]byte{
 			truststoreSecretData: []byte(encodedpassword),
 		}
-
 		errsecret := r.client.Create(context.TODO(), truststoresecret)
 		log.Error(errsecret ,"error in creating trustsote password")
 		return password
-
 	}
-
 	//get password from the secret
 	foundpassword := string(secret.Data[truststoreSecretData])
 	getpass, err := b64.StdEncoding.DecodeString(foundpassword)
-
 	if err != nil {
 		log.Error(err,"error decoding truststore password")
 	}
-
 	password = string(getpass)
-
 	return password
 }
