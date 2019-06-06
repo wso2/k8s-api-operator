@@ -25,7 +25,7 @@ USER root
 RUN  mkdir -p /home/exec
 COPY --from=toolkit /home/exec /home/exec
 
-RUN echo yes | keytool -import  -storepass ballerina -keystore /ballerina/runtime/bre/security/ballerinaTruststore.p12 -alias "{{alias}}" -file {{certPath}}
+RUN echo yes | keytool -import  -storepass {{password}} -keystore /ballerina/runtime/bre/security/ballerinaTruststore.p12 -alias "{{alias}}" -file {{certPath}}
 
 RUN keytool -list -storepass ballerina -v -keystore /ballerina/runtime/bre/security/ballerinaTruststore.p12
 

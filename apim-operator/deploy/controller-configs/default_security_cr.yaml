@@ -5,6 +5,6 @@ metadata:
   namespace: wso2-system
 spec:
   type: JWT
-  certificate: secret-test
+  certificate: testjwt
   issuer: https://localhost:9443/oauth2/defaultTest
   audience: https://localhost:9443/oauth2/defaultTest
