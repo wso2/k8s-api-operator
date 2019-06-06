@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha1"
 	"encoding/hex"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -226,29 +227,49 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		return reconcile.Result{}, errGetSec
 	}
 
-	//get certificate
-	certificateSecret := &corev1.Secret{}
-	errc := r.client.Get(context.TODO(), types.NamespacedName{Name: security.Spec.Certificate, Namespace: wso2NameSpaceConst}, certificateSecret)
+	var certificateSecret = &corev1.Secret{}
+	var alias string
+	var existcert string = "false"
+	//get the volume mounts
+	jobVolumeMount, jobVolume := getVolumes(instance)
 
-	if errc != nil && errors.IsNotFound(errc) {
-		reqLogger.Info("defined cretificate is not found")
-		return reconcile.Result{}, errc
+	//get certificate for JWT and Oauth
+	if strings.EqualFold(security.Spec.Type, "Oauth") || strings.EqualFold(security.Spec.Type, "JWT") {
+
+		errc := r.client.Get(context.TODO(), types.NamespacedName{Name: security.Spec.Certificate, Namespace: wso2NameSpaceConst}, certificateSecret)
+
+		if errc != nil && errors.IsNotFound(errc) {
+			reqLogger.Info("defined cretificate is not found")
+			return reconcile.Result{}, errc
+		}
+
+		volumemountTemp, volumeTemp := certMoutHandler(r, certificateSecret, jobVolumeMount, jobVolume)
+		jobVolumeMount = volumemountTemp
+		jobVolume = volumeTemp
+
+		fmt.Println("certificafe fetched")
+		fmt.Println(certificateSecret.Name)
+
+		alias = certificateSecret.Name + "alias"
+		// existcert = "true"
+		fmt.Println("cert exist in aouth, JWT :" + existcert)
 	}
 
-	alias := certificateSecret.Name + "alias"
-
-	if security.Spec.Type == "Oauth" {
+	if strings.EqualFold(security.Spec.Type, "Oauth") {
 		//fetch credentials from the secret created
-		errGetCredentials := getCredentials(r, security.Spec.Credentials)
+		fmt.Println("security type Oauth")
+		errGetCredentials := getCredentials(r, security.Spec.Credentials, "Oauth")
 
 		if errGetCredentials != nil {
-			log.Error(errGetCredentials, "Error occured when retriving credentials")
+			log.Error(errGetCredentials, "Error occured when retriving credentials for Oauth")
 		} else {
 			log.Info("Credentials successfully retrived")
 		}
 	}
 
-	if security.Spec.Type == "JWT" {
+	if strings.EqualFold(security.Spec.Type, "JWT") {
+
+		fmt.Println("security type JWT")
 		certificateAlias = alias
 
 		if security.Spec.Issuer != "" {
@@ -259,8 +280,20 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		}
 	}
 
-	//get the volume mounts
-	jobVolumeMount, jobVolume := getVolumes(instance, certificateSecret)
+	if strings.EqualFold(security.Spec.Type, "Basic") {
+
+		fmt.Println("security type Basic")
+		existcert = "false"
+		fmt.Println("cert exist basic :" + existcert)
+		//fetch credentials from the secret created
+		errGetCredentials := getCredentials(r, security.Spec.Credentials, "Basic")
+
+		if errGetCredentials != nil {
+			log.Error(errGetCredentials, "Error occured when retriving credentials for Basic")
+		} else {
+			log.Info("Credentials successfully retrived")
+		}
+	}
 
 	// gets the data from analytics secret
 	analyticsData, err := getSecretData(r)
@@ -283,7 +316,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	//writes into the conf file
 	//Handles the creation of dockerfile configmap
-	dockerfileConfmap, errDocker := dockerfileHandler(r,certificateSecret, alias)
+	dockerfileConfmap, errDocker := dockerfileHandler(r, certificateSecret, alias, existcert)
 	if errDocker != nil {
 		log.Error(errDocker, "error in docker configmap handling")
 	}
@@ -311,6 +344,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	if err != nil {
 		log.Error(err, "error in rendering ")
 	}
+
+	fmt.Println(output)
 
 	//writes the created conf file to secret
 	errCreateSecret := createMGWSecret(r, output)
@@ -579,9 +614,11 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger) string {
 
 }
 
-func getCredentials(r *ReconcileAPI, name string) error {
+func getCredentials(r *ReconcileAPI, name string, securityType string) error {
 
 	hasher := sha1.New()
+	var usrname string
+	var password []byte
 
 	//get the secret included credentials
 	credentialSecret := &corev1.Secret{}
@@ -595,17 +632,28 @@ func getCredentials(r *ReconcileAPI, name string) error {
 	//get the username and the password
 	for k, v := range credentialSecret.Data {
 		if strings.EqualFold(k, "username") {
-			basicUsername = string(v)
+			usrname = string(v)
 		}
 		if strings.EqualFold(k, "password") {
-			//encode password to sha1
-			_, err := hasher.Write([]byte(v))
+			password = v
+		}
+
+		if securityType == "Basic" {
+
+			basicUsername = usrname
+			_, err := hasher.Write([]byte(password))
 			if err != nil {
 				log.Info("error in encoding password")
 				return err
 			}
 			//convert encoded password to a hex string
 			basicPassword = hex.EncodeToString(hasher.Sum(nil))
+
+		}
+		if securityType == "Oauth" {
+
+			keymanagerUsername = usrname
+			keymanagerPassword = string(password)
 		}
 	}
 	return nil
@@ -629,7 +677,7 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 		deployVolumeMountTemp, deployVolumeTemp, err := getAnalyticsPVClaim(r, deployVolumeMount, deployVolume)
 		if err != nil {
 			log.Error(err, "PVC mounting error")
-		}else{
+		} else {
 			deployVolumeMount = deployVolumeMountTemp
 			deployVolume = deployVolumeTemp
 		}
@@ -669,7 +717,7 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 }
 
 //Handles dockermap configmap creation
-func dockerfileHandler(r *ReconcileAPI, secret *corev1.Secret, alias string) (*corev1.ConfigMap, error) {
+func dockerfileHandler(r *ReconcileAPI, secret *corev1.Secret, alias string, existcert string) (*corev1.ConfigMap, error) {
 	//Check if the configmap with dockerfile for mgw creation exists
 	var cretName string
 
@@ -680,11 +728,12 @@ func dockerfileHandler(r *ReconcileAPI, secret *corev1.Secret, alias string) (*c
 	truststorePass := getTruststorePassword(r)
 	dockertemplate := dockertemplatepath
 	dockerOutput, err := mustache.RenderFile(dockertemplate, map[string]string{
-		"certPath": certPath + secret.Name + "/" + cretName,
-		"alias": alias,
-		"password": truststorePass})
-	if err != nil{
-		log.Error(err,"error in rendering Dockerfile")
+		"certPath":  certPath + secret.Name + "/" + cretName,
+		"alias":     alias,
+		"password":  truststorePass,
+		"existcert": existcert})
+	if err != nil {
+		log.Error(err, "error in rendering Dockerfile")
 	}
 
 	dockerfileConfmap, err := getConfigmap(r, dockerFile, wso2NameSpaceConst)
@@ -705,9 +754,9 @@ func dockerfileHandler(r *ReconcileAPI, secret *corev1.Secret, alias string) (*c
 	}
 
 	dockerfileConfmap.Data["Dockerfile"] = dockerOutput
-	errorupdate := r.client.Update(context.TODO(), dockerfileConfmap )
-	if errorupdate != nil{
-		log.Error(errorupdate,"error in updating config map")
+	errorupdate := r.client.Update(context.TODO(), dockerfileConfmap)
+	if errorupdate != nil {
+		log.Error(errorupdate, "error in updating config map")
 	}
 
 	return dockerfileConfmap, err
@@ -906,7 +955,7 @@ func createMgwService(cr *wso2v1alpha1.API, nameSpace string) *corev1.Service {
 				Protocol:   corev1.ProtocolTCP,
 				Port:       9095,
 				TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: 9095},
-				NodePort: 30010,
+				NodePort:   30010,
 			}},
 			Selector: labels,
 		},
@@ -938,7 +987,7 @@ func createMgwLBService(cr *wso2v1alpha1.API, nameSpace string) *corev1.Service 
 }
 
 //default volume mounts for the kaniko job
-func getVolumes(cr *wso2v1alpha1.API, cert *corev1.Secret) ([]corev1.VolumeMount, []corev1.Volume) {
+func getVolumes(cr *wso2v1alpha1.API) ([]corev1.VolumeMount, []corev1.Volume) {
 
 	apiConfMap := cr.Spec.Definition.ConfigMapKeyRef.Name
 
@@ -966,11 +1015,6 @@ func getVolumes(cr *wso2v1alpha1.API, cert *corev1.Secret) ([]corev1.VolumeMount
 			Name:      mgwConfFile,
 			MountPath: mgwConfLocation,
 			ReadOnly:  true,
-		},
-		{
-			Name: certConfig,
-			MountPath: certPath + cert.Name,
-			ReadOnly:true,
 		},
 	}
 
@@ -1023,15 +1067,8 @@ func getVolumes(cr *wso2v1alpha1.API, cert *corev1.Secret) ([]corev1.VolumeMount
 				},
 			},
 		},
-		{
-			Name:certConfig,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName:cert.Name,
-				},
-			},
-		},
 	}
+
 	return jobVolumeMount, jobVolume
 
 }
@@ -1062,6 +1099,24 @@ func analyticsVolumeHandler(analyticsCertSecretName string, r *ReconcileAPI, job
 		})
 	}
 	return jobVolumeMount, jobVolume, errCert
+}
+
+func certMoutHandler(r *ReconcileAPI, cert *corev1.Secret, jobVolumeMount []corev1.VolumeMount, jobVolume []corev1.Volume) ([]corev1.VolumeMount, []corev1.Volume) {
+	jobVolumeMount = append(jobVolumeMount, corev1.VolumeMount{
+		Name:      certConfig,
+		MountPath: certPath + cert.Name,
+		ReadOnly:  true,
+	})
+
+	jobVolume = append(jobVolume, corev1.Volume{
+		Name: certConfig,
+		VolumeSource: corev1.VolumeSource{
+			Secret: &corev1.SecretVolumeSource{
+				SecretName: cert.Name,
+			},
+		},
+	})
+	return jobVolumeMount, jobVolume
 }
 
 //Mounts the persistent volume claims to be used when analytics is enabled
@@ -1101,17 +1156,17 @@ func getAnalyticsPVClaim(r *ReconcileAPI, deployVolumeMount []corev1.VolumeMount
 
 func getTruststorePassword(r *ReconcileAPI) string {
 
-	var password string;
+	var password string
 	//get secret if available
 	secret := &corev1.Secret{}
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: truststoreSecretName, Namespace: wso2NameSpaceConst},
-	secret)
-	if err != nil && errors.IsNotFound(err){
+		secret)
+	if err != nil && errors.IsNotFound(err) {
 		encodedpassword := encodedTrustsorePassword
 		//decode and get the password to append to the dockerfile
 		decodedpass, err := b64.StdEncoding.DecodeString(encodedpassword)
 		if err != nil {
-			log.Error(err,"error decoding truststore password")
+			log.Error(err, "error decoding truststore password")
 		}
 		password = string(decodedpass)
 		log.Info("creating new secret for truststore password")
@@ -1127,14 +1182,14 @@ func getTruststorePassword(r *ReconcileAPI) string {
 			truststoreSecretData: []byte(encodedpassword),
 		}
 		errsecret := r.client.Create(context.TODO(), truststoresecret)
-		log.Error(errsecret ,"error in creating trustsote password")
+		log.Error(errsecret, "error in creating trustsote password")
 		return password
 	}
 	//get password from the secret
 	foundpassword := string(secret.Data[truststoreSecretData])
 	getpass, err := b64.StdEncoding.DecodeString(foundpassword)
 	if err != nil {
-		log.Error(err,"error decoding truststore password")
+		log.Error(err, "error decoding truststore password")
 	}
 	password = string(getpass)
 	return password

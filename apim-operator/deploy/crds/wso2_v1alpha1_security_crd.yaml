@@ -47,7 +47,6 @@ spec:
               type: string
           required:
           - type
-          - certificate
           type: object
         status:
           type: object

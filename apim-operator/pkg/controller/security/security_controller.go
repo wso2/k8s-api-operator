@@ -3,6 +3,7 @@ package security
 import (
 	"context"
 	wso2v1alpha1 "github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -97,14 +98,14 @@ func (r *ReconcileSecurity) Reconcile(request reconcile.Request) (reconcile.Resu
 		return reconcile.Result{}, err
 	}
 
-	if instance.Spec.Type == "JWT" {
+	if strings.EqualFold(instance.Spec.Type , "JWT") {
 		if instance.Spec.Issuer == "" || instance.Spec.Audience == "" {
 			reqLogger.Info("Required fields are missing")
 			return reconcile.Result{}, nil
 		}
 	}
 
-	if instance.Spec.Type == "Oauth" {
+	if strings.EqualFold(instance.Spec.Type , "Oauth") {
 		if instance.Spec.Credentials == "" || instance.Spec.Endpoint == "" {
 			reqLogger.Info("required fields are missing")
 			return reconcile.Result{}, nil
@@ -118,6 +119,13 @@ func (r *ReconcileSecurity) Reconcile(request reconcile.Request) (reconcile.Resu
 			return reconcile.Result{}, errcertificate
 		}
 
+	}
+
+	if strings.EqualFold(instance.Spec.Type , "Basic") {
+		if instance.Spec.Credentials == ""{
+			reqLogger.Info("required field credentials are missing")
+			return reconcile.Result{}, nil
+		}
 	}
 
 	certificateSecret := &corev1.Secret{}

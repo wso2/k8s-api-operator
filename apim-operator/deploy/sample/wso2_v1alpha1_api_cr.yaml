@@ -6,7 +6,8 @@ metadata:
 spec:
   definition:
     configMapKeyRef:
-      name: jwtdefault
+      #JWT:jwtdefault  #Basic: test-swagger-basic
+      name: test-swagger-basic
     replicas: 1
     swagger: swagger
   mode: shared
