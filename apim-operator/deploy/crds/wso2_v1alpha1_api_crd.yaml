@@ -48,7 +48,6 @@ spec:
               required:
               - configMapKeyRef
               - replicas
-              - swagger
               type: object
             mode:
               type: string

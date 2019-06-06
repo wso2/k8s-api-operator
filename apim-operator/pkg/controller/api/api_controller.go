@@ -343,7 +343,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	depFound := &appsv1.Deployment{}
 	deperr := r.client.Get(context.TODO(), types.NamespacedName{Name: dep.Name, Namespace: dep.Namespace}, depFound)
 
-	svc := createMgwService(instance)
+	svc := createMgwLBService(instance, userNameSpace)
 	svcFound := &corev1.Service{}
 	svcErr := r.client.Get(context.TODO(), types.NamespacedName{Name: svc.Name, Namespace: svc.Namespace}, svcFound)
 
@@ -385,28 +385,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	return reconcile.Result{}, jobErr
 }
 
-// newPodForCR returns a busybox pod with the same name/namespace as the cr
-func newPodForCR(cr *wso2v1alpha1.API) *corev1.Pod {
-	labels := map[string]string{
-		"app": cr.Name,
-	}
-	return &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      cr.Name + "-pod",
-			Namespace: cr.Namespace,
-			Labels:    labels,
-		},
-		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					Name:    "busybox",
-					Image:   "busybox",
-					Command: []string{"sleep", "3600"},
-				},
-			},
-		},
-	}
-}
 
 // gets the data from analytics secret
 func getSecretData(r *ReconcileAPI) (map[string][]byte, error) {
@@ -642,6 +620,7 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 
 	controlConfigData := conf.Data
 	dockerRegistry := controlConfigData[dockerRegistryConst]
+	nameSpace := controlConfigData[userNameSpaceConst]
 	reps := int32(cr.Spec.Definition.Replicas)
 
 	deployVolumeMount := []corev1.VolumeMount{}
@@ -659,7 +638,7 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cr.Name,
-			Namespace: cr.Namespace,
+			Namespace: nameSpace,
 			Labels:    labels,
 		},
 		Spec: appsv1.DeploymentSpec{
@@ -908,7 +887,7 @@ func dockerConfigCreator(r *ReconcileAPI) error {
 
 //Service of the API
 //todo: This has to be changed to LB type
-func createMgwService(cr *wso2v1alpha1.API) *corev1.Service {
+func createMgwService(cr *wso2v1alpha1.API, nameSpace string) *corev1.Service {
 
 	labels := map[string]string{
 		"app": cr.Name,
@@ -917,7 +896,7 @@ func createMgwService(cr *wso2v1alpha1.API) *corev1.Service {
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cr.Name,
-			Namespace: cr.Namespace,
+			Namespace: nameSpace,
 			Labels:    labels,
 		},
 		Spec: corev1.ServiceSpec{
@@ -935,7 +914,7 @@ func createMgwService(cr *wso2v1alpha1.API) *corev1.Service {
 }
 
 //Creating a LB balancer service to expose mgw
-func createMgwLBService(cr *wso2v1alpha1.API) *corev1.Service {
+func createMgwLBService(cr *wso2v1alpha1.API, nameSpace string) *corev1.Service {
 
 	labels := map[string]string{
 		"app": cr.Name,
@@ -944,7 +923,7 @@ func createMgwLBService(cr *wso2v1alpha1.API) *corev1.Service {
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cr.Name,
-			Namespace: cr.Namespace,
+			Namespace: nameSpace,
 			Labels:    labels,
 		},
 		Spec: corev1.ServiceSpec{
@@ -952,7 +931,6 @@ func createMgwLBService(cr *wso2v1alpha1.API) *corev1.Service {
 			Ports: []corev1.ServicePort{{
 				Port:       9095,
 				TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: 9095},
-				NodePort: 31000,
 			}},
 			Selector: labels,
 		},
