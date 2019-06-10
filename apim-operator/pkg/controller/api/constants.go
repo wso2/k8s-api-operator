@@ -39,6 +39,7 @@ const (
 
 	dockerhubRegistryUrl     = "https://registry-1.docker.io/"
 	defaultSecurity          = "default-security"
+	endpointExtension        = "x-mgw-production-endpoints"
 	securityExtension        = "x-mgw-security"
 	certPath                 = "/usr/wso2/certs/"
 	dockertemplatepath       = "/usr/local/bin/dockerFile.mustache"

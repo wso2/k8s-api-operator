@@ -490,7 +490,7 @@ func mgwSwaggerLoader(swaggerDataMap map[string]string) (*openapi3.Swagger, stri
 func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger) string {
 
 	//api level endpoint
-	endpointData, checkEndpoint := swagger.Extensions["x-mgw-production-endpoints"]
+	endpointData, checkEndpoint := swagger.Extensions[endpointExtension]
 	if checkEndpoint {
 		prodEp := XMGWProductionEndpoints{}
 		var endPoint string
@@ -519,7 +519,7 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger) string {
 					endPoint = protocol + "://" + endPoint
 					checkt := []string{endPoint}
 					prodEp.Urls = checkt
-					swagger.Extensions["x-mgw-production-endpoints"] = prodEp
+					swagger.Extensions[endpointExtension] = prodEp
 				}
 			}
 		}
@@ -527,7 +527,7 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger) string {
 
 	//resource level endpoint
 	for _, path := range swagger.Paths {
-		resourceEndpointData, checkResourceEP := path.Get.Extensions["x-mgw-production-endpoints"]
+		resourceEndpointData, checkResourceEP := path.Get.Extensions[endpointExtension]
 		if checkResourceEP {
 			prodEp := XMGWProductionEndpoints{}
 			var endPoint string
@@ -555,7 +555,7 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger) string {
 						endPoint = protocol + "://" + endPoint
 						checkt := []string{endPoint}
 						prodEp.Urls = checkt
-						path.Get.Extensions["x-mgw-production-endpoints"] = prodEp
+						path.Get.Extensions[endpointExtension] = prodEp
 					}
 				}
 			}
