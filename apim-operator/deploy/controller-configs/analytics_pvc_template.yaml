@@ -2,7 +2,7 @@ kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: analytics-pv-claim
-  namespace: wso2-system
+  namespace: default
 spec:
   storageClassName: manual
   accessModes:

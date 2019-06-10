@@ -442,7 +442,7 @@ func createMGWSecret(r *ReconcileAPI, confData string) error {
 	}
 
 	apimSecret.Data = map[string][]byte{
-		"confData": []byte(confData),
+		mgwConfConst: []byte(confData),
 	}
 
 	// Check if this secret exists
@@ -963,6 +963,7 @@ func createMgwLBService(cr *wso2v1alpha1.API) *corev1.Service {
 func getVolumes(cr *wso2v1alpha1.API, cert *corev1.Secret) ([]corev1.VolumeMount, []corev1.Volume) {
 
 	apiConfMap := cr.Spec.Definition.ConfigMapKeyRef.Name
+	flag := true
 
 	jobVolumeMount := []corev1.VolumeMount{
 		{
@@ -992,6 +993,16 @@ func getVolumes(cr *wso2v1alpha1.API, cert *corev1.Secret) ([]corev1.VolumeMount
 		{
 			Name: certConfig,
 			MountPath: certPath + cert.Name,
+			ReadOnly:true,
+		},
+		{
+			Name: "wso2am",
+			MountPath: "/usr/wso2/wso2am/",
+			ReadOnly:true,
+		},
+		{
+			Name: "wso2analytics",
+			MountPath: "/usr/wso2/wso2analytics",
 			ReadOnly:true,
 		},
 	}
@@ -1050,6 +1061,25 @@ func getVolumes(cr *wso2v1alpha1.API, cert *corev1.Secret) ([]corev1.VolumeMount
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName:cert.Name,
+					Optional: &flag,
+				},
+			},
+		},
+		{
+			Name:"wso2am",
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:"wso2am-secret",
+					Optional: &flag,
+				},
+			},
+		},
+		{
+			Name:"wso2analytics",
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:"wso2analytics-secret",
+					Optional: &flag,
 				},
 			},
 		},

@@ -150,7 +150,7 @@ func (r *ReconcileRateLimiting) Reconcile(request reconcile.Request) (reconcile.
 	}
 
 	oldmap := foundmapc.Data
-	olddata := oldmap["Code"]
+	olddata := oldmap["policies.yaml"]
 	count := instance.Spec.RequestCount.Limit
 	unitTime := instance.Spec.UnitTime
 	timeUnit := instance.Spec.TimeUnit
@@ -223,7 +223,7 @@ func CreatePolicyConfigMap(output string) (*corev1.ConfigMap, error) {
 			Namespace: "wso2-system",
 		},
 		Data: map[string]string{
-			"Code": output,
+			"policies.yaml": output,
 		},
 	}, nil
 }

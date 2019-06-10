@@ -2,7 +2,7 @@ kind: PersistentVolume
 apiVersion: v1
 metadata:
   name: analytics-pv-volume
-  namespace: wso2-system
+  namespace: default
   labels:
     type: local
 spec:

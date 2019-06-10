@@ -8,6 +8,7 @@ RUN micro-gw init project
 
 #copy swagger definitions to the project location
 RUN cp /usr/wso2/swagger/* ./project/api_definitions/
+RUN cp /usr/wso2/policy/* ./project/
 
 #generate the executable
 RUN micro-gw build project
@@ -25,9 +26,13 @@ USER root
 RUN  mkdir -p /home/exec
 COPY --from=toolkit /home/exec /home/exec
 
-RUN echo yes | keytool -import  -storepass {{password}} -keystore /ballerina/runtime/bre/security/ballerinaTruststore.p12 -alias "{{alias}}" -file {{certPath}}
+RUN cp /usr/wso2/mgwconf/* /home/ballerina/conf
+#RUN echo yes | keytool -import  -storepass {{password}} -keystore /ballerina/runtime/bre/security/ballerinaTruststore.p12 -alias "{{alias}}" -file {{certPath}}
 
-RUN keytool -list -storepass ballerina -v -keystore /ballerina/runtime/bre/security/ballerinaTruststore.p12
+RUN echo yes | keytool -import  -storepass {{password}} -keystore /ballerina/runtime/bre/security/ballerinaTruststore.p12 -alias "wso2am" -file /usr/wso2/wso2am/wso2am.pem
+RUN echo yes | keytool -import  -storepass {{password}} -keystore /ballerina/runtime/bre/security/ballerinaTruststore.p12 -alias "wso2analytics" -file /usr/wso2/wso2analytics/wso2analytics.pem
+
+#RUN keytool -list -storepass ballerina -v -keystore /ballerina/runtime/bre/security/ballerinaTruststore.p12
 
 USER ballerina
 #project name has to be passed to the ballerina image as a env variable
