@@ -28,6 +28,12 @@ change.
 > ###### Deploy sample custom resources on the kubernetes cluster
 - _for i in ./deploy/sample-crs/*yaml; do kubectl apply -f $i; done_
 
+> ##### Deploying an API in K8s cluter
+
+- Download sample API definition (swagger files) from [product micro-gateway sample](https://github.com/wso2/product-microgateway/tree/master/samples) github location.
+- Execute the following command to deploy the API
+- *kubectl add api "api_name" --from-file="location to the api swagger definition"*
+- ex: ***kubectl add api petstorebasic --from-file=petstore_basic.yaml***
 > ###### Undeploy the changes (one by one)
 
 - *kubectl delete -f deploy/crds/wso2_v1alpha1_targetendpoint_cr.yaml*
