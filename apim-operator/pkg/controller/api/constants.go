@@ -27,7 +27,7 @@ const (
 
 	wso2NameSpaceConst    = "wso2-system"
 	policyConfigmap       = "policy-configmap"
-	mgwConfSecretConst    = "mgwconf"
+	mgwConfSecretConst    = "mgw-secret"
 	analyticsSecretConst  = "analytics-secret"
 	dockerSecretNameConst = "docker-secret"
 	controllerConfName    = "controller-config"
