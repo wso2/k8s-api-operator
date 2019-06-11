@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"text/template"
 
 	"k8s.io/apimachinery/pkg/util/intstr"
 
@@ -43,6 +44,13 @@ var log = logf.Log.WithName("controller_api")
 //XMGWProductionEndpoints represents the structure of endpoint
 type XMGWProductionEndpoints struct {
 	Urls []string `yaml:"urls" json:"urls"`
+}
+
+//This struct use to import multiple certificates to trsutstore
+type Certs struct {
+	CertFound bool
+	Password string
+	Certs map[string]string
 }
 
 // Add creates a new API Controller and adds it to the Manager. The Manager will set fields on the Controller
@@ -143,7 +151,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	if dockerSecretEr != nil {
 		log.Error(dockerSecretEr, "Error in docker-config creation")
 	}
-
 	//Handles policy.yaml.
 	//If there aren't any ratelimiting objects deployed, new policy.yaml configmap will be created with default policies
 
@@ -229,7 +236,11 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	var certificateSecret = &corev1.Secret{}
 	var alias string
-	var existcert string = "false"
+	//keep to track the existance of certificates
+	var existcert bool
+	//to add multiple certs with alias
+	var certList map[string]string
+	var certName string
 	//get the volume mounts
 	jobVolumeMount, jobVolume := getVolumes(instance)
 
@@ -247,12 +258,15 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		jobVolumeMount = volumemountTemp
 		jobVolume = volumeTemp
 
-		fmt.Println("certificafe fetched")
-		fmt.Println(certificateSecret.Name)
-
 		alias = certificateSecret.Name + "alias"
-		// existcert = "true"
-		fmt.Println("cert exist in aouth, JWT :" + existcert)
+		existcert = true
+
+		for k,_ := range certificateSecret.Data {
+			 certName = k
+		}
+
+		//add cert path and alias as key value pairs
+		certList[alias] = certPath + certificateSecret.Name + "/" + certName
 	}
 
 	if strings.EqualFold(security.Spec.Type, "Oauth") {
@@ -269,7 +283,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	if strings.EqualFold(security.Spec.Type, "JWT") {
 
-		fmt.Println("security type JWT")
 		certificateAlias = alias
 
 		if security.Spec.Issuer != "" {
@@ -281,10 +294,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	if strings.EqualFold(security.Spec.Type, "Basic") {
-
-		fmt.Println("security type Basic")
-		existcert = "false"
-		fmt.Println("cert exist basic :" + existcert)
+		existcert = false
 		//fetch credentials from the secret created
 		errGetCredentials := getCredentials(r, security.Spec.Credentials, "Basic")
 
@@ -316,7 +326,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	//writes into the conf file
 	//Handles the creation of dockerfile configmap
-	dockerfileConfmap, errDocker := dockerfileHandler(r, certificateSecret, alias, existcert)
+	dockerfileConfmap, errDocker := dockerfileHandler(r, certList, existcert)
 	if errDocker != nil {
 		log.Error(errDocker, "error in docker configmap handling")
 	}
@@ -455,7 +465,7 @@ func createMGWSecret(r *ReconcileAPI, confData string) error {
 	}
 
 	apimSecret.Data = map[string][]byte{
-		"confData": []byte(confData),
+		mgwconfConst: []byte(confData),
 	}
 
 	// Check if this secret exists
@@ -638,6 +648,7 @@ func getCredentials(r *ReconcileAPI, name string, securityType string) error {
 			password = v
 		}
 
+	}
 		if securityType == "Basic" {
 
 			basicUsername = usrname
@@ -646,16 +657,13 @@ func getCredentials(r *ReconcileAPI, name string, securityType string) error {
 				log.Info("error in encoding password")
 				return err
 			}
-			//convert encoded password to a hex string
-			basicPassword = hex.EncodeToString(hasher.Sum(nil))
-
+			//convert encoded password to a uppercase hex string
+			basicPassword = strings.ToUpper(hex.EncodeToString(hasher.Sum(nil)))
 		}
 		if securityType == "Oauth" {
-
 			keymanagerUsername = usrname
 			keymanagerPassword = string(password)
 		}
-	}
 	return nil
 }
 
@@ -717,29 +725,33 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 }
 
 //Handles dockermap configmap creation
-func dockerfileHandler(r *ReconcileAPI, secret *corev1.Secret, alias string, existcert string) (*corev1.ConfigMap, error) {
-	//Check if the configmap with dockerfile for mgw creation exists
-	var cretName string
-
-	for k, _ := range secret.Data {
-		cretName = k
-	}
-
+func dockerfileHandler(r *ReconcileAPI, certList map[string]string, existcert bool) (*corev1.ConfigMap, error) {
 	truststorePass := getTruststorePassword(r)
 	dockertemplate := dockertemplatepath
-	dockerOutput, err := mustache.RenderFile(dockertemplate, map[string]string{
-		"certPath":  certPath + secret.Name + "/" + cretName,
-		"alias":     alias,
-		"password":  truststorePass,
-		"existcert": existcert})
-	if err != nil {
-		log.Error(err, "error in rendering Dockerfile")
+	certs := &Certs{
+		CertFound: existcert,
+		Password: truststorePass,
+		Certs:certList,
 	}
+	//generate dockerfile from the template
+	tmpl, err := template.ParseFiles(dockertemplate)
+	if err != nil {
+		log.Error(err, "error in rendering Dockerfile with template")
+		return nil, err
+	}
+	builder := &strings.Builder{}
+	err = tmpl.Execute(builder, certs)
+	if err != nil {
+		log.Error(err, "error in generating Dockerfile")
+		return nil,err
+	}
+	//fmt.Println("Docker file")
+	//fmt.Println(builder.String())
 
 	dockerfileConfmap, err := getConfigmap(r, dockerFile, wso2NameSpaceConst)
 	if err != nil && errors.IsNotFound(err) {
 
-		dockerConf, er := createConfigMap(dockerFile, "Dockerfile", dockerOutput, wso2NameSpaceConst)
+		dockerConf, er := createConfigMap(dockerFile, "Dockerfile", builder.String(), wso2NameSpaceConst)
 		if er != nil {
 			log.Error(er, "error in docker configmap creation")
 			return dockerfileConfmap, er
@@ -753,7 +765,8 @@ func dockerfileHandler(r *ReconcileAPI, secret *corev1.Secret, alias string, exi
 		return dockerfileConfmap, err
 	}
 
-	dockerfileConfmap.Data["Dockerfile"] = dockerOutput
+	//update existing dockerfile
+	dockerfileConfmap.Data["Dockerfile"] = builder.String()
 	errorupdate := r.client.Update(context.TODO(), dockerfileConfmap)
 	if errorupdate != nil {
 		log.Error(errorupdate, "error in updating config map")

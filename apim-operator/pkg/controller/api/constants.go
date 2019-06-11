@@ -27,7 +27,7 @@ const (
 
 	wso2NameSpaceConst    = "wso2-system"
 	policyConfigmap       = "policy-configmap"
-	mgwConfSecretConst    = "mgw-secret"
+	mgwConfSecretConst    = "mgwconf"
 	analyticsSecretConst  = "analytics-secret"
 	dockerSecretNameConst = "docker-secret"
 	controllerConfName    = "controller-config"
@@ -40,9 +40,10 @@ const (
 	defaultSecurity    = "default-security"
 	securityExtension = "x-mgw-security"
 	certPath = "/usr/wso2/certs/"
-	dockertemplatepath = "/usr/local/bin/dockerFile.mustache"
+	dockertemplatepath = "/usr/local/bin/dockerFile.gotmpl"
 	certConfig = "apim-certs"
 	encodedTrustsorePassword = "YmFsbGVyaW5h"
 	truststoreSecretName = "truststorepass"
 	truststoreSecretData = "password"
+	mgwconfConst = "micro-gw.conf"
 )
