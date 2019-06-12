@@ -14,10 +14,10 @@ const (
 	mgwConfFile             = "conf-file"
 	mgwConfLocation         = "/usr/wso2/mgwconf/"
 	analyticsCertFile       = "analytics-cert"
-	analyticsCertLocation   = "/usr/wso2/analyticscert/"
+	analyticsCertLocation   = "/home/analyticssecret"
 	analyticsPVClaim        = "analytics-pv-claim"
 	analyticsVolumeName     = "analytics-pv-storage"
-	analyticsVolumeLocation = "/analyticspv/"
+	analyticsVolumeLocation = "/home/api-usage-data/"
 
 	mgwToolkitImgConst  = "mgwToolkitImg"
 	mgwRuntimeImgConst  = "mgwRuntimeImg"

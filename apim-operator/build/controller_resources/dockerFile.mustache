@@ -26,13 +26,29 @@ USER root
 RUN  mkdir -p /home/exec
 COPY --from=toolkit /home/exec /home/exec
 
+RUN mkdir -p /home/testing
+RUN cp /usr/wso2/mgwconf/* /home/testing
+RUN ls /home/testing
+
+RUN ls /home/ballerina/conf
+
 RUN cp /usr/wso2/mgwconf/* /home/ballerina/conf
+
+RUN ls /home/ballerina/conf
+
+RUN cat /home/ballerina/conf/micro-gw.conf
+
 #RUN echo yes | keytool -import  -storepass {{password}} -keystore /ballerina/runtime/bre/security/ballerinaTruststore.p12 -alias "{{alias}}" -file {{certPath}}
 
-RUN echo yes | keytool -import  -storepass {{password}} -keystore /ballerina/runtime/bre/security/ballerinaTruststore.p12 -alias "wso2am" -file /usr/wso2/wso2am/wso2am.pem
-RUN echo yes | keytool -import  -storepass {{password}} -keystore /ballerina/runtime/bre/security/ballerinaTruststore.p12 -alias "wso2analytics" -file /usr/wso2/wso2analytics/wso2analytics.pem
+RUN echo yes | keytool -import  -storepass {{password}} -keystore /ballerina/runtime/bre/security/ballerinaTruststore.p12 -alias "wso2am260" -file /usr/wso2/wso2am/wso2am260.pem
+RUN echo yes | keytool -import  -storepass {{password}} -keystore /ballerina/runtime/bre/security/ballerinaTruststore.p12 -alias "wso2analytics260" -file /usr/wso2/wso2analytics/wso2analytics260.pem
 
 #RUN keytool -list -storepass ballerina -v -keystore /ballerina/runtime/bre/security/ballerinaTruststore.p12
+
+#RUN setfacl -m u:ballerina:rwx /home/ballerina
+
+#RUN chown ballerina: /home/ballerina
+RUN chmod a+w /home/ballerina
 
 USER ballerina
 #project name has to be passed to the ballerina image as a env variable

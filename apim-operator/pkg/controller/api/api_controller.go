@@ -281,6 +281,11 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		}
 	}
 
+	//TODO: hardcoded for now
+	issuer           = "https://localhost:9443/oauth2/token"
+	audience         = "http://org.wso2.apimgt/gateway"
+	certificateAlias = "wso2am260"
+
 	//writes into the conf file
 	//Handles the creation of dockerfile configmap
 	dockerfileConfmap, errDocker := dockerfileHandler(r,certificateSecret, alias)
@@ -625,15 +630,15 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 
 	deployVolumeMount := []corev1.VolumeMount{}
 	deployVolume := []corev1.Volume{}
-	if analyticsEnabled {
-		deployVolumeMountTemp, deployVolumeTemp, err := getAnalyticsPVClaim(r, deployVolumeMount, deployVolume)
-		if err != nil {
-			log.Error(err, "PVC mounting error")
-		}else{
-			deployVolumeMount = deployVolumeMountTemp
-			deployVolume = deployVolumeTemp
-		}
-	}
+	// if analyticsEnabled {
+	// 	deployVolumeMountTemp, deployVolumeTemp, err := getAnalyticsPVClaim(r, deployVolumeMount, deployVolume)
+	// 	if err != nil {
+	// 		log.Error(err, "PVC mounting error")
+	// 	}else{
+	// 		deployVolumeMount = deployVolumeMountTemp
+	// 		deployVolume = deployVolumeTemp
+	// 	}
+	// }
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1047,7 +1052,7 @@ func getVolumes(cr *wso2v1alpha1.API, cert *corev1.Secret) ([]corev1.VolumeMount
 			Name:"wso2am",
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:"wso2am-secret",
+					SecretName:"wso2am260-secret",
 					Optional: &flag,
 				},
 			},
@@ -1056,7 +1061,7 @@ func getVolumes(cr *wso2v1alpha1.API, cert *corev1.Secret) ([]corev1.VolumeMount
 			Name:"wso2analytics",
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:"wso2analytics-secret",
+					SecretName:"wso2analytics260-secret",
 					Optional: &flag,
 				},
 			},
@@ -1100,13 +1105,13 @@ func analyticsVolumeHandler(analyticsCertSecretName string, r *ReconcileAPI, job
 //Modify the templates according to the cluster environment and required capacity
 func getAnalyticsPVClaim(r *ReconcileAPI, deployVolumeMount []corev1.VolumeMount, deployVolume []corev1.Volume) ([]corev1.VolumeMount, []corev1.Volume, error) {
 
-	pvClaim := &corev1.PersistentVolumeClaim{}
-	//checks if the claim is available
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: analyticsPVClaim, Namespace: wso2NameSpaceConst}, pvClaim)
-	if err != nil {
-		log.Error(err, "Error in analytics-pv-claim")
-	} else {
-		log.Info("Analytics persistent volume claim found. Mounting it to volume.")
+	// pvClaim := &corev1.PersistentVolumeClaim{}
+	// //checks if the claim is available
+	// err := r.client.Get(context.TODO(), types.NamespacedName{Name: analyticsPVClaim, Namespace: wso2NameSpaceConst}, pvClaim)
+	// if err != nil {
+	// 	log.Error(err, "Error in analytics-pv-claim")
+	// } else {
+	// 	log.Info("Analytics persistent volume claim found. Mounting it to volume.")
 
 		deployVolumeMount = []corev1.VolumeMount{
 			{
@@ -1119,14 +1124,12 @@ func getAnalyticsPVClaim(r *ReconcileAPI, deployVolumeMount []corev1.VolumeMount
 			{
 				Name: analyticsVolumeName,
 				VolumeSource: corev1.VolumeSource{
-					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-						ClaimName: analyticsPVClaim,
-					},
+					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
 			},
 		}
-	}
-	return deployVolumeMount, deployVolume, err
+	//}
+	return deployVolumeMount, deployVolume, nil
 }
 
 func getTruststorePassword(r *ReconcileAPI) string {

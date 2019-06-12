@@ -37,9 +37,9 @@ tokenCache.evictionFactor=0.25
 
 [analytics]
 enable={{analyticsEnabled}}
-uploadingTimeSpanInMillis=600000
-uploadingEndpoint="https://localhost:9444/analytics/v1.0/usage/upload-file"
-rotatingPeriod=600000
+uploadingTimeSpanInMillis=60000
+uploadingEndpoint="https://wso2analytics260:9444/analytics/v1.0/usage/upload-file"
+rotatingPeriod=60000
 task.uploadFiles=true
 username="{{analyticsUsername}}"
 password="{{analyticsPassword}}"
@@ -88,3 +88,8 @@ throttleEndpointbase64Header = "admin:admin"
     hostname = "https://127.0.0.1:2379/v2/keys/jti/"
     username = "root"
     password = "root"
+
+
+
+[b7a.log]
+level="DEBUG"
