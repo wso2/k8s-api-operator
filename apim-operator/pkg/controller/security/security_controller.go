@@ -1,8 +1,24 @@
+// Copyright (c)  WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+//
+// WSO2 Inc. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 package security
 
 import (
 	"context"
 	wso2v1alpha1 "github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -97,14 +113,14 @@ func (r *ReconcileSecurity) Reconcile(request reconcile.Request) (reconcile.Resu
 		return reconcile.Result{}, err
 	}
 
-	if instance.Spec.Type == "JWT" {
+	if strings.EqualFold(instance.Spec.Type , "JWT") {
 		if instance.Spec.Issuer == "" || instance.Spec.Audience == "" {
 			reqLogger.Info("Required fields are missing")
 			return reconcile.Result{}, nil
 		}
 	}
 
-	if instance.Spec.Type == "Oauth" {
+	if strings.EqualFold(instance.Spec.Type , "Oauth") {
 		if instance.Spec.Credentials == "" || instance.Spec.Endpoint == "" {
 			reqLogger.Info("required fields are missing")
 			return reconcile.Result{}, nil
@@ -118,6 +134,13 @@ func (r *ReconcileSecurity) Reconcile(request reconcile.Request) (reconcile.Resu
 			return reconcile.Result{}, errcertificate
 		}
 
+	}
+
+	if strings.EqualFold(instance.Spec.Type , "Basic") {
+		if instance.Spec.Credentials == ""{
+			reqLogger.Info("required field credentials are missing")
+			return reconcile.Result{}, nil
+		}
 	}
 
 	certificateSecret := &corev1.Secret{}

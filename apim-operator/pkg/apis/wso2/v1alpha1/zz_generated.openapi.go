@@ -313,7 +313,7 @@ func schema_pkg_apis_wso2_v1alpha1_SecuritySpec(ref common.ReferenceCallback) co
 						},
 					},
 				},
-				Required: []string{"type", "certificate"},
+				Required: []string{"type"},
 			},
 		},
 		Dependencies: []string{},
