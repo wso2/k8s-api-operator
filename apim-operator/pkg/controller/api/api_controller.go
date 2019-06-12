@@ -255,8 +255,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	//keep to track the existance of certificates
 	var existcert bool
 	//to add multiple certs with alias
-	var certList map[string]string
-	var certName string
+	// var certList map[string]string
+	// var certName string
 	//get the volume mounts
 	jobVolumeMount, jobVolume := getVolumes(instance)
 
@@ -270,19 +270,19 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			return reconcile.Result{}, errc
 		}
 
-		volumemountTemp, volumeTemp := certMoutHandler(r, certificateSecret, jobVolumeMount, jobVolume)
-		jobVolumeMount = volumemountTemp
-		jobVolume = volumeTemp
+		// volumemountTemp, volumeTemp := certMoutHandler(r, certificateSecret, jobVolumeMount, jobVolume)
+		// jobVolumeMount = volumemountTemp
+		// jobVolume = volumeTemp
 
-		alias = certificateSecret.Name + "alias"
+		// alias = certificateSecret.Name + "alias"
 		existcert = true
 
-		for k,_ := range certificateSecret.Data {
-			 certName = k
-		}
+		// for k,_ := range certificateSecret.Data {
+		// 	 certName = k
+		// }
 
-		//add cert path and alias as key value pairs
-		certList[alias] = certPath + certificateSecret.Name + "/" + certName
+		// //add cert path and alias as key value pairs
+		// certList[alias] = certPath + certificateSecret.Name + "/" + certName
 	}
 
 	if strings.EqualFold(security.Spec.Type, "Oauth") {
@@ -332,22 +332,28 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		analyticsCertSecretName := string(analyticsData[certConst])
 
 		log.Info("Finding analytics cert secret " + analyticsCertSecretName)
-		// Check if this secret exists and append it to volumes
+		//Check if this secret exists and append it to volumes
 		jobVolumeMountTemp, jobVolumeTemp, errCert := analyticsVolumeHandler(analyticsCertSecretName, r, jobVolumeMount, jobVolume)
 		if errCert == nil {
 			jobVolumeMount = jobVolumeMountTemp
 			jobVolume = jobVolumeTemp
 		}
+		
 	}
 
 	//TODO: hardcoded for now
+	log.Info("TODO")
 	issuer           = "https://localhost:9443/oauth2/token"
 	audience         = "http://org.wso2.apimgt/gateway"
 	certificateAlias = "wso2am260"
+	//var certListAnalytics map[string]string
+	certListAnalytics := make(map[string]string)
+	certListAnalytics["wso2am260"] = "/usr/wso2/wso2am/wso2am260.pem"
+	certListAnalytics["wso2analytics260"] = "/usr/wso2/wso2analytics/wso2analytics260.pem"
 
 	//writes into the conf file
 	//Handles the creation of dockerfile configmap
-	dockerfileConfmap, errDocker := dockerfileHandler(r, certList, existcert)
+	dockerfileConfmap, errDocker := dockerfileHandler(r, certListAnalytics, existcert)
 	if errDocker != nil {
 		log.Error(errDocker, "error in docker configmap handling")
 	}

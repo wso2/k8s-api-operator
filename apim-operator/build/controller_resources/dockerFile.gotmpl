@@ -56,6 +56,8 @@ RUN echo yes | keytool -import  -storepass {{ $.Password }} -keystore /ballerina
     {{- end }}
 RUN keytool -list -storepass ballerina -v -keystore /ballerina/runtime/bre/security/ballerinaTruststore.p12
 {{ end }}
+
+RUN chmod a+w /home/ballerina
 USER ballerina
 #project name has to be passed to the ballerina image as a env variable
 ENV project="project"
