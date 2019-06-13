@@ -1,12 +1,12 @@
 apiVersion: wso2.com/v1alpha1
 kind: API
 metadata:
-  name: test2-api
+  name: sample-api
   namespace: wso2-system
 spec:
   definition:
     configMapKeyRef:
-      name: basicswagger2
+      name: test-basic-security
     replicas: 1
     swagger: swagger
   mode: shared
