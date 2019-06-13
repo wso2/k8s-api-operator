@@ -324,14 +324,14 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		log.Info("Disabling analytics since analytics configurations were not found")
 		analyticsEnabled = "false"
 	} else {
-		if analyticsConf.Data["analyticsEnable"] == "true" {
-			uploadingTimeSpanInMillis = analyticsConf.Data["uploadingTimeSpanInMillis"]
-			rotatingPeriod = analyticsConf.Data["rotatingPeriod"]
-			uploadFiles = analyticsConf.Data["uploadFiles"]
-			verifyHostname = analyticsConf.Data["verifyHostname"]
-			hostname = analyticsConf.Data["hostname"]
-			port = analyticsConf.Data["port"]
-			analyticsSecretName := analyticsConf.Data["analyticsSecret"]
+		if analyticsConf.Data[analyticsEnabledConst] == "true" {
+			uploadingTimeSpanInMillis = analyticsConf.Data[uploadingTimeSpanInMillisConst]
+			rotatingPeriod = analyticsConf.Data[rotatingPeriodConst]
+			uploadFiles = analyticsConf.Data[uploadFilesConst]
+			verifyHostname = analyticsConf.Data[verifyHostnameConst]
+			hostname = analyticsConf.Data[hostnameConst]
+			port = analyticsConf.Data[portConst]
+			analyticsSecretName := analyticsConf.Data[analyticsSecretConst]
 
 			// gets the data from analytics secret
 			analyticsData, err := getSecretData(r, analyticsSecretName)
@@ -364,30 +364,30 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 	log.Info("docker file data " + dockerfileConfmap.Data["Dockerfile"])
 
-	filename := "/usr/local/bin/microgwconf.mustache"
+	filename := mgwConfTemplatePath
 	output, err := mustache.RenderFile(filename, map[string]string{
-		"keystorePath":                   keystorePath,
-		"keystorePassword":               keystorePassword,
-		"truststorePath":                 truststorePath,
-		"truststorePassword":             truststorePassword,
-		"keymanagerServerurl":            keymanagerServerurl,
-		"keymanagerUsername":             keymanagerUsername,
-		"keymanagerPassword":             keymanagerPassword,
-		"issuer":                         issuer,
-		"audience":                       audience,
-		"certificateAlias":               certificateAlias,
-		"enabledGlobalTMEventPublishing": enabledGlobalTMEventPublishing,
-		"basicUsername":                  basicUsername,
-		"basicPassword":                  basicPassword,
-		"analyticsEnabled":               analyticsEnabled,
-		"analyticsUsername":              analyticsUsername,
-		"analyticsPassword":              analyticsPassword,
-		"uploadingTimeSpanInMillis":      uploadingTimeSpanInMillis,
-		"rotatingPeriod":                 rotatingPeriod,
-		"uploadFiles":                    uploadFiles,
-		"verifyHostname":                 verifyHostname,
-		"hostname":                       hostname,
-		"port":                           port})
+		keystorePathConst:                   keystorePath,
+		keystorePasswordConst:               keystorePassword,
+		truststorePathConst:                 truststorePath,
+		truststorePasswordConst:             truststorePassword,
+		keymanagerServerurlConst:            keymanagerServerurl,
+		keymanagerUsernameConst:             keymanagerUsername,
+		keymanagerPasswordConst:             keymanagerPassword,
+		issuerConst:                         issuer,
+		audienceConst:                       audience,
+		certificateAliasConst:               certificateAlias,
+		enabledGlobalTMEventPublishingConst: enabledGlobalTMEventPublishing,
+		basicUsernameConst:                  basicUsername,
+		basicPasswordConst:                  basicPassword,
+		analyticsEnabledConst:               analyticsEnabled,
+		analyticsUsernameConst:              analyticsUsername,
+		analyticsPasswordConst:              analyticsPassword,
+		uploadingTimeSpanInMillisConst:      uploadingTimeSpanInMillis,
+		rotatingPeriodConst:                 rotatingPeriod,
+		uploadFilesConst:                    uploadFiles,
+		verifyHostnameConst:                 verifyHostname,
+		hostnameConst:                       hostname,
+		portConst:                           port})
 
 	if err != nil {
 		log.Error(err, "error in rendering ")
