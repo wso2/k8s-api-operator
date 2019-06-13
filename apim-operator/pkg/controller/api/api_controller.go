@@ -65,8 +65,8 @@ type XMGWProductionEndpoints struct {
 //This struct use to import multiple certificates to trsutstore
 type Certs struct {
 	CertFound bool
-	Password string
-	Certs map[string]string
+	Password  string
+	Certs     map[string]string
 }
 
 // Add creates a new API Controller and adds it to the Manager. The Manager will set fields on the Controller
@@ -255,8 +255,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	//keep to track the existance of certificates
 	var existcert bool
 	//to add multiple certs with alias
-	// var certList map[string]string
-	// var certName string
+	certList := make(map[string]string)
+	var certName string
 	//get the volume mounts
 	jobVolumeMount, jobVolume := getVolumes(instance)
 
@@ -270,19 +270,19 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			return reconcile.Result{}, errc
 		}
 
-		// volumemountTemp, volumeTemp := certMoutHandler(r, certificateSecret, jobVolumeMount, jobVolume)
-		// jobVolumeMount = volumemountTemp
-		// jobVolume = volumeTemp
+		volumemountTemp, volumeTemp := certMoutHandler(r, certificateSecret, jobVolumeMount, jobVolume)
+		jobVolumeMount = volumemountTemp
+		jobVolume = volumeTemp
 
-		// alias = certificateSecret.Name + "alias"
+		alias = certificateSecret.Name + "alias"
 		existcert = true
 
-		// for k,_ := range certificateSecret.Data {
-		// 	 certName = k
-		// }
+		for k, _ := range certificateSecret.Data {
+			certName = k
+		}
 
-		// //add cert path and alias as key value pairs
-		// certList[alias] = certPath + certificateSecret.Name + "/" + certName
+		//add cert path and alias as key value pairs
+		certList[alias] = certPath + certificateSecret.Name + "/" + certName
 	}
 
 	if strings.EqualFold(security.Spec.Type, "Oauth") {
@@ -326,34 +326,39 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	if err == nil && analyticsData != nil && analyticsData[usernameConst] != nil &&
 		analyticsData[passwordConst] != nil && analyticsData[certConst] != nil {
-		analyticsEnabled = "true"
 		analyticsUsername = string(analyticsData[usernameConst])
 		analyticsPassword = string(analyticsData[passwordConst])
 		analyticsCertSecretName := string(analyticsData[certConst])
 
 		log.Info("Finding analytics cert secret " + analyticsCertSecretName)
 		//Check if this secret exists and append it to volumes
-		jobVolumeMountTemp, jobVolumeTemp, errCert := analyticsVolumeHandler(analyticsCertSecretName, r, jobVolumeMount, jobVolume)
+		jobVolumeMountTemp, jobVolumeTemp, fileName, errCert := analyticsVolumeHandler(analyticsCertSecretName, r, jobVolumeMount, jobVolume)
 		if errCert == nil {
 			jobVolumeMount = jobVolumeMountTemp
 			jobVolume = jobVolumeTemp
+			existcert = true
+			analyticsEnabled = "true"
+			certList[analyticsAlias] = analyticsCertLocation + fileName
 		}
-		
 	}
 
-	//TODO: hardcoded for now
-	log.Info("TODO")
-	issuer           = "https://localhost:9443/oauth2/token"
-	audience         = "http://org.wso2.apimgt/gateway"
-	certificateAlias = "wso2am260"
-	//var certListAnalytics map[string]string
-	certListAnalytics := make(map[string]string)
-	certListAnalytics["wso2am260"] = "/usr/wso2/wso2am/wso2am260.pem"
-	certListAnalytics["wso2analytics260"] = "/usr/wso2/wso2analytics/wso2analytics260.pem"
+	// gets analytics configuration
+	analyticsConf, analyticsEr := getConfigmap(r, analyticsConfName, wso2NameSpaceConst)
+	if analyticsEr != nil {
+		log.Info("Disabling analytics since analytics configurations were not found")
+		analyticsEnabled = "false"
+	} else {
+		uploadingTimeSpanInMillis = analyticsConf.Data["uploadingTimeSpanInMillis"]
+		rotatingPeriod = analyticsConf.Data["rotatingPeriod"]
+		uploadFiles = analyticsConf.Data["uploadFiles"]
+		verifyHostname = analyticsConf.Data["verifyHostname"]
+		hostname = analyticsConf.Data["hostname"]
+		port = analyticsConf.Data["port"]
+	}
 
 	//writes into the conf file
 	//Handles the creation of dockerfile configmap
-	dockerfileConfmap, errDocker := dockerfileHandler(r, certListAnalytics, existcert)
+	dockerfileConfmap, errDocker := dockerfileHandler(r, certList, existcert)
 	if errDocker != nil {
 		log.Error(errDocker, "error in docker configmap handling")
 	}
@@ -376,7 +381,13 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		"basicPassword":                  basicPassword,
 		"analyticsEnabled":               analyticsEnabled,
 		"analyticsUsername":              analyticsUsername,
-		"analyticsPassword":              analyticsPassword})
+		"analyticsPassword":              analyticsPassword,
+		"uploadingTimeSpanInMillis":      uploadingTimeSpanInMillis,
+		"rotatingPeriod":                 rotatingPeriod,
+		"uploadFiles":                    uploadFiles,
+		"verifyHostname":                 verifyHostname,
+		"hostname":                       hostname,
+		"port":                           port})
 
 	if err != nil {
 		log.Error(err, "error in rendering ")
@@ -456,7 +467,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	reqLogger.Info("Skip reconcile: Job already exists", "Job.Namespace", job.Namespace, "Job.Name", job.Name)
 	return reconcile.Result{}, jobErr
 }
-
 
 // gets the data from analytics secret
 func getSecretData(r *ReconcileAPI) (map[string][]byte, error) {
@@ -676,21 +686,21 @@ func getCredentials(r *ReconcileAPI, name string, securityType string) error {
 		}
 
 	}
-		if securityType == "Basic" {
+	if securityType == "Basic" {
 
-			basicUsername = usrname
-			_, err := hasher.Write([]byte(password))
-			if err != nil {
-				log.Info("error in encoding password")
-				return err
-			}
-			//convert encoded password to a uppercase hex string
-			basicPassword = strings.ToUpper(hex.EncodeToString(hasher.Sum(nil)))
+		basicUsername = usrname
+		_, err := hasher.Write([]byte(password))
+		if err != nil {
+			log.Info("error in encoding password")
+			return err
 		}
-		if securityType == "Oauth" {
-			keymanagerUsername = usrname
-			keymanagerPassword = string(password)
-		}
+		//convert encoded password to a uppercase hex string
+		basicPassword = strings.ToUpper(hex.EncodeToString(hasher.Sum(nil)))
+	}
+	if securityType == "Oauth" {
+		keymanagerUsername = usrname
+		keymanagerPassword = string(password)
+	}
 	return nil
 }
 
@@ -757,8 +767,8 @@ func dockerfileHandler(r *ReconcileAPI, certList map[string]string, existcert bo
 	dockertemplate := dockertemplatepath
 	certs := &Certs{
 		CertFound: existcert,
-		Password: truststorePass,
-		Certs:certList,
+		Password:  truststorePass,
+		Certs:     certList,
 	}
 	//generate dockerfile from the template
 	tmpl, err := template.ParseFiles(dockertemplate)
@@ -770,7 +780,7 @@ func dockerfileHandler(r *ReconcileAPI, certList map[string]string, existcert bo
 	err = tmpl.Execute(builder, certs)
 	if err != nil {
 		log.Error(err, "error in generating Dockerfile")
-		return nil,err
+		return nil, err
 	}
 
 	dockerfileConfmap, err := getConfigmap(r, dockerFile, wso2NameSpaceConst)
@@ -1028,7 +1038,6 @@ func createMgwLBService(cr *wso2v1alpha1.API, nameSpace string) *corev1.Service 
 func getVolumes(cr *wso2v1alpha1.API) ([]corev1.VolumeMount, []corev1.Volume) {
 
 	apiConfMap := cr.Spec.Definition.ConfigMapKeyRef.Name
-	flag := true
 
 	jobVolumeMount := []corev1.VolumeMount{
 		{
@@ -1054,16 +1063,6 @@ func getVolumes(cr *wso2v1alpha1.API) ([]corev1.VolumeMount, []corev1.Volume) {
 			Name:      mgwConfFile,
 			MountPath: mgwConfLocation,
 			ReadOnly:  true,
-		},
-		{
-			Name: "wso2am",
-			MountPath: "/usr/wso2/wso2am/",
-			ReadOnly:true,
-		},
-		{
-			Name: "wso2analytics",
-			MountPath: "/usr/wso2/wso2analytics",
-			ReadOnly:true,
 		},
 	}
 
@@ -1116,24 +1115,6 @@ func getVolumes(cr *wso2v1alpha1.API) ([]corev1.VolumeMount, []corev1.Volume) {
 				},
 			},
 		},
-		{
-			Name:"wso2am",
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName:"wso2am260-secret",
-					Optional: &flag,
-				},
-			},
-		},
-		{
-			Name:"wso2analytics",
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName:"wso2analytics260-secret",
-					Optional: &flag,
-				},
-			},
-		},
 	}
 
 	return jobVolumeMount, jobVolume
@@ -1141,7 +1122,9 @@ func getVolumes(cr *wso2v1alpha1.API) ([]corev1.VolumeMount, []corev1.Volume) {
 }
 
 // Handles the mounting of analytics certificate
-func analyticsVolumeHandler(analyticsCertSecretName string, r *ReconcileAPI, jobVolumeMount []corev1.VolumeMount, jobVolume []corev1.Volume) ([]corev1.VolumeMount, []corev1.Volume, error) {
+func analyticsVolumeHandler(analyticsCertSecretName string, r *ReconcileAPI, jobVolumeMount []corev1.VolumeMount,
+	jobVolume []corev1.Volume) ([]corev1.VolumeMount, []corev1.Volume, string, error) {
+	var fileName string
 	analyticsCertSecret := &corev1.Secret{}
 	//checks if the certificate exists
 	errCert := r.client.Get(context.TODO(), types.NamespacedName{Name: analyticsCertSecretName, Namespace: wso2NameSpaceConst}, analyticsCertSecret)
@@ -1164,8 +1147,12 @@ func analyticsVolumeHandler(analyticsCertSecretName string, r *ReconcileAPI, job
 				},
 			},
 		})
+
+		for pem := range analyticsCertSecret.Data {
+			fileName = pem
+		}
 	}
-	return jobVolumeMount, jobVolume, errCert
+	return jobVolumeMount, jobVolume, fileName, errCert
 }
 
 func certMoutHandler(r *ReconcileAPI, cert *corev1.Secret, jobVolumeMount []corev1.VolumeMount, jobVolume []corev1.Volume) ([]corev1.VolumeMount, []corev1.Volume) {
@@ -1200,21 +1187,21 @@ func getAnalyticsPVClaim(r *ReconcileAPI, deployVolumeMount []corev1.VolumeMount
 	// } else {
 	// 	log.Info("Analytics persistent volume claim found. Mounting it to volume.")
 
-		deployVolumeMount = []corev1.VolumeMount{
-			{
-				Name:      analyticsVolumeName,
-				MountPath: analyticsVolumeLocation,
-				ReadOnly:  false,
+	deployVolumeMount = []corev1.VolumeMount{
+		{
+			Name:      analyticsVolumeName,
+			MountPath: analyticsVolumeLocation,
+			ReadOnly:  false,
+		},
+	}
+	deployVolume = []corev1.Volume{
+		{
+			Name: analyticsVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
-		}
-		deployVolume = []corev1.Volume{
-			{
-				Name: analyticsVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					EmptyDir: &corev1.EmptyDirVolumeSource{},
-				},
-			},
-		}
+		},
+	}
 	//}
 	return deployVolumeMount, deployVolume, nil
 }

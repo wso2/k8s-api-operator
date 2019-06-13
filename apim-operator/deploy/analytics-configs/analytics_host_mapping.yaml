@@ -14,13 +14,27 @@
 # specific language governing permissions and limitations
 # under the License.
 
-apiVersion: wso2.com/v1alpha1
-kind: Security
+kind: Service
+apiVersion: v1
 metadata:
-  name: default-security
-  namespace: wso2-system
+  name: wso2analytics260
 spec:
-  type: JWT
-  certificate: wso2am260-secret
-  issuer: https://localhost:9443/oauth2/token
-  audience: http://org.wso2.apimgt/gateway
+  type: ClusterIP
+  ports:
+    - protocol: TCP
+      port: 9444
+      targetPort: 9444
+      name: "servlet"
+   
+---
+kind: Endpoints
+apiVersion: v1
+metadata:
+  name: wso2analytics260
+subsets:
+  - addresses:
+      - ip: 35.202.210.126                         # FIX ME: API Manager and Analytics IP Address
+    ports:
+      - port: 9444
+        name: "servlet"
+      

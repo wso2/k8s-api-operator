@@ -29,10 +29,11 @@ const (
 	mgwConfFile             = "conf-file"
 	mgwConfLocation         = "/usr/wso2/mgwconf/"
 	analyticsCertFile       = "analytics-cert"
-	analyticsCertLocation   = "/home/analyticssecret"
+	analyticsCertLocation   = "/usr/wso2/analyticssecret/"
 	analyticsPVClaim        = "analytics-pv-claim"
 	analyticsVolumeName     = "analytics-pv-storage"
 	analyticsVolumeLocation = "/home/api-usage-data/"
+	analyticsConfName = "analytics-config"
 
 	mgwToolkitImgConst  = "mgwToolkitImg"
 	mgwRuntimeImgConst  = "mgwRuntimeImg"
@@ -51,6 +52,7 @@ const (
 	usernameConst = "username"
 	passwordConst = "password"
 	certConst     = "cert_security"
+	analyticsAlias ="wso2analytics260"
 
 	dockerhubRegistryUrl     = "https://registry-1.docker.io/"
 	defaultSecurity          = "default-security"

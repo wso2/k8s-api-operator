@@ -14,13 +14,15 @@
 # specific language governing permissions and limitations
 # under the License.
 
-apiVersion: wso2.com/v1alpha1
-kind: Security
+apiVersion: v1
+kind: ConfigMap
 metadata:
-  name: default-security
+  name: analytics-config
   namespace: wso2-system
-spec:
-  type: JWT
-  certificate: wso2am260-secret
-  issuer: https://localhost:9443/oauth2/token
-  audience: http://org.wso2.apimgt/gateway
+data:
+  uploadingTimeSpanInMillis: "60000"
+  rotatingPeriod: "60000"
+  uploadFiles: "true"
+  verifyHostname: "true"
+  hostname: wso2analytics260
+  port: "9444"

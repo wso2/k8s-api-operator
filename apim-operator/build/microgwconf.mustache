@@ -53,13 +53,13 @@ tokenCache.evictionFactor=0.25
 
 [analytics]
 enable={{analyticsEnabled}}
-uploadingTimeSpanInMillis=60000
-uploadingEndpoint="https://wso2analytics260:9444/analytics/v1.0/usage/upload-file"
-rotatingPeriod=60000
-task.uploadFiles=true
+uploadingTimeSpanInMillis={{uploadingTimeSpanInMillis}}
+uploadingEndpoint="https://{{hostname}}:{{port}}/analytics/v1.0/usage/upload-file"
+rotatingPeriod={{rotatingPeriod}}
+task.uploadFiles={{rotatingPeriod}}
 username="{{analyticsUsername}}"
 password="{{analyticsPassword}}"
-verifyHostname=true
+verifyHostname={{verifyHostname}}
 
 [http2]
 enable=false
