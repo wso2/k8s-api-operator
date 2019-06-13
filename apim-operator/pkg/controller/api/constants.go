@@ -32,7 +32,7 @@ const (
 	analyticsCertLocation   = "/usr/wso2/analyticssecret/"
 	analyticsPVClaim        = "analytics-pv-claim"
 	analyticsVolumeName     = "analytics-pv-storage"
-	analyticsVolumeLocation = "/home/api-usage-data/"
+	analyticsVolumeLocation = "/home/ballerina/api-usage-data/"
 	analyticsConfName = "analytics-config"
 
 	mgwToolkitImgConst  = "mgwToolkitImg"

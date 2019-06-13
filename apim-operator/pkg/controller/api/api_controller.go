@@ -119,9 +119,6 @@ type ReconcileAPI struct {
 
 // Reconcile reads that state of the cluster for a API object and makes changes based on the state read
 // and what is in the API.Spec
-// TODO(user): Modify this Reconcile function to implement your Controller logic.  This example creates
-// a Pod as an example
-// Note:
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, error) {
@@ -718,15 +715,15 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 
 	deployVolumeMount := []corev1.VolumeMount{}
 	deployVolume := []corev1.Volume{}
-	// if analyticsEnabled {
-	// 	deployVolumeMountTemp, deployVolumeTemp, err := getAnalyticsPVClaim(r, deployVolumeMount, deployVolume)
-	// 	if err != nil {
-	// 		log.Error(err, "PVC mounting error")
-	// 	}else{
-	// 		deployVolumeMount = deployVolumeMountTemp
-	// 		deployVolume = deployVolumeTemp
-	// 	}
-	// }
+	if analyticsEnabled {
+		deployVolumeMountTemp, deployVolumeTemp, err := getAnalyticsPVClaim(r, deployVolumeMount, deployVolume)
+		if err != nil {
+			log.Error(err, "Analytics volume mounting error")
+		}else{
+			deployVolumeMount = deployVolumeMountTemp
+			deployVolume = deployVolumeTemp
+		}
+	}
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1173,19 +1170,8 @@ func certMoutHandler(r *ReconcileAPI, cert *corev1.Secret, jobVolumeMount []core
 	return jobVolumeMount, jobVolume
 }
 
-//Mounts the persistent volume claims to be used when analytics is enabled
-//To enable analytics, user should create an analytics claim with the name "analytics-pv-claim"
-//Templates for persistent volume and claim are provided for local kubernetes cluster
-//Modify the templates according to the cluster environment and required capacity
+//Mounts an emptydir volume to be used when analytics is enabled
 func getAnalyticsPVClaim(r *ReconcileAPI, deployVolumeMount []corev1.VolumeMount, deployVolume []corev1.Volume) ([]corev1.VolumeMount, []corev1.Volume, error) {
-
-	// pvClaim := &corev1.PersistentVolumeClaim{}
-	// //checks if the claim is available
-	// err := r.client.Get(context.TODO(), types.NamespacedName{Name: analyticsPVClaim, Namespace: wso2NameSpaceConst}, pvClaim)
-	// if err != nil {
-	// 	log.Error(err, "Error in analytics-pv-claim")
-	// } else {
-	// 	log.Info("Analytics persistent volume claim found. Mounting it to volume.")
 
 	deployVolumeMount = []corev1.VolumeMount{
 		{
