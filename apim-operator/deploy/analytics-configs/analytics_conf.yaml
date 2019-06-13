@@ -20,6 +20,8 @@ metadata:
   name: analytics-config
   namespace: wso2-system
 data:
+  analyticsEnable: "true"
+  analyticsSecret: "analytics-secret"
   uploadingTimeSpanInMillis: "60000"
   rotatingPeriod: "60000"
   uploadFiles: "true"

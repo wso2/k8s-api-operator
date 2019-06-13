@@ -318,39 +318,42 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		}
 	}
 
-	// gets the data from analytics secret
-	analyticsData, err := getSecretData(r)
-
-	if err == nil && analyticsData != nil && analyticsData[usernameConst] != nil &&
-		analyticsData[passwordConst] != nil && analyticsData[certConst] != nil {
-		analyticsUsername = string(analyticsData[usernameConst])
-		analyticsPassword = string(analyticsData[passwordConst])
-		analyticsCertSecretName := string(analyticsData[certConst])
-
-		log.Info("Finding analytics cert secret " + analyticsCertSecretName)
-		//Check if this secret exists and append it to volumes
-		jobVolumeMountTemp, jobVolumeTemp, fileName, errCert := analyticsVolumeHandler(analyticsCertSecretName, r, jobVolumeMount, jobVolume)
-		if errCert == nil {
-			jobVolumeMount = jobVolumeMountTemp
-			jobVolume = jobVolumeTemp
-			existcert = true
-			analyticsEnabled = "true"
-			certList[analyticsAlias] = analyticsCertLocation + fileName
-		}
-	}
-
 	// gets analytics configuration
 	analyticsConf, analyticsEr := getConfigmap(r, analyticsConfName, wso2NameSpaceConst)
 	if analyticsEr != nil {
 		log.Info("Disabling analytics since analytics configurations were not found")
 		analyticsEnabled = "false"
 	} else {
-		uploadingTimeSpanInMillis = analyticsConf.Data["uploadingTimeSpanInMillis"]
-		rotatingPeriod = analyticsConf.Data["rotatingPeriod"]
-		uploadFiles = analyticsConf.Data["uploadFiles"]
-		verifyHostname = analyticsConf.Data["verifyHostname"]
-		hostname = analyticsConf.Data["hostname"]
-		port = analyticsConf.Data["port"]
+		if analyticsConf.Data["analyticsEnable"] == "true" {
+			uploadingTimeSpanInMillis = analyticsConf.Data["uploadingTimeSpanInMillis"]
+			rotatingPeriod = analyticsConf.Data["rotatingPeriod"]
+			uploadFiles = analyticsConf.Data["uploadFiles"]
+			verifyHostname = analyticsConf.Data["verifyHostname"]
+			hostname = analyticsConf.Data["hostname"]
+			port = analyticsConf.Data["port"]
+			analyticsSecretName := analyticsConf.Data["analyticsSecret"]
+
+			// gets the data from analytics secret
+			analyticsData, err := getSecretData(r, analyticsSecretName)
+
+			if err == nil && analyticsData != nil && analyticsData[usernameConst] != nil &&
+				analyticsData[passwordConst] != nil && analyticsData[certConst] != nil {
+				analyticsUsername = string(analyticsData[usernameConst])
+				analyticsPassword = string(analyticsData[passwordConst])
+				analyticsCertSecretName := string(analyticsData[certConst])
+
+				log.Info("Finding analytics cert secret " + analyticsCertSecretName)
+				//Check if this secret exists and append it to volumes
+				jobVolumeMountTemp, jobVolumeTemp, fileName, errCert := analyticsVolumeHandler(analyticsCertSecretName, r, jobVolumeMount, jobVolume)
+				if errCert == nil {
+					jobVolumeMount = jobVolumeMountTemp
+					jobVolume = jobVolumeTemp
+					existcert = true
+					analyticsEnabled = "true"
+					certList[analyticsAlias] = analyticsCertLocation + fileName
+				}
+			}
+		}
 	}
 
 	//writes into the conf file
@@ -466,11 +469,11 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 }
 
 // gets the data from analytics secret
-func getSecretData(r *ReconcileAPI) (map[string][]byte, error) {
+func getSecretData(r *ReconcileAPI, analyticsSecretName string) (map[string][]byte, error) {
 	var analyticsData map[string][]byte
 	// Check if this secret exists
 	analyticsSecret := &corev1.Secret{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: analyticsSecretConst, Namespace: wso2NameSpaceConst}, analyticsSecret)
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: analyticsSecretName, Namespace: wso2NameSpaceConst}, analyticsSecret)
 
 	if err != nil && errors.IsNotFound(err) {
 		log.Info("Analytics Secret is not found")
@@ -719,7 +722,7 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 		deployVolumeMountTemp, deployVolumeTemp, err := getAnalyticsPVClaim(r, deployVolumeMount, deployVolume)
 		if err != nil {
 			log.Error(err, "Analytics volume mounting error")
-		}else{
+		} else {
 			deployVolumeMount = deployVolumeMountTemp
 			deployVolume = deployVolumeTemp
 		}
