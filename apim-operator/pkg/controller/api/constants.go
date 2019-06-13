@@ -30,8 +30,7 @@ const (
 	mgwConfLocation         = "/usr/wso2/mgwconf/"
 	analyticsCertFile       = "analytics-cert"
 	analyticsCertLocation   = "/usr/wso2/analyticssecret/"
-	analyticsPVClaim        = "analytics-pv-claim"
-	analyticsVolumeName     = "analytics-pv-storage"
+	analyticsVolumeName     = "analytics-volume-storage"
 	analyticsVolumeLocation = "/home/ballerina/api-usage-data/"
 	analyticsConfName = "analytics-config"
 
@@ -45,7 +44,6 @@ const (
 	policyConfigmap       = "policy-configmap"
 	mgwConfSecretConst    = "mgw-conf"
 	mgwConfConst          = "micro-gw.conf"
-	analyticsSecretConst  = "analytics-secret"
 	dockerSecretNameConst = "docker-secret"
 	controllerConfName    = "controller-config"
 
