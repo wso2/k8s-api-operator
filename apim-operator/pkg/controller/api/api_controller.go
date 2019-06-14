@@ -144,8 +144,9 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Controller configmap is not found, could have been deleted after reconcile request.
-			// Return and don't requeue
-			return reconcile.Result{}, nil
+			// Return and requeue
+			log.Error(err, "Controller configuration file is not found")
+			return reconcile.Result{}, err
 		}
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
@@ -179,8 +180,9 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Swagger configmap is not found, could have been deleted after reconcile request.
-			// Return and don't requeue
-			return reconcile.Result{}, nil
+			// Return and requeue
+			log.Error(err, "Swagger configmap is not found")
+			return reconcile.Result{}, err
 		}
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
