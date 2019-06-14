@@ -35,9 +35,15 @@ var (
 	certificateAlias string = "wso2apim"
 
 	//analytics
-	analyticsEnabled  string = "false"
-	analyticsUsername string = "admin"
-	analyticsPassword string = "admin"
+	analyticsEnabled          string = "false"
+	analyticsUsername         string = "admin"
+	analyticsPassword         string = "admin"
+	uploadingTimeSpanInMillis string = "600000"
+	rotatingPeriod            string = "600000"
+	uploadFiles               string = "true"
+	verifyHostname            string = "true"
+	hostname                  string = "localhost"
+	port                      string = "9444"
 
 	//throttlingConfig
 	enabledGlobalTMEventPublishing string = "false"

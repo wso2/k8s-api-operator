@@ -21,6 +21,6 @@ metadata:
   namespace: wso2-system
 spec:
   type: JWT
-  certificate: testjwt
-  issuer: https://localhost:9443/oauth2/defaultTest
-  audience: https://localhost:9443/oauth2/defaultTest
+  certificate: wso2am260-secret
+  issuer: https://localhost:9443/oauth2/token
+  audience: http://org.wso2.apimgt/gateway

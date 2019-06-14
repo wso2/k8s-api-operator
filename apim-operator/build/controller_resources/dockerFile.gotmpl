@@ -25,6 +25,9 @@ RUN micro-gw init project
 #copy swagger definitions to the project location
 RUN cp /usr/wso2/swagger/* ./project/api_definitions/
 
+#copy policy yaml to the project
+RUN cp /usr/wso2/policy/* ./project/
+
 #generate the executable
 RUN micro-gw build project
 
@@ -43,6 +46,7 @@ COPY --from=toolkit /home/exec /home/exec
 
 RUN ls /home/ballerina/conf
 
+#copy microgateway conf
 RUN cp /usr/wso2/mgwconf/* /home/ballerina/conf
 
 RUN ls /home/ballerina/conf
@@ -56,6 +60,8 @@ RUN echo yes | keytool -import  -storepass {{ $.Password }} -keystore /ballerina
     {{- end }}
 RUN keytool -list -storepass ballerina -v -keystore /ballerina/runtime/bre/security/ballerinaTruststore.p12
 {{ end }}
+
+RUN chmod a+w /home/ballerina
 USER ballerina
 #project name has to be passed to the ballerina image as a env variable
 ENV project="project"

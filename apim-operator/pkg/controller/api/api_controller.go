@@ -65,8 +65,8 @@ type XMGWProductionEndpoints struct {
 //This struct use to import multiple certificates to trsutstore
 type Certs struct {
 	CertFound bool
-	Password string
-	Certs map[string]string
+	Password  string
+	Certs     map[string]string
 }
 
 // Add creates a new API Controller and adds it to the Manager. The Manager will set fields on the Controller
@@ -119,9 +119,6 @@ type ReconcileAPI struct {
 
 // Reconcile reads that state of the cluster for a API object and makes changes based on the state read
 // and what is in the API.Spec
-// TODO(user): Modify this Reconcile function to implement your Controller logic.  This example creates
-// a Pod as an example
-// Note:
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, error) {
@@ -255,7 +252,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	//keep to track the existance of certificates
 	var existcert bool
 	//to add multiple certs with alias
-	var certList map[string]string
+	certList := make(map[string]string)
 	var certName string
 	//get the volume mounts
 	jobVolumeMount, jobVolume := getVolumes(instance)
@@ -277,8 +274,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		alias = certificateSecret.Name + "alias"
 		existcert = true
 
-		for k,_ := range certificateSecret.Data {
-			 certName = k
+		for k, _ := range certificateSecret.Data {
+			certName = k
 		}
 
 		//add cert path and alias as key value pairs
@@ -321,22 +318,41 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		}
 	}
 
-	// gets the data from analytics secret
-	analyticsData, err := getSecretData(r)
+	// gets analytics configuration
+	analyticsConf, analyticsEr := getConfigmap(r, analyticsConfName, wso2NameSpaceConst)
+	if analyticsEr != nil {
+		log.Info("Disabling analytics since the analytics configuration related config map not found.")
+		analyticsEnabled = "false"
+	} else {
+		if analyticsConf.Data[analyticsEnabledConst] == "true" {
+			uploadingTimeSpanInMillis = analyticsConf.Data[uploadingTimeSpanInMillisConst]
+			rotatingPeriod = analyticsConf.Data[rotatingPeriodConst]
+			uploadFiles = analyticsConf.Data[uploadFilesConst]
+			verifyHostname = analyticsConf.Data[verifyHostnameConst]
+			hostname = analyticsConf.Data[hostnameConst]
+			port = analyticsConf.Data[portConst]
+			analyticsSecretName := analyticsConf.Data[analyticsSecretConst]
 
-	if err == nil && analyticsData != nil && analyticsData[usernameConst] != nil &&
-		analyticsData[passwordConst] != nil && analyticsData[certConst] != nil {
-		analyticsEnabled = "true"
-		analyticsUsername = string(analyticsData[usernameConst])
-		analyticsPassword = string(analyticsData[passwordConst])
-		analyticsCertSecretName := string(analyticsData[certConst])
+			// gets the data from analytics secret
+			analyticsData, err := getSecretData(r, analyticsSecretName)
 
-		log.Info("Finding analytics cert secret " + analyticsCertSecretName)
-		// Check if this secret exists and append it to volumes
-		jobVolumeMountTemp, jobVolumeTemp, errCert := analyticsVolumeHandler(analyticsCertSecretName, r, jobVolumeMount, jobVolume)
-		if errCert == nil {
-			jobVolumeMount = jobVolumeMountTemp
-			jobVolume = jobVolumeTemp
+			if err == nil && analyticsData != nil && analyticsData[usernameConst] != nil &&
+				analyticsData[passwordConst] != nil && analyticsData[certConst] != nil {
+				analyticsUsername = string(analyticsData[usernameConst])
+				analyticsPassword = string(analyticsData[passwordConst])
+				analyticsCertSecretName := string(analyticsData[certConst])
+
+				log.Info("Finding analytics cert secret " + analyticsCertSecretName)
+				//Check if this secret exists and append it to volumes
+				jobVolumeMountTemp, jobVolumeTemp, fileName, errCert := analyticsVolumeHandler(analyticsCertSecretName, r, jobVolumeMount, jobVolume)
+				if errCert == nil {
+					jobVolumeMount = jobVolumeMountTemp
+					jobVolume = jobVolumeTemp
+					existcert = true
+					analyticsEnabled = "true"
+					certList[analyticsAlias] = analyticsCertLocation + fileName
+				}
+			}
 		}
 	}
 
@@ -348,24 +364,30 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 	log.Info("docker file data " + dockerfileConfmap.Data["Dockerfile"])
 
-	filename := "/usr/local/bin/microgwconf.mustache"
+	filename := mgwConfTemplatePath
 	output, err := mustache.RenderFile(filename, map[string]string{
-		"keystorePath":                   keystorePath,
-		"keystorePassword":               keystorePassword,
-		"truststorePath":                 truststorePath,
-		"truststorePassword":             truststorePassword,
-		"keymanagerServerurl":            keymanagerServerurl,
-		"keymanagerUsername":             keymanagerUsername,
-		"keymanagerPassword":             keymanagerPassword,
-		"issuer":                         issuer,
-		"audience":                       audience,
-		"certificateAlias":               certificateAlias,
-		"enabledGlobalTMEventPublishing": enabledGlobalTMEventPublishing,
-		"basicUsername":                  basicUsername,
-		"basicPassword":                  basicPassword,
-		"analyticsEnabled":               analyticsEnabled,
-		"analyticsUsername":              analyticsUsername,
-		"analyticsPassword":              analyticsPassword})
+		keystorePathConst:                   keystorePath,
+		keystorePasswordConst:               keystorePassword,
+		truststorePathConst:                 truststorePath,
+		truststorePasswordConst:             truststorePassword,
+		keymanagerServerurlConst:            keymanagerServerurl,
+		keymanagerUsernameConst:             keymanagerUsername,
+		keymanagerPasswordConst:             keymanagerPassword,
+		issuerConst:                         issuer,
+		audienceConst:                       audience,
+		certificateAliasConst:               certificateAlias,
+		enabledGlobalTMEventPublishingConst: enabledGlobalTMEventPublishing,
+		basicUsernameConst:                  basicUsername,
+		basicPasswordConst:                  basicPassword,
+		analyticsEnabledConst:               analyticsEnabled,
+		analyticsUsernameConst:              analyticsUsername,
+		analyticsPasswordConst:              analyticsPassword,
+		uploadingTimeSpanInMillisConst:      uploadingTimeSpanInMillis,
+		rotatingPeriodConst:                 rotatingPeriod,
+		uploadFilesConst:                    uploadFiles,
+		verifyHostnameConst:                 verifyHostname,
+		hostnameConst:                       hostname,
+		portConst:                           port})
 
 	if err != nil {
 		log.Error(err, "error in rendering ")
@@ -446,13 +468,12 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	return reconcile.Result{}, jobErr
 }
 
-
 // gets the data from analytics secret
-func getSecretData(r *ReconcileAPI) (map[string][]byte, error) {
+func getSecretData(r *ReconcileAPI, analyticsSecretName string) (map[string][]byte, error) {
 	var analyticsData map[string][]byte
 	// Check if this secret exists
 	analyticsSecret := &corev1.Secret{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: analyticsSecretConst, Namespace: wso2NameSpaceConst}, analyticsSecret)
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: analyticsSecretName, Namespace: wso2NameSpaceConst}, analyticsSecret)
 
 	if err != nil && errors.IsNotFound(err) {
 		log.Info("Analytics Secret is not found")
@@ -481,7 +502,7 @@ func createMGWSecret(r *ReconcileAPI, confData string) error {
 	}
 
 	apimSecret.Data = map[string][]byte{
-		mgwconfConst: []byte(confData),
+		mgwConfConst: []byte(confData),
 	}
 
 	// Check if this secret exists
@@ -551,7 +572,7 @@ func mgwSwaggerLoader(swaggerDataMap map[string]string) (*openapi3.Swagger, stri
 func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger) string {
 
 	//api level endpoint
-	endpointData, checkEndpoint := swagger.Extensions["x-mgw-production-endpoints"]
+	endpointData, checkEndpoint := swagger.Extensions[endpointExtension]
 	if checkEndpoint {
 		prodEp := XMGWProductionEndpoints{}
 		var endPoint string
@@ -580,7 +601,7 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger) string {
 					endPoint = protocol + "://" + endPoint
 					checkt := []string{endPoint}
 					prodEp.Urls = checkt
-					swagger.Extensions["x-mgw-production-endpoints"] = prodEp
+					swagger.Extensions[endpointExtension] = prodEp
 				}
 			}
 		}
@@ -588,7 +609,7 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger) string {
 
 	//resource level endpoint
 	for _, path := range swagger.Paths {
-		resourceEndpointData, checkResourceEP := path.Get.Extensions["x-mgw-production-endpoints"]
+		resourceEndpointData, checkResourceEP := path.Get.Extensions[endpointExtension]
 		if checkResourceEP {
 			prodEp := XMGWProductionEndpoints{}
 			var endPoint string
@@ -616,7 +637,7 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger) string {
 						endPoint = protocol + "://" + endPoint
 						checkt := []string{endPoint}
 						prodEp.Urls = checkt
-						path.Get.Extensions["x-mgw-production-endpoints"] = prodEp
+						path.Get.Extensions[endpointExtension] = prodEp
 					}
 				}
 			}
@@ -665,21 +686,21 @@ func getCredentials(r *ReconcileAPI, name string, securityType string) error {
 		}
 
 	}
-		if securityType == "Basic" {
+	if securityType == "Basic" {
 
-			basicUsername = usrname
-			_, err := hasher.Write([]byte(password))
-			if err != nil {
-				log.Info("error in encoding password")
-				return err
-			}
-			//convert encoded password to a uppercase hex string
-			basicPassword = strings.ToUpper(hex.EncodeToString(hasher.Sum(nil)))
+		basicUsername = usrname
+		_, err := hasher.Write([]byte(password))
+		if err != nil {
+			log.Info("error in encoding password")
+			return err
 		}
-		if securityType == "Oauth" {
-			keymanagerUsername = usrname
-			keymanagerPassword = string(password)
-		}
+		//convert encoded password to a uppercase hex string
+		basicPassword = strings.ToUpper(hex.EncodeToString(hasher.Sum(nil)))
+	}
+	if securityType == "Oauth" {
+		keymanagerUsername = usrname
+		keymanagerPassword = string(password)
+	}
 	return nil
 }
 
@@ -700,7 +721,7 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 	if analyticsEnabled {
 		deployVolumeMountTemp, deployVolumeTemp, err := getAnalyticsPVClaim(r, deployVolumeMount, deployVolume)
 		if err != nil {
-			log.Error(err, "PVC mounting error")
+			log.Error(err, "Analytics volume mounting error")
 		} else {
 			deployVolumeMount = deployVolumeMountTemp
 			deployVolume = deployVolumeTemp
@@ -740,14 +761,14 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 	}
 }
 
-//Handles dockermap configmap creation
+//Handles dockerfile configmap creation
 func dockerfileHandler(r *ReconcileAPI, certList map[string]string, existcert bool) (*corev1.ConfigMap, error) {
 	truststorePass := getTruststorePassword(r)
 	dockertemplate := dockertemplatepath
 	certs := &Certs{
 		CertFound: existcert,
-		Password: truststorePass,
-		Certs:certList,
+		Password:  truststorePass,
+		Certs:     certList,
 	}
 	//generate dockerfile from the template
 	tmpl, err := template.ParseFiles(dockertemplate)
@@ -759,10 +780,8 @@ func dockerfileHandler(r *ReconcileAPI, certList map[string]string, existcert bo
 	err = tmpl.Execute(builder, certs)
 	if err != nil {
 		log.Error(err, "error in generating Dockerfile")
-		return nil,err
+		return nil, err
 	}
-	//fmt.Println("Docker file")
-	//fmt.Println(builder.String())
 
 	dockerfileConfmap, err := getConfigmap(r, dockerFile, wso2NameSpaceConst)
 	if err != nil && errors.IsNotFound(err) {
@@ -1103,7 +1122,9 @@ func getVolumes(cr *wso2v1alpha1.API) ([]corev1.VolumeMount, []corev1.Volume) {
 }
 
 // Handles the mounting of analytics certificate
-func analyticsVolumeHandler(analyticsCertSecretName string, r *ReconcileAPI, jobVolumeMount []corev1.VolumeMount, jobVolume []corev1.Volume) ([]corev1.VolumeMount, []corev1.Volume, error) {
+func analyticsVolumeHandler(analyticsCertSecretName string, r *ReconcileAPI, jobVolumeMount []corev1.VolumeMount,
+	jobVolume []corev1.Volume) ([]corev1.VolumeMount, []corev1.Volume, string, error) {
+	var fileName string
 	analyticsCertSecret := &corev1.Secret{}
 	//checks if the certificate exists
 	errCert := r.client.Get(context.TODO(), types.NamespacedName{Name: analyticsCertSecretName, Namespace: wso2NameSpaceConst}, analyticsCertSecret)
@@ -1126,8 +1147,12 @@ func analyticsVolumeHandler(analyticsCertSecretName string, r *ReconcileAPI, job
 				},
 			},
 		})
+
+		for pem := range analyticsCertSecret.Data {
+			fileName = pem
+		}
 	}
-	return jobVolumeMount, jobVolume, errCert
+	return jobVolumeMount, jobVolume, fileName, errCert
 }
 
 func certMoutHandler(r *ReconcileAPI, cert *corev1.Secret, jobVolumeMount []corev1.VolumeMount, jobVolume []corev1.Volume) ([]corev1.VolumeMount, []corev1.Volume) {
@@ -1148,39 +1173,26 @@ func certMoutHandler(r *ReconcileAPI, cert *corev1.Secret, jobVolumeMount []core
 	return jobVolumeMount, jobVolume
 }
 
-//Mounts the persistent volume claims to be used when analytics is enabled
-//To enable analytics, user should create an analytics claim with the name "analytics-pv-claim"
-//Templates for persistent volume and claim are provided for local kubernetes cluster
-//Modify the templates according to the cluster environment and required capacity
+//Mounts an emptydir volume to be used when analytics is enabled
 func getAnalyticsPVClaim(r *ReconcileAPI, deployVolumeMount []corev1.VolumeMount, deployVolume []corev1.Volume) ([]corev1.VolumeMount, []corev1.Volume, error) {
 
-	pvClaim := &corev1.PersistentVolumeClaim{}
-	//checks if the claim is available
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: analyticsPVClaim, Namespace: wso2NameSpaceConst}, pvClaim)
-	if err != nil {
-		log.Error(err, "Error in analytics-pv-claim")
-	} else {
-		log.Info("Analytics persistent volume claim found. Mounting it to volume.")
-
-		deployVolumeMount = []corev1.VolumeMount{
-			{
-				Name:      analyticsVolumeName,
-				MountPath: analyticsVolumeLocation,
-				ReadOnly:  false,
-			},
-		}
-		deployVolume = []corev1.Volume{
-			{
-				Name: analyticsVolumeName,
-				VolumeSource: corev1.VolumeSource{
-					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-						ClaimName: analyticsPVClaim,
-					},
-				},
-			},
-		}
+	deployVolumeMount = []corev1.VolumeMount{
+		{
+			Name:      analyticsVolumeName,
+			MountPath: analyticsVolumeLocation,
+			ReadOnly:  false,
+		},
 	}
-	return deployVolumeMount, deployVolume, err
+	deployVolume = []corev1.Volume{
+		{
+			Name: analyticsVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
+	}
+	//}
+	return deployVolumeMount, deployVolume, nil
 }
 
 func getTruststorePassword(r *ReconcileAPI) string {

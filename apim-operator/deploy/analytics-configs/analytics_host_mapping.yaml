@@ -14,15 +14,27 @@
 # specific language governing permissions and limitations
 # under the License.
 
-kind: PersistentVolumeClaim
+kind: Service
 apiVersion: v1
 metadata:
-  name: analytics-pv-claim
-  namespace: wso2-system
+  name: wso2analytics260
 spec:
-  storageClassName: manual
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: 3Gi
+  type: ClusterIP
+  ports:
+    - protocol: TCP
+      port: 9444
+      targetPort: 9444
+      name: "servlet"
+   
+---
+kind: Endpoints
+apiVersion: v1
+metadata:
+  name: wso2analytics260
+subsets:
+  - addresses:
+      - ip: 0.0.0.0                         # FIX ME: API Manager and Analytics IP Address
+    ports:
+      - port: 9444
+        name: "servlet"
+      

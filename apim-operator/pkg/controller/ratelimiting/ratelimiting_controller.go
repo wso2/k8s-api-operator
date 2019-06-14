@@ -127,12 +127,12 @@ func (r *ReconcileRateLimiting) Reconcile(request reconcile.Request) (reconcile.
 	log.Info(name)
 
 	policyType := instance.Spec.Type
-	if policyType == "subscription" || policyType == "Subscription" {
-		policyType = "Subscription"
-	} else if policyType == "application" || policyType == "Application" {
-		policyType = "Application"
+	if policyType == "subscription" || policyType == subscriptionConst {
+		policyType = subscriptionConst
+	} else if policyType == "application" || policyType == applicationConst {
+		policyType = applicationConst
 	} else if policyType == "advance" || policyType == "Advance" {
-		policyType = "Resource"
+		policyType = resourceConst
 	} else {
 		log.Info("INVALID policy type. Use application or subscription in crd object for type")
 		return reconcile.Result{}, nil
@@ -140,11 +140,11 @@ func (r *ReconcileRateLimiting) Reconcile(request reconcile.Request) (reconcile.
 
 	//Check if policy configmap is available
 	foundmapc := &corev1.ConfigMap{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: "policy-configmap", Namespace: "wso2-system"}, foundmapc)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: policyConfMapNameConst, Namespace: wso2NameSpaceConst}, foundmapc)
 
 	if err != nil && errors.IsNotFound(err) {
 		//create new map with default policies if a map is not found
-		reqLogger.Info("Creating a config map with default policies", "Namespace", "wso2-system", "Name", "policy-configmap")
+		reqLogger.Info("Creating a config map with default policies", "Namespace", wso2NameSpaceConst, "Name", policyConfMapNameConst)
 
 		defaultval := CreateDefault()
 		fmt.Println(defaultval)
@@ -166,7 +166,7 @@ func (r *ReconcileRateLimiting) Reconcile(request reconcile.Request) (reconcile.
 	}
 
 	oldmap := foundmapc.Data
-	olddata := oldmap["Code"]
+	olddata := oldmap[policyFileConst]
 	count := instance.Spec.RequestCount.Limit
 	unitTime := instance.Spec.UnitTime
 	timeUnit := instance.Spec.TimeUnit
@@ -188,15 +188,15 @@ func (r *ReconcileRateLimiting) Reconcile(request reconcile.Request) (reconcile.
 	var newSub []map[string]Policy
 	var newApp []map[string]Policy
 
-	if policyType == "Resource" {
+	if policyType == resourceConst {
 		newRes = append(oldRes, newPolObj)
 		newSub = oldSub
 		newApp = oldApp
-	} else if policyType == "Subscription" {
+	} else if policyType == subscriptionConst {
 		newRes = oldRes
 		newSub = append(oldSub, newPolObj)
 		newApp = oldApp
-	} else if policyType == "Application" {
+	} else if policyType == applicationConst {
 		newRes = oldRes
 		newSub = oldSub
 		newApp = append(oldApp, newPolObj)
@@ -235,11 +235,11 @@ func CreatePolicyConfigMap(output string) (*corev1.ConfigMap, error) {
 
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "policy-configmap",
-			Namespace: "wso2-system",
+			Name:      policyConfMapNameConst,
+			Namespace: wso2NameSpaceConst,
 		},
 		Data: map[string]string{
-			"Code": output,
+			policyFileConst: output,
 		},
 	}, nil
 }
