@@ -321,7 +321,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	// gets analytics configuration
 	analyticsConf, analyticsEr := getConfigmap(r, analyticsConfName, wso2NameSpaceConst)
 	if analyticsEr != nil {
-		log.Info("Disabling analytics since analytics configurations were not found")
+		log.Info("Disabling analytics since the analytics configuration related config map not found.")
 		analyticsEnabled = "false"
 	} else {
 		if analyticsConf.Data[analyticsEnabledConst] == "true" {
