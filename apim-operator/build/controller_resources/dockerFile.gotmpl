@@ -17,7 +17,7 @@
 #This image will be used by Kaniko pod to create the micro-gw image
 
 # Custom image with java and toolkit has been build for stage1
-FROM wso2am/wso2micro-gw-toolkit:3.0.1 as toolkit
+FROM {{$.BaseImage}} as toolkit
 
 #init the micro-gw project
 RUN micro-gw init project
@@ -37,7 +37,7 @@ RUN mkdir -p /home/exec
 RUN cp ./project/target/*.balx /home/exec/
 
 #Stage 2: Generate balx will be passed to the micro-gw runtime
-FROM wso2/wso2micro-gw:3.0.1
+FROM {{$.RuntimeImage}}
 
 #change permission to create and copy the executable
 USER root
