@@ -283,8 +283,10 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	if strings.EqualFold(security.Spec.Type, "Oauth") {
-		//fetch credentials from the secret created
 		fmt.Println("security type Oauth")
+		//get the keymanager server URL from the security kind
+		keymanagerServerurl = security.Spec.Endpoint
+		//fetch credentials from the secret created
 		errGetCredentials := getCredentials(r, security.Spec.Credentials, "Oauth")
 
 		if errGetCredentials != nil {
@@ -356,7 +358,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		}
 	}
 
-	//writes into the conf file
 	//Handles the creation of dockerfile configmap
 	dockerfileConfmap, errDocker := dockerfileHandler(r, certList, existcert)
 	if errDocker != nil {
@@ -364,6 +365,13 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 	log.Info("docker file data " + dockerfileConfmap.Data["Dockerfile"])
 
+	//Get data from apim configmap
+	apimConfig, apimEr := getConfigmap(r, apimConfName, wso2NameSpaceConst)
+	if apimEr == nil {
+		verifyHostname = apimConfig.Data[verifyHostnameConst]
+	}
+
+	//writes into the conf file
 	filename := mgwConfTemplatePath
 	output, err := mustache.RenderFile(filename, map[string]string{
 		keystorePathConst:                   keystorePath,
