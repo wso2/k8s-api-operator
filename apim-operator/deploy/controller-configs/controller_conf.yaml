@@ -20,8 +20,8 @@ metadata:
   name: controller-config
   namespace: wso2-system
 data:
-  mgwToolkitImg: wso2am/wso2micro-gw-toolkit:3.0.0-beta2
-  mgwRuntimeImg: wso2/wso2micro-gw:3.0.0-beta2
+  mgwToolkitImg: wso2am/wso2micro-gw-toolkit:3.0.1
+  mgwRuntimeImg: wso2/wso2micro-gw:3.0.1
   kanikoImg: gcr.io/kaniko-project/executor
   dockerRegistry: <user-docker-registry>
   userNameSpace: default

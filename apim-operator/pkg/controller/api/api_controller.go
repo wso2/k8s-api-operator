@@ -63,10 +63,12 @@ type XMGWProductionEndpoints struct {
 }
 
 //This struct use to import multiple certificates to trsutstore
-type Certs struct {
+type DockerfileArtifacts struct {
 	CertFound bool
 	Password  string
 	Certs     map[string]string
+	BaseImage string
+	RuntimeImage string
 }
 
 // Add creates a new API Controller and adds it to the Manager. The Manager will set fields on the Controller
@@ -144,8 +146,9 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Controller configmap is not found, could have been deleted after reconcile request.
-			// Return and don't requeue
-			return reconcile.Result{}, nil
+			// Return and requeue
+			log.Error(err, "Controller configuration file is not found")
+			return reconcile.Result{}, err
 		}
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
@@ -179,8 +182,9 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Swagger configmap is not found, could have been deleted after reconcile request.
-			// Return and don't requeue
-			return reconcile.Result{}, nil
+			// Return and requeue
+			log.Error(err, "Swagger configmap is not found")
+			return reconcile.Result{}, err
 		}
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
@@ -359,7 +363,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	//Handles the creation of dockerfile configmap
-	dockerfileConfmap, errDocker := dockerfileHandler(r, certList, existcert)
+	dockerfileConfmap, errDocker := dockerfileHandler(r, certList, existcert, controlConfigData)
 	if errDocker != nil {
 		log.Error(errDocker, "error in docker configmap handling")
 	}
@@ -411,24 +415,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		log.Info("Successfully created secret")
 	}
 
-	//Schedule Kaniko pod
-	job := scheduleKanikoJob(instance, imageName, controlConf, jobVolumeMount, jobVolume)
-	if err := controllerutil.SetControllerReference(instance, job, r.scheme); err != nil {
-		return reconcile.Result{}, err
-	}
-	kubeJob := &batchv1.Job{}
-	jobErr := r.client.Get(context.TODO(), types.NamespacedName{Name: job.Name, Namespace: job.Namespace}, kubeJob)
-	// if Job is not available
-	if jobErr != nil && errors.IsNotFound(jobErr) {
-		reqLogger.Info("Creating a new Job", "Job.Namespace", job.Namespace, "Job.Name", job.Name)
-		jobErr = r.client.Create(context.TODO(), job)
-		if jobErr != nil {
-			return reconcile.Result{}, jobErr
-		}
-	} else if jobErr != nil {
-		return reconcile.Result{}, jobErr
-	}
-
 	analyticsEnabledBool, _ := strconv.ParseBool(analyticsEnabled)
 	dep := createMgwDeployment(instance, imageName, controlConf, analyticsEnabledBool, r)
 	depFound := &appsv1.Deployment{}
@@ -438,9 +424,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	svcFound := &corev1.Service{}
 	svcErr := r.client.Get(context.TODO(), types.NamespacedName{Name: svc.Name, Namespace: svc.Namespace}, svcFound)
 
-	// if kaniko job is succeeded, create the deployment
-	if kubeJob.Status.Succeeded > 0 {
-		reqLogger.Info("Job completed successfully", "Job.Namespace", job.Namespace, "Job.Name", job.Name)
+	//Schedule Kaniko pod
+	if imageExist {
 		if deperr != nil && errors.IsNotFound(deperr) {
 			reqLogger.Info("Creating a new Dep", "Dep.Namespace", dep.Namespace, "Dep.Name", dep.Name)
 			deperr = r.client.Create(context.TODO(), dep)
@@ -468,12 +453,57 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			svcFound.Namespace, "SVC.Name", svcFound.Name)
 		return reconcile.Result{}, nil
 	} else {
-		reqLogger.Info("Job is still not completed.", "Job.Status", job.Status)
-		return reconcile.Result{}, deperr
+		job := scheduleKanikoJob(instance, imageName, controlConf, jobVolumeMount, jobVolume)
+		if err := controllerutil.SetControllerReference(instance, job, r.scheme); err != nil {
+			return reconcile.Result{}, err
+		}
+		kubeJob := &batchv1.Job{}
+		jobErr := r.client.Get(context.TODO(), types.NamespacedName{Name: job.Name, Namespace: job.Namespace}, kubeJob)
+		// if Job is not available
+		if jobErr != nil && errors.IsNotFound(jobErr) {
+			reqLogger.Info("Creating a new Job", "Job.Namespace", job.Namespace, "Job.Name", job.Name)
+			jobErr = r.client.Create(context.TODO(), job)
+			if jobErr != nil {
+				return reconcile.Result{}, jobErr
+			}
+		} else if jobErr != nil {
+			return reconcile.Result{}, jobErr
+		}
+
+		// if kaniko job is succeeded, create the deployment
+		if kubeJob.Status.Succeeded > 0 {
+			reqLogger.Info("Job completed successfully", "Job.Namespace", job.Namespace, "Job.Name", job.Name)
+			if deperr != nil && errors.IsNotFound(deperr) {
+				reqLogger.Info("Creating a new Dep", "Dep.Namespace", dep.Namespace, "Dep.Name", dep.Name)
+				deperr = r.client.Create(context.TODO(), dep)
+				if deperr != nil {
+					return reconcile.Result{}, deperr
+				}
+				// deployment created successfully - go to create service
+			} else if deperr != nil {
+				return reconcile.Result{}, deperr
+			}
+
+			if svcErr != nil && errors.IsNotFound(svcErr) {
+				reqLogger.Info("Creating a new Service", "SVC.Namespace", svc.Namespace, "SVC.Name", svc.Name)
+				svcErr = r.client.Create(context.TODO(), svc)
+				if svcErr != nil {
+					return reconcile.Result{}, svcErr
+				}
+				//Service created successfully - don't requeue
+				return reconcile.Result{}, nil
+			} else if svcErr != nil {
+				return reconcile.Result{}, svcErr
+			}
+			// if service already exsits
+			reqLogger.Info("Skip reconcile: Service already exists", "SVC.Namespace",
+				svcFound.Namespace, "SVC.Name", svcFound.Name)
+			return reconcile.Result{}, nil
+		} else {
+			reqLogger.Info("Job is still not completed.", "Job.Status", job.Status)
+			return reconcile.Result{}, deperr
+		}
 	}
-	// Job already exists - don't requeue
-	reqLogger.Info("Skip reconcile: Job already exists", "Job.Namespace", job.Namespace, "Job.Name", job.Name)
-	return reconcile.Result{}, jobErr
 }
 
 // gets the data from analytics secret
@@ -770,13 +800,15 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 }
 
 //Handles dockerfile configmap creation
-func dockerfileHandler(r *ReconcileAPI, certList map[string]string, existcert bool) (*corev1.ConfigMap, error) {
+func dockerfileHandler(r *ReconcileAPI, certList map[string]string, existcert bool, conf map[string]string) (*corev1.ConfigMap, error) {
 	truststorePass := getTruststorePassword(r)
 	dockertemplate := dockertemplatepath
-	certs := &Certs{
+	certs := &DockerfileArtifacts{
 		CertFound: existcert,
 		Password:  truststorePass,
 		Certs:     certList,
+		BaseImage: conf[mgwToolkitImgConst],
+		RuntimeImage: conf[mgwRuntimeImgConst],
 	}
 	//generate dockerfile from the template
 	tmpl, err := template.ParseFiles(dockertemplate)

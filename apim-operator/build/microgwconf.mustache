@@ -34,7 +34,6 @@ username="{{keymanagerUsername}}"
 password="{{keymanagerPassword}}"
 tokenContext="oauth2"
 timestampSkew=5000
-verifyHostname={{verifyHostname}}
 
 [jwtTokenConfig]
 issuer="{{issuer}}"
@@ -59,7 +58,6 @@ rotatingPeriod={{rotatingPeriod}}
 task.uploadFiles={{rotatingPeriod}}
 username="{{analyticsUsername}}"
 password="{{analyticsPassword}}"
-verifyHostname={{verifyHostname}}
 
 [http2]
 enable=false
@@ -87,7 +85,6 @@ jmsConnectionProviderUrl= "amqp://admin:admin@carbon/carbon?brokerlist='tcp://lo
 jmsConnectionUsername = ""
 jmsConnectionPassword = ""
 throttleEndpointUrl = "https://localhost:9443/endpoints"
-verifyHostname=true
 throttleEndpointbase64Header = "admin:admin"
 
 [tokenRevocationConfig]
@@ -105,7 +102,5 @@ throttleEndpointbase64Header = "admin:admin"
     username = "root"
     password = "root"
 
-
-
-[b7a.log]
-level="DEBUG"
+[httpClients]
+  verifyHostname={{verifyHostname}}
