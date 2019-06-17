@@ -37,4 +37,29 @@ subsets:
     ports:
       - port: 9444
         name: "servlet"
+
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: wso2am260
+spec:
+  type: ClusterIP
+  ports:
+    - protocol: TCP
+      port: 9443
+      targetPort: 9443
+      name: "apimport"
+   
+---
+kind: Endpoints
+apiVersion: v1
+metadata:
+  name: wso2am260
+subsets:
+  - addresses:
+      - ip: 0.0.0.0                         # FIX ME: API Manager and Analytics IP Address
+    ports:
+      - port: 9443
+        name: "apimport"
       

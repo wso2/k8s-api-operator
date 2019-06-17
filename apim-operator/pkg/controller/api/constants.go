@@ -63,6 +63,7 @@ const (
 	encodedTrustsorePassword = "YmFsbGVyaW5h"
 	truststoreSecretName     = "truststorepass"
 	truststoreSecretData     = "password"
+	apimConfName             = "apim-config"
 
 	keystorePathConst                   = "keystorePath"
 	keystorePasswordConst               = "keystorePassword"

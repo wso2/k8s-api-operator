@@ -15,12 +15,25 @@
 # under the License.
 
 apiVersion: v1
-kind: Secret
+kind: ConfigMap
 metadata:
-  name: analytics-secret
+  name: analytics-config
   namespace: wso2-system
-type: Opaque
 data:
-  username: YWRtaW4=               #enter base64 encoded username for analytics
-  password: YWRtaW4=               #enter base64 encoded password for analytics
-  cert_security: d3NvMmFuYWx5dGljczI2MC1zZWNyZXQ=  #enter (base64 encoded) name of the secret with certificate
+  analyticsEnabled: "true"
+  analyticsSecret: "analytics-secret"
+  uploadingTimeSpanInMillis: "60000"
+  rotatingPeriod: "60000"
+  uploadFiles: "true"
+  verifyHostname: "true"
+  hostname: wso2analytics260
+  port: "9444"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: apim-config
+  namespace: wso2-system
+data:
+  verifyHostname: "true"
