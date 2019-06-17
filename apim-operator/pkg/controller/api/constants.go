@@ -54,8 +54,8 @@ const (
 
 	dockerhubRegistryUrl     = "https://registry-1.docker.io/"
 	defaultSecurity          = "default-security"
-	endpointExtension        = "x-mgw-production-endpoints"
-	securityExtension        = "x-mgw-security"
+	endpointExtension        = "x-wso2-production-endpoints"
+	securityExtension        = "x-wso2-security"
 	certPath                 = "/usr/wso2/certs/"
 	mgwConfTemplatePath      = "/usr/local/bin/microgwconf.mustache"
 	dockertemplatepath       = "/usr/local/bin/dockerFile.gotmpl"

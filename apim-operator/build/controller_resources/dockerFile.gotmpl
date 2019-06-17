@@ -17,7 +17,7 @@
 #This image will be used by Kaniko pod to create the micro-gw image
 
 # Custom image with java and toolkit has been build for stage1
-FROM wso2am/wso2micro-gw-toolkit:3.0.0-beta2 as toolkit
+FROM {{$.BaseImage}} as toolkit
 
 #init the micro-gw project
 RUN micro-gw init project
@@ -34,31 +34,25 @@ RUN micro-gw build project
 #copy the executable to the home/exec location
 RUN mkdir -p /home/exec
 
-RUN cp ./project/target/* /home/exec/
+RUN cp ./project/target/*.balx /home/exec/
 
 #Stage 2: Generate balx will be passed to the micro-gw runtime
-FROM wso2/wso2micro-gw:3.0.0-beta2
+FROM {{$.RuntimeImage}}
 
 #change permission to create and copy the executable
 USER root
-RUN  mkdir -p /home/exec
-COPY --from=toolkit /home/exec /home/exec
 
-RUN ls /home/ballerina/conf
+RUN  mkdir -p /home/exec
+
+COPY --from=toolkit /home/exec /home/exec
 
 #copy microgateway conf
 RUN cp /usr/wso2/mgwconf/* /home/ballerina/conf
-
-RUN ls /home/ballerina/conf
-
-RUN cat /home/ballerina/conf/micro-gw.conf
-
 
 {{ if .CertFound }}
     {{- range $alias, $certPath := .Certs }}
 RUN echo yes | keytool -import  -storepass {{ $.Password }} -keystore /ballerina/runtime/bre/security/ballerinaTruststore.p12 -alias "{{ $alias }}" -file {{ $certPath }}
     {{- end }}
-RUN keytool -list -storepass ballerina -v -keystore /ballerina/runtime/bre/security/ballerinaTruststore.p12
 {{ end }}
 
 RUN chmod a+w /home/ballerina

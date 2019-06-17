@@ -63,10 +63,12 @@ type XMGWProductionEndpoints struct {
 }
 
 //This struct use to import multiple certificates to trsutstore
-type Certs struct {
+type DockerfileArtifacts struct {
 	CertFound bool
 	Password  string
 	Certs     map[string]string
+	BaseImage string
+	RuntimeImage string
 }
 
 // Add creates a new API Controller and adds it to the Manager. The Manager will set fields on the Controller
@@ -360,7 +362,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	//writes into the conf file
 	//Handles the creation of dockerfile configmap
-	dockerfileConfmap, errDocker := dockerfileHandler(r, certList, existcert)
+	dockerfileConfmap, errDocker := dockerfileHandler(r, certList, existcert, controlConfigData)
 	if errDocker != nil {
 		log.Error(errDocker, "error in docker configmap handling")
 	}
@@ -790,13 +792,15 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 }
 
 //Handles dockerfile configmap creation
-func dockerfileHandler(r *ReconcileAPI, certList map[string]string, existcert bool) (*corev1.ConfigMap, error) {
+func dockerfileHandler(r *ReconcileAPI, certList map[string]string, existcert bool, conf map[string]string) (*corev1.ConfigMap, error) {
 	truststorePass := getTruststorePassword(r)
 	dockertemplate := dockertemplatepath
-	certs := &Certs{
+	certs := &DockerfileArtifacts{
 		CertFound: existcert,
 		Password:  truststorePass,
 		Certs:     certList,
+		BaseImage: conf[mgwToolkitImgConst],
+		RuntimeImage: conf[mgwRuntimeImgConst],
 	}
 	//generate dockerfile from the template
 	tmpl, err := template.ParseFiles(dockertemplate)
