@@ -16,7 +16,7 @@
 # under the License.
 
 # Please copy this file to /usr/local/bin and give executable permissions
-# Sample usage : kubectl add api api-name --from-file=/home/harsha/Downloads/boomi/non-weborders/order_swagger.json --replicas=3
+# Sample usage : kubectl update api api-name --from-file=/home/harsha/Downloads/boomi/non-weborders/order_swagger.json --replicas=3
 if [[ "$1" == "api" ]]
 then
 
@@ -52,7 +52,8 @@ echo -e "\nDeleteting configmap if exists with name "$apiName
 
 echo -e "\nCreating configmap with name "$apiName
     kubectl create configmap $2 $3 -n=wso2-system
-    echo -e "\nGenerating a api kind"
+
+echo -e "\nUpdating api kind"
 
 cat << EOF > wso2_v1alpha1_api_cr.yaml
 apiVersion: wso2.com/v1alpha1
@@ -65,7 +66,7 @@ spec:
  replicas: ${replicas}
  type: swagger
  mode: privateJet
-
+ updateTimeStamp: "$(date +%s)"
 EOF
 
     kubectl apply -f wso2_v1alpha1_api_cr.yaml

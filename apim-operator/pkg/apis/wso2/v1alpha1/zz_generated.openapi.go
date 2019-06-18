@@ -77,24 +77,42 @@ func schema_pkg_apis_wso2_v1alpha1_APISpec(ref common.ReferenceCallback) common.
 			SchemaProps: spec.SchemaProps{
 				Description: "APISpec defines the desired state of API",
 				Properties: map[string]spec.Schema{
-					"definition": {
+					"mode": {
 						SchemaProps: spec.SchemaProps{
 							Description: "INSERT ADDITIONAL SPEC FIELDS - desired state of cluster Important: Run \"operator-sdk generate k8s\" to regenerate code after modifying this file Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html",
-							Ref:         ref("github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.Definition"),
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
-					"mode": {
+					"updateTimeStamp": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"replicas": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"integer"},
+							Format: "int32",
+						},
+					},
+					"configmapName": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"type": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
 							Format: "",
 						},
 					},
 				},
-				Required: []string{"definition", "mode"},
+				Required: []string{"mode", "replicas", "configmapName"},
 			},
 		},
-		Dependencies: []string{
-			"github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.Definition"},
+		Dependencies: []string{},
 	}
 }
 
@@ -429,7 +447,7 @@ func schema_pkg_apis_wso2_v1alpha1_TargetEndpointSpec(ref common.ReferenceCallba
 						},
 					},
 				},
-				Required: []string{"type", "protocol", "hostname", "port", "deploy", "endpointName", "endpointSecurity"},
+				Required: []string{"type", "protocol", "hostname", "port", "deploy", "endpointName", "endpointSecurity", "mode"},
 			},
 		},
 		Dependencies: []string{

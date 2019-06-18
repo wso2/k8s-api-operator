@@ -29,8 +29,11 @@ type APISpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
-	Definition Definition `json:"definition"`
-	Mode       Mode       `json:"mode"`
+	Mode            Mode   `json:"mode"`
+	UpdateTimeStamp string  `json:"updateTimeStamp"`
+	Replicas        int    `json:"replicas"`
+	ConfigmapName   string `json:"configmapName"`
+	Type            string `json:"type"`
 }
 
 // APIStatus defines the observed state of API
@@ -41,15 +44,6 @@ type APIStatus struct {
 	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
 }
 
-type Definition struct {
-	ConfigMapKeyRef ConfigMapKeyRef `json:"configMapKeyRef"`
-	Replicas        int             `json:"replicas"`
-	Swagger         string          `json:"swagger"`
-}
-
-type ConfigMapKeyRef struct {
-	Name string `json:"name"`
-}
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // API is the Schema for the apis API
