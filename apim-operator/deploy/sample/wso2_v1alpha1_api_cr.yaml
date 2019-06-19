@@ -5,8 +5,7 @@ metadata:
   namespace: wso2-system
 spec:
   definition:
-    configMapKeyRef:
-      name: test-basic-security
-    replicas: 1
-    swagger: swagger
-  mode: shared
+    configmapName: oauthswagger
+    type: swagger
+  replicas: 1
+  mode: privateJet

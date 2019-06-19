@@ -44,32 +44,29 @@ spec:
         spec:
           properties:
             definition:
+              properties:
+                configmapName:
+                  type: string
+                type:
+                  type: string
+              required:
+              - configmapName
+              type: object
+            mode:
               description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
                 Important: Run "operator-sdk generate k8s" to regenerate code after
                 modifying this file Add custom validation using kubebuilder tags:
                 https://book.kubebuilder.io/beyond_basics/generating_crd.html'
-              properties:
-                configMapKeyRef:
-                  properties:
-                    name:
-                      type: string
-                  required:
-                  - name
-                  type: object
-                replicas:
-                  format: int64
-                  type: integer
-                swagger:
-                  type: string
-              required:
-              - configMapKeyRef
-              - replicas
-              type: object
-            mode:
+              type: string
+            replicas:
+              format: int64
+              type: integer
+            updateTimeStamp:
               type: string
           required:
-          - definition
           - mode
+          - replicas
+          - definition
           type: object
         status:
           type: object
