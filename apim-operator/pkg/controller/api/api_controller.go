@@ -424,7 +424,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	if instance.Spec.UpdateTimeStamp != "" {
 		//Schedule Kaniko pod
-		log.Info("Update API")
+		reqLogger.Info("Updating the API", "API.Name", instance.Name, "API.Namespace", instance.Namespace)
 		job := scheduleKanikoJob(instance, imageName, controlConf, jobVolumeMount, jobVolume, instance.Spec.UpdateTimeStamp)
 		if err := controllerutil.SetControllerReference(instance, job, r.scheme); err != nil {
 			return reconcile.Result{}, err
