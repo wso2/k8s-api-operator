@@ -64,7 +64,6 @@ spec:
   configmapName: "${apiName}"
   type: swagger
  replicas: ${replicas}
- type: swagger
  mode: privateJet
 
 EOF
