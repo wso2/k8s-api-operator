@@ -4,7 +4,8 @@ metadata:
   name: sample-api
   namespace: wso2-system
 spec:
-  configmapName: oauthswagger
+  definition:
+    configmapName: oauthswagger
+    type: swagger
   replicas: 1
-  type: swagger
   mode: privateJet

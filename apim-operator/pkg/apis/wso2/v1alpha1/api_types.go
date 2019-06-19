@@ -29,11 +29,10 @@ type APISpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
-	Mode            Mode   `json:"mode"`
-	UpdateTimeStamp string  `json:"updateTimeStamp"`
-	Replicas        int    `json:"replicas"`
-	ConfigmapName   string `json:"configmapName"`
-	Type            string `json:"type"`
+	Mode            Mode       `json:"mode"`
+	UpdateTimeStamp string     `json:"updateTimeStamp"`
+	Replicas        int        `json:"replicas"`
+	Definition      Definition `json:"definition"`
 }
 
 // APIStatus defines the observed state of API
@@ -63,6 +62,12 @@ type APIList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []API `json:"items"`
+}
+
+//Definition contains api definition related values
+type Definition struct {
+	ConfigmapName string `json:"configmapName"`
+	Type          string `json:"type"`
 }
 
 type Mode string

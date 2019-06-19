@@ -96,23 +96,17 @@ func schema_pkg_apis_wso2_v1alpha1_APISpec(ref common.ReferenceCallback) common.
 							Format: "int32",
 						},
 					},
-					"configmapName": {
+					"definition": {
 						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"type": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
+							Ref: ref("github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.Definition"),
 						},
 					},
 				},
-				Required: []string{"mode", "replicas", "configmapName"},
+				Required: []string{"mode", "replicas", "definition"},
 			},
 		},
-		Dependencies: []string{},
+		Dependencies: []string{
+			"github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.Definition"},
 	}
 }
 
@@ -447,7 +441,7 @@ func schema_pkg_apis_wso2_v1alpha1_TargetEndpointSpec(ref common.ReferenceCallba
 						},
 					},
 				},
-				Required: []string{"type", "protocol", "hostname", "port", "deploy", "endpointName", "endpointSecurity", "mode"},
+				Required: []string{"type", "protocol", "hostname", "port", "deploy", "endpointName", "endpointSecurity"},
 			},
 		},
 		Dependencies: []string{

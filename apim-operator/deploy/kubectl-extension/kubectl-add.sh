@@ -16,7 +16,7 @@
 # under the License.
 
 # Please copy this file to /usr/local/bin and give executable permissions
-# Sample usage : kubectl add api api-name --from-file=/home/harsha/Downloads/boomi/non-weborders/order_swagger.json --replicas=3
+# Sample usage : kubectl add api <api-name> --from-file=<file> --replicas=<number of replicas> -n=<namespace>
 if [[ "$1" == "api" ]]
 then
 
@@ -59,16 +59,17 @@ apiVersion: wso2.com/v1alpha1
 kind: API
 metadata:
  name: "${apiName}"
- namespace: wso2-system
 spec:
- configmapName: "${apiName}"
+ definition:
+  configmapName: "${apiName}"
+  type: swagger
  replicas: ${replicas}
  type: swagger
  mode: privateJet
 
 EOF
 
-    kubectl apply -f wso2_v1alpha1_api_cr.yaml
+    kubectl apply -f wso2_v1alpha1_api_cr.yaml $5
 
 else
     echo "Unknown command"

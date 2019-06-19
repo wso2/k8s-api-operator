@@ -159,7 +159,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	mgwRuntimeImg := controlConfigData[mgwRuntimeImgConst]
 	kanikoImg := controlConfigData[kanikoImgConst]
 	dockerRegistry := controlConfigData[dockerRegistryConst]
-	userNameSpace := controlConfigData[userNameSpaceConst]
+	userNameSpace := instance.Namespace
 	reqLogger.Info("Controller Configurations", "mgwToolkitImg", mgwToolkitImg, "mgwRuntimeImg", mgwRuntimeImg,
 		"kanikoImg", kanikoImg, "dockerRegistry", dockerRegistry, "userNameSpace", userNameSpace)
 
@@ -176,7 +176,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	//Check if the configmap mentioned in crd object exist
-	apiConfigMapRef := instance.Spec.ConfigmapName
+	apiConfigMapRef := instance.Spec.Definition.ConfigmapName
 	log.Info(apiConfigMapRef)
 	apiConfigMap, err := getConfigmap(r, apiConfigMapRef, wso2NameSpaceConst)
 	if err != nil {
@@ -259,7 +259,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	certList := make(map[string]string)
 	var certName string
 	//get the volume mounts
-	jobVolumeMount, jobVolume := getVolumes(instance)
+	jobVolumeMount, jobVolume := getVolumes(apiConfigMapRef)
 
 	//get certificate for JWT and Oauth
 	if strings.EqualFold(security.Spec.Type, "Oauth") || strings.EqualFold(security.Spec.Type, "JWT") {
@@ -414,14 +414,14 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	analyticsEnabledBool, _ := strconv.ParseBool(analyticsEnabled)
-	dep := createMgwDeployment(instance, imageName, controlConf, analyticsEnabledBool, r)
+	dep := createMgwDeployment(instance, imageName, controlConf, analyticsEnabledBool, r, userNameSpace)
 	depFound := &appsv1.Deployment{}
 	deperr := r.client.Get(context.TODO(), types.NamespacedName{Name: dep.Name, Namespace: dep.Namespace}, depFound)
 
 	svc := createMgwLBService(instance, userNameSpace)
 	svcFound := &corev1.Service{}
 	svcErr := r.client.Get(context.TODO(), types.NamespacedName{Name: svc.Name, Namespace: svc.Namespace}, svcFound)
-	
+
 	if instance.Spec.UpdateTimeStamp != "" {
 		//Schedule Kaniko pod
 		log.Info("Update API")
@@ -456,7 +456,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 				return reconcile.Result{}, deperr
 			}
 			log.Info("Found deployment. Updating it")
-			updateEr := r.client.Update(context.TODO(),dep)
+			updateEr := r.client.Update(context.TODO(), dep)
 			if updateEr != nil {
 				log.Error(updateEr, "Error in updating deployment")
 				return reconcile.Result{}, updateEr
@@ -575,6 +575,7 @@ func getSecretData(r *ReconcileAPI, analyticsSecretName string) (map[string][]by
 
 }
 
+//Handles microgateway conf create and update
 func createMGWSecret(r *ReconcileAPI, confData string) error {
 	var apimSecret *corev1.Secret
 
@@ -589,19 +590,19 @@ func createMGWSecret(r *ReconcileAPI, confData string) error {
 		mgwConfConst: []byte(confData),
 	}
 
-	// Check if this secret exists
+	// Check if mgw-conf secret exists
 	checkSecret := &corev1.Secret{}
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: mgwConfSecretConst, Namespace: wso2NameSpaceConst}, checkSecret)
 
 	if err != nil && errors.IsNotFound(err) {
-		log.Info("Creating secret ")
+		log.Info("Creating mgw-conf secret ")
 		errSecret := r.client.Create(context.TODO(), apimSecret)
 		return errSecret
 	} else if err != nil {
-		log.Error(err, "error ")
+		log.Error(err, "error in mgw-conf creation")
 		return err
 	} else {
-		log.Info("Updating secret")
+		log.Info("Updating mgw-conf secret")
 		errSecret := r.client.Update(context.TODO(), apimSecret)
 		return errSecret
 	}
@@ -790,14 +791,13 @@ func getCredentials(r *ReconcileAPI, name string, securityType string) error {
 
 // generate relevant MGW deployment/services for the given API definition
 func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.ConfigMap, analyticsEnabled bool,
-	r *ReconcileAPI) *appsv1.Deployment {
+	r *ReconcileAPI, nameSpace string) *appsv1.Deployment {
 	labels := map[string]string{
 		"app": cr.Name,
 	}
 
 	controlConfigData := conf.Data
 	dockerRegistry := controlConfigData[dockerRegistryConst]
-	nameSpace := controlConfigData[userNameSpaceConst]
 	reps := int32(cr.Spec.Replicas)
 
 	deployVolumeMount := []corev1.VolumeMount{}
@@ -830,10 +830,10 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:         "mgw" + cr.Name,
-							Image:        dockerRegistry + "/" + imageName,
+							Name:            "mgw" + cr.Name,
+							Image:           dockerRegistry + "/" + imageName,
 							ImagePullPolicy: "Always",
-							VolumeMounts: deployVolumeMount,
+							VolumeMounts:    deployVolumeMount,
 							Ports: []corev1.ContainerPort{{
 								ContainerPort: 9095,
 							}},
@@ -978,13 +978,13 @@ func scheduleKanikoJob(cr *wso2v1alpha1.API, imageName string, conf *corev1.Conf
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cr.Name + "kaniko" + timeStamp,
-			Namespace: cr.Namespace,
+			Namespace: wso2NameSpaceConst,
 		},
 		Spec: batchv1.JobSpec{
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      cr.Name + "-job",
-					Namespace: cr.Namespace,
+					Namespace: wso2NameSpaceConst,
 					Labels:    labels,
 				},
 				Spec: corev1.PodSpec{
@@ -1122,9 +1122,7 @@ func createMgwLBService(cr *wso2v1alpha1.API, nameSpace string) *corev1.Service 
 }
 
 //default volume mounts for the kaniko job
-func getVolumes(cr *wso2v1alpha1.API) ([]corev1.VolumeMount, []corev1.Volume) {
-
-	apiConfMap := cr.Spec.ConfigmapName
+func getVolumes(apiConfMap string) ([]corev1.VolumeMount, []corev1.Volume) {
 
 	jobVolumeMount := []corev1.VolumeMount{
 		{

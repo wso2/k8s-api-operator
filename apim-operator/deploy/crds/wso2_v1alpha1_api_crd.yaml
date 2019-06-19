@@ -43,8 +43,15 @@ spec:
           type: object
         spec:
           properties:
-            configmapName:
-              type: string
+            definition:
+              properties:
+                configmapName:
+                  type: string
+                type:
+                  type: string
+              required:
+              - configmapName
+              type: object
             mode:
               description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
                 Important: Run "operator-sdk generate k8s" to regenerate code after
@@ -54,14 +61,12 @@ spec:
             replicas:
               format: int64
               type: integer
-            type:
-              type: string
             updateTimeStamp:
               type: string
           required:
           - mode
           - replicas
-          - configmapName
+          - definition
           type: object
         status:
           type: object
