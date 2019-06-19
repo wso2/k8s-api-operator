@@ -19,8 +19,10 @@ package api
 import (
 	"context"
 	"crypto/sha1"
+	"crypto/tls"
 	"encoding/hex"
 	"fmt"
+	"gopkg.in/resty.v1"
 	"strconv"
 	"strings"
 	"text/template"
@@ -71,6 +73,69 @@ type DockerfileArtifacts struct {
 	RuntimeImage string
 }
 
+type consumerResponse struct {
+	CallBackURL string `json:"callBackURL"`
+	JsonString string `json:"jsonString"`
+	ClientName string `json:"clientName"`
+	ClientId string `json:"clientId"`
+	ClientSecret string `json:"clientSecret"`
+
+}
+
+type accessToken struct {
+	Scope string `json:"scope"`
+	Token_type string `json:"token_type"`
+	Expires_in int `json:"expires_in"`
+	Refresh_token string `json:"refresh_token"`
+	Access_token string `json:"access_token"`
+}
+
+type jsonRequset struct {
+	Id string `json:"id"`
+	Name string `json:"name"`
+	Description string `json:"description"`
+	Context string `json:"context"`
+	Version string `json:"version"`
+	Provider string `json:"provider"`
+	ApiDefinition string `json:"apiDefinition"`
+	WsdlUri *string `json:"wsdlUri"`
+	ResponseCaching string `json:"responseCaching"`
+	CacheTimeout int `json:"cacheTimeout"`
+	DestinationStatsEnabled *string `json:"destinationStatsEnabled"`
+	IsDefaultVersion bool `json:"isDefaultVersion"`
+	Type1 string `json:"type"`
+	Transport []string `json:"transport"`
+	Tags []string `json:"tags"`
+	Tiers []string `json:"tiers"`
+	MaxTps map[string]int `json:"maxTps"`
+	ThumbnailUri *string `json:"thumbnailUri"`
+	Visibility string `json:"visibility"`
+	VisibleRoles []string `json:"visibleRoles"`
+	EndpointConfig string `json:"endpointConfig"`
+	EndpointSecurity map[string]string `json:"endpointSecurity"`
+	GatewayEnvironments string `json:"gatewayEnvironments"`
+	Sequences []sequence `json:"sequences"`
+	SubscriptionAvailableTenants []string `json:"subscriptionAvailableTenants"`
+	BusinessInformation map[string]string `json:"businessInformation"`
+	SubscriptionAvailability *string `json:"subscriptionAvailability"`
+	CorsConfiguration corsConfiguration `json:"corsConfiguration"`
+}
+
+type sequence struct {
+	Name string `json:"name"`
+	Type2 string `json:"type"`
+	Id string `json:"id"`
+	Shared bool `json:"shared"`
+}
+
+type corsConfiguration struct {
+	AccessControlAllowOrigins []string `json:"accessControlAllowOrigins"`
+	AccessControlAllowHeaders []string `json:"accessControlAllowHeaders"`
+	AccessControlAllowMethods []string `json:"accessControlAllowMethods"`
+	AccessControlAllowCredentials bool `json:"accessControlAllowCredentials"`
+	CorsConfigurationEnabled bool `json:"corsConfigurationEnabled"`
+}
+
 // Add creates a new API Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
@@ -118,6 +183,8 @@ type ReconcileAPI struct {
 	client client.Client
 	scheme *runtime.Scheme
 }
+
+var publisher  = make(map[string]int)
 
 // Reconcile reads that state of the cluster for a API object and makes changes based on the state read
 // and what is in the API.Spec
@@ -558,6 +625,9 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			return reconcile.Result{}, deperr
 		}
 	}
+	// Job already exists - don't requeue
+	reqLogger.Info("Skip reconcile: Job already exists", "Job.Namespace", job.Namespace, "Job.Name", job.Name)
+	return reconcile.Result{},deperr
 }
 
 // gets the data from analytics secret

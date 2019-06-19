@@ -65,7 +65,6 @@ const (
 	truststoreSecretName     = "truststorepass"
 	truststoreSecretData     = "password"
 	apimConfName             = "apim-config"
-
 	keystorePathConst                   = "keystorePath"
 	keystorePasswordConst               = "keystorePassword"
 	truststorePathConst                 = "truststorePath"
@@ -89,4 +88,6 @@ const (
 	hostnameConst                       = "hostname"
 	portConst                           = "port"
 	analyticsSecretConst                = "analyticsSecret"
+	encodedCredentials = "YWRtaW46YWRtaW4="
+
 )

@@ -116,14 +116,14 @@ func (r *ReconcileSecurity) Reconcile(request reconcile.Request) (reconcile.Resu
 	if strings.EqualFold(instance.Spec.Type , "JWT") {
 		if instance.Spec.Issuer == "" || instance.Spec.Audience == "" {
 			reqLogger.Info("Required fields are missing")
-			return reconcile.Result{}, nil
+			//return reconcile.Result{}, nil
 		}
 	}
 
 	if strings.EqualFold(instance.Spec.Type , "Oauth") {
 		if instance.Spec.Credentials == "" || instance.Spec.Endpoint == "" {
 			reqLogger.Info("required fields are missing")
-			return reconcile.Result{}, nil
+			//return reconcile.Result{}, nil
 		}
 
 		credentialSecret := &corev1.Secret{}
@@ -139,7 +139,7 @@ func (r *ReconcileSecurity) Reconcile(request reconcile.Request) (reconcile.Resu
 	if strings.EqualFold(instance.Spec.Type , "Basic") {
 		if instance.Spec.Credentials == ""{
 			reqLogger.Info("required field credentials are missing")
-			return reconcile.Result{}, nil
+			//return reconcile.Result{}, nil
 		}
 	}
 
@@ -151,5 +151,5 @@ func (r *ReconcileSecurity) Reconcile(request reconcile.Request) (reconcile.Resu
 		return reconcile.Result{}, errcertificate
 	}
 
-	return reconcile.Result{}, nil
+	return reconcile.Result{Requeue: true}, nil
 }
