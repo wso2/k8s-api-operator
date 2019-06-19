@@ -177,7 +177,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	//Check if the configmap mentioned in crd object exist
 	apiConfigMapRef := instance.Spec.Definition.ConfigmapName
-	log.Info(apiConfigMapRef)
 	apiConfigMap, err := getConfigmap(r, apiConfigMapRef, wso2NameSpaceConst)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -455,7 +454,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			} else if deperr != nil {
 				return reconcile.Result{}, deperr
 			}
-			log.Info("Found deployment. Updating it")
+			reqLogger.Info("Updating the found deployment", "Dep.Namespace", dep.Namespace, "Dep.Name", dep.Name)
 			updateEr := r.client.Update(context.TODO(), dep)
 			if updateEr != nil {
 				log.Error(updateEr, "Error in updating deployment")
