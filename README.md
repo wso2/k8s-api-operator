@@ -55,8 +55,8 @@
     - ex: ***kubectl show api petstorebasic -n=wso2***
 
 - Execute the following command to remove the API
-    - *kubectl remove api "api_name" -n="desired namespace"*
-    - ex: ***kubectl remove api petstorebasic -n=wso2***
+    - *kubectl delete api "api_name" -n="desired namespace"*
+    - ex: ***kubectl delete api petstorebasic -n=wso2***
 
 - Execute the following command to remove the k8s operator
     - *kubectl remove operator
