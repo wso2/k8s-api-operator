@@ -142,6 +142,10 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	owner := getOwnerDetails(instance)
+	operatorOwner, ownerErr := getOperatorOwner(r)
+	if ownerErr != nil {
+		return reconcile.Result{}, ownerErr
+	}
 
 	//get configurations file for the controller
 	controlConf, err := getConfigmap(r, controllerConfName, wso2NameSpaceConst)
@@ -165,14 +169,15 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	reqLogger.Info("Controller Configurations", "mgwToolkitImg", mgwToolkitImg, "mgwRuntimeImg", mgwRuntimeImg,
 		"kanikoImg", kanikoImg, "dockerRegistry", dockerRegistry, "userNameSpace", userNameSpace)
 
-	dockerSecretEr := dockerConfigCreator(r)
+	//creates the docker configs in the required format
+	dockerSecretEr := dockerConfigCreator(r, operatorOwner)
 	if dockerSecretEr != nil {
 		log.Error(dockerSecretEr, "Error in docker-config creation")
 	}
+
 	//Handles policy.yaml.
 	//If there aren't any ratelimiting objects deployed, new policy.yaml configmap will be created with default policies
-
-	policyEr := policyHandler(r)
+	policyEr := policyHandler(r, operatorOwner)
 	if policyEr != nil {
 		log.Error(policyEr, "Error in default policy map creation")
 	}
@@ -364,11 +369,12 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	//Handles the creation of dockerfile configmap
-	dockerfileConfmap, errDocker := dockerfileHandler(r, certList, existcert, controlConfigData)
+	dockerfileConfmap, errDocker := dockerfileHandler(r, certList, existcert, controlConfigData, operatorOwner)
 	if errDocker != nil {
 		log.Error(errDocker, "error in docker configmap handling")
+	} else {
+		log.Info("kaniko job related dockerfile was written into configmap " + dockerfileConfmap.Name)
 	}
-	log.Info("kaniko job related dockerfile was written into configmap " + dockerfileConfmap.Name)
 
 	//Get data from apim configmap
 	apimConfig, apimEr := getConfigmap(r, apimConfName, wso2NameSpaceConst)
@@ -407,7 +413,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	//writes the created conf file to secret
-	errCreateSecret := createMGWSecret(r, output)
+	errCreateSecret := createMGWSecret(r, output, operatorOwner)
 	if errCreateSecret != nil {
 		log.Error(errCreateSecret, "Error in creating conf secret")
 	} else {
@@ -577,13 +583,14 @@ func getSecretData(r *ReconcileAPI, analyticsSecretName string) (map[string][]by
 }
 
 //Handles microgateway conf create and update
-func createMGWSecret(r *ReconcileAPI, confData string) error {
+func createMGWSecret(r *ReconcileAPI, confData string, operatorOwner []metav1.OwnerReference) error {
 	var apimSecret *corev1.Secret
 
 	apimSecret = &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      mgwConfSecretConst,
 			Namespace: wso2NameSpaceConst,
+			OwnerReferences: operatorOwner,
 		},
 	}
 
@@ -849,7 +856,8 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 }
 
 //Handles dockerfile configmap creation
-func dockerfileHandler(r *ReconcileAPI, certList map[string]string, existcert bool, conf map[string]string) (*corev1.ConfigMap, error) {
+func dockerfileHandler(r *ReconcileAPI, certList map[string]string, existcert bool, conf map[string]string,
+ operatorOwner []metav1.OwnerReference) (*corev1.ConfigMap, error) {
 	truststorePass := getTruststorePassword(r)
 	dockertemplate := dockertemplatepath
 	certs := &DockerfileArtifacts{
@@ -874,8 +882,7 @@ func dockerfileHandler(r *ReconcileAPI, certList map[string]string, existcert bo
 
 	dockerfileConfmap, err := getConfigmap(r, dockerFile, wso2NameSpaceConst)
 	if err != nil && errors.IsNotFound(err) {
-		noOwner := []metav1.OwnerReference{}
-		dockerConf, er := createConfigMap(dockerFile, "Dockerfile", builder.String(), wso2NameSpaceConst, noOwner)
+		dockerConf, er := createConfigMap(dockerFile, "Dockerfile", builder.String(), wso2NameSpaceConst, operatorOwner)
 		if er != nil {
 			log.Error(er, "error in docker configmap creation")
 			return dockerfileConfmap, er
@@ -899,7 +906,7 @@ func dockerfileHandler(r *ReconcileAPI, certList map[string]string, existcert bo
 	return dockerfileConfmap, err
 }
 
-func policyHandler(r *ReconcileAPI) error {
+func policyHandler(r *ReconcileAPI, operatorOwner []metav1.OwnerReference) error {
 	//Check if policy configmap is available
 	foundmapc := &corev1.ConfigMap{}
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: policyConfigmap, Namespace: wso2NameSpaceConst}, foundmapc)
@@ -910,7 +917,7 @@ func policyHandler(r *ReconcileAPI) error {
 
 		defaultval := ratelimiting.CreateDefault()
 
-		confmap, confer := ratelimiting.CreatePolicyConfigMap(defaultval)
+		confmap, confer := ratelimiting.CreatePolicyConfigMap(defaultval, operatorOwner)
 		if confer != nil {
 			log.Error(confer, "Error in default config map structure creation")
 			return confer
@@ -1011,7 +1018,7 @@ func scheduleKanikoJob(cr *wso2v1alpha1.API, imageName string, conf *corev1.Conf
 	}
 }
 
-func dockerConfigCreator(r *ReconcileAPI) error {
+func dockerConfigCreator(r *ReconcileAPI, operatorOwner []metav1.OwnerReference) error {
 	//checks if docker secret is available
 	dockerSecret := &corev1.Secret{}
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: dockerSecretNameConst, Namespace: wso2NameSpaceConst}, dockerSecret)
@@ -1027,7 +1034,6 @@ func dockerConfigCreator(r *ReconcileAPI) error {
 	dockerPassword := string(dockerData[passwordConst])
 	rawCredentials := dockerUsername + ":" + dockerPassword
 	credentials := b64.StdEncoding.EncodeToString([]byte(rawCredentials))
-	noOwner := []metav1.OwnerReference{}
 
 	//make the docker-config template
 	filename := "/usr/local/bin/dockerSecretTemplate.mustache"
@@ -1040,7 +1046,7 @@ func dockerConfigCreator(r *ReconcileAPI) error {
 	}
 
 	//Writes the created template to a configmap
-	dockerConf, er := createConfigMap(dockerConfig, "config.json", output, wso2NameSpaceConst, noOwner)
+	dockerConf, er := createConfigMap(dockerConfig, "config.json", output, wso2NameSpaceConst, operatorOwner)
 	if er != nil {
 		log.Error(er, "error in docker-config configmap creation")
 		return er
@@ -1326,6 +1332,7 @@ func getTruststorePassword(r *ReconcileAPI) string {
 	return password
 }
 
+//gets the details of the api crd object for owner reference
 func getOwnerDetails(cr *wso2v1alpha1.API) []metav1.OwnerReference {
 	setOwner :=true
 	return []metav1.OwnerReference{
@@ -1338,4 +1345,25 @@ func getOwnerDetails(cr *wso2v1alpha1.API) []metav1.OwnerReference {
 			BlockOwnerDeletion: &setOwner,
 		},
 	}
+}
+
+//gets the details of the operator for owner reference
+func getOperatorOwner(r *ReconcileAPI) ([]metav1.OwnerReference, error) {
+	depFound := &appsv1.Deployment{}
+	setOwner := true
+	deperr := r.client.Get(context.TODO(), types.NamespacedName{Name: "apim-operator", Namespace: wso2NameSpaceConst}, depFound)
+	if deperr != nil {
+		noOwner := []metav1.OwnerReference{}
+		return noOwner, deperr
+	}
+	return []metav1.OwnerReference{
+		{
+			APIVersion:         depFound.APIVersion,
+			Kind:               depFound.Kind,
+			Name:               depFound.Name,
+			UID:                depFound.UID,
+			Controller:         &setOwner,
+			BlockOwnerDeletion: &setOwner,
+		},
+	}, nil
 }
