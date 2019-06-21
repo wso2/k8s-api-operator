@@ -141,6 +141,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		return reconcile.Result{}, err
 	}
 
+	owner := getOwnerDetails(instance)
+
 	//get configurations file for the controller
 	controlConf, err := getConfigmap(r, controllerConfName, wso2NameSpaceConst)
 	if err != nil {
@@ -211,7 +213,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	//update configmap with modified swagger
 
-	swaggerConfMap, err := createConfigMap(apiConfigMapRef, swaggerDataFile, newSwagger, wso2NameSpaceConst)
+	swaggerConfMap, err := createConfigMap(apiConfigMapRef, swaggerDataFile, newSwagger, wso2NameSpaceConst, owner)
 	if err != nil {
 		log.Error(err, "Error in modified swagger configmap structure")
 	}
@@ -413,18 +415,18 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	analyticsEnabledBool, _ := strconv.ParseBool(analyticsEnabled)
-	dep := createMgwDeployment(instance, imageName, controlConf, analyticsEnabledBool, r, userNameSpace)
+	dep := createMgwDeployment(instance, imageName, controlConf, analyticsEnabledBool, r, userNameSpace, owner)
 	depFound := &appsv1.Deployment{}
 	deperr := r.client.Get(context.TODO(), types.NamespacedName{Name: dep.Name, Namespace: dep.Namespace}, depFound)
 
-	svc := createMgwLBService(instance, userNameSpace)
+	svc := createMgwLBService(instance, userNameSpace, owner)
 	svcFound := &corev1.Service{}
 	svcErr := r.client.Get(context.TODO(), types.NamespacedName{Name: svc.Name, Namespace: svc.Namespace}, svcFound)
 
 	if instance.Spec.UpdateTimeStamp != "" {
 		//Schedule Kaniko pod
 		reqLogger.Info("Updating the API", "API.Name", instance.Name, "API.Namespace", instance.Namespace)
-		job := scheduleKanikoJob(instance, imageName, controlConf, jobVolumeMount, jobVolume, instance.Spec.UpdateTimeStamp)
+		job := scheduleKanikoJob(instance, imageName, controlConf, jobVolumeMount, jobVolume, instance.Spec.UpdateTimeStamp, owner)
 		if err := controllerutil.SetControllerReference(instance, job, r.scheme); err != nil {
 			return reconcile.Result{}, err
 		}
@@ -498,7 +500,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		return reconcile.Result{}, nil
 	} else {
 		//Schedule Kaniko pod
-		job := scheduleKanikoJob(instance, imageName, controlConf, jobVolumeMount, jobVolume, instance.Spec.UpdateTimeStamp)
+		job := scheduleKanikoJob(instance, imageName, controlConf, jobVolumeMount, jobVolume, instance.Spec.UpdateTimeStamp, owner)
 		if err := controllerutil.SetControllerReference(instance, job, r.scheme); err != nil {
 			return reconcile.Result{}, err
 		}
@@ -626,12 +628,13 @@ func getConfigmap(r *ReconcileAPI, mapName string, ns string) (*corev1.ConfigMap
 }
 
 // createConfigMap creates a config file with the given data
-func createConfigMap(apiConfigMapRef string, key string, value string, ns string) (*corev1.ConfigMap, error) {
+func createConfigMap(apiConfigMapRef string, key string, value string, ns string, owner []metav1.OwnerReference) (*corev1.ConfigMap, error) {
 
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      apiConfigMapRef,
 			Namespace: ns,
+			OwnerReferences: owner,
 		},
 		Data: map[string]string{
 			key: value,
@@ -790,7 +793,7 @@ func getCredentials(r *ReconcileAPI, name string, securityType string) error {
 
 // generate relevant MGW deployment/services for the given API definition
 func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.ConfigMap, analyticsEnabled bool,
-	r *ReconcileAPI, nameSpace string) *appsv1.Deployment {
+	r *ReconcileAPI, nameSpace string, owner []metav1.OwnerReference) *appsv1.Deployment {
 	labels := map[string]string{
 		"app": cr.Name,
 	}
@@ -798,7 +801,6 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 	controlConfigData := conf.Data
 	dockerRegistry := controlConfigData[dockerRegistryConst]
 	reps := int32(cr.Spec.Replicas)
-
 	deployVolumeMount := []corev1.VolumeMount{}
 	deployVolume := []corev1.Volume{}
 	if analyticsEnabled {
@@ -816,6 +818,7 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 			Name:      cr.Name,
 			Namespace: nameSpace,
 			Labels:    labels,
+			OwnerReferences: owner,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &reps,
@@ -871,8 +874,8 @@ func dockerfileHandler(r *ReconcileAPI, certList map[string]string, existcert bo
 
 	dockerfileConfmap, err := getConfigmap(r, dockerFile, wso2NameSpaceConst)
 	if err != nil && errors.IsNotFound(err) {
-
-		dockerConf, er := createConfigMap(dockerFile, "Dockerfile", builder.String(), wso2NameSpaceConst)
+		noOwner := []metav1.OwnerReference{}
+		dockerConf, er := createConfigMap(dockerFile, "Dockerfile", builder.String(), wso2NameSpaceConst, noOwner)
 		if er != nil {
 			log.Error(er, "error in docker configmap creation")
 			return dockerfileConfmap, er
@@ -965,7 +968,7 @@ func isImageExist(image string, tag string, r *ReconcileAPI) (bool, error) {
 
 //Schedule Kaniko Job to generate micro-gw image
 func scheduleKanikoJob(cr *wso2v1alpha1.API, imageName string, conf *corev1.ConfigMap, jobVolumeMount []corev1.VolumeMount,
-	jobVolume []corev1.Volume, timeStamp string) *batchv1.Job {
+	jobVolume []corev1.Volume, timeStamp string, owner []metav1.OwnerReference) *batchv1.Job {
 	labels := map[string]string{
 		"app": cr.Name,
 	}
@@ -978,6 +981,7 @@ func scheduleKanikoJob(cr *wso2v1alpha1.API, imageName string, conf *corev1.Conf
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      cr.Name + "kaniko" + timeStamp,
 			Namespace: wso2NameSpaceConst,
+			OwnerReferences: owner,
 		},
 		Spec: batchv1.JobSpec{
 			Template: corev1.PodTemplateSpec{
@@ -1023,6 +1027,7 @@ func dockerConfigCreator(r *ReconcileAPI) error {
 	dockerPassword := string(dockerData[passwordConst])
 	rawCredentials := dockerUsername + ":" + dockerPassword
 	credentials := b64.StdEncoding.EncodeToString([]byte(rawCredentials))
+	noOwner := []metav1.OwnerReference{}
 
 	//make the docker-config template
 	filename := "/usr/local/bin/dockerSecretTemplate.mustache"
@@ -1035,7 +1040,7 @@ func dockerConfigCreator(r *ReconcileAPI) error {
 	}
 
 	//Writes the created template to a configmap
-	dockerConf, er := createConfigMap(dockerConfig, "config.json", output, wso2NameSpaceConst)
+	dockerConf, er := createConfigMap(dockerConfig, "config.json", output, wso2NameSpaceConst, noOwner)
 	if er != nil {
 		log.Error(er, "error in docker-config configmap creation")
 		return er
@@ -1097,7 +1102,7 @@ func createMgwService(cr *wso2v1alpha1.API, nameSpace string) *corev1.Service {
 }
 
 //Creating a LB balancer service to expose mgw
-func createMgwLBService(cr *wso2v1alpha1.API, nameSpace string) *corev1.Service {
+func createMgwLBService(cr *wso2v1alpha1.API, nameSpace string, owner []metav1.OwnerReference) *corev1.Service {
 
 	labels := map[string]string{
 		"app": cr.Name,
@@ -1108,6 +1113,7 @@ func createMgwLBService(cr *wso2v1alpha1.API, nameSpace string) *corev1.Service 
 			Name:      cr.Name,
 			Namespace: nameSpace,
 			Labels:    labels,
+			OwnerReferences: owner,
 		},
 		Spec: corev1.ServiceSpec{
 			Type: "LoadBalancer",
@@ -1307,7 +1313,7 @@ func getTruststorePassword(r *ReconcileAPI) string {
 			truststoreSecretData: []byte(encodedpassword),
 		}
 		errsecret := r.client.Create(context.TODO(), truststoresecret)
-		log.Error(errsecret, "error in creating trustsote password")
+		log.Error(errsecret, "error in creating trustore password")
 		return password
 	}
 	//get password from the secret
@@ -1318,4 +1324,18 @@ func getTruststorePassword(r *ReconcileAPI) string {
 	}
 	password = string(getpass)
 	return password
+}
+
+func getOwnerDetails(cr *wso2v1alpha1.API) []metav1.OwnerReference {
+	setOwner :=true
+	return []metav1.OwnerReference{
+		{
+			APIVersion:         cr.APIVersion,
+			Kind:               cr.Kind,
+			Name:               cr.Name,
+			UID:                cr.UID,
+			Controller:         &setOwner,
+			BlockOwnerDeletion: &setOwner,
+		},
+	}
 }
