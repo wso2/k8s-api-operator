@@ -58,9 +58,9 @@
     - *kubectl delete api "api_name" -n="desired namespace"*
     - ex: ***kubectl delete api petstorebasic -n=wso2***
 
-- Execute the following command to remove the k8s operator
-    - *kubectl remove operator
-
+- Execute the following command to remove the apim operator
+    - ***kubectl delete deployment apim-operator -n=wso2-system***
+    
 
 - Note:
 - If the namespace is not provided, default namespace will be used. The namespace used in all the commands must match.
