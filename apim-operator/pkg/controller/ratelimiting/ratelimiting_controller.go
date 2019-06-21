@@ -33,6 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+	appsv1 "k8s.io/api/apps/v1"
 
 	"fmt"
 	"strings"
@@ -120,6 +121,12 @@ func (r *ReconcileRateLimiting) Reconcile(request reconcile.Request) (reconcile.
 		return reconcile.Result{}, err
 	}
 
+	//gets the details of the operator as the owner
+	operatorOwner, ownerErr := getOperatorOwner(r)
+	if ownerErr != nil {
+		return reconcile.Result{}, ownerErr
+	}
+
 	// GENERATE POLICY YAML USING CRD INSTANCE
 
 	nameArray := strings.Split(instance.ObjectMeta.Name, "-")
@@ -149,7 +156,7 @@ func (r *ReconcileRateLimiting) Reconcile(request reconcile.Request) (reconcile.
 		defaultval := CreateDefault()
 		fmt.Println(defaultval)
 
-		confmap, confer := CreatePolicyConfigMap(defaultval)
+		confmap, confer := CreatePolicyConfigMap(defaultval, operatorOwner)
 		if confer != nil {
 			log.Error(confer, "Error in default config map structure creation")
 		}
@@ -214,7 +221,7 @@ func (r *ReconcileRateLimiting) Reconcile(request reconcile.Request) (reconcile.
 
 	//CREATE CONFIG MAP OF POLICY YAML
 
-	confmap, confEr := CreatePolicyConfigMap(output)
+	confmap, confEr := CreatePolicyConfigMap(output, operatorOwner)
 	if confEr != nil {
 		log.Error(confEr, "Error in config map structure creation")
 	}
@@ -231,12 +238,13 @@ func (r *ReconcileRateLimiting) Reconcile(request reconcile.Request) (reconcile.
 }
 
 // CreateConfigMap creates a config file with the generated code
-func CreatePolicyConfigMap(output string) (*corev1.ConfigMap, error) {
+func CreatePolicyConfigMap(output string, operatorOwner []metav1.OwnerReference) (*corev1.ConfigMap, error) {
 
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      policyConfMapNameConst,
 			Namespace: wso2NameSpaceConst,
+			OwnerReferences: operatorOwner,
 		},
 		Data: map[string]string{
 			policyFileConst: output,
@@ -325,4 +333,25 @@ type Policy struct {
 	Count    int    `yaml:"count"`
 	UnitTime int    `yaml:"unitTime"`
 	TimeUnit string `yaml:"timeUnit"`
+}
+
+//gets the details of the operator for owner reference
+func getOperatorOwner(r *ReconcileRateLimiting) ([]metav1.OwnerReference, error) {
+	depFound := &appsv1.Deployment{}
+	setOwner := true
+	deperr := r.client.Get(context.TODO(), types.NamespacedName{Name: "apim-operator", Namespace: wso2NameSpaceConst}, depFound)
+	if deperr != nil {
+		noOwner := []metav1.OwnerReference{}
+		return noOwner, deperr
+	}
+	return []metav1.OwnerReference{
+		{
+			APIVersion:         depFound.APIVersion,
+			Kind:               depFound.Kind,
+			Name:               depFound.Name,
+			UID:                depFound.UID,
+			Controller:         &setOwner,
+			BlockOwnerDeletion: &setOwner,
+		},
+	}, nil
 }
