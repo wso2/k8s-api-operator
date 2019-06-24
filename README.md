@@ -60,7 +60,7 @@
     
 
 - Note:
-> Namespace and replicas are optional parameters and default values will be used if they are not provided. However, the namespace used in all the commands related to particular API name must match.
+> Namespace and replicas are optional parameters. If they are not provided default namespace will be used and 1 replica will be created. However, the namespace used in all the commands related to particular API name must match.
 
 
 ##### Incorporating analytics to the k8s operator
