@@ -6,19 +6,16 @@
 - Give executable permission to the extension file <br /> 
     -  ***chmod +x ./deploy/kubectl-extension/kubectl-add.sh***
     -  ***chmod +x ./deploy/kubectl-extension/kubectl-update.sh***
-    -  ***chmod +x ./deploy/kubectl-extension/kubectl-remove.sh***
     -  ***chmod +x ./deploy/kubectl-extension/kubectl-show.sh***
 - Copy the extensions to ***/usr/local/bin/***
     - ___cp ./deploy/kubectl-extension/kubectl-add.sh /usr/local/bin___
     - ___cp ./deploy/kubectl-extension/kubectl-update.sh /usr/local/bin___
-    - ___cp ./deploy/kubectl-extension/kubectl-remove.sh /usr/local/bin___
     - ___cp ./deploy/kubectl-extension/kubectl-show.sh /usr/local/bin___
 
 ###### Note:
 - User may have to remove '.sh' from the extension depending on the kubernetes environment. Use the following additional commands for that.
     - mv /usr/local/bin/kubectl-add.sh /usr/local/bin/kubectl-add
     - mv /usr/local/bin/kubectl-update.sh /usr/local/bin/kubectl-update
-    - mv /usr/local/bin/kubectl-remove.sh /usr/local/bin/kubectl-remove
     - mv /usr/local/bin/kubectl-show.sh /usr/local/bin/kubectl-show
 ##### Deploy k8s CRD artifacts
 
@@ -63,7 +60,7 @@
     
 
 - Note:
-- If the namespace is not provided, default namespace will be used. The namespace used in all the commands must match.
+> If the namespace is not provided, default namespace will be used. The namespace used in all the commands must match.
 
 
 ##### Incorporating analytics to the k8s operator
