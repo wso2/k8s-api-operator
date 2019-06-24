@@ -588,8 +588,8 @@ func createMGWSecret(r *ReconcileAPI, confData string, operatorOwner []metav1.Ow
 
 	apimSecret = &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      mgwConfSecretConst,
-			Namespace: wso2NameSpaceConst,
+			Name:            mgwConfSecretConst,
+			Namespace:       wso2NameSpaceConst,
 			OwnerReferences: operatorOwner,
 		},
 	}
@@ -639,12 +639,27 @@ func createConfigMap(apiConfigMapRef string, key string, value string, ns string
 
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      apiConfigMapRef,
-			Namespace: ns,
+			Name:            apiConfigMapRef,
+			Namespace:       ns,
 			OwnerReferences: owner,
 		},
 		Data: map[string]string{
 			key: value,
+		},
+	}, nil
+}
+
+// createSecret creates a config file with the given data
+func createSecret(secretName string, key string, value string, ns string, owner []metav1.OwnerReference) (*corev1.Secret, error) {
+
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            secretName,
+			Namespace:       ns,
+			OwnerReferences: owner,
+		},
+		Data: map[string][]byte{
+			key: []byte(value),
 		},
 	}, nil
 }
@@ -822,9 +837,9 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      cr.Name,
-			Namespace: nameSpace,
-			Labels:    labels,
+			Name:            cr.Name,
+			Namespace:       nameSpace,
+			Labels:          labels,
 			OwnerReferences: owner,
 		},
 		Spec: appsv1.DeploymentSpec{
@@ -857,7 +872,7 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 
 //Handles dockerfile configmap creation
 func dockerfileHandler(r *ReconcileAPI, certList map[string]string, existcert bool, conf map[string]string,
- operatorOwner []metav1.OwnerReference) (*corev1.ConfigMap, error) {
+	operatorOwner []metav1.OwnerReference) (*corev1.ConfigMap, error) {
 	truststorePass := getTruststorePassword(r)
 	dockertemplate := dockertemplatepath
 	certs := &DockerfileArtifacts{
@@ -986,8 +1001,8 @@ func scheduleKanikoJob(cr *wso2v1alpha1.API, imageName string, conf *corev1.Conf
 
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      cr.Name + "kaniko" + timeStamp,
-			Namespace: wso2NameSpaceConst,
+			Name:            cr.Name + "kaniko" + timeStamp,
+			Namespace:       wso2NameSpaceConst,
 			OwnerReferences: owner,
 		},
 		Spec: batchv1.JobSpec{
@@ -1045,31 +1060,31 @@ func dockerConfigCreator(r *ReconcileAPI, operatorOwner []metav1.OwnerReference)
 		return err
 	}
 
-	//Writes the created template to a configmap
-	dockerConf, er := createConfigMap(dockerConfig, "config.json", output, wso2NameSpaceConst, operatorOwner)
+	//Writes the created template to a secret
+	dockerConf, er := createSecret(dockerConfig, "config.json", output, wso2NameSpaceConst, operatorOwner)
 	if er != nil {
-		log.Error(er, "error in docker-config configmap creation")
+		log.Error(er, "error in docker-config secret creation")
 		return er
 	}
 
 	// Check if this configmap already exists
-	foundmap := &corev1.ConfigMap{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: dockerConf.Name, Namespace: dockerConf.Namespace}, foundmap)
+	foundsecret := &corev1.Secret{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: dockerConf.Name, Namespace: dockerConf.Namespace}, foundsecret)
 
 	if err != nil && errors.IsNotFound(err) {
-		log.Info("Creating a new Config map", "Namespace", dockerConf.Namespace, "confmap.Name", dockerConf.Name)
+		log.Info("Creating a new docker-config secret", "Namespace", dockerConf.Namespace, "secret.Name", dockerConf.Name)
 		err = r.client.Create(context.TODO(), dockerConf)
 		if err != nil {
 			log.Error(err, "error ")
 			return err
 		}
-		// confmap created successfully
+		// secret created successfully
 		return nil
 	} else if err != nil {
 		log.Error(err, "error ")
 		return err
 	}
-	log.Info("Map already exists", "confmap.Namespace", foundmap.Namespace, "confmap.Name", foundmap.Name)
+	log.Info("Docker config secret already exists", "secret.Namespace", foundsecret.Namespace, "secret.Name", foundsecret.Name)
 	log.Info("Updating Config map", "confmap.Namespace", dockerConf.Namespace, "confmap.Name", dockerConf.Name)
 	err = r.client.Update(context.TODO(), dockerConf)
 	if err != nil {
@@ -1116,9 +1131,9 @@ func createMgwLBService(cr *wso2v1alpha1.API, nameSpace string, owner []metav1.O
 
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      cr.Name,
-			Namespace: nameSpace,
-			Labels:    labels,
+			Name:            cr.Name,
+			Namespace:       nameSpace,
+			Labels:          labels,
 			OwnerReferences: owner,
 		},
 		Spec: corev1.ServiceSpec{
@@ -1176,10 +1191,8 @@ func getVolumes(apiConfMap string) ([]corev1.VolumeMount, []corev1.Volume) {
 		{
 			Name: dockerConfig,
 			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: dockerConfig,
-					},
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: dockerConfig,
 				},
 			},
 		},
@@ -1334,7 +1347,7 @@ func getTruststorePassword(r *ReconcileAPI) string {
 
 //gets the details of the api crd object for owner reference
 func getOwnerDetails(cr *wso2v1alpha1.API) []metav1.OwnerReference {
-	setOwner :=true
+	setOwner := true
 	return []metav1.OwnerReference{
 		{
 			APIVersion:         cr.APIVersion,
