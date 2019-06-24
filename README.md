@@ -60,7 +60,7 @@
     
 
 - Note:
-> If the namespace is not provided, default namespace will be used. The namespace used in all the commands must match.
+> Namespace and replicas are optional parameters and default values will be used if they are not provided. However, the namespace used in all the commands related to particular API name must match.
 
 
 ##### Incorporating analytics to the k8s operator
