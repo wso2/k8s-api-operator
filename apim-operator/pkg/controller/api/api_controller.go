@@ -265,7 +265,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	certList := make(map[string]string)
 	var certName string
 	//get the volume mounts
-	jobVolumeMount, jobVolume := getVolumes(apiConfigMapRef)
+	jobVolumeMount, jobVolume := getVolumes(instance)
 
 	//get certificate for JWT and Oauth
 	if strings.EqualFold(security.Spec.Type, "Oauth") || strings.EqualFold(security.Spec.Type, "JWT") {
@@ -369,7 +369,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	//Handles the creation of dockerfile configmap
-	dockerfileConfmap, errDocker := dockerfileHandler(r, certList, existcert, controlConfigData, operatorOwner)
+	dockerfileConfmap, errDocker := dockerfileHandler(r, certList, existcert, controlConfigData, owner, instance)
 	if errDocker != nil {
 		log.Error(errDocker, "error in docker configmap handling")
 	} else {
@@ -413,7 +413,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	//writes the created conf file to secret
-	errCreateSecret := createMGWSecret(r, output, operatorOwner)
+	errCreateSecret := createMGWSecret(r, output, owner, instance)
 	if errCreateSecret != nil {
 		log.Error(errCreateSecret, "Error in creating conf secret")
 	} else {
@@ -583,14 +583,14 @@ func getSecretData(r *ReconcileAPI, analyticsSecretName string) (map[string][]by
 }
 
 //Handles microgateway conf create and update
-func createMGWSecret(r *ReconcileAPI, confData string, operatorOwner []metav1.OwnerReference) error {
+func createMGWSecret(r *ReconcileAPI, confData string, owner []metav1.OwnerReference, cr *wso2v1alpha1.API) error {
 	var apimSecret *corev1.Secret
 
 	apimSecret = &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:            mgwConfSecretConst,
+			Name:            cr.Name+"-"+mgwConfSecretConst,
 			Namespace:       wso2NameSpaceConst,
-			OwnerReferences: operatorOwner,
+			OwnerReferences: owner,
 		},
 	}
 
@@ -600,7 +600,7 @@ func createMGWSecret(r *ReconcileAPI, confData string, operatorOwner []metav1.Ow
 
 	// Check if mgw-conf secret exists
 	checkSecret := &corev1.Secret{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: mgwConfSecretConst, Namespace: wso2NameSpaceConst}, checkSecret)
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: cr.Name+"-"+mgwConfSecretConst, Namespace: wso2NameSpaceConst}, checkSecret)
 
 	if err != nil && errors.IsNotFound(err) {
 		log.Info("Creating mgw-conf secret ")
@@ -872,7 +872,7 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 
 //Handles dockerfile configmap creation
 func dockerfileHandler(r *ReconcileAPI, certList map[string]string, existcert bool, conf map[string]string,
-	operatorOwner []metav1.OwnerReference) (*corev1.ConfigMap, error) {
+	owner []metav1.OwnerReference, cr *wso2v1alpha1.API) (*corev1.ConfigMap, error) {
 	truststorePass := getTruststorePassword(r)
 	dockertemplate := dockertemplatepath
 	certs := &DockerfileArtifacts{
@@ -895,9 +895,9 @@ func dockerfileHandler(r *ReconcileAPI, certList map[string]string, existcert bo
 		return nil, err
 	}
 
-	dockerfileConfmap, err := getConfigmap(r, dockerFile, wso2NameSpaceConst)
+	dockerfileConfmap, err := getConfigmap(r, cr.Name+"-"+dockerFile, wso2NameSpaceConst)
 	if err != nil && errors.IsNotFound(err) {
-		dockerConf, er := createConfigMap(dockerFile, "Dockerfile", builder.String(), wso2NameSpaceConst, operatorOwner)
+		dockerConf, er := createConfigMap(cr.Name+"-"+dockerFile, "Dockerfile", builder.String(), wso2NameSpaceConst, owner)
 		if er != nil {
 			log.Error(er, "error in docker configmap creation")
 			return dockerfileConfmap, er
@@ -1148,7 +1148,7 @@ func createMgwLBService(cr *wso2v1alpha1.API, nameSpace string, owner []metav1.O
 }
 
 //default volume mounts for the kaniko job
-func getVolumes(apiConfMap string) ([]corev1.VolumeMount, []corev1.Volume) {
+func getVolumes(cr *wso2v1alpha1.API) ([]corev1.VolumeMount, []corev1.Volume) {
 
 	jobVolumeMount := []corev1.VolumeMount{
 		{
@@ -1183,7 +1183,7 @@ func getVolumes(apiConfMap string) ([]corev1.VolumeMount, []corev1.Volume) {
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: apiConfMap,
+						Name: cr.Spec.Definition.ConfigmapName,
 					},
 				},
 			},
@@ -1201,7 +1201,7 @@ func getVolumes(apiConfMap string) ([]corev1.VolumeMount, []corev1.Volume) {
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: dockerFile,
+						Name: cr.Name+"-"+dockerFile,
 					},
 				},
 			},
@@ -1220,7 +1220,7 @@ func getVolumes(apiConfMap string) ([]corev1.VolumeMount, []corev1.Volume) {
 			Name: mgwConfFile,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: mgwConfSecretConst,
+					SecretName: cr.Name+"-"+mgwConfSecretConst,
 				},
 			},
 		},
