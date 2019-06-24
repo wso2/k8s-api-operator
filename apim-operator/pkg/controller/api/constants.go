@@ -46,6 +46,7 @@ const (
 	mgwConfConst          = "micro-gw.conf"
 	dockerSecretNameConst = "docker-secret"
 	controllerConfName    = "controller-config"
+	policyFileConst       = "policies.yaml"
 
 	usernameConst  = "username"
 	passwordConst  = "password"

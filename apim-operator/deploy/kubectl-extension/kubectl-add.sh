@@ -16,7 +16,7 @@
 # under the License.
 
 # Please copy this file to /usr/local/bin and give executable permissions
-# Sample usage : kubectl add api <api-name> --from-file=<file> --replicas=<number of replicas> -n=<namespace>
+# Sample usage : kubectl add api <api-name> --from-file=<file> -n=<namespace> --replicas=<number of replicas>
 if [[ "$1" == "api" ]]
 then
 
@@ -48,10 +48,10 @@ done
 apiName=$2
 
 echo -e "\nDeleteting configmap if exists with name "$apiName
-    kubectl delete configmap $2 -n=wso2-system
+    kubectl delete configmap $2 $4
 
 echo -e "\nCreating configmap with name "$apiName
-    kubectl create configmap $2 $3 -n=wso2-system
+    kubectl create configmap $2 $3 $4
     echo -e "\nGenerating a api kind"
 
 cat << EOF > wso2_v1alpha1_api_cr.yaml
@@ -68,7 +68,7 @@ spec:
 
 EOF
 
-    kubectl apply -f wso2_v1alpha1_api_cr.yaml $5
+    kubectl apply -f wso2_v1alpha1_api_cr.yaml $4
 
 else
     echo "Unknown command"
