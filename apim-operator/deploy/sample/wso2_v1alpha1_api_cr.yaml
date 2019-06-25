@@ -1,11 +1,11 @@
 apiVersion: wso2.com/v1alpha1
 kind: API
 metadata:
-  name: test-api
+  name: test-api-publisher
   namespace: wso2-system
 spec:
   definition:
-    configmapName: oauthswagger
+    configmapName: test-publish
     type: swagger
   replicas: 1
   mode: privateJet

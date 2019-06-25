@@ -89,7 +89,6 @@ type accessToken struct {
 }
 
 type jsonRequset struct {
-	Id string `json:"id"`
 	Name string `json:"name"`
 	Description string `json:"description"`
 	Context string `json:"context"`
@@ -132,6 +131,33 @@ type corsConfiguration struct {
 	AccessControlAllowMethods []string `json:"accessControlAllowMethods"`
 	AccessControlAllowCredentials bool `json:"accessControlAllowCredentials"`
 	CorsConfigurationEnabled bool `json:"corsConfigurationEnabled"`
+}
+
+type info struct {
+	Description string `json:"description"`
+	Version string `json:"version"`
+	Title string `json:"title"`
+	TermsOfService string `json:"termsOfService"`
+	Contact contact `json:"contact"`
+	License license `json:"license"`
+}
+
+type contact struct {
+	Email string `json:"email"`
+}
+
+type license struct {
+	Name string `json:"name"`
+	Url string `json:"url"`
+}
+
+type tags struct {
+	Name string `json:"name"`
+}
+
+type externalDocs struct {
+	Description string `json:"description"`
+	Url string `json:"url"`
 }
 
 // Add creates a new API Controller and adds it to the Manager. The Manager will set fields on the Controller
