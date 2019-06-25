@@ -247,9 +247,9 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		errGetSec := r.client.Get(context.TODO(), types.NamespacedName{Name:  defaultSecurity, Namespace: userNameSpace}, securityDefault)
 
 		if errGetSec != nil && errors.IsNotFound(errGetSec) {
-			var defaultcertName string
-			var defaultcertvalue []byte
-			//retrive default-security from wso2-system namespace
+			var defaultCertName string
+			var defaultCertvalue []byte
+			//retrieve default-security from wso2-system namespace
 			errSec := r.client.Get(context.TODO(), types.NamespacedName{Name:  defaultSecurity, Namespace: wso2NameSpaceConst}, securityDefault)
 			if errSec != nil && errors.IsNotFound(errSec){
 				reqLogger.Info("default security instance is not found in wso2-system namespace")
@@ -258,8 +258,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 				log.Error(errSec,"error in getting default security from wso2-system namespace")
 				return reconcile.Result{}, errSec
 			}
-			var defaultcert = &corev1.Secret{}
-			errc := r.client.Get(context.TODO(), types.NamespacedName{Name: securityDefault.Spec.Certificate, Namespace: wso2NameSpaceConst}, defaultcert)
+			var defaultCert = &corev1.Secret{}
+			errc := r.client.Get(context.TODO(), types.NamespacedName{Name: securityDefault.Spec.Certificate, Namespace: wso2NameSpaceConst}, defaultCert)
 			if errc != nil && errors.IsNotFound(errc) {
 				reqLogger.Info("defined cretificate is not found")
 				return reconcile.Result{}, errc
@@ -267,33 +267,24 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 				log.Error(errc,"error in getting default cert from wso2-system namespace")
 			}
 			//copying default cert as a secret to user namespace
-			for cert, value := range defaultcert.Data {
-				defaultcertName = cert
-				defaultcertvalue = value
+			noOwner := []metav1.OwnerReference{}
+			for cert, value := range defaultCert.Data {
+				defaultCertName = cert
+				defaultCertvalue = value
 			}
-			var defaultcertSecret *corev1.Secret
-			defaultcertSecret = &corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      securityDefault.Spec.Certificate,
-					Namespace: userNameSpace,
-				},
+			newDefaultSecret := createSecret(securityDefault.Spec.Certificate,defaultCertName,string(defaultCertvalue),userNameSpace,noOwner)
+			errCreateSec := r.client.Create(context.TODO(),newDefaultSecret)
+			if errCreateSec != nil {
+				log.Error(errCreateSec,"error creating secret for default security in user namespace")
+				return reconcile.Result{},errCreateSec
 			}
-			defaultcertSecret.Data = map[string][]byte{
-				defaultcertName : defaultcertvalue,
-			}
-			errcreatesec := r.client.Create(context.TODO(),defaultcertSecret)
-			if errcreatesec != nil {
-				log.Error(errcreatesec,"error creating secret for default security in user namespace")
-				return reconcile.Result{},errcreatesec
-			}
-
 			//copying default security to user namespace
-			cperr := copyDefaultSecurity(securityDefault, userNameSpace)
-			if cperr != nil{
-				log.Error(cperr,"error copying security to user namespace")
-				return reconcile.Result{}, cperr
+			newDefaultSecurity := copyDefaultSecurity(securityDefault, userNameSpace)
+			errCreateSecurity := r.client.Create(context.TODO(),newDefaultSecurity)
+			if errCreateSecurity != nil {
+				log.Error(errCreateSecurity,"error creating secret for default security in user namespace")
+				return reconcile.Result{},errCreateSecurity
 			}
-
 		}
 
 	}
@@ -1436,10 +1427,9 @@ func getOperatorOwner(r *ReconcileAPI) ([]metav1.OwnerReference, error) {
 		},
 	}, nil
 }
-func copyDefaultSecurity(securityDefault *wso2v1alpha1.Security,userNameSpace string) error  {
+func copyDefaultSecurity(securityDefault *wso2v1alpha1.Security,userNameSpace string) *wso2v1alpha1.Security  {
 
-	var defaultSec *wso2v1alpha1.Security
-	defaultSec = &wso2v1alpha1.Security{
+	return &wso2v1alpha1.Security{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: defaultSecurity,
 			Namespace: userNameSpace,
@@ -1451,11 +1441,5 @@ func copyDefaultSecurity(securityDefault *wso2v1alpha1.Security,userNameSpace st
 			Issuer: securityDefault.Spec.Issuer,
 		},
 	}
-	errcreatesecurity := r.client.Create(context.TODO(),defaultSec)
-	if errcreatesecurity != nil {
-		log.Error(errcreatesecurity,"error creating secret for default security in user namespace")
-		return errcreatesecurity
-	}
-		return nil
 }
 
