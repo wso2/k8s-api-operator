@@ -151,5 +151,5 @@ func (r *ReconcileSecurity) Reconcile(request reconcile.Request) (reconcile.Resu
 		return reconcile.Result{}, errcertificate
 	}
 
-	return reconcile.Result{Requeue: true}, nil
+	return reconcile.Result{}, nil
 }

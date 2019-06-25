@@ -19,10 +19,8 @@ package api
 import (
 	"context"
 	"crypto/sha1"
-	"crypto/tls"
 	"encoding/hex"
 	"fmt"
-	"gopkg.in/resty.v1"
 	"strconv"
 	"strings"
 	"text/template"
@@ -595,7 +593,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		if kubeJob.Status.Succeeded > 0 {
 			reqLogger.Info("Job completed successfully", "Job.Namespace", job.Namespace, "Job.Name", job.Name)
 			if deperr != nil && errors.IsNotFound(deperr) {
-				reqLogger.Info("Creating a new Dep", "Dep.Namespace", dep.Namespace, "Dep.Name", dep.Name)
+				reqLogger.Info("Creating a new Deployment", "Dep.Namespace", dep.Namespace, "Dep.Name", dep.Name)
 				deperr = r.client.Create(context.TODO(), dep)
 				if deperr != nil {
 					return reconcile.Result{}, deperr
@@ -625,10 +623,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			return reconcile.Result{}, deperr
 		}
 	}
-	// Job already exists - don't requeue
-	reqLogger.Info("Skip reconcile: Job already exists", "Job.Namespace", job.Namespace, "Job.Name", job.Name)
-	return reconcile.Result{},deperr
-}
+
+	}
 
 // gets the data from analytics secret
 func getSecretData(r *ReconcileAPI, analyticsSecretName string) (map[string][]byte, error) {
