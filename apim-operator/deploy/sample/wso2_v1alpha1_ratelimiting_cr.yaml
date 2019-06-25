@@ -4,9 +4,9 @@ metadata:
   name: testing1-ratelimiting
   namespace: wso2-system
 spec:
-  type: subscription             # application ,subscription
+  type: subscription             # application ,subscription, advance
   description: Allow 1000 requests per minute   # optional
-  timeUnit: min # min or sec
+  timeUnit: min 
   unitTime: 1
   requestCount:
    limit: 1000

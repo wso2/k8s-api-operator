@@ -1,0 +1,67 @@
+#Copyright (c)  WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+#
+# WSO2 Inc. licenses this file to you under the Apache License,
+# Version 2.0 (the "License"); you may not use this file except
+# in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+apiVersion: wso2.com/v1alpha1
+kind: RateLimiting
+metadata:
+  name: advance5
+  namespace: wso2-test-ns1
+spec:
+  type: advance             
+  description: Allow 5 requests per minute   # optional
+  timeUnit: min
+  unitTime: 1
+  requestCount:
+   limit: 5
+---
+apiVersion: wso2.com/v1alpha1
+kind: RateLimiting
+metadata:
+  name: advance3
+  namespace: wso2-test-ns2
+spec:
+  type: advance             
+  description: Allow 3 requests per minute   # optional
+  timeUnit: min
+  unitTime: 1
+  requestCount:
+   limit: 3
+---
+apiVersion: wso2.com/v1alpha1
+kind: RateLimiting
+metadata:
+  name: app4
+  namespace: wso2-test-ns1
+spec:
+  type: application             
+  description: Allow 4 requests per minute   # optional
+  timeUnit: min
+  unitTime: 1
+  requestCount:
+   limit: 4
+---
+apiVersion: wso2.com/v1alpha1
+kind: RateLimiting
+metadata:
+  name: sub6
+  namespace: wso2-test-ns2
+spec:
+  type: subscription             
+  description: Allow 6 requests per minute   # optional
+  timeUnit: min
+  unitTime: 1
+  requestCount:
+   limit: 6
