@@ -121,6 +121,7 @@ func (r *ReconcileRateLimiting) Reconcile(request reconcile.Request) (reconcile.
 		return reconcile.Result{}, err
 	}
 
+	userNameSpace := instance.Namespace
 	//gets the details of the operator as the owner
 	operatorOwner, ownerErr := getOperatorOwner(r)
 	if ownerErr != nil {
@@ -147,16 +148,16 @@ func (r *ReconcileRateLimiting) Reconcile(request reconcile.Request) (reconcile.
 
 	//Check if policy configmap is available
 	foundmapc := &corev1.ConfigMap{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: policyConfMapNameConst, Namespace: wso2NameSpaceConst}, foundmapc)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: policyConfMapNameConst, Namespace: userNameSpace}, foundmapc)
 
 	if err != nil && errors.IsNotFound(err) {
 		//create new map with default policies if a map is not found
-		reqLogger.Info("Creating a config map with default policies", "Namespace", wso2NameSpaceConst, "Name", policyConfMapNameConst)
+		reqLogger.Info("Creating a config map with default policies", "Namespace", userNameSpace, "Name", policyConfMapNameConst)
 
 		defaultval := CreateDefault()
 		fmt.Println(defaultval)
 
-		confmap, confer := CreatePolicyConfigMap(defaultval, operatorOwner)
+		confmap, confer := CreatePolicyConfigMap(defaultval, operatorOwner, userNameSpace)
 		if confer != nil {
 			log.Error(confer, "Error in default config map structure creation")
 		}
@@ -221,7 +222,7 @@ func (r *ReconcileRateLimiting) Reconcile(request reconcile.Request) (reconcile.
 
 	//CREATE CONFIG MAP OF POLICY YAML
 
-	confmap, confEr := CreatePolicyConfigMap(output, operatorOwner)
+	confmap, confEr := CreatePolicyConfigMap(output, operatorOwner, userNameSpace)
 	if confEr != nil {
 		log.Error(confEr, "Error in config map structure creation")
 	}
@@ -238,12 +239,12 @@ func (r *ReconcileRateLimiting) Reconcile(request reconcile.Request) (reconcile.
 }
 
 // CreateConfigMap creates a config file with the generated code
-func CreatePolicyConfigMap(output string, operatorOwner []metav1.OwnerReference) (*corev1.ConfigMap, error) {
+func CreatePolicyConfigMap(output string, operatorOwner []metav1.OwnerReference, userNameSpace string) (*corev1.ConfigMap, error) {
 
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      policyConfMapNameConst,
-			Namespace: wso2NameSpaceConst,
+			Namespace: userNameSpace,
 			OwnerReferences: operatorOwner,
 		},
 		Data: map[string]string{
