@@ -54,7 +54,7 @@ const (
 	analyticsAlias = "wso2analytics260"
 
 	dockerhubRegistryUrl     = "https://registry-1.docker.io/"
-	defaultSecurity          = "default-security"
+	defaultSecurity          = "default-security-jwt"
 	endpointExtension        = "x-wso2-production-endpoints"
 	securityExtension        = "x-wso2-security"
 	certPath                 = "/usr/wso2/certs/"

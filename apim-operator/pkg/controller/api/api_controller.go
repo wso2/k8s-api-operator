@@ -70,96 +70,6 @@ type DockerfileArtifacts struct {
 	BaseImage    string
 	RuntimeImage string
 }
-
-type consumerResponse struct {
-	CallBackURL string `json:"callBackURL"`
-	JsonString string `json:"jsonString"`
-	ClientName string `json:"clientName"`
-	ClientId string `json:"clientId"`
-	ClientSecret string `json:"clientSecret"`
-
-}
-
-type accessToken struct {
-	Scope string `json:"scope"`
-	Token_type string `json:"token_type"`
-	Expires_in int `json:"expires_in"`
-	Refresh_token string `json:"refresh_token"`
-	Access_token string `json:"access_token"`
-}
-
-type jsonRequset struct {
-	Name string `json:"name"`
-	Description string `json:"description"`
-	Context string `json:"context"`
-	Version string `json:"version"`
-	Provider string `json:"provider"`
-	ApiDefinition string `json:"apiDefinition"`
-	WsdlUri *string `json:"wsdlUri"`
-	ResponseCaching string `json:"responseCaching"`
-	CacheTimeout int `json:"cacheTimeout"`
-	DestinationStatsEnabled *string `json:"destinationStatsEnabled"`
-	IsDefaultVersion bool `json:"isDefaultVersion"`
-	Type1 string `json:"type"`
-	Transport []string `json:"transport"`
-	Tags []string `json:"tags"`
-	Tiers []string `json:"tiers"`
-	MaxTps map[string]int `json:"maxTps"`
-	ThumbnailUri *string `json:"thumbnailUri"`
-	Visibility string `json:"visibility"`
-	VisibleRoles []string `json:"visibleRoles"`
-	EndpointConfig string `json:"endpointConfig"`
-	EndpointSecurity map[string]string `json:"endpointSecurity"`
-	GatewayEnvironments string `json:"gatewayEnvironments"`
-	Sequences []sequence `json:"sequences"`
-	SubscriptionAvailableTenants []string `json:"subscriptionAvailableTenants"`
-	BusinessInformation map[string]string `json:"businessInformation"`
-	SubscriptionAvailability *string `json:"subscriptionAvailability"`
-	CorsConfiguration corsConfiguration `json:"corsConfiguration"`
-}
-
-type sequence struct {
-	Name string `json:"name"`
-	Type2 string `json:"type"`
-	Id string `json:"id"`
-	Shared bool `json:"shared"`
-}
-
-type corsConfiguration struct {
-	AccessControlAllowOrigins []string `json:"accessControlAllowOrigins"`
-	AccessControlAllowHeaders []string `json:"accessControlAllowHeaders"`
-	AccessControlAllowMethods []string `json:"accessControlAllowMethods"`
-	AccessControlAllowCredentials bool `json:"accessControlAllowCredentials"`
-	CorsConfigurationEnabled bool `json:"corsConfigurationEnabled"`
-}
-
-type info struct {
-	Description string `json:"description"`
-	Version string `json:"version"`
-	Title string `json:"title"`
-	TermsOfService string `json:"termsOfService"`
-	Contact contact `json:"contact"`
-	License license `json:"license"`
-}
-
-type contact struct {
-	Email string `json:"email"`
-}
-
-type license struct {
-	Name string `json:"name"`
-	Url string `json:"url"`
-}
-
-type tags struct {
-	Name string `json:"name"`
-}
-
-type externalDocs struct {
-	Description string `json:"description"`
-	Url string `json:"url"`
-}
-
 // Add creates a new API Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
@@ -207,9 +117,6 @@ type ReconcileAPI struct {
 	client client.Client
 	scheme *runtime.Scheme
 }
-
-var publisher  = make(map[string]int)
-
 // Reconcile reads that state of the cluster for a API object and makes changes based on the state read
 // and what is in the API.Spec
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
@@ -335,8 +242,62 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	} else {
 		//use default security cr
 		securityName = defaultSecurity
+		//copy default sec in wso2-system to user namespace
+		securityDefault := &wso2v1alpha1.Security{}
+		errGetSec := r.client.Get(context.TODO(), types.NamespacedName{Name:  defaultSecurity, Namespace: userNameSpace}, securityDefault)
+
+		if errGetSec != nil && errors.IsNotFound(errGetSec) {
+			var defaultcertName string
+			var defaultcertvalue []byte
+			//retrive default-security from wso2-system namespace
+			errSec := r.client.Get(context.TODO(), types.NamespacedName{Name:  defaultSecurity, Namespace: wso2NameSpaceConst}, securityDefault)
+			if errSec != nil && errors.IsNotFound(errSec){
+				reqLogger.Info("default security instance is not found in wso2-system namespace")
+				return reconcile.Result{}, errSec
+			}else if errSec != nil{
+				log.Error(errSec,"error in getting default security from wso2-system namespace")
+				return reconcile.Result{}, errSec
+			}
+			var defaultcert = &corev1.Secret{}
+			errc := r.client.Get(context.TODO(), types.NamespacedName{Name: securityDefault.Spec.Certificate, Namespace: wso2NameSpaceConst}, defaultcert)
+			if errc != nil && errors.IsNotFound(errc) {
+				reqLogger.Info("defined cretificate is not found")
+				return reconcile.Result{}, errc
+			} else if errc != nil{
+				log.Error(errc,"error in getting default cert from wso2-system namespace")
+			}
+			//copying default cert as a secret to user namespace
+			for cert, value := range defaultcert.Data {
+				defaultcertName = cert
+				defaultcertvalue = value
+			}
+			var defaultcertSecret *corev1.Secret
+			defaultcertSecret = &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      securityDefault.Spec.Certificate,
+					Namespace: userNameSpace,
+				},
+			}
+			defaultcertSecret.Data = map[string][]byte{
+				defaultcertName : defaultcertvalue,
+			}
+			errcreatesec := r.client.Create(context.TODO(),defaultcertSecret)
+			if errcreatesec != nil {
+				log.Error(errcreatesec,"error creating secret for default security in user namespace")
+				return reconcile.Result{},errcreatesec
+			}
+
+			//copying default security to user namespace
+			cperr := copyDefaultSecurity(securityDefault, userNameSpace)
+			if cperr != nil{
+				log.Error(cperr,"error copying security to user namespace")
+				return reconcile.Result{}, cperr
+			}
+
+		}
+
 	}
-	//get security instance. sample secret name is hard coded for now.
+	//get security instance
 	security := &wso2v1alpha1.Security{}
 	errGetSec := r.client.Get(context.TODO(), types.NamespacedName{Name: securityName, Namespace: userNameSpace}, security)
 
@@ -650,7 +611,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		}
 	}
 
-	}
+}
 
 // gets the data from analytics secret
 func getSecretData(r *ReconcileAPI, analyticsSecretName string) (map[string][]byte, error) {
@@ -1475,3 +1436,26 @@ func getOperatorOwner(r *ReconcileAPI) ([]metav1.OwnerReference, error) {
 		},
 	}, nil
 }
+func copyDefaultSecurity(securityDefault *wso2v1alpha1.Security,userNameSpace string) error  {
+
+	var defaultSec *wso2v1alpha1.Security
+	defaultSec = &wso2v1alpha1.Security{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: defaultSecurity,
+			Namespace: userNameSpace,
+		},
+		Spec: wso2v1alpha1.SecuritySpec{
+			Type: securityDefault.Spec.Type,
+			Certificate: securityDefault.Spec.Certificate,
+			Audience: securityDefault.Spec.Audience,
+			Issuer: securityDefault.Spec.Issuer,
+		},
+	}
+	errcreatesecurity := r.client.Create(context.TODO(),defaultSec)
+	if errcreatesecurity != nil {
+		log.Error(errcreatesecurity,"error creating secret for default security in user namespace")
+		return errcreatesecurity
+	}
+		return nil
+}
+
