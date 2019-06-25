@@ -294,7 +294,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		//get the keymanager server URL from the security kind
 		keymanagerServerurl = security.Spec.Endpoint
 		//fetch credentials from the secret created
-		errGetCredentials := getCredentials(r, security.Spec.Credentials, "Oauth")
+		errGetCredentials := getCredentials(r, security.Spec.Credentials, "Oauth", userNameSpace)
 
 		if errGetCredentials != nil {
 			log.Error(errGetCredentials, "Error occured when retriving credentials for Oauth")
@@ -318,7 +318,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	if strings.EqualFold(security.Spec.Type, "Basic") {
 		existcert = false
 		//fetch credentials from the secret created
-		errGetCredentials := getCredentials(r, security.Spec.Credentials, "Basic")
+		errGetCredentials := getCredentials(r, security.Spec.Credentials, "Basic", userNameSpace)
 
 		if errGetCredentials != nil {
 			log.Error(errGetCredentials, "Error occured when retriving credentials for Basic")
@@ -771,7 +771,7 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger) string {
 
 }
 
-func getCredentials(r *ReconcileAPI, name string, securityType string) error {
+func getCredentials(r *ReconcileAPI, name string, securityType string, userNameSpace string) error {
 
 	hasher := sha1.New()
 	var usrname string
@@ -779,7 +779,7 @@ func getCredentials(r *ReconcileAPI, name string, securityType string) error {
 
 	//get the secret included credentials
 	credentialSecret := &corev1.Secret{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: wso2NameSpaceConst}, credentialSecret)
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: userNameSpace}, credentialSecret)
 
 	if err != nil && errors.IsNotFound(err) {
 		log.Info("secret not found")
