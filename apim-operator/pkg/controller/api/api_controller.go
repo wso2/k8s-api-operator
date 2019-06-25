@@ -219,7 +219,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	//update configmap with modified swagger
 
 	swaggerConfMap := createConfigMap(apiConfigMapRef, swaggerDataFile, newSwagger, userNameSpace, owner)
-	
+
 	log.Info("Updating swagger configmap")
 	errConf := r.client.Update(context.TODO(), swaggerConfMap)
 	if errConf != nil {
@@ -636,7 +636,7 @@ func getConfigmap(r *ReconcileAPI, mapName string, ns string) (*corev1.ConfigMap
 }
 
 // createConfigMap creates a config file with the given data
-func createConfigMap(apiConfigMapRef string, key string, value string, ns string, owner []metav1.OwnerReference) (*corev1.ConfigMap) {
+func createConfigMap(apiConfigMapRef string, key string, value string, ns string, owner []metav1.OwnerReference) *corev1.ConfigMap {
 
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -899,7 +899,7 @@ func dockerfileHandler(r *ReconcileAPI, certList map[string]string, existcert bo
 	dockerfileConfmap, err := getConfigmap(r, cr.Name+"-"+dockerFile, cr.Namespace)
 	if err != nil && errors.IsNotFound(err) {
 		dockerConf := createConfigMap(cr.Name+"-"+dockerFile, "Dockerfile", builder.String(), cr.Namespace, owner)
-		
+
 		errorMap := r.client.Create(context.TODO(), dockerConf)
 		if errorMap != nil {
 			return dockerfileConfmap, errorMap
@@ -925,39 +925,39 @@ func policyHandler(r *ReconcileAPI, operatorOwner []metav1.OwnerReference, userN
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: policyConfigmap, Namespace: userNameSpace}, foundmapc)
 
 	if err != nil && errors.IsNotFound(err) {
-		//check if the policy configmap exists in the wso2-system namespace
-		errNs := r.client.Get(context.TODO(), types.NamespacedName{Name: policyConfigmap, Namespace: userNameSpace}, foundmapc)
-		if errNs != nil && errors.IsNotFound(errNs) {
-			//create new map with default policies in user namespace if a map is not found in wso2-system
-			log.Info("Creating a config map with default policies", "Namespace", userNameSpace, "Name", policyConfigmap)
+		// //check if the policy configmap exists in the wso2-system namespace
+		// errNs := r.client.Get(context.TODO(), types.NamespacedName{Name: policyConfigmap, Namespace: userNameSpace}, foundmapc)
+		// if errNs != nil && errors.IsNotFound(errNs) {
+		//create new map with default policies in user namespace if a map is not found in wso2-system
+		log.Info("Creating a config map with default policies", "Namespace", userNameSpace, "Name", policyConfigmap)
 
-			defaultval := ratelimiting.CreateDefault()
-			confmap := createConfigMap(policyConfigmap, policyFileConst, defaultval, userNameSpace, operatorOwner)
-			
-			err = r.client.Create(context.TODO(), confmap)
-			if err != nil {
-				log.Error(err, "error ")
-				return err
-			}
-		} else if errNs != nil {
-			log.Error(errNs, "Error in getting policy configmap from usernamespace")
-			return errNs
-		} else {
-			log.Info("Policy configmap is found in wso2-system. Copying it to user namepsace")
-			var fileName string
-			var value string
-			for pem, val := range foundmapc.Data {
-				fileName = pem
-				value = string(val)
-			}
-			//copying the policy configmap to user namespace
-			policyMap := createConfigMap(policyConfigmap, fileName, value, userNameSpace, operatorOwner)
-			mapEr := r.client.Create(context.TODO(), policyMap)
-			if mapEr != nil {
-				log.Error(mapEr, "Error in copying found policy configmap to user namepsace")
-				return mapEr
-			}
+		defaultval := ratelimiting.CreateDefault()
+		confmap := createConfigMap(policyConfigmap, policyFileConst, defaultval, userNameSpace, operatorOwner)
+
+		err = r.client.Create(context.TODO(), confmap)
+		if err != nil {
+			log.Error(err, "error ")
+			return err
 		}
+		// } else if errNs != nil {
+		// 	log.Error(errNs, "Error in getting policy configmap from usernamespace")
+		// 	return errNs
+		// } else {
+		// 	log.Info("Policy configmap is found in wso2-system. Copying it to user namepsace")
+		// 	var fileName string
+		// 	var value string
+		// 	for pem, val := range foundmapc.Data {
+		// 		fileName = pem
+		// 		value = string(val)
+		// 	}
+		// 	//copying the policy configmap to user namespace
+		// 	policyMap := createConfigMap(policyConfigmap, fileName, value, userNameSpace, operatorOwner)
+		// 	mapEr := r.client.Create(context.TODO(), policyMap)
+		// 	if mapEr != nil {
+		// 		log.Error(mapEr, "Error in copying found policy configmap to user namepsace")
+		// 		return mapEr
+		// 	}
+		// }
 	} else if err != nil {
 		log.Error(err, "error ")
 		return err
