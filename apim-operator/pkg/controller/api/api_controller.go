@@ -70,6 +70,17 @@ type DockerfileArtifacts struct {
 	BaseImage    string
 	RuntimeImage string
 }
+
+type paths struct {
+	Get []path `json:"get"`
+	Post []path `json:"post"`
+	Put []path `json:"put"`
+	Delete []path `json:"delete"`
+}
+
+type path struct {
+	Security map[string][]string `json:"security"`
+}
 // Add creates a new API Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
@@ -226,7 +237,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	reqLogger.Info("getting security instance")
 
-	//get defined security cr from swagger
+	//get API level security cr from swagger
 	definedSecurity, checkSecuritykind := swagger.Extensions[securityExtension]
 	var securityName string
 
