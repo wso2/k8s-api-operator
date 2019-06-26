@@ -4,13 +4,9 @@
 
 > ##### This scenario demonstrates ratelimiting (throttling), OAuth2 flow, Analytics, Security kind, API addition, update, show and delete
 
-- Follow the main README and deploy the apim-operator.
+- Follow the main README and deploy the apim-operator and configuration files. Make sure to set the analyticsEnabled to "true" and deploy analytics secret with credentials to analytics server and certificate, if you want to check analytics
  
 ##### Navigate to the k8s-apim-operator/apim-operators/scenarios/scenario1 directory and execute the following command
-
-- Deploy apim and analytics configurations
-    - ***kubectl apply -f apim_analytics_configs.yaml***
-    - Note: uploading cycle of usage files to analytics server is set for a shorter period (1 minute) for demonstration purposes
 
 - Create 2 namespaces <br /> 
     - ***kubectl apply -f namespace.yaml***
