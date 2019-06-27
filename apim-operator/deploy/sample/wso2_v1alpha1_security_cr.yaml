@@ -2,7 +2,7 @@ apiVersion: wso2.com/v1alpha1
 kind: Security
 metadata:
   name: oauthtest
-  namespace: shehani
+  namespace: <namespace>
 spec:
   # Add fields here #secret-test-certificate
   type: Oauth
@@ -15,7 +15,7 @@ apiVersion: wso2.com/v1alpha1
 kind: Security
 metadata:
   name: basicauth
-  namespace: shehani
+  namespace:  <namespace>
 spec:
   # Add fields here #secret-test-certificate
   type: Oauth
@@ -28,7 +28,7 @@ apiVersion: wso2.com/v1alpha1
 kind: Security
 metadata:
   name: petstorebasic
-  namespace: shehani
+  namespace:  <namespace>
 spec:
   # Add fields here #secret-test-certificate
   type: basic
