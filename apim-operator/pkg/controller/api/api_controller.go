@@ -71,6 +71,16 @@ type DockerfileArtifacts struct {
 	RuntimeImage string
 }
 
+type paths struct {
+	Get []path `json:"get"`
+	Post []path `json:"post"`
+	Put []path `json:"put"`
+	Delete []path `json:"delete"`
+}
+
+type path struct {
+	Security map[string][]string `json:"security"`
+}
 // Add creates a new API Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
@@ -118,7 +128,6 @@ type ReconcileAPI struct {
 	client client.Client
 	scheme *runtime.Scheme
 }
-
 // Reconcile reads that state of the cluster for a API object and makes changes based on the state read
 // and what is in the API.Spec
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
@@ -228,7 +237,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	reqLogger.Info("getting security instance")
 
-	//get defined security cr from swagger
+	//get API level security cr from swagger
 	definedSecurity, checkSecuritykind := swagger.Extensions[securityExtension]
 	var securityName string
 
@@ -244,8 +253,53 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	} else {
 		//use default security cr
 		securityName = defaultSecurity
+		//copy default sec in wso2-system to user namespace
+		securityDefault := &wso2v1alpha1.Security{}
+		errGetSec := r.client.Get(context.TODO(), types.NamespacedName{Name:  defaultSecurity, Namespace: userNameSpace}, securityDefault)
+
+		if errGetSec != nil && errors.IsNotFound(errGetSec) {
+			var defaultCertName string
+			var defaultCertvalue []byte
+			//retrieve default-security from wso2-system namespace
+			errSec := r.client.Get(context.TODO(), types.NamespacedName{Name:  defaultSecurity, Namespace: wso2NameSpaceConst}, securityDefault)
+			if errSec != nil && errors.IsNotFound(errSec){
+				reqLogger.Info("default security instance is not found in wso2-system namespace")
+				return reconcile.Result{}, errSec
+			}else if errSec != nil{
+				log.Error(errSec,"error in getting default security from wso2-system namespace")
+				return reconcile.Result{}, errSec
+			}
+			var defaultCert = &corev1.Secret{}
+			errc := r.client.Get(context.TODO(), types.NamespacedName{Name: securityDefault.Spec.Certificate, Namespace: wso2NameSpaceConst}, defaultCert)
+			if errc != nil && errors.IsNotFound(errc) {
+				reqLogger.Info("defined cretificate is not found")
+				return reconcile.Result{}, errc
+			} else if errc != nil{
+				log.Error(errc,"error in getting default cert from wso2-system namespace")
+			}
+			//copying default cert as a secret to user namespace
+			noOwner := []metav1.OwnerReference{}
+			for cert, value := range defaultCert.Data {
+				defaultCertName = cert
+				defaultCertvalue = value
+			}
+			newDefaultSecret := createSecret(securityDefault.Spec.Certificate,defaultCertName,string(defaultCertvalue),userNameSpace,noOwner)
+			errCreateSec := r.client.Create(context.TODO(),newDefaultSecret)
+			if errCreateSec != nil {
+				log.Error(errCreateSec,"error creating secret for default security in user namespace")
+				return reconcile.Result{},errCreateSec
+			}
+			//copying default security to user namespace
+			newDefaultSecurity := copyDefaultSecurity(securityDefault, userNameSpace)
+			errCreateSecurity := r.client.Create(context.TODO(),newDefaultSecurity)
+			if errCreateSecurity != nil {
+				log.Error(errCreateSecurity,"error creating secret for default security in user namespace")
+				return reconcile.Result{},errCreateSecurity
+			}
+		}
+
 	}
-	//get security instance. sample secret name is hard coded for now.
+	//get security instance
 	security := &wso2v1alpha1.Security{}
 	errGetSec := r.client.Get(context.TODO(), types.NamespacedName{Name: securityName, Namespace: userNameSpace}, security)
 
@@ -528,7 +582,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		if kubeJob.Status.Succeeded > 0 {
 			reqLogger.Info("Job completed successfully", "Job.Namespace", job.Namespace, "Job.Name", job.Name)
 			if deperr != nil && errors.IsNotFound(deperr) {
-				reqLogger.Info("Creating a new Dep", "Dep.Namespace", dep.Namespace, "Dep.Name", dep.Name)
+				reqLogger.Info("Creating a new Deployment", "Dep.Namespace", dep.Namespace, "Dep.Name", dep.Name)
 				deperr = r.client.Create(context.TODO(), dep)
 				if deperr != nil {
 					return reconcile.Result{}, deperr
@@ -558,6 +612,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			return reconcile.Result{}, deperr
 		}
 	}
+
 }
 
 // gets the data from analytics secret
@@ -1383,3 +1438,19 @@ func getOperatorOwner(r *ReconcileAPI) ([]metav1.OwnerReference, error) {
 		},
 	}, nil
 }
+func copyDefaultSecurity(securityDefault *wso2v1alpha1.Security,userNameSpace string) *wso2v1alpha1.Security  {
+
+	return &wso2v1alpha1.Security{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: defaultSecurity,
+			Namespace: userNameSpace,
+		},
+		Spec: wso2v1alpha1.SecuritySpec{
+			Type: securityDefault.Spec.Type,
+			Certificate: securityDefault.Spec.Certificate,
+			Audience: securityDefault.Spec.Audience,
+			Issuer: securityDefault.Spec.Issuer,
+		},
+	}
+}
+

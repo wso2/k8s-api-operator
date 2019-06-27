@@ -38,8 +38,6 @@ const (
 	mgwRuntimeImgConst  = "mgwRuntimeImg"
 	kanikoImgConst      = "kanikoImg"
 	dockerRegistryConst = "dockerRegistry"
-	userNameSpaceConst  = "userNameSpace"
-
 	wso2NameSpaceConst    = "wso2-system"
 	policyConfigmap       = "policy-configmap"
 	mgwConfSecretConst    = "mgw-conf"
@@ -54,9 +52,9 @@ const (
 	analyticsAlias = "wso2analytics260"
 
 	dockerhubRegistryUrl     = "https://registry-1.docker.io/"
-	defaultSecurity          = "default-security"
+	defaultSecurity          = "default-security-jwt"
 	endpointExtension        = "x-wso2-production-endpoints"
-	securityExtension        = "x-wso2-security"
+	securityExtension        = "security"
 	certPath                 = "/usr/wso2/certs/"
 	mgwConfTemplatePath      = "/usr/local/bin/microgwconf.mustache"
 	dockertemplatepath       = "/usr/local/bin/dockerFile.gotmpl"
@@ -65,7 +63,6 @@ const (
 	truststoreSecretName     = "truststorepass"
 	truststoreSecretData     = "password"
 	apimConfName             = "apim-config"
-
 	keystorePathConst                   = "keystorePath"
 	keystorePasswordConst               = "keystorePassword"
 	truststorePathConst                 = "truststorePath"
@@ -89,4 +86,5 @@ const (
 	hostnameConst                       = "hostname"
 	portConst                           = "port"
 	analyticsSecretConst                = "analyticsSecret"
+
 )
