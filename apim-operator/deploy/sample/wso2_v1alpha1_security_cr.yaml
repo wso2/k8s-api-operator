@@ -1,11 +1,35 @@
 apiVersion: wso2.com/v1alpha1
 kind: Security
 metadata:
-  name: example-security-test-oauth
-  namespace: wso2-system
+  name: oauthtest
+  namespace: shehani
 spec:
   # Add fields here #secret-test-certificate
   type: Oauth
   certificate: wso2am260-secret
   endpoint: "https://wso2am260:9443"
   credentials: oauth-credentials
+
+---
+apiVersion: wso2.com/v1alpha1
+kind: Security
+metadata:
+  name: basicauth
+  namespace: shehani
+spec:
+  # Add fields here #secret-test-certificate
+  type: Oauth
+  certificate: wso2am260-secret
+  endpoint: "https://wso2am260:9443"
+  credentials: oauth-credentials
+
+---
+apiVersion: wso2.com/v1alpha1
+kind: Security
+metadata:
+  name: petstorebasic
+  namespace: shehani
+spec:
+  # Add fields here #secret-test-certificate
+  type: basic
+  credentials: secret-basic
