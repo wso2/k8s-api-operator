@@ -99,7 +99,7 @@ const (
 	basicSecurityAndScheme  ="basic"
 	securitySchemeExtension ="securitySchemes"
 	securityJWT				="JWT"
-	securityOauth="Oauth"
-	certAlias="alias"
-	pathsExtension="paths"
+	securityOauth			="Oauth"
+	certAlias				="alias"
+	pathsExtension			="paths"
 )
