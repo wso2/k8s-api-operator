@@ -113,10 +113,18 @@ func (r *ReconcileSecurity) Reconcile(request reconcile.Request) (reconcile.Resu
 		return reconcile.Result{}, err
 	}
 
+	userNamespace := instance.Namespace
 	if strings.EqualFold(instance.Spec.Type , "JWT") {
 		if instance.Spec.Issuer == "" || instance.Spec.Audience == "" {
 			reqLogger.Info("Required fields are missing")
 			return reconcile.Result{}, nil
+		}
+		certificateSecret := &corev1.Secret{}
+		errcertificate := r.client.Get(context.TODO(), types.NamespacedName{Name: instance.Spec.Certificate, Namespace: userNamespace}, certificateSecret)
+
+		if errcertificate != nil && errors.IsNotFound(errcertificate) {
+			reqLogger.Info("defined secret for cretificate is not found")
+			return reconcile.Result{}, errcertificate
 		}
 	}
 
@@ -127,7 +135,7 @@ func (r *ReconcileSecurity) Reconcile(request reconcile.Request) (reconcile.Resu
 		}
 
 		credentialSecret := &corev1.Secret{}
-		errcertificate := r.client.Get(context.TODO(), types.NamespacedName{Name: instance.Spec.Credentials, Namespace: "wso2-system"}, credentialSecret)
+		errcertificate := r.client.Get(context.TODO(), types.NamespacedName{Name: instance.Spec.Credentials, Namespace: userNamespace}, credentialSecret)
 
 		if errcertificate != nil && errors.IsNotFound(errcertificate) {
 			reqLogger.Info("defined secret for credentials is not found")
@@ -142,14 +150,5 @@ func (r *ReconcileSecurity) Reconcile(request reconcile.Request) (reconcile.Resu
 			return reconcile.Result{}, nil
 		}
 	}
-
-	certificateSecret := &corev1.Secret{}
-	errcertificate := r.client.Get(context.TODO(), types.NamespacedName{Name: instance.Spec.Certificate, Namespace: "wso2-system"}, certificateSecret)
-
-	if errcertificate != nil && errors.IsNotFound(errcertificate) {
-		reqLogger.Info("defined secret for cretificate is not found")
-		return reconcile.Result{}, errcertificate
-	}
-
 	return reconcile.Result{}, nil
 }

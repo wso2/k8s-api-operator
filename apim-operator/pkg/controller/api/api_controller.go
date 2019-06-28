@@ -70,16 +70,21 @@ type DockerfileArtifacts struct {
 	BaseImage    string
 	RuntimeImage string
 }
-
-type paths struct {
-	Get []path `json:"get"`
-	Post []path `json:"post"`
-	Put []path `json:"put"`
-	Delete []path `json:"delete"`
-}
-
 type path struct {
-	Security map[string][]string `json:"security"`
+	Security []map[string][]string `json:"security"`
+}
+type securitySchemeStruct struct {
+	SecurityType 	string		`json:"type"`
+	Scheme 			string		`json:"scheme,omitempty"`
+	Flows			*authorizationCode	`json:"flows,omitempty"`
+}
+type authorizationCode struct {
+	AuthorizationCode scopeSet `json:"authorizationCode,omitempty"`
+}
+type scopeSet struct {
+	AuthorizationUrl string `json:"authorizationUrl"`
+	TokenUrl string `json:"tokenUrl"`
+	Scopes 	map[string]string `json:"scopes,omitempty"`
 }
 // Add creates a new API Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
@@ -237,22 +242,150 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	reqLogger.Info("getting security instance")
 
-	//get API level security cr from swagger
-	definedSecurity, checkSecuritykind := swagger.Extensions[securityExtension]
-	var securityName string
-
-	if checkSecuritykind {
-		rawmsg := definedSecurity.(json.RawMessage)
-		errsec := json.Unmarshal(rawmsg, &securityName)
-
+	var alias string
+	//keep to track the existance of certificates
+	var existcert bool
+	//to add multiple certs with alias
+	certList := make(map[string]string)
+	var certName string
+	//get the volume mounts
+	jobVolumeMount, jobVolume := getVolumes(instance)
+	//get all the securities defined in swagger
+	var securityMap = make(map[string][]string)
+	var securityDefinition = make(map[string]securitySchemeStruct)
+	//check security scheme already exist
+	_, secSchemeDefined := swagger.Extensions[securitySchemeExtension]
+	//get security instances
+	//get API level security
+	apiLevelSecurity, isDefined := swagger.Extensions[securityExtension]
+	var APILevelSecurity []map[string][]string
+	if isDefined {
+		rawmsg := apiLevelSecurity.(json.RawMessage)
+		errsec := json.Unmarshal(rawmsg, &APILevelSecurity)
 		if errsec != nil {
-			log.Error(err, "error getting security kind from swagger ")
+			log.Error(err, "error unmarshaling API level security ")
 			return reconcile.Result{}, errsec
 		}
+		for _,value  := range APILevelSecurity{
+			for secName, val := range value{
+				fmt.Println("API level security scopes")
+				fmt.Println(val)
+				securityMap[secName] = val
+			}
+		}
+	}
+	//get resource level security
+	resLevelSecurity, isdefined := swagger.Extensions[pathsExtension]
+	var resSecurityMap map[string]map[string]path
 
+	if isdefined {
+		rawmsg := resLevelSecurity.(json.RawMessage)
+		err := json.Unmarshal(rawmsg,&resSecurityMap)
+		if err != nil {
+			log.Error(err,"error unmarshalling resource level secuirty")
+			return reconcile.Result{}, err
+		}
+		for _, obj := range resSecurityMap{
+			for _,obj := range obj{
+					for _, value:= range obj.Security{
+						for secName,val := range value{
+							fmt.Println("scope values")
+							fmt.Println(val)
+							securityMap[secName] = val
+						}
+					}
+			}
+		}
+		securityInstance := &wso2v1alpha1.Security{}
+		var certificateSecret = &corev1.Secret{}
+		for secName,scopeList := range securityMap{
+			//retrive security instances
+			errGetSec := r.client.Get(context.TODO(), types.NamespacedName{Name: secName, Namespace: userNameSpace}, securityInstance)
+			if errGetSec != nil && errors.IsNotFound(errGetSec) {
+				reqLogger.Info("defined security instance " + secName + " is not found")
+				return reconcile.Result{}, errGetSec
+			}
+			//get certificate for JWT and Oauth
+			if strings.EqualFold(securityInstance.Spec.Type, securityOauth) || strings.EqualFold(securityInstance.Spec.Type, securityJWT) {
+				errc := r.client.Get(context.TODO(), types.NamespacedName{Name: securityInstance.Spec.Certificate, Namespace: userNameSpace}, certificateSecret)
+				if errc != nil && errors.IsNotFound(errc) {
+					reqLogger.Info("defined certificate is not found")
+					return reconcile.Result{}, errc
+				}
+				//mount certs
+				volumemountTemp, volumeTemp := certMoutHandler(r, certificateSecret, jobVolumeMount, jobVolume)
+				jobVolumeMount = volumemountTemp
+				jobVolume = volumeTemp
+				alias = certificateSecret.Name + certAlias
+				existcert = true
+				for k := range certificateSecret.Data {
+					certName = k
+				}
+				//add cert path and alias as key value pairs
+				certList[alias] = certPath + certificateSecret.Name + "/" + certName
+			}
+			if strings.EqualFold(securityInstance.Spec.Type, securityOauth) {
+				//get the keymanager server URL from the security kind
+				keymanagerServerurl = securityInstance.Spec.Endpoint
+				//fetch credentials from the secret created
+				errGetCredentials := getCredentials(r, securityInstance.Spec.Credentials, securityOauth, userNameSpace)
+				if errGetCredentials != nil {
+					log.Error(errGetCredentials, "Error occurred when retrieving credentials for Oauth")
+				} else {
+					log.Info("Credentials successfully retrieved")
+				}
+				if !secSchemeDefined{
+					//add scopes
+					scopes := map[string]string{}
+					for _,scopeValue := range scopeList{
+						scopes[scopeValue] = "grant " + scopeValue + " access"
+					}
+					//creating security scheme
+					scheme := securitySchemeStruct{
+						SecurityType:oauthSecurityType,
+						Flows:&authorizationCode{
+							scopeSet{
+								authorizationUrl,
+								tokenUrl,
+								scopes,
+							},
+						},
+					}
+					securityDefinition[secName] = scheme
+				}
+			}
+			if strings.EqualFold(securityInstance.Spec.Type, securityJWT) {
+				certificateAlias = alias
+				if securityInstance.Spec.Issuer != "" {
+					issuer = securityInstance.Spec.Issuer
+				}
+				if securityInstance.Spec.Audience != "" {
+					audience = securityInstance.Spec.Audience
+				}
+			}
+			if strings.EqualFold(securityInstance.Spec.Type, basicSecurityAndScheme) {
+				existcert = false
+				//fetch credentials from the secret created
+				errGetCredentials := getCredentials(r, securityInstance.Spec.Credentials, "Basic", userNameSpace)
+				if errGetCredentials != nil {
+					log.Error(errGetCredentials, "Error occurred when retrieving credentials for Basic")
+				} else {
+					log.Info("Credentials successfully retrieved")
+				}
+				//creating security scheme
+				if !secSchemeDefined{
+					scheme := securitySchemeStruct{
+						SecurityType:basicSecurityType,
+						Scheme:basicSecurityAndScheme,
+					}
+					securityDefinition[secName] = scheme
+				}
+			}
+		}
+		//adding security scheme to swagger
+		swagger.Components.Extensions[securitySchemeExtension] = securityDefinition
 	} else {
-		//use default security cr
-		securityName = defaultSecurity
+		//use default security
 		//copy default sec in wso2-system to user namespace
 		securityDefault := &wso2v1alpha1.Security{}
 		errGetSec := r.client.Get(context.TODO(), types.NamespacedName{Name:  defaultSecurity, Namespace: userNameSpace}, securityDefault)
@@ -297,90 +430,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 				return reconcile.Result{},errCreateSecurity
 			}
 		}
-
 	}
-	//get security instance
-	security := &wso2v1alpha1.Security{}
-	errGetSec := r.client.Get(context.TODO(), types.NamespacedName{Name: securityName, Namespace: userNameSpace}, security)
-
-	if errGetSec != nil && errors.IsNotFound(errGetSec) {
-		reqLogger.Info("defined security instance is not found")
-		return reconcile.Result{}, errGetSec
-	}
-
-	var certificateSecret = &corev1.Secret{}
-	var alias string
-	//keep to track the existance of certificates
-	var existcert bool
-	//to add multiple certs with alias
-	certList := make(map[string]string)
-	var certName string
-	//get the volume mounts
-	jobVolumeMount, jobVolume := getVolumes(instance)
-
-	//get certificate for JWT and Oauth
-	if strings.EqualFold(security.Spec.Type, "Oauth") || strings.EqualFold(security.Spec.Type, "JWT") {
-
-		errc := r.client.Get(context.TODO(), types.NamespacedName{Name: security.Spec.Certificate, Namespace: userNameSpace}, certificateSecret)
-
-		if errc != nil && errors.IsNotFound(errc) {
-			reqLogger.Info("defined cretificate is not found")
-			return reconcile.Result{}, errc
-		}
-
-		volumemountTemp, volumeTemp := certMoutHandler(r, certificateSecret, jobVolumeMount, jobVolume)
-		jobVolumeMount = volumemountTemp
-		jobVolume = volumeTemp
-
-		alias = certificateSecret.Name + "alias"
-		existcert = true
-
-		for k, _ := range certificateSecret.Data {
-			certName = k
-		}
-
-		//add cert path and alias as key value pairs
-		certList[alias] = certPath + certificateSecret.Name + "/" + certName
-	}
-
-	if strings.EqualFold(security.Spec.Type, "Oauth") {
-		fmt.Println("security type Oauth")
-		//get the keymanager server URL from the security kind
-		keymanagerServerurl = security.Spec.Endpoint
-		//fetch credentials from the secret created
-		errGetCredentials := getCredentials(r, security.Spec.Credentials, "Oauth", userNameSpace)
-
-		if errGetCredentials != nil {
-			log.Error(errGetCredentials, "Error occured when retriving credentials for Oauth")
-		} else {
-			log.Info("Credentials successfully retrived")
-		}
-	}
-
-	if strings.EqualFold(security.Spec.Type, "JWT") {
-
-		certificateAlias = alias
-
-		if security.Spec.Issuer != "" {
-			issuer = security.Spec.Issuer
-		}
-		if security.Spec.Audience != "" {
-			audience = security.Spec.Audience
-		}
-	}
-
-	if strings.EqualFold(security.Spec.Type, "Basic") {
-		existcert = false
-		//fetch credentials from the secret created
-		errGetCredentials := getCredentials(r, security.Spec.Credentials, "Basic", userNameSpace)
-
-		if errGetCredentials != nil {
-			log.Error(errGetCredentials, "Error occured when retriving credentials for Basic")
-		} else {
-			log.Info("Credentials successfully retrived")
-		}
-	}
-
 	// gets analytics configuration
 	analyticsConf, analyticsEr := getConfigmap(r, analyticsConfName, wso2NameSpaceConst)
 	if analyticsEr != nil {
@@ -391,7 +441,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			uploadingTimeSpanInMillis = analyticsConf.Data[uploadingTimeSpanInMillisConst]
 			rotatingPeriod = analyticsConf.Data[rotatingPeriodConst]
 			uploadFiles = analyticsConf.Data[uploadFilesConst]
-			verifyHostname = analyticsConf.Data[verifyHostnameConst]
 			hostname = analyticsConf.Data[hostnameConst]
 			port = analyticsConf.Data[portConst]
 			analyticsSecretName := analyticsConf.Data[analyticsSecretConst]
