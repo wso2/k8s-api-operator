@@ -20,6 +20,7 @@ import (
 	"context"
 	"crypto/sha1"
 	"encoding/hex"
+	"fmt"
 	"strconv"
 	"strings"
 	"text/template"
@@ -250,24 +251,26 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	//get the volume mounts
 	jobVolumeMount, jobVolume := getVolumes(instance)
 	//get all the securities defined in swagger
-	var securityMap = make(map[string]struct{})
+	var securityMap = make(map[string][]string)
 	var securityDefinition = make(map[string]securitySchemeStruct)
 	//check security scheme already exist
 	_, secSchemeDefined := swagger.Extensions[securitySchemeExtension]
 	//get security instances
 	//get API level security
 	apiLevelSecurity, isDefined := swagger.Extensions[securityExtension]
-	var APILevelsecurity []map[string][]string
+	var APILevelSecurity []map[string][]string
 	if isDefined {
 		rawmsg := apiLevelSecurity.(json.RawMessage)
-		errsec := json.Unmarshal(rawmsg, &APILevelsecurity)
+		errsec := json.Unmarshal(rawmsg, &APILevelSecurity)
 		if errsec != nil {
 			log.Error(err, "error unmarshaling API level security ")
 			return reconcile.Result{}, errsec
 		}
-		for _,value  := range APILevelsecurity{
-			for secName := range value{
-				securityMap[secName] = struct{}{}
+		for _,value  := range APILevelSecurity{
+			for secName, val := range value{
+				fmt.Println("API level security scopes")
+				fmt.Println(val)
+				securityMap[secName] = val
 			}
 		}
 	}
@@ -285,15 +288,17 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		for _, obj := range resSecurityMap{
 			for _,obj := range obj{
 					for _, value:= range obj.Security{
-						for secName := range value{
-							securityMap[secName] = struct{}{}
+						for secName,val := range value{
+							fmt.Println("scope values")
+							fmt.Println(val)
+							securityMap[secName] = val
 						}
 					}
 			}
 		}
 		securityInstance := &wso2v1alpha1.Security{}
 		var certificateSecret = &corev1.Secret{}
-		for secName := range securityMap{
+		for secName,scopeList := range securityMap{
 			//retrive security instances
 			errGetSec := r.client.Get(context.TODO(), types.NamespacedName{Name: secName, Namespace: userNameSpace}, securityInstance)
 			if errGetSec != nil && errors.IsNotFound(errGetSec) {
@@ -304,7 +309,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			if strings.EqualFold(securityInstance.Spec.Type, securityOauth) || strings.EqualFold(securityInstance.Spec.Type, securityJWT) {
 				errc := r.client.Get(context.TODO(), types.NamespacedName{Name: securityInstance.Spec.Certificate, Namespace: userNameSpace}, certificateSecret)
 				if errc != nil && errors.IsNotFound(errc) {
-					reqLogger.Info("defined cretificate is not found")
+					reqLogger.Info("defined certificate is not found")
 					return reconcile.Result{}, errc
 				}
 				//mount certs
@@ -325,11 +330,16 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 				//fetch credentials from the secret created
 				errGetCredentials := getCredentials(r, securityInstance.Spec.Credentials, securityOauth, userNameSpace)
 				if errGetCredentials != nil {
-					log.Error(errGetCredentials, "Error occured when retriving credentials for Oauth")
+					log.Error(errGetCredentials, "Error occurred when retrieving credentials for Oauth")
 				} else {
-					log.Info("Credentials successfully retrived")
+					log.Info("Credentials successfully retrieved")
 				}
 				if !secSchemeDefined{
+					//add scopes
+					scopes := map[string]string{}
+					for _,scopeValue := range scopeList{
+						scopes[scopeValue] = "grant " + scopeValue + " access"
+					}
 					//creating security scheme
 					scheme := securitySchemeStruct{
 						SecurityType:oauthSecurityType,
@@ -337,10 +347,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 							scopeSet{
 								authorizationUrl,
 								tokenUrl,
-								map[string]string{
-									read: grantsReadAccess,
-									write:grantsWriteAccess,
-									admin:grantsAccessToAdmin},
+								scopes,
 							},
 						},
 					}
@@ -361,9 +368,9 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 				//fetch credentials from the secret created
 				errGetCredentials := getCredentials(r, securityInstance.Spec.Credentials, "Basic", userNameSpace)
 				if errGetCredentials != nil {
-					log.Error(errGetCredentials, "Error occured when retriving credentials for Basic")
+					log.Error(errGetCredentials, "Error occurred when retrieving credentials for Basic")
 				} else {
-					log.Info("Credentials successfully retrived")
+					log.Info("Credentials successfully retrieved")
 				}
 				//creating security scheme
 				if !secSchemeDefined{
@@ -434,7 +441,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			uploadingTimeSpanInMillis = analyticsConf.Data[uploadingTimeSpanInMillisConst]
 			rotatingPeriod = analyticsConf.Data[rotatingPeriodConst]
 			uploadFiles = analyticsConf.Data[uploadFilesConst]
-			verifyHostname = analyticsConf.Data[verifyHostnameConst]
 			hostname = analyticsConf.Data[hostnameConst]
 			port = analyticsConf.Data[portConst]
 			analyticsSecretName := analyticsConf.Data[analyticsSecretConst]

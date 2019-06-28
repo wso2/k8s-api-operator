@@ -1,0 +1,36 @@
+apiVersion: wso2.com/v1alpha1
+kind: Security
+metadata:
+  name: oauthtest
+spec:
+  # Security - Oauth
+  type: Oauth
+  #create secret with certificate and add secret name
+  certificate: wso2am260-secret
+  endpoint: "https://wso2apim.wso2"
+  #create secret with credentials and add secret name
+  credentials: oauth-credentials
+
+---
+apiVersion: wso2.com/v1alpha1
+kind: Security
+metadata:
+  name: petstorebasic
+spec:
+  # Security - Basic
+  type: basic
+  credentials: secret-basic
+
+---
+apiVersion: wso2.com/v1alpha1
+kind: Security
+metadata:
+  name: jwt-security
+  namespace: wso2-system
+spec:
+  # Security - JWT
+  type: JWT
+  credentials: secret-basic
+  issuer: https://localhost:9443/jwt/token
+  audience: https://localhost:9443/jwt/token
+  certificate: wso2am260-secret
