@@ -68,9 +68,112 @@
 - To enable analytics, modify the analytics-config configmap given in the ./deploy/apim-analytics-configs/apim-analytics-conf.yaml and set the field analyticsEnabled to "true". The other parameters also can be modified with required values.
 - Create a secret with the public certificate of the wso2am-analytics server and provide the name of the created secret along with the username and password to the wso2am-analytics server (all fields must be base 64 encoded). Use the template provided for analytics-secret in apim_analytics_secret_template.yaml
 
-##### Using OAuth2 
-- To enable OAuth2, deploy a security kind with the desired parameters. A sample is provided in ./deploy/sample-crs/wso2_v1alpha1_security_cr.yaml. The certificate of the wso2am server and credentials should be included in secrets and the secret names should be entered to the security kind.
+##### Applying security for APIs 
+- APIs created with kubernetes apim operator can be secured by defining security with security kind. It supports basic, JWT and Oauth2 security types.
 
-- Note:
-- Modify the configurations related to wso2am using the template provided in ./deploy/apim-analytics-configs/apim-analytics-conf.yaml : apim-config configmap.
+   **Securing API with JWT authentication**
+   
+    i. Create a secret with the certificate
 
+   `
+   kubectl create secret generic <secret name> -n <namespace> --from-file=<path to cert>
+   `
+  
+   ii. Create a security with security kind. Include the name of the secret created in step (i) in certificate field
+   ```
+   apiVersion: <version>
+   kind: Security
+   metadata:
+     name: <security name>
+   spec:
+     type: JWT
+     certificate: <name of the secret created in step 1>
+     issuer: <issuer>
+     audience: <audience>
+   ```
+   **Securing API with Oauth2 authentication**
+   
+    i. Create a secret with the certificate of the wso2am server
+   
+   `
+   kubectl create secret generic <secret name> -n default --from-file=<path to cert>
+   `
+   
+    ii. Create a secret with user credentials 
+   ```
+   apiVersion: v1
+   kind: Secret
+   metadata:
+     name: <secret name>
+   type: Opaque
+   data:
+     username: base64 encoded user name 
+     password: base64 encoded password
+   ```  
+    iii. Create a security with security kind. Include the name of the secret created in step (i) in certificate field and name of the secret created in step (ii) in credentials field.
+   ```
+   apiVersion: <api_version>
+   kind: Security
+   metadata:
+     name: <security name>
+     namespace: <namespace>
+   spec:
+     type: Oauth
+     certificate: <name of the secret created in step 1>
+     endpoint: <endpoint>
+     credentials: <name of the secret created in step 2>
+   ```
+   **NOTE:** Modify the configurations related to wso2am using the template provided in ./deploy/apim-analytics-configs/apim-analytics-conf.yaml : apim-config configmap.
+
+   **Securing API with Basic authentication**
+   
+    i. Create a secret with user credentials 
+   ```
+   apiVersion: <version>
+   kind: Secret
+   metadata:
+     name: <secret name>
+   type: Opaque
+   data:
+     username: base64 encoded username 
+     password: base64 encoded password
+   ```
+    ii. Create a security with security kind. Include the name of the secret created in step (i) in credentials field.
+   ```
+   apiVersion: <api_version>
+   kind: Security
+   metadata:
+     name: <security name>
+     namespace: <namespace>
+   spec:
+     type: basic
+     credentials: <name of the secret created in step 1>
+   ``` 
+   **Defining the securities in swagger definition**
+
+    Security can be defined in swagger definition under security keyword in both API and resource levels. Define the property scopes for OAuth 2 security scheme. 
+
+   **Defining security in API level**
+   
+      ```
+      security:
+          - petstorebasic: []  
+          - oauthtest: 
+            - read
+      ```
+
+   **Defining security in resource level**
+   
+      ```
+      paths:
+        "/pet/findByStatus":
+          get:
+            security:
+              - basicauth: #Oauth
+                - read:pets
+                - write:pets
+              - petstorebasic: []
+      ```
+
+
+sample security definitions are provided in ./deploy/sample-definitions/security_definitions.yaml
