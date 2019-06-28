@@ -96,7 +96,7 @@
     i. Create a secret with the certificate of the wso2am server
    
    `
-   kubectl create secret generic <secret name> -n default --from-file=<path to cert>
+   kubectl create secret generic <secret name> -n <namespace> --from-file=<path to cert>
    `
    
     ii. Create a secret with user credentials 
@@ -112,7 +112,7 @@
    ```  
     iii. Create a security with security kind. Include the name of the secret created in step (i) in certificate field and name of the secret created in step (ii) in credentials field.
    ```
-   apiVersion: <api_version>
+   apiVersion: <version>
    kind: Security
    metadata:
      name: <security name>
@@ -129,7 +129,7 @@
    
     i. Create a secret with user credentials 
    ```
-   apiVersion: <version>
+   apiVersion: v1
    kind: Secret
    metadata:
      name: <secret name>
@@ -140,7 +140,7 @@
    ```
     ii. Create a security with security kind. Include the name of the secret created in step (i) in credentials field.
    ```
-   apiVersion: <api_version>
+   apiVersion: <version>
    kind: Security
    metadata:
      name: <security name>
@@ -151,20 +151,20 @@
    ``` 
    **Defining the securities in swagger definition**
 
-    Security can be defined in swagger definition under security keyword in both API and resource levels. Define the property scopes for OAuth 2 security scheme. 
+    Security can be defined in swagger definition under security keyword in both API and resource levels. Define the property scopes for OAuth2 security scheme. 
 
    **Defining security in API level**
    
-      ```
+     ```
       security:
           - petstorebasic: []  
           - oauthtest: 
             - read
-      ```
+     ```
 
    **Defining security in resource level**
    
-      ```
+     ```
       paths:
         "/pet/findByStatus":
           get:
@@ -173,7 +173,7 @@
                 - read:pets
                 - write:pets
               - petstorebasic: []
-      ```
+     ```
 
 
-sample security definitions are provided in ./deploy/sample-definitions/security_definitions.yaml
+   sample security definitions are provided in ./deploy/sample-definitions/security_definitions.yaml
