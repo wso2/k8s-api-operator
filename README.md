@@ -169,7 +169,7 @@
         "/pet/findByStatus":
           get:
             security:
-              - basicauth: #Oauth
+              - basicauth:
                 - read:pets
                 - write:pets
               - petstorebasic: []
