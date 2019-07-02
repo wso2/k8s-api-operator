@@ -20,7 +20,7 @@ import (
 	"context"
 	"crypto/sha1"
 	"encoding/hex"
-	"fmt"
+	"github.com/sirupsen/logrus"
 	"strconv"
 	"strings"
 	"text/template"
@@ -268,8 +268,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		}
 		for _,value  := range APILevelSecurity{
 			for secName, val := range value{
-				fmt.Println("API level security scopes")
-				fmt.Println(val)
 				securityMap[secName] = val
 			}
 		}
@@ -289,8 +287,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			for _,obj := range obj{
 					for _, value:= range obj.Security{
 						for secName,val := range value{
-							fmt.Println("scope values")
-							fmt.Println(val)
 							securityMap[secName] = val
 						}
 					}
@@ -332,7 +328,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 				if errGetCredentials != nil {
 					log.Error(errGetCredentials, "Error occurred when retrieving credentials for Oauth")
 				} else {
-					log.Info("Credentials successfully retrieved")
+					log.Info("Credentials successfully retrieved for security "+ secName)
 				}
 				if !secSchemeDefined{
 					//add scopes
@@ -370,7 +366,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 				if errGetCredentials != nil {
 					log.Error(errGetCredentials, "Error occurred when retrieving credentials for Basic")
 				} else {
-					log.Info("Credentials successfully retrieved")
+					log.Info("Credentials successfully retrieved for security " + secName)
 				}
 				//creating security scheme
 				if !secSchemeDefined{
@@ -481,9 +477,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	apimConfig, apimEr := getConfigmap(r, apimConfName, wso2NameSpaceConst)
 	if apimEr == nil {
 		verifyHostname = apimConfig.Data[verifyHostnameConst]
-	} else {
-		log.Error(apimEr, "APIM configuration not found")
-		return reconcile.Result{}, apimEr
 	}
 
 	//writes into the conf file
@@ -727,16 +720,24 @@ func getConfigmap(r *ReconcileAPI, mapName string, ns string) (*corev1.ConfigMap
 	apiConfigMap := &corev1.ConfigMap{}
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: mapName, Namespace: ns}, apiConfigMap)
 
-	if err != nil && errors.IsNotFound(err) {
-		log.Error(err, "Specified configmap is not found: %s", mapName)
-		return apiConfigMap, err
-	} else if err != nil {
+	if mapName == apimConfName {
+		if err != nil && errors.IsNotFound(err){
+			logrus.Warnf("missing APIM configurations ",err)
+
+		} else if err != nil {
 		log.Error(err, "error ")
 		return apiConfigMap, err
-	} else {
-		return apiConfigMap, nil
+		}
+	} else{
+		if err != nil && errors.IsNotFound(err) {
+			log.Error(err, "Specified configmap is not found: %s", mapName)
+			return apiConfigMap, err
+		} else if err != nil {
+			log.Error(err, "error ")
+			return apiConfigMap, err
+		}
 	}
-
+	return apiConfigMap,nil
 }
 
 // createConfigMap creates a config file with the given data
