@@ -24,7 +24,7 @@
     <groupId>org.wso2.apim</groupId>
     <artifactId>k8s-apim-operator-distribution</artifactId>
     <version>0.6</version>
-    <name>WSO2 APIM k8s CRDs zip Components</name>
+    <name>K8s APIM Operator Distribution</name>
 
     <build>
         <plugins>

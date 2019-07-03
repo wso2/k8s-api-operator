@@ -1,6 +1,6 @@
 #### Developer Guide
 
-**Building the image after changes are added**
+**Building the image**
 
 The apim-operator was built using the operator-sdk CLI tool. you can follow the [user guide][operator_sdk_user_guide] of operator-sdk CLI tool for 
 more information. 
