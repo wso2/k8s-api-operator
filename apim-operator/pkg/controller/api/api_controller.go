@@ -218,7 +218,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	image := strings.ToLower(strings.ReplaceAll(swagger.Info.Title, " ", ""))
-	tag := swagger.Info.Version + instance.Spec.UpdateTimeStamp
+	tag := swagger.Info.Version + "-" + instance.Spec.UpdateTimeStamp
 	imageName := image + ":" + tag
 
 	// check if the image already exists
@@ -1099,7 +1099,7 @@ func scheduleKanikoJob(cr *wso2v1alpha1.API, imageName string, conf *corev1.Conf
 
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:            cr.Name + "kaniko" + timeStamp,
+			Name:            cr.Name + "kaniko" + "-" + timeStamp,
 			Namespace:       cr.Namespace,
 			OwnerReferences: owner,
 		},

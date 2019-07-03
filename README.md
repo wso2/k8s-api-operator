@@ -2,67 +2,100 @@
 
 ##### Navigate to the k8s-apim-operator/apim-operators/ directory and execute the following command
 
-##### Deploy k8s client extensions
-- Give executable permission to the extension file <br /> 
-    -  ***chmod +x ./deploy/kubectl-extension/kubectl-add.sh***
-    -  ***chmod +x ./deploy/kubectl-extension/kubectl-update.sh***
-    -  ***chmod +x ./deploy/kubectl-extension/kubectl-show.sh***
+##### Deploy K8s client extensions
+
+- Give executable permission to the extension files
+
+```
+chmod +x ./deploy/kubectl-extension/kubectl-add
+chmod +x ./deploy/kubectl-extension/kubectl-update
+chmod +x ./deploy/kubectl-extension/kubectl-show
+```
+
 - Copy the extensions to ***/usr/local/bin/***
-    - ___cp ./deploy/kubectl-extension/kubectl-add.sh /usr/local/bin___
-    - ___cp ./deploy/kubectl-extension/kubectl-update.sh /usr/local/bin___
-    - ___cp ./deploy/kubectl-extension/kubectl-show.sh /usr/local/bin___
+```
+cp ./deploy/kubectl-extension/kubectl-add /usr/local/bin
+cp ./deploy/kubectl-extension/kubectl-update /usr/local/bin
+cp ./deploy/kubectl-extension/kubectl-show /usr/local/bin
+```
 
-###### Note:
-- User may have to remove '.sh' from the extension depending on the kubernetes environment. Use the following additional commands for that.
-    - mv /usr/local/bin/kubectl-add.sh /usr/local/bin/kubectl-add
-    - mv /usr/local/bin/kubectl-update.sh /usr/local/bin/kubectl-update
-    - mv /usr/local/bin/kubectl-show.sh /usr/local/bin/kubectl-show
-##### Deploy k8s CRD artifacts
+##### Deploy K8s CRD artifacts
 
-> ##### Before deploying the role you have to make yourself as a cluster admin. (Replace "email-address" with the proper value)
-- *kubectl create clusterrolebinding email-address --clusterrole=cluster-admin --user=email-address*
+- Before deploying the role you have to make yourself as a cluster admin. (Replace "email-address" with the proper value)
 
-> ##### Deploying namespace, roles/role binding and service account associated with operator
-- _for i in ./deploy/controller-artifacts/*yaml; do kubectl apply -f $i; done_
+```
+kubectl create clusterrolebinding email-address --clusterrole=cluster-admin --user=email-address
+```
 
-> ##### Deploying CRD for API, Target endpoint, Security, Ratelimiting
-- _for i in ./deploy/crd/*yaml; do kubectl apply -f $i; done_
+- Deploying CRDs for API, TargetEndpoint, Security, RateLimiting
+```
+kubectl apply -f ./deploy/crds/
+```
 
+- Deploying controller level configurations
 
-> ##### Deploying controller level configuration
->> "controller-configs" contains the configuration user would have to change. Modify the controller_conf.yaml with the needed values and enter the ***user's docker registry***. Enter the base 64 encoded username and password of the user's docker registry into the docker_secret_template.yaml.
-- _for i in ./deploy/controller-configs/*yaml; do kubectl apply -f $i; done_
+"controller-configs" contains the configuration user needs to change. The docker images are created and pushed to the user's docker registry.
+Update the ***user's docker registry*** in the controller_conf.yaml. Enter the base 64 encoded username and password of the user's docker registry into the docker_secret_template.yaml.
 
-> ##### Deploy sample custom resources on the kubernetes cluster (Optional)
-- _for i in ./deploy/sample-crs/*yaml; do kubectl apply -f $i; done_
+```
+kubectl apply -f ./deploy/controller-configs/
+```
 
-> ##### Deploying an API in K8s cluter
+- Deploying namespace, roles/role binding and service account associated with the operator
+```
+kubectl apply -f ./deploy/controller-artifacts/
+```
 
-- Download sample API definition (swagger files) from [product micro-gateway sample](https://github.com/wso2/product-microgateway/tree/master/samples) github location.
-- Execute the following command to deploy the API
-    - *kubectl add api "api_name" --from-file="location to the api swagger definition" --replicas="number of replicas" -n="desired namespace"*
-    - ex: ***kubectl add api petstorebasic --from-file=petstore_basic.yaml --replicas=2 -n=wso2***
+##### Deploying an API in K8s cluster
 
-- Execute the following command to update the API
-    - *kubectl update api "api_name" --from-file="location to the api swagger definition" --replicas="number of replicas" -n="desired namespace"*
-    - ex: ***kubectl update api petstorebasic --from-file=petstore_basic.yaml --replicas=1 -n=wso2***
+- Deploy the API petstore
+```
+kubectl add api "api_name" --from-file="location to the api swagger definition"
 
-- Execute the following command to view the details of the API
-    - *kubectl show api "api_name" -n="desired namespace"*
-    - ex: ***kubectl show api petstorebasic -n=wso2***
+kubectl add api petstore --from-file=./deploy/scenarios/scenario-1/petstore_basic.yaml
+```
+  
+- Update the API petstore
+```
+kubectl update api "api_name" --from-file="location to the api swagger definition"
 
-- Execute the following command to remove the API
-    - *kubectl delete api "api_name" -n="desired namespace"*
-    - ex: ***kubectl delete api petstorebasic -n=wso2***
+kubectl update api petstore --from-file=./deploy/scenarios/scenario-1/petstore_basic.yaml
+```
+ 
+- View the details of the API
+```
+kubectl show api "api_name"
 
-- Execute the following command to remove the apim operator
-    - ***kubectl delete deployment apim-operator -n=wso2-system***
+kubectl show api petstore
+```
+  
+- Delete the API
+```
+kubectl delete api "api_name"
+
+kubectl delete api petstore
+```
+
+Optional Parameters
+
+```
+--replicas=3 Number of replicas
+-n=wso2      Namespace to deploy the API
+
+kubectl add api "api_name" --from-file="location to the api swagger definition" --replicas="number of replicas" -n="desired namespace"
+```
+
+***Note:***
+Namespace and replicas are optional parameters. If they are not provided default namespace will be used and 1 replica will be created. However, the namespace used in all the commands related to particular API name must match.
+
+##### Cleanup
+
+```
+kubectl delete -f ./deploy/controller-artifacts/
+kubectl delete -f ./deploy/controller-configs/
+kubectl delete -f ./deploy/crds/
+```
     
-
-- Note:
-> Namespace and replicas are optional parameters. If they are not provided default namespace will be used and 1 replica will be created. However, the namespace used in all the commands related to particular API name must match.
-
-
 ##### Incorporating analytics to the k8s operator
 
 - To enable analytics, modify the analytics-config configmap given in the ./deploy/apim-analytics-configs/apim-analytics-conf.yaml and set the field analyticsEnabled to "true". The other parameters also can be modified with required values.
