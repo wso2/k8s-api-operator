@@ -469,7 +469,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	dockerfileConfmap, errDocker := dockerfileHandler(r, certList, existcert, controlConfigData, owner, instance)
 	if errDocker != nil {
 		log.Error(errDocker, "error in docker configmap handling")
-		return reconcile.Result{},errDocker
+		return reconcile.Result{}, errDocker
 	} else {
 		log.Info("kaniko job related dockerfile was written into configmap " + dockerfileConfmap.Name)
 	}
