@@ -469,6 +469,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	dockerfileConfmap, errDocker := dockerfileHandler(r, certList, existcert, controlConfigData, owner, instance)
 	if errDocker != nil {
 		log.Error(errDocker, "error in docker configmap handling")
+		return reconcile.Result{},errDocker
 	} else {
 		log.Info("kaniko job related dockerfile was written into configmap " + dockerfileConfmap.Name)
 	}
@@ -975,12 +976,22 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 		},
 	}
 }
-
 //Handles dockerfile configmap creation
 func dockerfileHandler(r *ReconcileAPI, certList map[string]string, existcert bool, conf map[string]string,
 	owner []metav1.OwnerReference, cr *wso2v1alpha1.API) (*corev1.ConfigMap, error) {
+	var dockerTemplate string
 	truststorePass := getTruststorePassword(r)
-	dockertemplate := dockertemplatepath
+	dockerTemplateConfigmap, err := getConfigmap(r,"dockerfile-template",cr.Namespace)
+	if err != nil && errors.IsNotFound(err){
+		log.Error(err,"docker template configmap not found")
+		return nil, err
+	}else if err != nil{
+		log.Error(err,"error in retrieving docker template")
+		return nil, err
+	}
+	for _, val := range dockerTemplateConfigmap.Data {
+		dockerTemplate = string(val)
+	}
 	certs := &DockerfileArtifacts{
 		CertFound:    existcert,
 		Password:     truststorePass,
@@ -989,7 +1000,7 @@ func dockerfileHandler(r *ReconcileAPI, certList map[string]string, existcert bo
 		RuntimeImage: conf[mgwRuntimeImgConst],
 	}
 	//generate dockerfile from the template
-	tmpl, err := template.ParseFiles(dockertemplate)
+	tmpl, err := template.New("").Parse(dockerTemplate)
 	if err != nil {
 		log.Error(err, "error in rendering Dockerfile with template")
 		return nil, err
@@ -1233,8 +1244,13 @@ func createMgwLBService(cr *wso2v1alpha1.API, nameSpace string, owner []metav1.O
 		Spec: corev1.ServiceSpec{
 			Type: "LoadBalancer",
 			Ports: []corev1.ServicePort{{
+				Name:"port-9095",
 				Port:       9095,
 				TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: 9095},
+			},{
+				Name:"port-9090",
+				Port:       9090,
+				TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: 9090},
 			}},
 			Selector: labels,
 		},
