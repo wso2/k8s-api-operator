@@ -24,6 +24,7 @@ const (
 	dockerFileLocation      = "/usr/wso2/dockerfile/"
 	dockerConfLocation      = "/kaniko/.docker"
 	dockerFile              = "dockerfile"
+	dockerFileTemplate          = "dockerfile-template"
 	policyyamlFile          = "policy-file"
 	policyyamlLocation      = "/usr/wso2/policy/"
 	mgwConfFile             = "conf-file"

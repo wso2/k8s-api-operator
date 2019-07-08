@@ -74,18 +74,19 @@ type path struct {
 	Security []map[string][]string `json:"security"`
 }
 type securitySchemeStruct struct {
-	SecurityType 	string		`json:"type"`
-	Scheme 			string		`json:"scheme,omitempty"`
-	Flows			*authorizationCode	`json:"flows,omitempty"`
+	SecurityType string             `json:"type"`
+	Scheme       string             `json:"scheme,omitempty"`
+	Flows        *authorizationCode `json:"flows,omitempty"`
 }
 type authorizationCode struct {
 	AuthorizationCode scopeSet `json:"authorizationCode,omitempty"`
 }
 type scopeSet struct {
-	AuthorizationUrl string `json:"authorizationUrl"`
-	TokenUrl string `json:"tokenUrl"`
-	Scopes 	map[string]string `json:"scopes,omitempty"`
+	AuthorizationUrl string            `json:"authorizationUrl"`
+	TokenUrl         string            `json:"tokenUrl"`
+	Scopes           map[string]string `json:"scopes,omitempty"`
 }
+
 // Add creates a new API Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
@@ -133,6 +134,7 @@ type ReconcileAPI struct {
 	client client.Client
 	scheme *runtime.Scheme
 }
+
 // Reconcile reads that state of the cluster for a API object and makes changes based on the state read
 // and what is in the API.Spec
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
@@ -266,8 +268,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			log.Error(err, "error unmarshaling API level security ")
 			return reconcile.Result{}, errsec
 		}
-		for _,value  := range APILevelSecurity{
-			for secName, val := range value{
+		for _, value := range APILevelSecurity {
+			for secName, val := range value {
 				securityMap[secName] = val
 			}
 		}
@@ -278,23 +280,23 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	if isdefined {
 		rawmsg := resLevelSecurity.(json.RawMessage)
-		err := json.Unmarshal(rawmsg,&resSecurityMap)
+		err := json.Unmarshal(rawmsg, &resSecurityMap)
 		if err != nil {
-			log.Error(err,"error unmarshalling resource level secuirty")
+			log.Error(err, "error unmarshalling resource level secuirty")
 			return reconcile.Result{}, err
 		}
-		for _, obj := range resSecurityMap{
-			for _,obj := range obj{
-					for _, value:= range obj.Security{
-						for secName,val := range value{
-							securityMap[secName] = val
-						}
+		for _, obj := range resSecurityMap {
+			for _, obj := range obj {
+				for _, value := range obj.Security {
+					for secName, val := range value {
+						securityMap[secName] = val
 					}
+				}
 			}
 		}
 		securityInstance := &wso2v1alpha1.Security{}
 		var certificateSecret = &corev1.Secret{}
-		for secName,scopeList := range securityMap{
+		for secName, scopeList := range securityMap {
 			//retrive security instances
 			errGetSec := r.client.Get(context.TODO(), types.NamespacedName{Name: secName, Namespace: userNameSpace}, securityInstance)
 			if errGetSec != nil && errors.IsNotFound(errGetSec) {
@@ -328,18 +330,18 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 				if errGetCredentials != nil {
 					log.Error(errGetCredentials, "Error occurred when retrieving credentials for Oauth")
 				} else {
-					log.Info("Credentials successfully retrieved for security "+ secName)
+					log.Info("Credentials successfully retrieved for security " + secName)
 				}
-				if !secSchemeDefined{
+				if !secSchemeDefined {
 					//add scopes
 					scopes := map[string]string{}
-					for _,scopeValue := range scopeList{
+					for _, scopeValue := range scopeList {
 						scopes[scopeValue] = "grant " + scopeValue + " access"
 					}
 					//creating security scheme
 					scheme := securitySchemeStruct{
-						SecurityType:oauthSecurityType,
-						Flows:&authorizationCode{
+						SecurityType: oauthSecurityType,
+						Flows: &authorizationCode{
 							scopeSet{
 								authorizationUrl,
 								tokenUrl,
@@ -369,10 +371,10 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 					log.Info("Credentials successfully retrieved for security " + secName)
 				}
 				//creating security scheme
-				if !secSchemeDefined{
+				if !secSchemeDefined {
 					scheme := securitySchemeStruct{
-						SecurityType:basicSecurityType,
-						Scheme:basicSecurityAndScheme,
+						SecurityType: basicSecurityType,
+						Scheme:       basicSecurityAndScheme,
 					}
 					securityDefinition[secName] = scheme
 				}
@@ -384,18 +386,18 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		//use default security
 		//copy default sec in wso2-system to user namespace
 		securityDefault := &wso2v1alpha1.Security{}
-		errGetSec := r.client.Get(context.TODO(), types.NamespacedName{Name:  defaultSecurity, Namespace: userNameSpace}, securityDefault)
+		errGetSec := r.client.Get(context.TODO(), types.NamespacedName{Name: defaultSecurity, Namespace: userNameSpace}, securityDefault)
 
 		if errGetSec != nil && errors.IsNotFound(errGetSec) {
 			var defaultCertName string
 			var defaultCertvalue []byte
 			//retrieve default-security from wso2-system namespace
-			errSec := r.client.Get(context.TODO(), types.NamespacedName{Name:  defaultSecurity, Namespace: wso2NameSpaceConst}, securityDefault)
-			if errSec != nil && errors.IsNotFound(errSec){
+			errSec := r.client.Get(context.TODO(), types.NamespacedName{Name: defaultSecurity, Namespace: wso2NameSpaceConst}, securityDefault)
+			if errSec != nil && errors.IsNotFound(errSec) {
 				reqLogger.Info("default security instance is not found in wso2-system namespace")
 				return reconcile.Result{}, errSec
-			}else if errSec != nil{
-				log.Error(errSec,"error in getting default security from wso2-system namespace")
+			} else if errSec != nil {
+				log.Error(errSec, "error in getting default security from wso2-system namespace")
 				return reconcile.Result{}, errSec
 			}
 			var defaultCert = &corev1.Secret{}
@@ -403,8 +405,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			if errc != nil && errors.IsNotFound(errc) {
 				reqLogger.Info("defined cretificate is not found")
 				return reconcile.Result{}, errc
-			} else if errc != nil{
-				log.Error(errc,"error in getting default cert from wso2-system namespace")
+			} else if errc != nil {
+				log.Error(errc, "error in getting default cert from wso2-system namespace")
 			}
 			//copying default cert as a secret to user namespace
 			noOwner := []metav1.OwnerReference{}
@@ -412,18 +414,18 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 				defaultCertName = cert
 				defaultCertvalue = value
 			}
-			newDefaultSecret := createSecret(securityDefault.Spec.Certificate,defaultCertName,string(defaultCertvalue),userNameSpace,noOwner)
-			errCreateSec := r.client.Create(context.TODO(),newDefaultSecret)
+			newDefaultSecret := createSecret(securityDefault.Spec.Certificate, defaultCertName, string(defaultCertvalue), userNameSpace, noOwner)
+			errCreateSec := r.client.Create(context.TODO(), newDefaultSecret)
 			if errCreateSec != nil {
-				log.Error(errCreateSec,"error creating secret for default security in user namespace")
-				return reconcile.Result{},errCreateSec
+				log.Error(errCreateSec, "error creating secret for default security in user namespace")
+				return reconcile.Result{}, errCreateSec
 			}
 			//copying default security to user namespace
 			newDefaultSecurity := copyDefaultSecurity(securityDefault, userNameSpace)
-			errCreateSecurity := r.client.Create(context.TODO(),newDefaultSecurity)
+			errCreateSecurity := r.client.Create(context.TODO(), newDefaultSecurity)
 			if errCreateSecurity != nil {
-				log.Error(errCreateSecurity,"error creating secret for default security in user namespace")
-				return reconcile.Result{},errCreateSecurity
+				log.Error(errCreateSecurity, "error creating secret for default security in user namespace")
+				return reconcile.Result{}, errCreateSecurity
 			}
 		}
 	}
@@ -722,14 +724,14 @@ func getConfigmap(r *ReconcileAPI, mapName string, ns string) (*corev1.ConfigMap
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: mapName, Namespace: ns}, apiConfigMap)
 
 	if mapName == apimConfName {
-		if err != nil && errors.IsNotFound(err){
-			logrus.Warnf("missing APIM configurations ",err)
+		if err != nil && errors.IsNotFound(err) {
+			logrus.Warnf("missing APIM configurations ", err)
 
 		} else if err != nil {
-		log.Error(err, "error ")
-		return apiConfigMap, err
+			log.Error(err, "error ")
+			return apiConfigMap, err
 		}
-	} else{
+	} else {
 		if err != nil && errors.IsNotFound(err) {
 			log.Error(err, "Specified configmap is not found: %s", mapName)
 			return apiConfigMap, err
@@ -738,7 +740,7 @@ func getConfigmap(r *ReconcileAPI, mapName string, ns string) (*corev1.ConfigMap
 			return apiConfigMap, err
 		}
 	}
-	return apiConfigMap,nil
+	return apiConfigMap, nil
 }
 
 // createConfigMap creates a config file with the given data
@@ -976,17 +978,18 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 		},
 	}
 }
+
 //Handles dockerfile configmap creation
 func dockerfileHandler(r *ReconcileAPI, certList map[string]string, existcert bool, conf map[string]string,
 	owner []metav1.OwnerReference, cr *wso2v1alpha1.API) (*corev1.ConfigMap, error) {
 	var dockerTemplate string
 	truststorePass := getTruststorePassword(r)
-	dockerTemplateConfigmap, err := getConfigmap(r,"dockerfile-template",cr.Namespace)
-	if err != nil && errors.IsNotFound(err){
-		log.Error(err,"docker template configmap not found")
+	dockerTemplateConfigmap, err := getConfigmap(r, dockerFileTemplate, cr.Namespace)
+	if err != nil && errors.IsNotFound(err) {
+		log.Error(err, "docker template configmap not found")
 		return nil, err
-	}else if err != nil{
-		log.Error(err,"error in retrieving docker template")
+	} else if err != nil {
+		log.Error(err, "error in retrieving docker template")
 		return nil, err
 	}
 	for _, val := range dockerTemplateConfigmap.Data {
@@ -1244,11 +1247,11 @@ func createMgwLBService(cr *wso2v1alpha1.API, nameSpace string, owner []metav1.O
 		Spec: corev1.ServiceSpec{
 			Type: "LoadBalancer",
 			Ports: []corev1.ServicePort{{
-				Name:"port-9095",
+				Name:       "port-9095",
 				Port:       9095,
 				TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: 9095},
-			},{
-				Name:"port-9090",
+			}, {
+				Name:       "port-9090",
 				Port:       9090,
 				TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: 9090},
 			}},
@@ -1504,19 +1507,18 @@ func getOperatorOwner(r *ReconcileAPI) ([]metav1.OwnerReference, error) {
 		},
 	}, nil
 }
-func copyDefaultSecurity(securityDefault *wso2v1alpha1.Security,userNameSpace string) *wso2v1alpha1.Security  {
+func copyDefaultSecurity(securityDefault *wso2v1alpha1.Security, userNameSpace string) *wso2v1alpha1.Security {
 
 	return &wso2v1alpha1.Security{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: defaultSecurity,
+			Name:      defaultSecurity,
 			Namespace: userNameSpace,
 		},
 		Spec: wso2v1alpha1.SecuritySpec{
-			Type: securityDefault.Spec.Type,
+			Type:        securityDefault.Spec.Type,
 			Certificate: securityDefault.Spec.Certificate,
-			Audience: securityDefault.Spec.Audience,
-			Issuer: securityDefault.Spec.Issuer,
+			Audience:    securityDefault.Spec.Audience,
+			Issuer:      securityDefault.Spec.Issuer,
 		},
 	}
 }
-
