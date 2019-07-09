@@ -61,13 +61,6 @@ kubectl update api "api_name" --from-file="location to the api swagger definitio
 
 kubectl update api petstore --from-file=./deploy/scenarios/scenario-1/petstore_basic.yaml
 ```
- 
-- View the details of the API
-```
-kubectl show api "api_name"
-
-kubectl show api petstore
-```
   
 - Delete the API
 ```
@@ -79,10 +72,10 @@ kubectl delete api petstore
 Optional Parameters
 
 ```
---replicas=3 Number of replicas
--n=wso2      Namespace to deploy the API
+--replicas=3          Number of replicas
+--namespace=wso2      Namespace to deploy the API
 
-kubectl add api "api_name" --from-file="location to the api swagger definition" --replicas="number of replicas" -n="desired namespace"
+kubectl add api "api_name" --from-file="location to the api swagger definition" --replicas="number of replicas" --namespace="desired namespace"
 ```
 
 ***Note:***
