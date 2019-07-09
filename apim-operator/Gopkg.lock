@@ -1179,6 +1179,7 @@
     "github.com/operator-framework/operator-sdk/pkg/metrics",
     "github.com/operator-framework/operator-sdk/pkg/restmapper",
     "github.com/operator-framework/operator-sdk/version",
+    "github.com/sirupsen/logrus",
     "github.com/spf13/pflag",
     "gopkg.in/yaml.v2",
     "k8s.io/api/apps/v1",
