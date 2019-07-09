@@ -16,43 +16,71 @@
 # under the License.
 
 # Please copy this file to /usr/local/bin and give executable permissions
-# Sample usage : kubectl add api <api-name> --from-file=<file> -n=<namespace> --replicas=<number of replicas>
+# Sample usage : kubectl add api <api-name> --from-file=<file> --replicas=<number of replicas> --namespace=<namespace>
+
+print_error()
+{
+echo "Error: must specify api, api name and Swagger file location.
+
+Add an API from a Swagger file.
+
+JSON and YAML formats are accepted.
+
+Examples:
+  # Add an API using a Swagger file.
+  kubectl add api petstore --from-file=./Swagger.json
+  kubectl add api petstore --from-file=./Swagger.json --replicas=3
+  kubectl add api petstore --from-file=./Swagger.json --namespace=wso2
+  kubectl add api petstore --from-file=./Swagger.json --replicas=3 --namespace=wso2
+
+Available Commands:
+  api                 Add an API.
+
+Options:
+  --filename='': File Location
+  --replicas='': Number of replicas
+
+Usage:
+  kubectl add api petstore --from-file=FILENAME [options] "
+}
+
+
 if [[ "$1" == "api" ]]
 then
 
-for var in "$@"
-do
-    if [[ $var == *"--from-file"* ]]; then
-      fromFile=$var
-    fi
+    if [[ "$2" == "" || "$3" == "" ]]
+    then
+        print_error
+    else
+        for var in "$@"
+        do
+            if [[ $var == *"--replicas"* ]]; then
+              replicasArg=$var
+            elif [[ "$var" == *"-n"* ]]; then
+              namespace=$var
+            fi
+        done
 
-    if [[ $var == *"--replicas"* ]]; then
-      replicasArg=$var
-    fi
-done
+        IFS='=';
+        count=0
+        replicas=1
 
-IFS='=';
+        for i in $replicasArg;
+        do
+            ((count++))
+            if [[ $count == 2 ]]; then
+                  replicas=$i
+            fi
+        done
 
-count=0
-replicas=1
+        apiName=$2
 
-for i in $replicasArg;
-do
-    echo $i
-    ((count++))
-    if [[ $count == 2 ]]; then
-          replicas=$i
-    fi
-done
+        echo -e "\nCreating configmap with name "$apiName $namespace
+        kubectl create configmap $apiName $3 $namespace
 
-apiName=$2
 
-echo -e "\nDeleteting configmap if exists with name "$apiName
-    kubectl delete configmap $2 $4
-
-echo -e "\nCreating configmap with name "$apiName
-    kubectl create configmap $2 $3 $4
-    echo -e "\nGenerating a api kind"
+        if [ $? -eq 0 ]; then
+            echo -e "\nGenerating a api kind"
 
 cat << EOF > wso2_v1alpha1_api_cr.yaml
 apiVersion: wso2.com/v1alpha1
@@ -65,13 +93,10 @@ spec:
   type: swagger
  replicas: ${replicas}
  mode: privateJet
-
 EOF
-
-    kubectl apply -f wso2_v1alpha1_api_cr.yaml $4
-
+            kubectl apply -f wso2_v1alpha1_api_cr.yaml $namespace
+         fi
+    fi
 else
-    echo "Unknown command"
+    print_error
 fi
-
-echo "Completed"
