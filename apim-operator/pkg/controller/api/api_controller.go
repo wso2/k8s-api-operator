@@ -222,9 +222,11 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	image := strings.ToLower(strings.ReplaceAll(swagger.Info.Title, " ", ""))
-	tag := swagger.Info.Version + "-" + instance.Spec.UpdateTimeStamp
+	tag := swagger.Info.Version
+	if instance.Spec.UpdateTimeStamp != "" {
+		tag = tag + "-" + instance.Spec.UpdateTimeStamp
+	}
 	imageName := image + ":" + tag
-
 	// check if the image already exists
 	imageExist, errImage := isImageExist(dockerRegistry+"/"+image, tag, r)
 	if errImage != nil {
@@ -449,7 +451,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 				log.Error(errGetSec, "error getting default security from user namespace")
 				return reconcile.Result{}, errGetSec
 			} else {
-				log.Info("default security exists in " + userNameSpace + "namespace")
+				log.Info("default security exists in " + userNameSpace + " namespace")
 			}
 		}
 	}
@@ -1130,14 +1132,17 @@ func scheduleKanikoJob(cr *wso2v1alpha1.API, imageName string, conf *corev1.Conf
 	labels := map[string]string{
 		"app": cr.Name,
 	}
-
+	kanikoJobName := cr.Name + "kaniko"
+	if timeStamp != "" {
+		kanikoJobName = kanikoJobName + "-" + timeStamp
+	}
 	controlConfigData := conf.Data
 	kanikoImg := controlConfigData[kanikoImgConst]
 	dockerRegistry := controlConfigData[dockerRegistryConst]
 
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:            cr.Name + "kaniko" + "-" + timeStamp,
+			Name:            kanikoJobName,
 			Namespace:       cr.Namespace,
 			OwnerReferences: owner,
 		},
