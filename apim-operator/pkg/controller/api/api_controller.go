@@ -21,9 +21,13 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"github.com/sirupsen/logrus"
+	"fmt"
+	"net"
+	"net/url"
 	"strconv"
 	"strings"
 	"text/template"
+	"reflect"
 
 	"k8s.io/apimachinery/pkg/util/intstr"
 
@@ -230,8 +234,24 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 	log.Info("image exist? " + strconv.FormatBool(imageExist))
 
-	newSwagger := mgwSwaggerHandler(r, swagger)
+	endpointNames, newSwagger := mgwSwaggerHandler(r, swagger, string(instance.Spec.Mode))
 
+	if strings.EqualFold(string(instance.Spec.Mode)	, "sidecar") {
+		for endpointName, _ := range endpointNames {
+			targetEndpointCr := &wso2v1alpha1.TargetEndpoint{}
+			erCr := r.client.Get(context.TODO(), types.NamespacedName{Namespace: wso2NameSpaceConst, Name: endpointName}, targetEndpointCr)
+			if erCr != nil {
+				if targetEndpointCr.Spec.Deploy.DockerImage != "" && instance.Spec.Mode != "sidecar" {
+					if err := r.reconcileDeploymentForBackend(targetEndpointCr); err != nil {
+						return reconcile.Result{}, err
+					}
+					if err := r.reconcileBackendService(targetEndpointCr); err != nil {
+						return reconcile.Result{}, err
+					}
+				}
+			}
+		}
+	}
 	//update configmap with modified swagger
 
 	swaggerConfMap := createConfigMap(apiConfigMapRef, swaggerDataFile, newSwagger, userNameSpace, owner)
@@ -386,18 +406,18 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		//use default security
 		//copy default sec in wso2-system to user namespace
 		securityDefault := &wso2v1alpha1.Security{}
-		errGetSec := r.client.Get(context.TODO(), types.NamespacedName{Name: defaultSecurity, Namespace: userNameSpace}, securityDefault)
+		errGetSec := r.client.Get(context.TODO(), types.NamespacedName{Name:  defaultSecurity, Namespace: userNameSpace}, securityDefault)
 
 		if errGetSec != nil && errors.IsNotFound(errGetSec) {
 			var defaultCertName string
 			var defaultCertvalue []byte
 			//retrieve default-security from wso2-system namespace
-			errSec := r.client.Get(context.TODO(), types.NamespacedName{Name: defaultSecurity, Namespace: wso2NameSpaceConst}, securityDefault)
-			if errSec != nil && errors.IsNotFound(errSec) {
+			errSec := r.client.Get(context.TODO(), types.NamespacedName{Name:  defaultSecurity, Namespace: wso2NameSpaceConst}, securityDefault)
+			if errSec != nil && errors.IsNotFound(errSec){
 				reqLogger.Info("default security instance is not found in wso2-system namespace")
 				return reconcile.Result{}, errSec
-			} else if errSec != nil {
-				log.Error(errSec, "error in getting default security from wso2-system namespace")
+			}else if errSec != nil{
+				log.Error(errSec,"error in getting default security from wso2-system namespace")
 				return reconcile.Result{}, errSec
 			}
 			var defaultCert = &corev1.Secret{}
@@ -405,8 +425,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			if errc != nil && errors.IsNotFound(errc) {
 				reqLogger.Info("defined cretificate is not found")
 				return reconcile.Result{}, errc
-			} else if errc != nil {
-				log.Error(errc, "error in getting default cert from wso2-system namespace")
+			} else if errc != nil{
+				log.Error(errc,"error in getting default cert from wso2-system namespace")
 			}
 			//copying default cert as a secret to user namespace
 			noOwner := []metav1.OwnerReference{}
@@ -787,7 +807,9 @@ func mgwSwaggerLoader(swaggerDataMap map[string]string) (*openapi3.Swagger, stri
 }
 
 //Get endpoint from swagger and replace it with targetendpoint kind service endpoint
-func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger) string {
+func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string) (map[string]string, string) {
+
+	endpointNames := make(map[string]string)
 
 	//api level endpoint
 	endpointData, checkEndpoint := swagger.Extensions[endpointExtension]
@@ -800,42 +822,7 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger) string {
 			err := json.Unmarshal(endpointJson, &endPoint)
 			if err == nil {
 				//check if service & targetendpoint cr object are available
-				currentService := &corev1.Service{}
-				targetEndpointCr := &wso2v1alpha1.TargetEndpoint{}
-				err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: wso2NameSpaceConst,
-					Name: endPoint}, currentService)
-				erCr := r.client.Get(context.TODO(), types.NamespacedName{Namespace: wso2NameSpaceConst, Name: endPoint}, targetEndpointCr)
-
-				if err != nil && errors.IsNotFound(err) {
-					log.Error(err, "Service is not found")
-				} else if erCr != nil && errors.IsNotFound(erCr) {
-					log.Error(err, "targetendpoint CRD object is not found")
-				} else if err != nil {
-					log.Error(err, "Error in getting service")
-				} else if erCr != nil {
-					log.Error(err, "Error in getting targetendpoint CRD object")
-				} else {
-					protocol := targetEndpointCr.Spec.Protocol
-					endPoint = protocol + "://" + endPoint
-					checkt := []string{endPoint}
-					prodEp.Urls = checkt
-					swagger.Extensions[endpointExtension] = prodEp
-				}
-			}
-		}
-	}
-
-	//resource level endpoint
-	for _, path := range swagger.Paths {
-		resourceEndpointData, checkResourceEP := path.Get.Extensions[endpointExtension]
-		if checkResourceEP {
-			prodEp := XMGWProductionEndpoints{}
-			var endPoint string
-			ResourceEndpointJson, checkJsonResource := resourceEndpointData.(json.RawMessage)
-			if checkJsonResource {
-				err := json.Unmarshal(ResourceEndpointJson, &endPoint)
-				if err == nil {
-					//check if service & targetendpoint cr object are available
+				if mode != "sidecar" {
 					currentService := &corev1.Service{}
 					targetEndpointCr := &wso2v1alpha1.TargetEndpoint{}
 					err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: wso2NameSpaceConst,
@@ -855,7 +842,62 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger) string {
 						endPoint = protocol + "://" + endPoint
 						checkt := []string{endPoint}
 						prodEp.Urls = checkt
-						path.Get.Extensions[endpointExtension] = prodEp
+						swagger.Extensions[endpointExtension] = prodEp
+					}
+				} else {
+					endpointUrl, err := url.Parse(endPoint)
+					if err != nil {
+						endpointNames[endPoint] = endPoint;
+					} else {
+						host, _, _ := net.SplitHostPort(endpointUrl.Host)
+						endpointNames[host] = host;
+					}
+				}
+			}
+		}
+	}
+
+	//resource level endpoint
+	for _, path := range swagger.Paths {
+		resourceEndpointData, checkResourceEP := path.Get.Extensions[endpointExtension]
+		if checkResourceEP {
+			prodEp := XMGWProductionEndpoints{}
+			var endPoint string
+			ResourceEndpointJson, checkJsonResource := resourceEndpointData.(json.RawMessage)
+			if checkJsonResource {
+				err := json.Unmarshal(ResourceEndpointJson, &endPoint)
+				if err == nil {
+					if mode != "sidecar" {
+						//check if service & targetendpoint cr object are available
+						currentService := &corev1.Service{}
+						targetEndpointCr := &wso2v1alpha1.TargetEndpoint{}
+						err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: wso2NameSpaceConst,
+							Name: endPoint}, currentService)
+						erCr := r.client.Get(context.TODO(), types.NamespacedName{Namespace: wso2NameSpaceConst, Name: endPoint}, targetEndpointCr)
+
+						if err != nil && errors.IsNotFound(err) {
+							log.Error(err, "Service is not found")
+						} else if erCr != nil && errors.IsNotFound(erCr) {
+							log.Error(err, "targetendpoint CRD object is not found")
+						} else if err != nil {
+							log.Error(err, "Error in getting service")
+						} else if erCr != nil {
+							log.Error(err, "Error in getting targetendpoint CRD object")
+						} else {
+							protocol := targetEndpointCr.Spec.Protocol
+							endPoint = protocol + "://" + endPoint
+							checkt := []string{endPoint}
+							prodEp.Urls = checkt
+							path.Get.Extensions[endpointExtension] = prodEp
+						}
+					} else {
+						endpointUrl, err := url.Parse(endPoint)
+						if err != nil {
+							endpointNames[endPoint] = endPoint;
+						} else {
+							host, _, _ := net.SplitHostPort(endpointUrl.Host)
+							endpointNames[host] = host;
+						}
 					}
 				}
 			}
@@ -875,7 +917,7 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger) string {
 
 	newSwagger := string(prettyJSON.Bytes())
 
-	return newSwagger
+	return endpointNames, newSwagger
 
 }
 
@@ -1507,6 +1549,7 @@ func getOperatorOwner(r *ReconcileAPI) ([]metav1.OwnerReference, error) {
 		},
 	}, nil
 }
+
 func copyDefaultSecurity(securityDefault *wso2v1alpha1.Security, userNameSpace string) *wso2v1alpha1.Security {
 
 	return &wso2v1alpha1.Security{
@@ -1521,4 +1564,115 @@ func copyDefaultSecurity(securityDefault *wso2v1alpha1.Security, userNameSpace s
 			Issuer:      securityDefault.Spec.Issuer,
 		},
 	}
+}
+
+// Create newDeploymentForCR method to create a deployment.
+func (r *ReconcileAPI) newDeploymentForBackendCR(m *wso2v1alpha1.TargetEndpoint) *appsv1.Deployment {
+	replicas := m.Spec.Deploy.Count
+	dep := &appsv1.Deployment{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "apps/v1",
+			Kind:       "Deployment",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      m.ObjectMeta.Name,
+			Namespace: m.ObjectMeta.Namespace,
+		},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: &replicas,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: m.ObjectMeta.Labels,
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: m.ObjectMeta.Labels,
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{{
+						Image: m.Spec.Deploy.DockerImage,
+						Name:  m.Spec.Deploy.Name,
+						Ports: []corev1.ContainerPort{{
+							ContainerPort: m.Spec.Port,
+						}},
+					}},
+				},
+			},
+		},
+	}
+	// Set Examplekind instance as the owner and controller
+	controllerutil.SetControllerReference(m, dep, r.scheme)
+	return dep
+
+}
+
+func (r *ReconcileAPI) reconcileBackendService(m *wso2v1alpha1.TargetEndpoint) error {
+	newService := r.newServiceForBackendCR(m)
+
+	err := r.client.Create(context.TODO(), newService)
+	if err != nil && !errors.IsAlreadyExists(err) {
+		return fmt.Errorf("failed to create Service resource: %v", err)
+	}
+
+	if err == nil {
+		return nil
+	}
+
+	currentService := &corev1.Service{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: newService.Namespace,
+		Name: newService.Name}, currentService)
+
+	if err != nil {
+		return fmt.Errorf("failed to retrieve Service resource: %v", err)
+	}
+
+	if reflect.DeepEqual(currentService.Spec.Ports, newService.Spec.Ports) {
+		return nil
+	}
+
+	currentService.Spec.Ports = newService.Spec.Ports
+	return r.client.Update(context.TODO(), currentService)
+}
+
+// NewService assembles the ClusterIP service for the Nginx
+func (r *ReconcileAPI) newServiceForBackendCR(m *wso2v1alpha1.TargetEndpoint) *corev1.Service {
+	var port int
+	port = int(m.Spec.Port)
+	service := corev1.Service{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Service",
+			APIVersion: "apps/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      m.ObjectMeta.Name,
+			Namespace: m.ObjectMeta.Namespace,
+		},
+		Spec: corev1.ServiceSpec{
+			Selector: m.ObjectMeta.Labels,
+			Ports: []corev1.ServicePort{
+				corev1.ServicePort{Port: m.Spec.Port, TargetPort: intstr.FromInt(port)},
+			},
+		},
+	}
+	controllerutil.SetControllerReference(m, &service, r.scheme)
+	return &service
+}
+
+func (r *ReconcileAPI) reconcileDeploymentForBackend(m *wso2v1alpha1.TargetEndpoint) error {
+	found := &appsv1.Deployment{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: m.Name, Namespace: m.Namespace}, found)
+	if err != nil && errors.IsNotFound(err) {
+		// Define a new deployment
+		dep := r.newDeploymentForBackendCR(m)
+		log.WithValues("Creating a new Deployment %s/%s\n", dep.Namespace, dep.Name)
+		err = r.client.Create(context.TODO(), dep)
+		if err != nil {
+			log.WithValues("Failed to create new Deployment: %v\n", err)
+			return err
+		}
+		// Deployment created successfully - return and requeue
+	} else if err != nil {
+		log.WithValues("Failed to get Deployment: %v\n", err)
+		return err
+	}
+	return nil
 }

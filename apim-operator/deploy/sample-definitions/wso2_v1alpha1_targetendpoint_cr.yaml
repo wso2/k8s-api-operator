@@ -16,4 +16,4 @@ spec:
     username: user,
     type: basic,
     password: pass
-  mode : privateJet
+  mode : sidecar
