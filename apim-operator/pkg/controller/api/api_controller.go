@@ -396,14 +396,14 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 			if errGetSec != nil && errors.IsNotFound(errGetSec) {
 				log.Info("default security not found in " + userNameSpace + " namespace")
-				log.Info("retrieve default-security from wso2-system namespace")
+				log.Info("retrieve default-security from " + wso2NameSpaceConst)
 				//retrieve default-security from wso2-system namespace
 				errSec := r.client.Get(context.TODO(), types.NamespacedName{Name: defaultSecurity, Namespace: wso2NameSpaceConst}, securityDefault)
 				if errSec != nil && errors.IsNotFound(errSec) {
-					reqLogger.Info("default security instance is not found in wso2-system namespace")
+					reqLogger.Info("default security instance is not found in " + wso2NameSpaceConst)
 					return reconcile.Result{}, errSec
 				} else if errSec != nil {
-					log.Error(errSec, "error in getting default security from wso2-system namespace")
+					log.Error(errSec, "error in getting default security from " + wso2NameSpaceConst)
 					return reconcile.Result{}, errSec
 				}
 				var defaultCert = &corev1.Secret{}
@@ -411,15 +411,15 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 				errCertUserns := r.client.Get(context.TODO(), types.NamespacedName{Name: securityDefault.Spec.Certificate, Namespace: userNameSpace}, defaultCert)
 				if errCertUserns != nil && errors.IsNotFound(errCertUserns) {
 					log.Info("default certificate is not found in " + userNameSpace + "namespace")
-					log.Info("retrieve default certificate from wso2-system namespace")
+					log.Info("retrieve default certificate from " + wso2NameSpaceConst)
 					var defaultCertName string
 					var defaultCertvalue []byte
 					errc := r.client.Get(context.TODO(), types.NamespacedName{Name: securityDefault.Spec.Certificate, Namespace: wso2NameSpaceConst}, defaultCert)
 					if errc != nil && errors.IsNotFound(errc) {
-						reqLogger.Info("defined certificate is not found in wso2-system namespace")
+						reqLogger.Info("defined certificate is not found in " + wso2NameSpaceConst)
 						return reconcile.Result{}, errc
 					} else if errc != nil {
-						log.Error(errc, "error in getting default cert from wso2-system namespace")
+						log.Error(errc, "error in getting default cert from " + wso2NameSpaceConst)
 						return reconcile.Result{}, errc
 					}
 					//copying default cert as a secret to user namespace
@@ -1382,10 +1382,10 @@ func analyticsVolumeHandler(analyticsCertSecretName string, r *ReconcileAPI, job
 	errCertNs := r.client.Get(context.TODO(), types.NamespacedName{Name: analyticsCertSecretName, Namespace: userNameSpace}, analyticsCertSecret)
 
 	if errCertNs != nil {
-		log.Info("Error in getting certificate secret specified in analytics from the user namespace. Finding it in wso2-system")
+		log.Info("Error in getting certificate secret specified in analytics from the user namespace. Finding it in " + wso2NameSpaceConst)
 		errCert := r.client.Get(context.TODO(), types.NamespacedName{Name: analyticsCertSecretName, Namespace: wso2NameSpaceConst}, analyticsCertSecret)
 		if errCert != nil {
-			log.Error(errCert, "Error in getting certificate secret specified in analytics from wso2-system namespace")
+			log.Error(errCert, "Error in getting certificate secret specified in analytics from " + wso2NameSpaceConst)
 			return jobVolumeMount, jobVolume, fileName, errCert
 		}
 		for pem, val := range analyticsCertSecret.Data {
