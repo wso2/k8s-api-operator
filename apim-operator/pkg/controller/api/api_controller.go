@@ -20,7 +20,10 @@ import (
 	"context"
 	"crypto/sha1"
 	"encoding/hex"
+	"github.com/golang/glog"
 	"github.com/sirupsen/logrus"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"strconv"
 	"strings"
 	"text/template"
@@ -555,6 +558,15 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	svcFound := &corev1.Service{}
 	svcErr := r.client.Get(context.TODO(), types.NamespacedName{Name: svc.Name, Namespace: svc.Namespace}, svcFound)
 
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		glog.Errorf("Can't load in cluster config: %v", err)
+	}
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		glog.Errorf("Can't get client set: %v", err)
+	}
+
 	if instance.Spec.UpdateTimeStamp != "" {
 		//Schedule Kaniko pod
 		reqLogger.Info("Updating the API", "API.Name", instance.Name, "API.Namespace", instance.Namespace)
@@ -574,7 +586,27 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		} else if jobErr != nil {
 			return reconcile.Result{}, jobErr
 		}
-
+		deletePolicy := metav1.DeletePropagationBackground
+		deleteOptions := metav1.DeleteOptions{PropagationPolicy: &deletePolicy}
+		//get list of exsisting jobs
+		getListOfJobs,errGetJobs := clientset.BatchV1().Jobs(job.Namespace).List(metav1.ListOptions{})
+		if len(getListOfJobs.Items) != 0 {
+			for _, kanikoJob := range getListOfJobs.Items{
+				if kanikoJob.Status.Succeeded > 0{
+					reqLogger.Info("Job " + kanikoJob.Name + " completed successfully","Job.Namespace", job.Namespace, "Job.Name", job.Name)
+					reqLogger.Info("Deleting job " + kanikoJob.Name ,"Job.Namespace", job.Namespace, "Job.Name", job.Name)
+					//deleting completed jobs
+					errDelete := clientset.BatchV1().Jobs(kanikoJob.Namespace).Delete(kanikoJob.Name,&deleteOptions)
+					if errDelete != nil{
+						reqLogger.Error(errDelete,"error while deleting " + kanikoJob.Name + " job")
+					} else {
+						reqLogger.Info("successfully deleted job" + kanikoJob.Name ,"Job.Namespace", job.Namespace, "Job.Name", job.Name)
+					}
+				}
+			}
+		} else if errGetJobs != nil {
+			reqLogger.Error(errGetJobs,"error retrieving jobs")
+		}
 		// if kaniko job is succeeded, edit the deployment
 		if kubeJob.Status.Succeeded > 0 {
 			reqLogger.Info("Job completed successfully", "Job.Namespace", job.Namespace, "Job.Name", job.Name)
@@ -1129,9 +1161,9 @@ func isImageExist(image string, tag string, r *ReconcileAPI) (bool, error) {
 //Schedule Kaniko Job to generate micro-gw image
 func scheduleKanikoJob(cr *wso2v1alpha1.API, imageName string, conf *corev1.ConfigMap, jobVolumeMount []corev1.VolumeMount,
 	jobVolume []corev1.Volume, timeStamp string, owner []metav1.OwnerReference) *batchv1.Job {
-	labels := map[string]string{
-		"app": cr.Name,
-	}
+	//labels := map[string]string{
+	//	"app": cr.Name,
+	//}
 	kanikoJobName := cr.Name + "kaniko"
 	if timeStamp != "" {
 		kanikoJobName = kanikoJobName + "-" + timeStamp
@@ -1151,7 +1183,6 @@ func scheduleKanikoJob(cr *wso2v1alpha1.API, imageName string, conf *corev1.Conf
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      cr.Name + "-job",
 					Namespace: cr.Namespace,
-					Labels:    labels,
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
