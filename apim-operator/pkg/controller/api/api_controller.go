@@ -20,7 +20,10 @@ import (
 	"context"
 	"crypto/sha1"
 	"encoding/hex"
+	"github.com/golang/glog"
 	"github.com/sirupsen/logrus"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"strconv"
 	"strings"
 	"text/template"
@@ -70,6 +73,8 @@ type DockerfileArtifacts struct {
 	BaseImage    string
 	RuntimeImage string
 }
+
+//These structs used to build the security schema in json
 type path struct {
 	Security []map[string][]string `json:"security"`
 }
@@ -220,9 +225,11 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	image := strings.ToLower(strings.ReplaceAll(swagger.Info.Title, " ", ""))
-	tag := swagger.Info.Version + "-" + instance.Spec.UpdateTimeStamp
+	tag := swagger.Info.Version
+	if instance.Spec.UpdateTimeStamp != "" {
+		tag = tag + "-" + instance.Spec.UpdateTimeStamp
+	}
 	imageName := image + ":" + tag
-
 	// check if the image already exists
 	imageExist, errImage := isImageExist(dockerRegistry+"/"+image, tag, r)
 	if errImage != nil {
@@ -275,10 +282,9 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		}
 	}
 	//get resource level security
-	resLevelSecurity, isdefined := swagger.Extensions[pathsExtension]
+	resLevelSecurity, resSecIsDefined := swagger.Extensions[securityExtension]
 	var resSecurityMap map[string]map[string]path
-
-	if isdefined {
+	if resSecIsDefined {
 		rawmsg := resLevelSecurity.(json.RawMessage)
 		err := json.Unmarshal(rawmsg, &resSecurityMap)
 		if err != nil {
@@ -383,49 +389,72 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		//adding security scheme to swagger
 		swagger.Components.Extensions[securitySchemeExtension] = securityDefinition
 	} else {
-		//use default security
-		//copy default sec in wso2-system to user namespace
-		securityDefault := &wso2v1alpha1.Security{}
-		errGetSec := r.client.Get(context.TODO(), types.NamespacedName{Name: defaultSecurity, Namespace: userNameSpace}, securityDefault)
+		if isDefined == false {
+			log.Info("use default security")
+			//use default security
+			//copy default sec in wso2-system to user namespace
+			securityDefault := &wso2v1alpha1.Security{}
+			//check default security already exist in user namespace
+			errGetSec := r.client.Get(context.TODO(), types.NamespacedName{Name: defaultSecurity, Namespace: userNameSpace}, securityDefault)
 
-		if errGetSec != nil && errors.IsNotFound(errGetSec) {
-			var defaultCertName string
-			var defaultCertvalue []byte
-			//retrieve default-security from wso2-system namespace
-			errSec := r.client.Get(context.TODO(), types.NamespacedName{Name: defaultSecurity, Namespace: wso2NameSpaceConst}, securityDefault)
-			if errSec != nil && errors.IsNotFound(errSec) {
-				reqLogger.Info("default security instance is not found in wso2-system namespace")
-				return reconcile.Result{}, errSec
-			} else if errSec != nil {
-				log.Error(errSec, "error in getting default security from wso2-system namespace")
-				return reconcile.Result{}, errSec
-			}
-			var defaultCert = &corev1.Secret{}
-			errc := r.client.Get(context.TODO(), types.NamespacedName{Name: securityDefault.Spec.Certificate, Namespace: wso2NameSpaceConst}, defaultCert)
-			if errc != nil && errors.IsNotFound(errc) {
-				reqLogger.Info("defined cretificate is not found")
-				return reconcile.Result{}, errc
-			} else if errc != nil {
-				log.Error(errc, "error in getting default cert from wso2-system namespace")
-			}
-			//copying default cert as a secret to user namespace
-			noOwner := []metav1.OwnerReference{}
-			for cert, value := range defaultCert.Data {
-				defaultCertName = cert
-				defaultCertvalue = value
-			}
-			newDefaultSecret := createSecret(securityDefault.Spec.Certificate, defaultCertName, string(defaultCertvalue), userNameSpace, noOwner)
-			errCreateSec := r.client.Create(context.TODO(), newDefaultSecret)
-			if errCreateSec != nil {
-				log.Error(errCreateSec, "error creating secret for default security in user namespace")
-				return reconcile.Result{}, errCreateSec
-			}
-			//copying default security to user namespace
-			newDefaultSecurity := copyDefaultSecurity(securityDefault, userNameSpace)
-			errCreateSecurity := r.client.Create(context.TODO(), newDefaultSecurity)
-			if errCreateSecurity != nil {
-				log.Error(errCreateSecurity, "error creating secret for default security in user namespace")
-				return reconcile.Result{}, errCreateSecurity
+			if errGetSec != nil && errors.IsNotFound(errGetSec) {
+				log.Info("default security not found in " + userNameSpace + " namespace")
+				log.Info("retrieve default-security from " + wso2NameSpaceConst)
+				//retrieve default-security from wso2-system namespace
+				errSec := r.client.Get(context.TODO(), types.NamespacedName{Name: defaultSecurity, Namespace: wso2NameSpaceConst}, securityDefault)
+				if errSec != nil && errors.IsNotFound(errSec) {
+					reqLogger.Info("default security instance is not found in " + wso2NameSpaceConst)
+					return reconcile.Result{}, errSec
+				} else if errSec != nil {
+					log.Error(errSec, "error in getting default security from " + wso2NameSpaceConst)
+					return reconcile.Result{}, errSec
+				}
+				var defaultCert = &corev1.Secret{}
+				//check default certificate exists in user namespace
+				errCertUserns := r.client.Get(context.TODO(), types.NamespacedName{Name: securityDefault.Spec.Certificate, Namespace: userNameSpace}, defaultCert)
+				if errCertUserns != nil && errors.IsNotFound(errCertUserns) {
+					log.Info("default certificate is not found in " + userNameSpace + "namespace")
+					log.Info("retrieve default certificate from " + wso2NameSpaceConst)
+					var defaultCertName string
+					var defaultCertvalue []byte
+					errc := r.client.Get(context.TODO(), types.NamespacedName{Name: securityDefault.Spec.Certificate, Namespace: wso2NameSpaceConst}, defaultCert)
+					if errc != nil && errors.IsNotFound(errc) {
+						reqLogger.Info("defined certificate is not found in " + wso2NameSpaceConst)
+						return reconcile.Result{}, errc
+					} else if errc != nil {
+						log.Error(errc, "error in getting default cert from " + wso2NameSpaceConst)
+						return reconcile.Result{}, errc
+					}
+					//copying default cert as a secret to user namespace
+					noOwner := []metav1.OwnerReference{}
+					for cert, value := range defaultCert.Data {
+						defaultCertName = cert
+						defaultCertvalue = value
+					}
+					newDefaultSecret := createSecret(securityDefault.Spec.Certificate, defaultCertName, string(defaultCertvalue), userNameSpace, noOwner)
+					errCreateSec := r.client.Create(context.TODO(), newDefaultSecret)
+					if errCreateSec != nil {
+						log.Error(errCreateSec, "error creating secret for default security in user namespace")
+						return reconcile.Result{}, errCreateSec
+					}
+				} else if errCertUserns != nil {
+					log.Error(errCertUserns, "error in getting default certificate from "+userNameSpace+"namespace")
+					return reconcile.Result{}, errCertUserns
+				}
+				//copying default security to user namespace
+				log.Info("copying default security to " + userNameSpace)
+				newDefaultSecurity := copyDefaultSecurity(securityDefault, userNameSpace)
+				errCreateSecurity := r.client.Create(context.TODO(), newDefaultSecurity)
+				if errCreateSecurity != nil {
+					log.Error(errCreateSecurity, "error creating secret for default security in user namespace")
+					return reconcile.Result{}, errCreateSecurity
+				}
+				log.Info("default security successfully copied to " + userNameSpace + " namespace")
+			} else if errGetSec != nil {
+				log.Error(errGetSec, "error getting default security from user namespace")
+				return reconcile.Result{}, errGetSec
+			} else {
+				log.Info("default security exists in " + userNameSpace + " namespace")
 			}
 		}
 	}
@@ -529,6 +558,15 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	svcFound := &corev1.Service{}
 	svcErr := r.client.Get(context.TODO(), types.NamespacedName{Name: svc.Name, Namespace: svc.Namespace}, svcFound)
 
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		glog.Errorf("Can't load in cluster config: %v", err)
+	}
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		glog.Errorf("Can't get client set: %v", err)
+	}
+
 	if instance.Spec.UpdateTimeStamp != "" {
 		//Schedule Kaniko pod
 		reqLogger.Info("Updating the API", "API.Name", instance.Name, "API.Namespace", instance.Namespace)
@@ -548,7 +586,27 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		} else if jobErr != nil {
 			return reconcile.Result{}, jobErr
 		}
-
+		deletePolicy := metav1.DeletePropagationBackground
+		deleteOptions := metav1.DeleteOptions{PropagationPolicy: &deletePolicy}
+		//get list of exsisting jobs
+		getListOfJobs,errGetJobs := clientset.BatchV1().Jobs(job.Namespace).List(metav1.ListOptions{})
+		if len(getListOfJobs.Items) != 0 {
+			for _, kanikoJob := range getListOfJobs.Items{
+				if kanikoJob.Status.Succeeded > 0{
+					reqLogger.Info("Job " + kanikoJob.Name + " completed successfully","Job.Namespace", job.Namespace, "Job.Name", job.Name)
+					reqLogger.Info("Deleting job " + kanikoJob.Name ,"Job.Namespace", job.Namespace, "Job.Name", job.Name)
+					//deleting completed jobs
+					errDelete := clientset.BatchV1().Jobs(kanikoJob.Namespace).Delete(kanikoJob.Name,&deleteOptions)
+					if errDelete != nil{
+						reqLogger.Error(errDelete,"error while deleting " + kanikoJob.Name + " job")
+					} else {
+						reqLogger.Info("successfully deleted job" + kanikoJob.Name ,"Job.Namespace", job.Namespace, "Job.Name", job.Name)
+					}
+				}
+			}
+		} else if errGetJobs != nil {
+			reqLogger.Error(errGetJobs,"error retrieving jobs")
+		}
 		// if kaniko job is succeeded, edit the deployment
 		if kubeJob.Status.Succeeded > 0 {
 			reqLogger.Info("Job completed successfully", "Job.Namespace", job.Namespace, "Job.Name", job.Name)
@@ -1103,17 +1161,20 @@ func isImageExist(image string, tag string, r *ReconcileAPI) (bool, error) {
 //Schedule Kaniko Job to generate micro-gw image
 func scheduleKanikoJob(cr *wso2v1alpha1.API, imageName string, conf *corev1.ConfigMap, jobVolumeMount []corev1.VolumeMount,
 	jobVolume []corev1.Volume, timeStamp string, owner []metav1.OwnerReference) *batchv1.Job {
-	labels := map[string]string{
-		"app": cr.Name,
+	//labels := map[string]string{
+	//	"app": cr.Name,
+	//}
+	kanikoJobName := cr.Name + "kaniko"
+	if timeStamp != "" {
+		kanikoJobName = kanikoJobName + "-" + timeStamp
 	}
-
 	controlConfigData := conf.Data
 	kanikoImg := controlConfigData[kanikoImgConst]
 	dockerRegistry := controlConfigData[dockerRegistryConst]
 
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:            cr.Name + "kaniko" + "-" + timeStamp,
+			Name:            kanikoJobName,
 			Namespace:       cr.Namespace,
 			OwnerReferences: owner,
 		},
@@ -1122,7 +1183,6 @@ func scheduleKanikoJob(cr *wso2v1alpha1.API, imageName string, conf *corev1.Conf
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      cr.Name + "-job",
 					Namespace: cr.Namespace,
-					Labels:    labels,
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -1353,10 +1413,10 @@ func analyticsVolumeHandler(analyticsCertSecretName string, r *ReconcileAPI, job
 	errCertNs := r.client.Get(context.TODO(), types.NamespacedName{Name: analyticsCertSecretName, Namespace: userNameSpace}, analyticsCertSecret)
 
 	if errCertNs != nil {
-		log.Info("Error in getting certificate secret specified in analytics from the user namespace. Finding it in wso2-system")
+		log.Info("Error in getting certificate secret specified in analytics from the user namespace. Finding it in " + wso2NameSpaceConst)
 		errCert := r.client.Get(context.TODO(), types.NamespacedName{Name: analyticsCertSecretName, Namespace: wso2NameSpaceConst}, analyticsCertSecret)
 		if errCert != nil {
-			log.Error(errCert, "Error in getting certificate secret specified in analytics from wso2-system namespace")
+			log.Error(errCert, "Error in getting certificate secret specified in analytics from " + wso2NameSpaceConst)
 			return jobVolumeMount, jobVolume, fileName, errCert
 		}
 		for pem, val := range analyticsCertSecret.Data {
