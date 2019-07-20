@@ -20,12 +20,11 @@ import (
 	"context"
 	"crypto/sha1"
 	"encoding/hex"
-	"github.com/golang/glog"
 	"fmt"
+	"github.com/golang/glog"
 	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"net"
 	"net/url"
 	"reflect"
 	"strconv"
@@ -94,6 +93,11 @@ type scopeSet struct {
 	AuthorizationUrl string            `json:"authorizationUrl"`
 	TokenUrl         string            `json:"tokenUrl"`
 	Scopes           map[string]string `json:"scopes,omitempty"`
+}
+
+var portMap = map[string]string{
+	"http":  "80",
+	"https": "443",
 }
 
 // Add creates a new API Controller and adds it to the Manager. The Manager will set fields on the Controller
@@ -253,19 +257,29 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	endpointNames, newSwagger := mgwSwaggerHandler(r, swagger, mode)
 
-	if mode == sideCar {
+	for endpointNameL, _ := range endpointNames {
+		log.Info("Endpoint name " + endpointNameL)
+	}
+
+	//Creating sidecar endpoint deployment
+	if mode == sidecar {
 		for endpointName, _ := range endpointNames {
 			targetEndpointCr := &wso2v1alpha1.TargetEndpoint{}
-			erCr := r.client.Get(context.TODO(), types.NamespacedName{Namespace: wso2NameSpaceConst, Name: endpointName}, targetEndpointCr)
-			if erCr != nil {
+			erCr := r.client.Get(context.TODO(),
+							types.NamespacedName{Namespace: wso2NameSpaceConst, Name: endpointName}, targetEndpointCr)
+			if erCr == nil {
 				if targetEndpointCr.Spec.Deploy.DockerImage != "" {
-					if err := r.reconcileDeploymentForBackend(targetEndpointCr); err != nil {
+					if err := r.reconcileDeploymentForSidecarEndpoint(targetEndpointCr, userNameSpace,
+																								instance); err != nil {
 						return reconcile.Result{}, err
 					}
-					if err := r.reconcileBackendService(targetEndpointCr); err != nil {
+					if err := r.reconcileSidecarEndpointService(targetEndpointCr, userNameSpace, instance); err != nil {
 						return reconcile.Result{}, err
 					}
 				}
+			} else {
+				log.Info("Failed to deplpy the sidecar endpoint " + endpointName)
+				return reconcile.Result{}, erCr
 			}
 		}
 	}
@@ -885,10 +899,10 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string) 
 		prodEp := XMGWProductionEndpoints{}
 		var endPoint string
 		endpointJson, checkJsonRaw := endpointData.(json.RawMessage)
-
 		if checkJsonRaw {
 			err := json.Unmarshal(endpointJson, &endPoint)
 			if err == nil {
+				log.Info("Parsing endpoints and not availble root service endpoint")
 				//check if service & targetendpoint cr object are available
 				currentService := &corev1.Service{}
 				targetEndpointCr := &wso2v1alpha1.TargetEndpoint{}
@@ -926,7 +940,7 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string) 
 							err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: wso2NameSpaceConst,
 								Name: urlVal}, currentService)
 							erCr := r.client.Get(context.TODO(), types.NamespacedName{Namespace: wso2NameSpaceConst, Name: urlVal}, targetEndpointCr)
-							if (err == nil && erCr == nil) || mode  == sideCar {
+							if (err == nil && erCr == nil) || mode  == sidecar {
 								endpointNames[urlVal] = urlVal;
 								protocol := targetEndpointCr.Spec.Protocol
 								urlVal = protocol + "://" + urlVal
@@ -934,10 +948,7 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string) 
 								isServiceDef = true;
 							}
 						} else {
-							host, _, err := net.SplitHostPort(endpointUrl.Host)
-							if err == nil {
-								endpointNames[host] = host;
-							}
+							endpointNames[endpointUrl.Hostname()] = endpointUrl.Hostname();
 						}
 					}
 
@@ -997,7 +1008,7 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string) 
 								err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: wso2NameSpaceConst,
 									Name: urlVal}, currentService)
 								erCr := r.client.Get(context.TODO(), types.NamespacedName{Namespace: wso2NameSpaceConst, Name: urlVal}, targetEndpointCr)
-								if (err == nil && erCr == nil) || mode  == sideCar {
+								if (err == nil && erCr == nil) || mode  == sidecar {
 									endpointNames[urlVal] = urlVal;
 									protocol := targetEndpointCr.Spec.Protocol
 									urlVal = protocol + "://" + urlVal
@@ -1005,10 +1016,7 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string) 
 									isServiceDef = true;
 								}
 							} else {
-								host, _, err := net.SplitHostPort(endpointUrl.Host)
-								if err == nil {
-									endpointNames[host] = host;
-								}
+								endpointNames[endpointUrl.Hostname()] = endpointUrl.Hostname();
 							}
 						}
 
@@ -1687,7 +1695,8 @@ func copyDefaultSecurity(securityDefault *wso2v1alpha1.Security, userNameSpace s
 }
 
 // Create newDeploymentForCR method to create a deployment.
-func (r *ReconcileAPI) newDeploymentForBackendCR(m *wso2v1alpha1.TargetEndpoint) *appsv1.Deployment {
+func (r *ReconcileAPI) createDeploymentForSidecarBackend(m *wso2v1alpha1.TargetEndpoint,
+													namespace string, instance *wso2v1alpha1.API) *appsv1.Deployment {
 	replicas := m.Spec.Deploy.Count
 	dep := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
@@ -1696,7 +1705,7 @@ func (r *ReconcileAPI) newDeploymentForBackendCR(m *wso2v1alpha1.TargetEndpoint)
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      m.ObjectMeta.Name,
-			Namespace: m.ObjectMeta.Namespace,
+			Namespace: namespace,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &replicas,
@@ -1720,13 +1729,14 @@ func (r *ReconcileAPI) newDeploymentForBackendCR(m *wso2v1alpha1.TargetEndpoint)
 		},
 	}
 	// Set Examplekind instance as the owner and controller
-	controllerutil.SetControllerReference(m, dep, r.scheme)
+	controllerutil.SetControllerReference(instance, dep, r.scheme)
 	return dep
 
 }
 
-func (r *ReconcileAPI) reconcileBackendService(m *wso2v1alpha1.TargetEndpoint) error {
-	newService := r.newServiceForBackendCR(m)
+func (r *ReconcileAPI) reconcileSidecarEndpointService(m *wso2v1alpha1.TargetEndpoint, namespace string,
+																			instance *wso2v1alpha1.API) error {
+	newService := r.createServiceForSidecarEndpoint(m, namespace, instance)
 
 	err := r.client.Create(context.TODO(), newService)
 	if err != nil && !errors.IsAlreadyExists(err) {
@@ -1738,7 +1748,7 @@ func (r *ReconcileAPI) reconcileBackendService(m *wso2v1alpha1.TargetEndpoint) e
 	}
 
 	currentService := &corev1.Service{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: newService.Namespace,
+	err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: namespace,
 		Name: newService.Name}, currentService)
 
 	if err != nil {
@@ -1754,7 +1764,8 @@ func (r *ReconcileAPI) reconcileBackendService(m *wso2v1alpha1.TargetEndpoint) e
 }
 
 // NewService assembles the ClusterIP service for the Nginx
-func (r *ReconcileAPI) newServiceForBackendCR(m *wso2v1alpha1.TargetEndpoint) *corev1.Service {
+func (r *ReconcileAPI) createServiceForSidecarEndpoint(m *wso2v1alpha1.TargetEndpoint,
+														namespace string, instance *wso2v1alpha1.API) *corev1.Service {
 	var port int
 	port = int(m.Spec.Port)
 	service := corev1.Service{
@@ -1764,7 +1775,7 @@ func (r *ReconcileAPI) newServiceForBackendCR(m *wso2v1alpha1.TargetEndpoint) *c
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      m.ObjectMeta.Name,
-			Namespace: m.ObjectMeta.Namespace,
+			Namespace: namespace,
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: m.ObjectMeta.Labels,
@@ -1773,17 +1784,18 @@ func (r *ReconcileAPI) newServiceForBackendCR(m *wso2v1alpha1.TargetEndpoint) *c
 			},
 		},
 	}
-	controllerutil.SetControllerReference(m, &service, r.scheme)
+	controllerutil.SetControllerReference(instance, &service, r.scheme)
 	return &service
 }
 
-func (r *ReconcileAPI) reconcileDeploymentForBackend(m *wso2v1alpha1.TargetEndpoint) error {
+func (r *ReconcileAPI) reconcileDeploymentForSidecarEndpoint(m *wso2v1alpha1.TargetEndpoint, namespace string,
+																					instance *wso2v1alpha1.API) error {
 	found := &appsv1.Deployment{}
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: m.Name, Namespace: m.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new deployment
-		dep := r.newDeploymentForBackendCR(m)
-		log.WithValues("Creating a new Deployment %s/%s\n", dep.Namespace, dep.Name)
+		dep := r.createDeploymentForSidecarBackend(m, namespace, instance)
+		log.WithValues("Creating a new Deployment %s/%s\n", namespace, dep.Name)
 		err = r.client.Create(context.TODO(), dep)
 		if err != nil {
 			log.WithValues("Failed to create new Deployment: %v\n", err)
