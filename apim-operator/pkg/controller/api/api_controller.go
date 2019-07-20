@@ -20,14 +20,14 @@ import (
 	"context"
 	"crypto/sha1"
 	"encoding/hex"
-	"github.com/sirupsen/logrus"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"net"
 	"net/url"
+	"reflect"
 	"strconv"
 	"strings"
 	"text/template"
-	"reflect"
 
 	"k8s.io/apimachinery/pkg/util/intstr"
 
@@ -219,6 +219,16 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	//Fetch swagger data from configmap, reads and modifies swagger
 	swaggerDataMap := apiConfigMap.Data
 	swagger, swaggerDataFile, err := mgwSwaggerLoader(swaggerDataMap)
+
+	modeExt := swagger.Extensions[deploymentMode]
+	mode := privateJet;
+	modeRawStr, _ := modeExt.(json.RawMessage)
+	err = json.Unmarshal(modeRawStr, &mode)
+
+	if err != nil {
+		log.Info("Deployment mode is not set in the swagger. Hence default to privateJet mode")
+	}
+
 	if err != nil {
 		log.Error(err, "Swagger loading error ")
 	}
@@ -234,14 +244,14 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 	log.Info("image exist? " + strconv.FormatBool(imageExist))
 
-	endpointNames, newSwagger := mgwSwaggerHandler(r, swagger, string(instance.Spec.Mode))
+	endpointNames, newSwagger := mgwSwaggerHandler(r, swagger, mode)
 
-	if strings.EqualFold(string(instance.Spec.Mode)	, "sidecar") {
+	if mode == sideCar {
 		for endpointName, _ := range endpointNames {
 			targetEndpointCr := &wso2v1alpha1.TargetEndpoint{}
 			erCr := r.client.Get(context.TODO(), types.NamespacedName{Namespace: wso2NameSpaceConst, Name: endpointName}, targetEndpointCr)
 			if erCr != nil {
-				if targetEndpointCr.Spec.Deploy.DockerImage != "" && instance.Spec.Mode != "sidecar" {
+				if targetEndpointCr.Spec.Deploy.DockerImage != "" {
 					if err := r.reconcileDeploymentForBackend(targetEndpointCr); err != nil {
 						return reconcile.Result{}, err
 					}
@@ -406,18 +416,18 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		//use default security
 		//copy default sec in wso2-system to user namespace
 		securityDefault := &wso2v1alpha1.Security{}
-		errGetSec := r.client.Get(context.TODO(), types.NamespacedName{Name:  defaultSecurity, Namespace: userNameSpace}, securityDefault)
+		errGetSec := r.client.Get(context.TODO(), types.NamespacedName{Name: defaultSecurity, Namespace: userNameSpace}, securityDefault)
 
 		if errGetSec != nil && errors.IsNotFound(errGetSec) {
 			var defaultCertName string
 			var defaultCertvalue []byte
 			//retrieve default-security from wso2-system namespace
-			errSec := r.client.Get(context.TODO(), types.NamespacedName{Name:  defaultSecurity, Namespace: wso2NameSpaceConst}, securityDefault)
-			if errSec != nil && errors.IsNotFound(errSec){
+			errSec := r.client.Get(context.TODO(), types.NamespacedName{Name: defaultSecurity, Namespace: wso2NameSpaceConst}, securityDefault)
+			if errSec != nil && errors.IsNotFound(errSec) {
 				reqLogger.Info("default security instance is not found in wso2-system namespace")
 				return reconcile.Result{}, errSec
-			}else if errSec != nil{
-				log.Error(errSec,"error in getting default security from wso2-system namespace")
+			} else if errSec != nil {
+				log.Error(errSec, "error in getting default security from wso2-system namespace")
 				return reconcile.Result{}, errSec
 			}
 			var defaultCert = &corev1.Secret{}
@@ -425,8 +435,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			if errc != nil && errors.IsNotFound(errc) {
 				reqLogger.Info("defined cretificate is not found")
 				return reconcile.Result{}, errc
-			} else if errc != nil{
-				log.Error(errc,"error in getting default cert from wso2-system namespace")
+			} else if errc != nil {
+				log.Error(errc, "error in getting default cert from wso2-system namespace")
 			}
 			//copying default cert as a secret to user namespace
 			noOwner := []metav1.OwnerReference{}
@@ -822,35 +832,60 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string) 
 			err := json.Unmarshal(endpointJson, &endPoint)
 			if err == nil {
 				//check if service & targetendpoint cr object are available
-				if mode != "sidecar" {
-					currentService := &corev1.Service{}
-					targetEndpointCr := &wso2v1alpha1.TargetEndpoint{}
-					err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: wso2NameSpaceConst,
-						Name: endPoint}, currentService)
-					erCr := r.client.Get(context.TODO(), types.NamespacedName{Namespace: wso2NameSpaceConst, Name: endPoint}, targetEndpointCr)
+				currentService := &corev1.Service{}
+				targetEndpointCr := &wso2v1alpha1.TargetEndpoint{}
+				err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: wso2NameSpaceConst,
+					Name: endPoint}, currentService)
+				erCr := r.client.Get(context.TODO(), types.NamespacedName{Namespace: wso2NameSpaceConst, Name: endPoint}, targetEndpointCr)
 
-					if err != nil && errors.IsNotFound(err) {
-						log.Error(err, "Service is not found")
-					} else if erCr != nil && errors.IsNotFound(erCr) {
-						log.Error(err, "targetendpoint CRD object is not found")
-					} else if err != nil {
-						log.Error(err, "Error in getting service")
-					} else if erCr != nil {
-						log.Error(err, "Error in getting targetendpoint CRD object")
-					} else {
-						protocol := targetEndpointCr.Spec.Protocol
-						endPoint = protocol + "://" + endPoint
-						checkt := []string{endPoint}
-						prodEp.Urls = checkt
-						swagger.Extensions[endpointExtension] = prodEp
-					}
+				if err != nil && errors.IsNotFound(err) {
+					log.Error(err, "Service is not found")
+				} else if erCr != nil && errors.IsNotFound(erCr) {
+					log.Error(err, "targetendpoint CRD object is not found")
+				} else if err != nil {
+					log.Error(err, "Error in getting service")
+				} else if erCr != nil {
+					log.Error(err, "Error in getting targetendpoint CRD object")
 				} else {
-					endpointUrl, err := url.Parse(endPoint)
-					if err != nil {
-						endpointNames[endPoint] = endPoint;
-					} else {
-						host, _, _ := net.SplitHostPort(endpointUrl.Host)
-						endpointNames[host] = host;
+					protocol := targetEndpointCr.Spec.Protocol
+					endpointNames[endPoint] = endPoint;
+					endPoint = protocol + "://" + endPoint
+					checkt := []string{endPoint}
+					prodEp.Urls = checkt
+					swagger.Extensions[endpointExtension] = prodEp
+				}
+			} else {
+				err := json.Unmarshal(endpointJson, &prodEp)
+				if err == nil {
+					lengthOfUrls := len(prodEp.Urls);
+					endpointList := make([]string, lengthOfUrls)
+					isServiceDef := false;
+					for index, urlVal := range prodEp.Urls {
+						endpointUrl, err := url.Parse(urlVal)
+						if err != nil {
+							currentService := &corev1.Service{}
+							targetEndpointCr := &wso2v1alpha1.TargetEndpoint{}
+							err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: wso2NameSpaceConst,
+								Name: urlVal}, currentService)
+							erCr := r.client.Get(context.TODO(), types.NamespacedName{Namespace: wso2NameSpaceConst, Name: urlVal}, targetEndpointCr)
+							if (err == nil && erCr == nil) || mode  == sideCar {
+								endpointNames[urlVal] = urlVal;
+								protocol := targetEndpointCr.Spec.Protocol
+								urlVal = protocol + "://" + urlVal
+								endpointList[index] = urlVal;
+								isServiceDef = true;
+							}
+						} else {
+							host, _, err := net.SplitHostPort(endpointUrl.Host)
+							if err == nil {
+								endpointNames[host] = host;
+							}
+						}
+					}
+
+					if isServiceDef {
+						prodEp.Urls = endpointList
+						swagger.Extensions[endpointExtension] = prodEp
 					}
 				}
 			}
@@ -867,36 +902,61 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string) 
 			if checkJsonResource {
 				err := json.Unmarshal(ResourceEndpointJson, &endPoint)
 				if err == nil {
-					if mode != "sidecar" {
-						//check if service & targetendpoint cr object are available
-						currentService := &corev1.Service{}
-						targetEndpointCr := &wso2v1alpha1.TargetEndpoint{}
-						err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: wso2NameSpaceConst,
-							Name: endPoint}, currentService)
-						erCr := r.client.Get(context.TODO(), types.NamespacedName{Namespace: wso2NameSpaceConst, Name: endPoint}, targetEndpointCr)
+					//check if service & targetendpoint cr object are available
+					currentService := &corev1.Service{}
+					targetEndpointCr := &wso2v1alpha1.TargetEndpoint{}
+					err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: wso2NameSpaceConst,
+						Name: endPoint}, currentService)
+					erCr := r.client.Get(context.TODO(), types.NamespacedName{Namespace: wso2NameSpaceConst, Name: endPoint}, targetEndpointCr)
 
-						if err != nil && errors.IsNotFound(err) {
-							log.Error(err, "Service is not found")
-						} else if erCr != nil && errors.IsNotFound(erCr) {
-							log.Error(err, "targetendpoint CRD object is not found")
-						} else if err != nil {
-							log.Error(err, "Error in getting service")
-						} else if erCr != nil {
-							log.Error(err, "Error in getting targetendpoint CRD object")
-						} else {
-							protocol := targetEndpointCr.Spec.Protocol
-							endPoint = protocol + "://" + endPoint
-							checkt := []string{endPoint}
-							prodEp.Urls = checkt
-							path.Get.Extensions[endpointExtension] = prodEp
-						}
+					if err != nil && errors.IsNotFound(err) {
+						log.Error(err, "Service is not found")
+					} else if erCr != nil && errors.IsNotFound(erCr) {
+						log.Error(err, "targetendpoint CRD object is not found")
+					} else if err != nil {
+						log.Error(err, "Error in getting service")
+					} else if erCr != nil {
+						log.Error(err, "Error in getting targetendpoint CRD object")
 					} else {
-						endpointUrl, err := url.Parse(endPoint)
-						if err != nil {
-							endpointNames[endPoint] = endPoint;
-						} else {
-							host, _, _ := net.SplitHostPort(endpointUrl.Host)
-							endpointNames[host] = host;
+						protocol := targetEndpointCr.Spec.Protocol
+						endpointNames[endPoint] = endPoint;
+						endPoint = protocol + "://" + endPoint
+						checkt := []string{endPoint}
+						prodEp.Urls = checkt
+						path.Get.Extensions[endpointExtension] = prodEp
+					}
+				} else {
+					err := json.Unmarshal(ResourceEndpointJson, &prodEp)
+					if err == nil {
+						lengthOfUrls := len(prodEp.Urls);
+						endpointList := make([]string, lengthOfUrls)
+						isServiceDef := false;
+						for index, urlVal := range prodEp.Urls {
+							endpointUrl, err := url.Parse(urlVal)
+							if err != nil {
+								currentService := &corev1.Service{}
+								targetEndpointCr := &wso2v1alpha1.TargetEndpoint{}
+								err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: wso2NameSpaceConst,
+									Name: urlVal}, currentService)
+								erCr := r.client.Get(context.TODO(), types.NamespacedName{Namespace: wso2NameSpaceConst, Name: urlVal}, targetEndpointCr)
+								if (err == nil && erCr == nil) || mode  == sideCar {
+									endpointNames[urlVal] = urlVal;
+									protocol := targetEndpointCr.Spec.Protocol
+									urlVal = protocol + "://" + urlVal
+									endpointList[index] = urlVal;
+									isServiceDef = true;
+								}
+							} else {
+								host, _, err := net.SplitHostPort(endpointUrl.Host)
+								if err == nil {
+									endpointNames[host] = host;
+								}
+							}
+						}
+
+						if isServiceDef {
+							prodEp.Urls = endpointList
+							path.Get.Extensions[endpointExtension] = prodEp
 						}
 					}
 				}
