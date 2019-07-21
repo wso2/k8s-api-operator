@@ -8,4 +8,3 @@ spec:
     configmapName: test-publish
     type: swagger
   replicas: 1
-  mode: privateJet

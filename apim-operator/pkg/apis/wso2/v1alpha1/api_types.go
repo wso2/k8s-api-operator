@@ -78,6 +78,10 @@ const (
 	Shared     Mode = "shared"
 )
 
+func (c Mode) String() string {
+	return string(c)
+}
+
 func init() {
 	SchemeBuilder.Register(&API{}, &APIList{})
 }

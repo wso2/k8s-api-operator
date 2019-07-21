@@ -1,7 +1,7 @@
 apiVersion: wso2.com/v1alpha1
 kind: TargetEndpoint
 metadata:
-  name: endpoint-pizza
+  name: petstore-swagger-io
   namespace: wso2-system
   labels:
     app: wso2
@@ -12,8 +12,4 @@ spec:
     name: myservice
     dockerImage: nginx:latest
     count: 3
-  endpointSecurity:
-    username: user,
-    type: basic,
-    password: pass
   mode : privateJet

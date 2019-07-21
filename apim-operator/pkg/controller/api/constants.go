@@ -55,6 +55,7 @@ const (
 	dockerhubRegistryUrl                = "https://registry-1.docker.io/"
 	defaultSecurity                     = "default-security-jwt"
 	endpointExtension                   = "x-wso2-production-endpoints"
+	deploymentMode                      = "x-wso2-mode"
 	securityExtension                   = "security"
 	certPath                            = "/usr/wso2/certs/"
 	mgwConfTemplatePath                 = "/usr/local/bin/microgwconf.mustache"
@@ -98,4 +99,7 @@ const (
 	securityOauth           = "Oauth"
 	certAlias               = "alias"
 	pathsExtension          = "paths"
+	sidecar                 = "sidecar"
+	privateJet              = "privateJet"
+	shared                  = "shared"
 )
