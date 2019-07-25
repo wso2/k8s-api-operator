@@ -72,3 +72,9 @@ rules:
   - '*'
   verbs:
   - '*'
+- apiGroups:
+  - autoscaling
+  resources:
+  - '*'
+  verbs:
+  - '*'

@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"github.com/golang/glog"
 	"github.com/sirupsen/logrus"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"net/url"
@@ -38,6 +39,7 @@ import (
 
 	wso2v1alpha1 "github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
+	"k8s.io/api/autoscaling/v2beta1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -593,14 +595,54 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		log.Info("Successfully created secret")
 	}
 
+	getResourceReqCPU := controlConfigData["resourceRequestCPU"]
+	getResourceReqMemory := controlConfigData["resourceRequestMemory"]
+	getResourceLimitCPU := controlConfigData["resourceLimitCPU"]
+	getResourceLimitMemory := controlConfigData["resourceLimitMemory"]
+	fmt.Println("getting max replicas")
+
+
 	analyticsEnabledBool, _ := strconv.ParseBool(analyticsEnabled)
-	dep := createMgwDeployment(instance, imageName, controlConf, analyticsEnabledBool, r, userNameSpace, owner)
+	dep := createMgwDeployment(instance, imageName, controlConf, analyticsEnabledBool, r, userNameSpace, owner,
+		getResourceReqCPU, getResourceReqMemory, getResourceLimitCPU, getResourceLimitMemory)
 	depFound := &appsv1.Deployment{}
 	deperr := r.client.Get(context.TODO(), types.NamespacedName{Name: dep.Name, Namespace: dep.Namespace}, depFound)
 
 	svc := createMgwLBService(instance, userNameSpace, owner)
 	svcFound := &corev1.Service{}
 	svcErr := r.client.Get(context.TODO(), types.NamespacedName{Name: svc.Name, Namespace: svc.Namespace}, svcFound)
+
+	getMaxRep := controlConfigData["hpa.MaxReplicas"]
+	fmt.Println("getting max replicas")
+	intValueRep, err := strconv.ParseInt(getMaxRep,10,32)
+	if err != nil {
+		panic(err)
+	}
+	maxReplicas := int32(intValueRep)
+	fmt.Println("max replicas from configmap ")
+	fmt.Println(getMaxRep)
+
+	GetAvgUtilCPU := controlConfigData["hpa.TargetAverageUtilizationCPU"]
+	intValueUtilCPU, err := strconv.ParseInt(GetAvgUtilCPU,10,32)
+	if err != nil {
+		panic(err)
+	}
+	GetAvgUtilMemory := controlConfigData["hpa.TargetAverageUtilizationMemory"]
+	intValueUtilMemory, err := strconv.ParseInt(GetAvgUtilMemory,10,32)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("avgUtil from configmap ")
+	fmt.Println(intValueUtilCPU)
+	targetAvgUtilizationCPU := int32(intValueUtilCPU)
+	targetAvgUtilizationMemory := int32(intValueUtilMemory)
+	minReplicas := int32(instance.Spec.Replicas)
+	errGettingHpa := createHorizontalPodAutoscaler(dep, r, owner,minReplicas, maxReplicas, targetAvgUtilizationCPU,
+		targetAvgUtilizationMemory)
+	if errGettingHpa != nil{
+		fmt.Println("error creating HPA")
+		fmt.Println(errGettingHpa)
+	}
 
 	config, err := rest.InClusterConfig()
 	if err != nil {
@@ -817,9 +859,66 @@ func createMGWSecret(r *ReconcileAPI, confData string, owner []metav1.OwnerRefer
 		errSecret := r.client.Update(context.TODO(), apimSecret)
 		return errSecret
 	}
-
 }
 
+func createHorizontalPodAutoscaler(dep *appsv1.Deployment, r *ReconcileAPI, owner []metav1.OwnerReference,
+	minReplicas int32, maxReplicas int32, targetAverageUtilizationCPU int32, targetAverageUtilizationMemory int32)  error  {
+
+	targetResource := v2beta1.CrossVersionObjectReference{
+		Kind: "Deployment",
+		Name: dep.Name,
+		APIVersion: "extensions/v1beta1",
+	}
+	//CPU utilization
+	resourceMetricsForCPU := &v2beta1.ResourceMetricSource{
+		Name: corev1.ResourceCPU,
+		TargetAverageUtilization: &targetAverageUtilizationCPU,
+	}
+	metricsResCPU := v2beta1.MetricSpec{
+		Type: "Resource",
+		Resource: resourceMetricsForCPU,
+	}
+	//Memory utilization
+	resourceMetricsForMemory := &v2beta1.ResourceMetricSource{
+		Name: corev1.ResourceMemory,
+		TargetAverageUtilization: &targetAverageUtilizationMemory,
+	}
+	metricsResMemory := v2beta1.MetricSpec{
+		Type: "Resource",
+		Resource:resourceMetricsForMemory,
+	}
+	metricsSet := []v2beta1.MetricSpec{metricsResCPU, metricsResMemory}
+	hpa := &v2beta1.HorizontalPodAutoscaler{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: dep.Name + "-hpa",
+			Namespace: dep.Namespace,
+			OwnerReferences: owner,
+		},
+		Spec: v2beta1.HorizontalPodAutoscalerSpec{
+			MinReplicas: &minReplicas,
+			MaxReplicas: maxReplicas,
+			ScaleTargetRef: targetResource,
+			Metrics: metricsSet,
+		},
+	}
+	//check hpa already exists
+	checkHpa := &v2beta1.HorizontalPodAutoscaler{}
+	hpaErr := r.client.Get(context.TODO(), types.NamespacedName{Name:hpa.Name, Namespace:hpa.Namespace},checkHpa)
+	if hpaErr != nil && errors.IsNotFound(hpaErr){
+		//creating new hpa
+		log.Info("Creating HPA for deployment " + dep.Name)
+		errHpaCreating := r.client.Create(context.TODO(), hpa)
+		if errHpaCreating != nil {
+			return  errHpaCreating
+		}
+		return  nil
+	} else if hpaErr != nil{
+		return hpaErr
+	} else {
+		log.Info("HPA for deployment " + dep.Name + " is already exist")
+	}
+	return nil
+}
 //get configmap
 func getConfigmap(r *ReconcileAPI, mapName string, ns string) (*corev1.ConfigMap, error) {
 	apiConfigMap := &corev1.ConfigMap{}
@@ -1092,7 +1191,8 @@ func getCredentials(r *ReconcileAPI, name string, securityType string, userNameS
 
 // generate relevant MGW deployment/services for the given API definition
 func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.ConfigMap, analyticsEnabled bool,
-	r *ReconcileAPI, nameSpace string, owner []metav1.OwnerReference) *appsv1.Deployment {
+	r *ReconcileAPI, nameSpace string, owner []metav1.OwnerReference, resourceReqCPU string, resourceReqMemory string,
+	resourceLimitCPU string, resourceLimitMemory string) *appsv1.Deployment {
 	labels := map[string]string{
 		"app": cr.Name,
 	}
@@ -1110,6 +1210,14 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 			deployVolumeMount = deployVolumeMountTemp
 			deployVolume = deployVolumeTemp
 		}
+	}
+	req := corev1.ResourceList{
+		corev1.ResourceCPU:    resource.MustParse(resourceReqCPU),
+		corev1.ResourceMemory: resource.MustParse(resourceReqMemory),
+	}
+	lim := corev1.ResourceList{
+		corev1.ResourceCPU:    resource.MustParse(resourceLimitCPU),
+		corev1.ResourceMemory: resource.MustParse(resourceLimitMemory),
 	}
 
 	return &appsv1.Deployment{
@@ -1134,6 +1242,10 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 							Name:            "mgw" + cr.Name,
 							Image:           dockerRegistry + "/" + imageName,
 							ImagePullPolicy: "Always",
+							Resources: corev1.ResourceRequirements{
+								Requests: req,
+								Limits:   lim,
+							},
 							VolumeMounts:    deployVolumeMount,
 							Ports: []corev1.ContainerPort{{
 								ContainerPort: 9095,
