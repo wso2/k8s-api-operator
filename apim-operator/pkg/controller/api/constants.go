@@ -102,4 +102,8 @@ const (
 	sidecar                 = "sidecar"
 	privateJet              = "privateJet"
 	shared                  = "shared"
+
+	hpaMaxReplicas                    = "hpaMaxReplicas"
+	hpaTargetAverageUtilizationCPU    = "hpaTargetAverageUtilizationCPU"
+	hpaTargetAverageUtilizationMemory = "hpaTargetAverageUtilizationMemory"
 )

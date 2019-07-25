@@ -20,7 +20,6 @@ import (
 	"context"
 	"crypto/sha1"
 	"encoding/hex"
-	"fmt"
 	"github.com/golang/glog"
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -452,7 +451,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 					reqLogger.Info("default security instance is not found in " + wso2NameSpaceConst)
 					return reconcile.Result{}, errSec
 				} else if errSec != nil {
-					log.Error(errSec, "error in getting default security from " + wso2NameSpaceConst)
+					log.Error(errSec, "error in getting default security from "+wso2NameSpaceConst)
 					return reconcile.Result{}, errSec
 				}
 				var defaultCert = &corev1.Secret{}
@@ -468,7 +467,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 						reqLogger.Info("defined certificate is not found in " + wso2NameSpaceConst)
 						return reconcile.Result{}, errc
 					} else if errc != nil {
-						log.Error(errc, "error in getting default cert from " + wso2NameSpaceConst)
+						log.Error(errc, "error in getting default cert from "+wso2NameSpaceConst)
 						return reconcile.Result{}, errc
 					}
 					//copying default cert as a secret to user namespace
@@ -599,8 +598,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	getResourceReqMemory := controlConfigData["resourceRequestMemory"]
 	getResourceLimitCPU := controlConfigData["resourceLimitCPU"]
 	getResourceLimitMemory := controlConfigData["resourceLimitMemory"]
-	fmt.Println("getting max replicas")
-
 
 	analyticsEnabledBool, _ := strconv.ParseBool(analyticsEnabled)
 	dep := createMgwDeployment(instance, imageName, controlConf, analyticsEnabledBool, r, userNameSpace, owner,
@@ -612,36 +609,29 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	svcFound := &corev1.Service{}
 	svcErr := r.client.Get(context.TODO(), types.NamespacedName{Name: svc.Name, Namespace: svc.Namespace}, svcFound)
 
-	getMaxRep := controlConfigData["hpa.MaxReplicas"]
-	fmt.Println("getting max replicas")
-	intValueRep, err := strconv.ParseInt(getMaxRep,10,32)
+	getMaxRep := controlConfigData[hpaMaxReplicas]
+	intValueRep, err := strconv.ParseInt(getMaxRep, 10, 32)
 	if err != nil {
-		panic(err)
+		log.Error(err, "error getting max replicas")
 	}
 	maxReplicas := int32(intValueRep)
-	fmt.Println("max replicas from configmap ")
-	fmt.Println(getMaxRep)
-
-	GetAvgUtilCPU := controlConfigData["hpa.TargetAverageUtilizationCPU"]
-	intValueUtilCPU, err := strconv.ParseInt(GetAvgUtilCPU,10,32)
+	GetAvgUtilCPU := controlConfigData[hpaTargetAverageUtilizationCPU]
+	intValueUtilCPU, err := strconv.ParseInt(GetAvgUtilCPU, 10, 32)
 	if err != nil {
-		panic(err)
+		log.Error(err, "error getting hpa target average utilization for CPU")
 	}
-	GetAvgUtilMemory := controlConfigData["hpa.TargetAverageUtilizationMemory"]
-	intValueUtilMemory, err := strconv.ParseInt(GetAvgUtilMemory,10,32)
+	GetAvgUtilMemory := controlConfigData[hpaTargetAverageUtilizationMemory]
+	intValueUtilMemory, err := strconv.ParseInt(GetAvgUtilMemory, 10, 32)
 	if err != nil {
-		panic(err)
+		log.Error(err, "error getting hpa target average utilization for memory")
 	}
-	fmt.Println("avgUtil from configmap ")
-	fmt.Println(intValueUtilCPU)
 	targetAvgUtilizationCPU := int32(intValueUtilCPU)
 	targetAvgUtilizationMemory := int32(intValueUtilMemory)
 	minReplicas := int32(instance.Spec.Replicas)
-	errGettingHpa := createHorizontalPodAutoscaler(dep, r, owner,minReplicas, maxReplicas, targetAvgUtilizationCPU,
+	errGettingHpa := createHorizontalPodAutoscaler(dep, r, owner, minReplicas, maxReplicas, targetAvgUtilizationCPU,
 		targetAvgUtilizationMemory)
-	if errGettingHpa != nil{
-		fmt.Println("error creating HPA")
-		fmt.Println(errGettingHpa)
+	if errGettingHpa != nil {
+		log.Error(errGettingHpa, "Error getting HPA")
 	}
 
 	config, err := rest.InClusterConfig()
@@ -675,23 +665,23 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		deletePolicy := metav1.DeletePropagationBackground
 		deleteOptions := metav1.DeleteOptions{PropagationPolicy: &deletePolicy}
 		//get list of exsisting jobs
-		getListOfJobs,errGetJobs := clientset.BatchV1().Jobs(job.Namespace).List(metav1.ListOptions{})
+		getListOfJobs, errGetJobs := clientset.BatchV1().Jobs(job.Namespace).List(metav1.ListOptions{})
 		if len(getListOfJobs.Items) != 0 {
-			for _, kanikoJob := range getListOfJobs.Items{
-				if kanikoJob.Status.Succeeded > 0{
-					reqLogger.Info("Job " + kanikoJob.Name + " completed successfully","Job.Namespace", job.Namespace, "Job.Name", job.Name)
-					reqLogger.Info("Deleting job " + kanikoJob.Name ,"Job.Namespace", job.Namespace, "Job.Name", job.Name)
+			for _, kanikoJob := range getListOfJobs.Items {
+				if kanikoJob.Status.Succeeded > 0 {
+					reqLogger.Info("Job "+kanikoJob.Name+" completed successfully", "Job.Namespace", job.Namespace, "Job.Name", job.Name)
+					reqLogger.Info("Deleting job "+kanikoJob.Name, "Job.Namespace", job.Namespace, "Job.Name", job.Name)
 					//deleting completed jobs
-					errDelete := clientset.BatchV1().Jobs(kanikoJob.Namespace).Delete(kanikoJob.Name,&deleteOptions)
-					if errDelete != nil{
-						reqLogger.Error(errDelete,"error while deleting " + kanikoJob.Name + " job")
+					errDelete := clientset.BatchV1().Jobs(kanikoJob.Namespace).Delete(kanikoJob.Name, &deleteOptions)
+					if errDelete != nil {
+						reqLogger.Error(errDelete, "error while deleting "+kanikoJob.Name+" job")
 					} else {
-						reqLogger.Info("successfully deleted job" + kanikoJob.Name ,"Job.Namespace", job.Namespace, "Job.Name", job.Name)
+						reqLogger.Info("successfully deleted job"+kanikoJob.Name, "Job.Namespace", job.Namespace, "Job.Name", job.Name)
 					}
 				}
 			}
 		} else if errGetJobs != nil {
-			reqLogger.Error(errGetJobs,"error retrieving jobs")
+			reqLogger.Error(errGetJobs, "error retrieving jobs")
 		}
 		// if kaniko job is succeeded, edit the deployment
 		if kubeJob.Status.Succeeded > 0 {
@@ -862,63 +852,64 @@ func createMGWSecret(r *ReconcileAPI, confData string, owner []metav1.OwnerRefer
 }
 
 func createHorizontalPodAutoscaler(dep *appsv1.Deployment, r *ReconcileAPI, owner []metav1.OwnerReference,
-	minReplicas int32, maxReplicas int32, targetAverageUtilizationCPU int32, targetAverageUtilizationMemory int32)  error  {
+	minReplicas int32, maxReplicas int32, targetAverageUtilizationCPU int32, targetAverageUtilizationMemory int32) error {
 
 	targetResource := v2beta1.CrossVersionObjectReference{
-		Kind: "Deployment",
-		Name: dep.Name,
+		Kind:       "Deployment",
+		Name:       dep.Name,
 		APIVersion: "extensions/v1beta1",
 	}
 	//CPU utilization
 	resourceMetricsForCPU := &v2beta1.ResourceMetricSource{
-		Name: corev1.ResourceCPU,
+		Name:                     corev1.ResourceCPU,
 		TargetAverageUtilization: &targetAverageUtilizationCPU,
 	}
 	metricsResCPU := v2beta1.MetricSpec{
-		Type: "Resource",
+		Type:     "Resource",
 		Resource: resourceMetricsForCPU,
 	}
 	//Memory utilization
 	resourceMetricsForMemory := &v2beta1.ResourceMetricSource{
-		Name: corev1.ResourceMemory,
+		Name:                     corev1.ResourceMemory,
 		TargetAverageUtilization: &targetAverageUtilizationMemory,
 	}
 	metricsResMemory := v2beta1.MetricSpec{
-		Type: "Resource",
-		Resource:resourceMetricsForMemory,
+		Type:     "Resource",
+		Resource: resourceMetricsForMemory,
 	}
 	metricsSet := []v2beta1.MetricSpec{metricsResCPU, metricsResMemory}
 	hpa := &v2beta1.HorizontalPodAutoscaler{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: dep.Name + "-hpa",
-			Namespace: dep.Namespace,
+			Name:            dep.Name + "-hpa",
+			Namespace:       dep.Namespace,
 			OwnerReferences: owner,
 		},
 		Spec: v2beta1.HorizontalPodAutoscalerSpec{
-			MinReplicas: &minReplicas,
-			MaxReplicas: maxReplicas,
+			MinReplicas:    &minReplicas,
+			MaxReplicas:    maxReplicas,
 			ScaleTargetRef: targetResource,
-			Metrics: metricsSet,
+			Metrics:        metricsSet,
 		},
 	}
 	//check hpa already exists
 	checkHpa := &v2beta1.HorizontalPodAutoscaler{}
-	hpaErr := r.client.Get(context.TODO(), types.NamespacedName{Name:hpa.Name, Namespace:hpa.Namespace},checkHpa)
-	if hpaErr != nil && errors.IsNotFound(hpaErr){
+	hpaErr := r.client.Get(context.TODO(), types.NamespacedName{Name: hpa.Name, Namespace: hpa.Namespace}, checkHpa)
+	if hpaErr != nil && errors.IsNotFound(hpaErr) {
 		//creating new hpa
 		log.Info("Creating HPA for deployment " + dep.Name)
 		errHpaCreating := r.client.Create(context.TODO(), hpa)
 		if errHpaCreating != nil {
-			return  errHpaCreating
+			return errHpaCreating
 		}
-		return  nil
-	} else if hpaErr != nil{
+		return nil
+	} else if hpaErr != nil {
 		return hpaErr
 	} else {
 		log.Info("HPA for deployment " + dep.Name + " is already exist")
 	}
 	return nil
 }
+
 //get configmap
 func getConfigmap(r *ReconcileAPI, mapName string, ns string) (*corev1.ConfigMap, error) {
 	apiConfigMap := &corev1.ConfigMap{}
@@ -1246,7 +1237,7 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 								Requests: req,
 								Limits:   lim,
 							},
-							VolumeMounts:    deployVolumeMount,
+							VolumeMounts: deployVolumeMount,
 							Ports: []corev1.ContainerPort{{
 								ContainerPort: 9095,
 							}},
@@ -1638,7 +1629,7 @@ func analyticsVolumeHandler(analyticsCertSecretName string, r *ReconcileAPI, job
 		log.Info("Error in getting certificate secret specified in analytics from the user namespace. Finding it in " + wso2NameSpaceConst)
 		errCert := r.client.Get(context.TODO(), types.NamespacedName{Name: analyticsCertSecretName, Namespace: wso2NameSpaceConst}, analyticsCertSecret)
 		if errCert != nil {
-			log.Error(errCert, "Error in getting certificate secret specified in analytics from " + wso2NameSpaceConst)
+			log.Error(errCert, "Error in getting certificate secret specified in analytics from "+wso2NameSpaceConst)
 			return jobVolumeMount, jobVolume, fileName, errCert
 		}
 		for pem, val := range analyticsCertSecret.Data {
