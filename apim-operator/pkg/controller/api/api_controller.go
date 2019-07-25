@@ -20,6 +20,7 @@ import (
 	"context"
 	"crypto/sha1"
 	"encoding/hex"
+	"fmt"
 	"github.com/golang/glog"
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -231,7 +232,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	swagger, swaggerDataFile, err := mgwSwaggerLoader(swaggerDataMap)
 
 	modeExt := swagger.Extensions[deploymentMode]
-	mode := privateJet;
+	mode := privateJet
 	modeRawStr, _ := modeExt.(json.RawMessage)
 	err = json.Unmarshal(modeRawStr, &mode)
 
@@ -267,11 +268,11 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		for endpointName, _ := range endpointNames {
 			targetEndpointCr := &wso2v1alpha1.TargetEndpoint{}
 			erCr := r.client.Get(context.TODO(),
-							types.NamespacedName{Namespace: wso2NameSpaceConst, Name: endpointName}, targetEndpointCr)
+				types.NamespacedName{Namespace: wso2NameSpaceConst, Name: endpointName}, targetEndpointCr)
 			if erCr == nil {
 				if targetEndpointCr.Spec.Deploy.DockerImage != "" {
 					if err := r.reconcileDeploymentForSidecarEndpoint(targetEndpointCr, userNameSpace,
-																								instance); err != nil {
+						instance); err != nil {
 						return reconcile.Result{}, err
 					}
 					if err := r.reconcileSidecarEndpointService(targetEndpointCr, userNameSpace, instance); err != nil {
@@ -1010,7 +1011,7 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string) 
 					log.Error(err, "Error in getting targetendpoint CRD object")
 				} else {
 					protocol := targetEndpointCr.Spec.Protocol
-					endpointNames[endPoint] = endPoint;
+					endpointNames[endPoint] = endPoint
 					endPoint = protocol + "://" + endPoint
 					checkt := []string{endPoint}
 					prodEp.Urls = checkt
@@ -1019,9 +1020,9 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string) 
 			} else {
 				err := json.Unmarshal(endpointJson, &prodEp)
 				if err == nil {
-					lengthOfUrls := len(prodEp.Urls);
+					lengthOfUrls := len(prodEp.Urls)
 					endpointList := make([]string, lengthOfUrls)
-					isServiceDef := false;
+					isServiceDef := false
 					for index, urlVal := range prodEp.Urls {
 						endpointUrl, err := url.Parse(urlVal)
 						if err != nil {
@@ -1030,15 +1031,15 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string) 
 							err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: wso2NameSpaceConst,
 								Name: urlVal}, currentService)
 							erCr := r.client.Get(context.TODO(), types.NamespacedName{Namespace: wso2NameSpaceConst, Name: urlVal}, targetEndpointCr)
-							if (err == nil && erCr == nil) || mode  == sidecar {
-								endpointNames[urlVal] = urlVal;
+							if (err == nil && erCr == nil) || mode == sidecar {
+								endpointNames[urlVal] = urlVal
 								protocol := targetEndpointCr.Spec.Protocol
 								urlVal = protocol + "://" + urlVal
-								endpointList[index] = urlVal;
-								isServiceDef = true;
+								endpointList[index] = urlVal
+								isServiceDef = true
 							}
 						} else {
-							endpointNames[endpointUrl.Hostname()] = endpointUrl.Hostname();
+							endpointNames[endpointUrl.Hostname()] = endpointUrl.Hostname()
 						}
 					}
 
@@ -1078,7 +1079,7 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string) 
 						log.Error(err, "Error in getting targetendpoint CRD object")
 					} else {
 						protocol := targetEndpointCr.Spec.Protocol
-						endpointNames[endPoint] = endPoint;
+						endpointNames[endPoint] = endPoint
 						endPoint = protocol + "://" + endPoint
 						checkt := []string{endPoint}
 						prodEp.Urls = checkt
@@ -1087,9 +1088,9 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string) 
 				} else {
 					err := json.Unmarshal(ResourceEndpointJson, &prodEp)
 					if err == nil {
-						lengthOfUrls := len(prodEp.Urls);
+						lengthOfUrls := len(prodEp.Urls)
 						endpointList := make([]string, lengthOfUrls)
-						isServiceDef := false;
+						isServiceDef := false
 						for index, urlVal := range prodEp.Urls {
 							endpointUrl, err := url.Parse(urlVal)
 							if err != nil {
@@ -1098,15 +1099,15 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string) 
 								err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: wso2NameSpaceConst,
 									Name: urlVal}, currentService)
 								erCr := r.client.Get(context.TODO(), types.NamespacedName{Namespace: wso2NameSpaceConst, Name: urlVal}, targetEndpointCr)
-								if (err == nil && erCr == nil) || mode  == sidecar {
-									endpointNames[urlVal] = urlVal;
+								if (err == nil && erCr == nil) || mode == sidecar {
+									endpointNames[urlVal] = urlVal
 									protocol := targetEndpointCr.Spec.Protocol
 									urlVal = protocol + "://" + urlVal
-									endpointList[index] = urlVal;
-									isServiceDef = true;
+									endpointList[index] = urlVal
+									isServiceDef = true
 								}
 							} else {
-								endpointNames[endpointUrl.Hostname()] = endpointUrl.Hostname();
+								endpointNames[endpointUrl.Hostname()] = endpointUrl.Hostname()
 							}
 						}
 
@@ -1799,7 +1800,7 @@ func copyDefaultSecurity(securityDefault *wso2v1alpha1.Security, userNameSpace s
 
 // Create newDeploymentForCR method to create a deployment.
 func (r *ReconcileAPI) createDeploymentForSidecarBackend(m *wso2v1alpha1.TargetEndpoint,
-													namespace string, instance *wso2v1alpha1.API) *appsv1.Deployment {
+	namespace string, instance *wso2v1alpha1.API) *appsv1.Deployment {
 	replicas := m.Spec.Deploy.Count
 	dep := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
@@ -1838,7 +1839,7 @@ func (r *ReconcileAPI) createDeploymentForSidecarBackend(m *wso2v1alpha1.TargetE
 }
 
 func (r *ReconcileAPI) reconcileSidecarEndpointService(m *wso2v1alpha1.TargetEndpoint, namespace string,
-																			instance *wso2v1alpha1.API) error {
+	instance *wso2v1alpha1.API) error {
 	newService := r.createServiceForSidecarEndpoint(m, namespace, instance)
 
 	err := r.client.Create(context.TODO(), newService)
@@ -1868,7 +1869,7 @@ func (r *ReconcileAPI) reconcileSidecarEndpointService(m *wso2v1alpha1.TargetEnd
 
 // NewService assembles the ClusterIP service for the Nginx
 func (r *ReconcileAPI) createServiceForSidecarEndpoint(m *wso2v1alpha1.TargetEndpoint,
-														namespace string, instance *wso2v1alpha1.API) *corev1.Service {
+	namespace string, instance *wso2v1alpha1.API) *corev1.Service {
 	var port int
 	port = int(m.Spec.Port)
 	service := corev1.Service{
@@ -1892,7 +1893,7 @@ func (r *ReconcileAPI) createServiceForSidecarEndpoint(m *wso2v1alpha1.TargetEnd
 }
 
 func (r *ReconcileAPI) reconcileDeploymentForSidecarEndpoint(m *wso2v1alpha1.TargetEndpoint, namespace string,
-																					instance *wso2v1alpha1.API) error {
+	instance *wso2v1alpha1.API) error {
 	found := &appsv1.Deployment{}
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: m.Name, Namespace: m.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
