@@ -7,8 +7,8 @@ info:
   description: 'This is a sample server Petstore server.  You can find out more about
     Swagger at [http://swagger.io](http://swagger.io) or on [irc.freenode.net, #swagger](http://swagger.io/irc/).  For
     this sample, you can use the api key `special-key` to test the authorization filters.'
-  version: 1.0.0
-  title: Swagger Petstore New
+  version: 1.0.3
+  title: Swagger Petstore testing
   termsOfService: http://swagger.io/terms/
   contact:
     email: apiteam@swagger.io
@@ -32,6 +32,8 @@ x-wso2-basePath: /petstore/v1
 x-wso2-production-endpoints:
   urls:
     - https://petstore.swagger.io/v2
+security:
+  - petstorebasic: []
 paths:
   "/pet/findByStatus":
     get:
@@ -86,8 +88,6 @@ paths:
           schema:
             type: integer
             format: int64
-      security:
-        - petstorebasic: []
       responses:
         '200':
           description: successful operation

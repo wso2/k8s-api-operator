@@ -231,17 +231,16 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	swaggerDataMap := apiConfigMap.Data
 	swagger, swaggerDataFile, err := mgwSwaggerLoader(swaggerDataMap)
 
-	modeExt := swagger.Extensions[deploymentMode]
+	modeExt, isModeDefined := swagger.Extensions[deploymentMode]
 	mode := privateJet
-	modeRawStr, _ := modeExt.(json.RawMessage)
-	err = json.Unmarshal(modeRawStr, &mode)
-
-	if err != nil {
+	if isModeDefined {
+		modeRawStr, _ := modeExt.(json.RawMessage)
+		err = json.Unmarshal(modeRawStr, &mode)
+		if err != nil {
+			log.Info("Error unmarshal data of mode")
+		}
+	} else {
 		log.Info("Deployment mode is not set in the swagger. Hence default to privateJet mode")
-	}
-
-	if err != nil {
-		log.Error(err, "Swagger loading error ")
 	}
 
 	image := strings.ToLower(strings.ReplaceAll(swagger.Info.Title, " ", ""))
@@ -262,7 +261,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	for endpointNameL, _ := range endpointNames {
 		log.Info("Endpoint name " + endpointNameL)
 	}
-
 	//Creating sidecar endpoint deployment
 	if mode == sidecar {
 		for endpointName, _ := range endpointNames {
@@ -315,6 +313,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	apiLevelSecurity, isDefined := swagger.Extensions[securityExtension]
 	var APILevelSecurity []map[string][]string
 	if isDefined {
+		log.Info("API level security is defined")
 		rawmsg := apiLevelSecurity.(json.RawMessage)
 		errsec := json.Unmarshal(rawmsg, &APILevelSecurity)
 		if errsec != nil {
@@ -326,17 +325,29 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 				securityMap[secName] = val
 			}
 		}
+	} else {
+		log.Info("API Level security is not defined")
 	}
 	//get resource level security
-	resLevelSecurity, resSecIsDefined := swagger.Extensions[securityExtension]
+	resLevelSecurity, resSecIsDefined := swagger.Extensions[pathsExtension]
 	var resSecurityMap map[string]map[string]path
+	var securityDef path
 	if resSecIsDefined {
 		rawmsg := resLevelSecurity.(json.RawMessage)
-		err := json.Unmarshal(rawmsg, &resSecurityMap)
-		if err != nil {
-			log.Error(err, "error unmarshalling resource level secuirty")
+		errrSec := json.Unmarshal(rawmsg, &resSecurityMap)
+		if errrSec != nil {
+			log.Error(errrSec, "error unmarshall into resource level security")
 			return reconcile.Result{}, err
 		}
+		for _, path := range resSecurityMap {
+			for _, sec := range path {
+				securityDef = sec
+
+			}
+		}
+	}
+	if len(securityDef.Security) > 0 {
+		log.Info("Resource level security is defined")
 		for _, obj := range resSecurityMap {
 			for _, obj := range obj {
 				for _, value := range obj.Security {
@@ -346,162 +357,168 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 				}
 			}
 		}
-		securityInstance := &wso2v1alpha1.Security{}
-		var certificateSecret = &corev1.Secret{}
-		for secName, scopeList := range securityMap {
-			//retrive security instances
-			errGetSec := r.client.Get(context.TODO(), types.NamespacedName{Name: secName, Namespace: userNameSpace}, securityInstance)
-			if errGetSec != nil && errors.IsNotFound(errGetSec) {
-				reqLogger.Info("defined security instance " + secName + " is not found")
-				return reconcile.Result{}, errGetSec
+	} else {
+		log.Info("Resource level security is not defiend")
+	}
+	securityInstance := &wso2v1alpha1.Security{}
+	var certificateSecret = &corev1.Secret{}
+	for secName, scopeList := range securityMap {
+		//retrieve security instances
+		errGetSec := r.client.Get(context.TODO(), types.NamespacedName{Name: secName, Namespace: userNameSpace}, securityInstance)
+		if errGetSec != nil && errors.IsNotFound(errGetSec) {
+			reqLogger.Info("defined security instance " + secName + " is not found")
+			return reconcile.Result{}, errGetSec
+		}
+		//get certificate for JWT and Oauth
+		if strings.EqualFold(securityInstance.Spec.Type, securityOauth) || strings.EqualFold(securityInstance.Spec.Type, securityJWT) {
+			errc := r.client.Get(context.TODO(), types.NamespacedName{Name: securityInstance.Spec.Certificate, Namespace: userNameSpace}, certificateSecret)
+			if errc != nil && errors.IsNotFound(errc) {
+				reqLogger.Info("defined certificate is not found")
+				return reconcile.Result{}, errc
+			} else {
+				log.Info("defined certificate successfully retrieved")
 			}
-			//get certificate for JWT and Oauth
-			if strings.EqualFold(securityInstance.Spec.Type, securityOauth) || strings.EqualFold(securityInstance.Spec.Type, securityJWT) {
-				errc := r.client.Get(context.TODO(), types.NamespacedName{Name: securityInstance.Spec.Certificate, Namespace: userNameSpace}, certificateSecret)
-				if errc != nil && errors.IsNotFound(errc) {
-					reqLogger.Info("defined certificate is not found")
-					return reconcile.Result{}, errc
-				}
-				//mount certs
-				volumemountTemp, volumeTemp := certMoutHandler(r, certificateSecret, jobVolumeMount, jobVolume)
-				jobVolumeMount = volumemountTemp
-				jobVolume = volumeTemp
-				alias = certificateSecret.Name + certAlias
-				existcert = true
-				for k := range certificateSecret.Data {
-					certName = k
-				}
-				//add cert path and alias as key value pairs
-				certList[alias] = certPath + certificateSecret.Name + "/" + certName
+			//mount certs
+			volumemountTemp, volumeTemp := certMoutHandler(r, certificateSecret, jobVolumeMount, jobVolume)
+			jobVolumeMount = volumemountTemp
+			jobVolume = volumeTemp
+			alias = certificateSecret.Name + certAlias
+			existcert = true
+			for k := range certificateSecret.Data {
+				certName = k
 			}
-			if strings.EqualFold(securityInstance.Spec.Type, securityOauth) {
-				//get the keymanager server URL from the security kind
-				keymanagerServerurl = securityInstance.Spec.Endpoint
-				//fetch credentials from the secret created
-				errGetCredentials := getCredentials(r, securityInstance.Spec.Credentials, securityOauth, userNameSpace)
-				if errGetCredentials != nil {
-					log.Error(errGetCredentials, "Error occurred when retrieving credentials for Oauth")
-				} else {
-					log.Info("Credentials successfully retrieved for security " + secName)
-				}
-				if !secSchemeDefined {
-					//add scopes
-					scopes := map[string]string{}
-					for _, scopeValue := range scopeList {
-						scopes[scopeValue] = "grant " + scopeValue + " access"
-					}
-					//creating security scheme
-					scheme := securitySchemeStruct{
-						SecurityType: oauthSecurityType,
-						Flows: &authorizationCode{
-							scopeSet{
-								authorizationUrl,
-								tokenUrl,
-								scopes,
-							},
-						},
-					}
-					securityDefinition[secName] = scheme
-				}
+			//add cert path and alias as key value pairs
+			certList[alias] = certPath + certificateSecret.Name + "/" + certName
+		}
+		if strings.EqualFold(securityInstance.Spec.Type, securityOauth) {
+			//get the keymanager server URL from the security kind
+			keymanagerServerurl = securityInstance.Spec.Endpoint
+			//fetch credentials from the secret created
+			errGetCredentials := getCredentials(r, securityInstance.Spec.Credentials, securityOauth, userNameSpace)
+			if errGetCredentials != nil {
+				log.Error(errGetCredentials, "Error occurred when retrieving credentials for Oauth")
+			} else {
+				log.Info("Credentials successfully retrieved for security " + secName)
 			}
-			if strings.EqualFold(securityInstance.Spec.Type, securityJWT) {
-				certificateAlias = alias
-				if securityInstance.Spec.Issuer != "" {
-					issuer = securityInstance.Spec.Issuer
-				}
-				if securityInstance.Spec.Audience != "" {
-					audience = securityInstance.Spec.Audience
-				}
-			}
-			if strings.EqualFold(securityInstance.Spec.Type, basicSecurityAndScheme) {
-				existcert = false
-				//fetch credentials from the secret created
-				errGetCredentials := getCredentials(r, securityInstance.Spec.Credentials, "Basic", userNameSpace)
-				if errGetCredentials != nil {
-					log.Error(errGetCredentials, "Error occurred when retrieving credentials for Basic")
-				} else {
-					log.Info("Credentials successfully retrieved for security " + secName)
+			if !secSchemeDefined {
+				//add scopes
+				scopes := map[string]string{}
+				for _, scopeValue := range scopeList {
+					scopes[scopeValue] = "grant " + scopeValue + " access"
 				}
 				//creating security scheme
-				if !secSchemeDefined {
-					scheme := securitySchemeStruct{
-						SecurityType: basicSecurityType,
-						Scheme:       basicSecurityAndScheme,
-					}
-					securityDefinition[secName] = scheme
+				scheme := securitySchemeStruct{
+					SecurityType: oauthSecurityType,
+					Flows: &authorizationCode{
+						scopeSet{
+							authorizationUrl,
+							tokenUrl,
+							scopes,
+						},
+					},
 				}
+				securityDefinition[secName] = scheme
 			}
 		}
-		//adding security scheme to swagger
-		swagger.Components.Extensions[securitySchemeExtension] = securityDefinition
-	} else {
-		if isDefined == false {
-			log.Info("use default security")
-			//use default security
-			//copy default sec in wso2-system to user namespace
-			securityDefault := &wso2v1alpha1.Security{}
-			//check default security already exist in user namespace
-			errGetSec := r.client.Get(context.TODO(), types.NamespacedName{Name: defaultSecurity, Namespace: userNameSpace}, securityDefault)
-
-			if errGetSec != nil && errors.IsNotFound(errGetSec) {
-				log.Info("default security not found in " + userNameSpace + " namespace")
-				log.Info("retrieve default-security from " + wso2NameSpaceConst)
-				//retrieve default-security from wso2-system namespace
-				errSec := r.client.Get(context.TODO(), types.NamespacedName{Name: defaultSecurity, Namespace: wso2NameSpaceConst}, securityDefault)
-				if errSec != nil && errors.IsNotFound(errSec) {
-					reqLogger.Info("default security instance is not found in " + wso2NameSpaceConst)
-					return reconcile.Result{}, errSec
-				} else if errSec != nil {
-					log.Error(errSec, "error in getting default security from "+wso2NameSpaceConst)
-					return reconcile.Result{}, errSec
-				}
-				var defaultCert = &corev1.Secret{}
-				//check default certificate exists in user namespace
-				errCertUserns := r.client.Get(context.TODO(), types.NamespacedName{Name: securityDefault.Spec.Certificate, Namespace: userNameSpace}, defaultCert)
-				if errCertUserns != nil && errors.IsNotFound(errCertUserns) {
-					log.Info("default certificate is not found in " + userNameSpace + "namespace")
-					log.Info("retrieve default certificate from " + wso2NameSpaceConst)
-					var defaultCertName string
-					var defaultCertvalue []byte
-					errc := r.client.Get(context.TODO(), types.NamespacedName{Name: securityDefault.Spec.Certificate, Namespace: wso2NameSpaceConst}, defaultCert)
-					if errc != nil && errors.IsNotFound(errc) {
-						reqLogger.Info("defined certificate is not found in " + wso2NameSpaceConst)
-						return reconcile.Result{}, errc
-					} else if errc != nil {
-						log.Error(errc, "error in getting default cert from "+wso2NameSpaceConst)
-						return reconcile.Result{}, errc
-					}
-					//copying default cert as a secret to user namespace
-					noOwner := []metav1.OwnerReference{}
-					for cert, value := range defaultCert.Data {
-						defaultCertName = cert
-						defaultCertvalue = value
-					}
-					newDefaultSecret := createSecret(securityDefault.Spec.Certificate, defaultCertName, string(defaultCertvalue), userNameSpace, noOwner)
-					errCreateSec := r.client.Create(context.TODO(), newDefaultSecret)
-					if errCreateSec != nil {
-						log.Error(errCreateSec, "error creating secret for default security in user namespace")
-						return reconcile.Result{}, errCreateSec
-					}
-				} else if errCertUserns != nil {
-					log.Error(errCertUserns, "error in getting default certificate from "+userNameSpace+"namespace")
-					return reconcile.Result{}, errCertUserns
-				}
-				//copying default security to user namespace
-				log.Info("copying default security to " + userNameSpace)
-				newDefaultSecurity := copyDefaultSecurity(securityDefault, userNameSpace)
-				errCreateSecurity := r.client.Create(context.TODO(), newDefaultSecurity)
-				if errCreateSecurity != nil {
-					log.Error(errCreateSecurity, "error creating secret for default security in user namespace")
-					return reconcile.Result{}, errCreateSecurity
-				}
-				log.Info("default security successfully copied to " + userNameSpace + " namespace")
-			} else if errGetSec != nil {
-				log.Error(errGetSec, "error getting default security from user namespace")
-				return reconcile.Result{}, errGetSec
-			} else {
-				log.Info("default security exists in " + userNameSpace + " namespace")
+		if strings.EqualFold(securityInstance.Spec.Type, securityJWT) {
+			log.Info("retriving data for security type JWT")
+			certificateAlias = alias
+			if securityInstance.Spec.Issuer != "" {
+				issuer = securityInstance.Spec.Issuer
 			}
+			if securityInstance.Spec.Audience != "" {
+				audience = securityInstance.Spec.Audience
+			}
+		}
+		if strings.EqualFold(securityInstance.Spec.Type, basicSecurityAndScheme) {
+			existcert = false
+			//fetch credentials from the secret created
+			errGetCredentials := getCredentials(r, securityInstance.Spec.Credentials, "Basic", userNameSpace)
+			if errGetCredentials != nil {
+				log.Error(errGetCredentials, "Error occurred when retrieving credentials for Basic")
+			} else {
+				log.Info("Credentials successfully retrieved for security " + secName)
+			}
+			//creating security scheme
+			if !secSchemeDefined {
+				scheme := securitySchemeStruct{
+					SecurityType: basicSecurityType,
+					Scheme:       basicSecurityAndScheme,
+				}
+				securityDefinition[secName] = scheme
+			}
+		}
+	}
+
+	//adding security scheme to swagger
+	swagger.Components.Extensions[securitySchemeExtension] = securityDefinition
+
+	if isDefined == false && len(securityDef.Security) == 0 {
+		log.Info("use default security")
+		//use default security
+		//copy default sec in wso2-system to user namespace
+		securityDefault := &wso2v1alpha1.Security{}
+		//check default security already exist in user namespace
+		errGetSec := r.client.Get(context.TODO(), types.NamespacedName{Name: defaultSecurity, Namespace: userNameSpace}, securityDefault)
+
+		if errGetSec != nil && errors.IsNotFound(errGetSec) {
+			log.Info("default security not found in " + userNameSpace + " namespace")
+			log.Info("retrieve default-security from " + wso2NameSpaceConst)
+			//retrieve default-security from wso2-system namespace
+			errSec := r.client.Get(context.TODO(), types.NamespacedName{Name: defaultSecurity, Namespace: wso2NameSpaceConst}, securityDefault)
+			if errSec != nil && errors.IsNotFound(errSec) {
+				reqLogger.Info("default security instance is not found in " + wso2NameSpaceConst)
+				return reconcile.Result{}, errSec
+			} else if errSec != nil {
+				log.Error(errSec, "error in getting default security from "+wso2NameSpaceConst)
+				return reconcile.Result{}, errSec
+			}
+			var defaultCert = &corev1.Secret{}
+			//check default certificate exists in user namespace
+			errCertUserns := r.client.Get(context.TODO(), types.NamespacedName{Name: securityDefault.Spec.Certificate, Namespace: userNameSpace}, defaultCert)
+			if errCertUserns != nil && errors.IsNotFound(errCertUserns) {
+				log.Info("default certificate is not found in " + userNameSpace + "namespace")
+				log.Info("retrieve default certificate from " + wso2NameSpaceConst)
+				var defaultCertName string
+				var defaultCertvalue []byte
+				errc := r.client.Get(context.TODO(), types.NamespacedName{Name: securityDefault.Spec.Certificate, Namespace: wso2NameSpaceConst}, defaultCert)
+				if errc != nil && errors.IsNotFound(errc) {
+					reqLogger.Info("defined certificate is not found in " + wso2NameSpaceConst)
+					return reconcile.Result{}, errc
+				} else if errc != nil {
+					log.Error(errc, "error in getting default cert from "+wso2NameSpaceConst)
+					return reconcile.Result{}, errc
+				}
+				//copying default cert as a secret to user namespace
+				noOwner := []metav1.OwnerReference{}
+				for cert, value := range defaultCert.Data {
+					defaultCertName = cert
+					defaultCertvalue = value
+				}
+				newDefaultSecret := createSecret(securityDefault.Spec.Certificate, defaultCertName, string(defaultCertvalue), userNameSpace, noOwner)
+				errCreateSec := r.client.Create(context.TODO(), newDefaultSecret)
+				if errCreateSec != nil {
+					log.Error(errCreateSec, "error creating secret for default security in user namespace")
+					return reconcile.Result{}, errCreateSec
+				}
+			} else if errCertUserns != nil {
+				log.Error(errCertUserns, "error in getting default certificate from "+userNameSpace+"namespace")
+				return reconcile.Result{}, errCertUserns
+			}
+			//copying default security to user namespace
+			log.Info("copying default security to " + userNameSpace)
+			newDefaultSecurity := copyDefaultSecurity(securityDefault, userNameSpace)
+			errCreateSecurity := r.client.Create(context.TODO(), newDefaultSecurity)
+			if errCreateSecurity != nil {
+				log.Error(errCreateSecurity, "error creating secret for default security in user namespace")
+				return reconcile.Result{}, errCreateSecurity
+			}
+			log.Info("default security successfully copied to " + userNameSpace + " namespace")
+		} else if errGetSec != nil {
+			log.Error(errGetSec, "error getting default security from user namespace")
+			return reconcile.Result{}, errGetSec
+		} else {
+			log.Info("default security exists in " + userNameSpace + " namespace")
 		}
 	}
 	// gets analytics configuration
@@ -555,6 +572,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	apimConfig, apimEr := getConfigmap(r, apimConfName, wso2NameSpaceConst)
 	if apimEr == nil {
 		verifyHostname = apimConfig.Data[verifyHostnameConst]
+	} else {
+		verifyHostname = verifyHostNameVal
 	}
 
 	//writes into the conf file
@@ -586,7 +605,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	if err != nil {
 		log.Error(err, "error in rendering ")
 	}
-
 	//writes the created conf file to secret
 	errCreateSecret := createMGWSecret(r, output, owner, instance)
 	if errCreateSecret != nil {
@@ -595,10 +613,10 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		log.Info("Successfully created secret")
 	}
 
-	getResourceReqCPU := controlConfigData["resourceRequestCPU"]
-	getResourceReqMemory := controlConfigData["resourceRequestMemory"]
-	getResourceLimitCPU := controlConfigData["resourceLimitCPU"]
-	getResourceLimitMemory := controlConfigData["resourceLimitMemory"]
+	getResourceReqCPU := controlConfigData[resourceRequestCPU]
+	getResourceReqMemory := controlConfigData[resourceRequestMemory]
+	getResourceLimitCPU := controlConfigData[resourceLimitCPU]
+	getResourceLimitMemory := controlConfigData[resourceLimitMemory]
 
 	analyticsEnabledBool, _ := strconv.ParseBool(analyticsEnabled)
 	dep := createMgwDeployment(instance, imageName, controlConf, analyticsEnabledBool, r, userNameSpace, owner,
@@ -677,7 +695,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 					if errDelete != nil {
 						reqLogger.Error(errDelete, "error while deleting "+kanikoJob.Name+" job")
 					} else {
-						reqLogger.Info("successfully deleted job"+kanikoJob.Name, "Job.Namespace", job.Namespace, "Job.Name", job.Name)
+						reqLogger.Info("successfully deleted job "+kanikoJob.Name, "Job.Namespace", job.Namespace, "Job.Name", job.Name)
 					}
 				}
 			}
@@ -869,16 +887,7 @@ func createHorizontalPodAutoscaler(dep *appsv1.Deployment, r *ReconcileAPI, owne
 		Type:     "Resource",
 		Resource: resourceMetricsForCPU,
 	}
-	//Memory utilization
-	resourceMetricsForMemory := &v2beta1.ResourceMetricSource{
-		Name:                     corev1.ResourceMemory,
-		TargetAverageUtilization: &targetAverageUtilizationMemory,
-	}
-	metricsResMemory := v2beta1.MetricSpec{
-		Type:     "Resource",
-		Resource: resourceMetricsForMemory,
-	}
-	metricsSet := []v2beta1.MetricSpec{metricsResCPU, metricsResMemory}
+	metricsSet := []v2beta1.MetricSpec{metricsResCPU}
 	hpa := &v2beta1.HorizontalPodAutoscaler{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            dep.Name + "-hpa",
@@ -919,6 +928,7 @@ func getConfigmap(r *ReconcileAPI, mapName string, ns string) (*corev1.ConfigMap
 	if mapName == apimConfName {
 		if err != nil && errors.IsNotFound(err) {
 			logrus.Warnf("missing APIM configurations ", err)
+			return nil, err
 
 		} else if err != nil {
 			log.Error(err, "error ")

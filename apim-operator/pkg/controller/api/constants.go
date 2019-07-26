@@ -102,8 +102,14 @@ const (
 	sidecar                 = "sidecar"
 	privateJet              = "privateJet"
 	shared                  = "shared"
+	verifyHostNameVal       = "false"
 
 	hpaMaxReplicas                    = "hpaMaxReplicas"
 	hpaTargetAverageUtilizationCPU    = "hpaTargetAverageUtilizationCPU"
 	hpaTargetAverageUtilizationMemory = "hpaTargetAverageUtilizationMemory"
+
+	resourceRequestCPU    = "resourceRequestCPU"
+	resourceRequestMemory = "resourceRequestMemory"
+	resourceLimitCPU      = "resourceLimitCPU"
+	resourceLimitMemory   = "resourceLimitMemory"
 )
