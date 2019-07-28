@@ -92,14 +92,14 @@ kubectl apply -f ./deploy/controller-configs/
 
 ##### Step 5: Deploy an API in K8s cluster
 
-- Deploy the API petstore
+- Deploy the API
 ```
 kubectl add api "api_name" --from-file="location to the api swagger definition"
 
 kubectl add api petstore --from-file=./deploy/scenarios/scenario-1/petstore_basic.yaml
 ```
   
-- Update the API petstore
+- Update the API
 ```
 kubectl update api "api_name" --from-file="location to the api swagger definition"
 
