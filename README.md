@@ -1,35 +1,84 @@
-# k8s-apim-operator
+# WSO2 API Manager Operator for Kubernetes
 
-##### Navigate to the k8s-apim-operator/apim-operators/ directory and execute the following command
+## Introduction
 
-##### Deploy K8s client extensions
+WSO2 API Manager is a full lifecycle API Management solution with monetization and policy enforcement. WSO2 API Microgateway is a cloud native, developer centric and decentralized API gateway for microservices. Kubernetes (K8s) is an open-source system for automating deployment, scaling, and management of containerized applications. The intention of this project is to provide cloud native full API management by a seamless integration with Kubernetes. With this native API Management support on K8s, this targets to improve the developer/devOps experience.
+
+## Approach
+
+#### Developer First Approach In WSO2 API Microgateway
+
+![alt text](https://raw.githubusercontent.com/wso2/k8s-apim-operator/master/api-microgateway.png)
+
+Open API definition is considered as the single source of truth to the WSO2 API Microgateway. This Open API definition contains all the required information regarding your API. By providing this definition to the WSO2 API Microgateway, you can generate a balx file which is required to deploy your API in WSO2 API Microgateway. 
+
+#### API Manager Operator for Kubernetes
+
+![alt text](https://raw.githubusercontent.com/wso2/k8s-apim-operator/master/apim-operator.png)
+
+The developer first approach is used when creating the API Manager Operator for Kubernetes. When an user requires to expose an API for the service he created, he only needs to provide the Open API definition to the Kubernetes. Then it will create the API and deploy his API in the WSO2 API Microgateway. His API is exposed as the Load Balancer service type in Kubernetes. 
+
+#### API Manager Custom Resources for Kubernetes
+
+We have initially introduced four custom resources for Kubernetes.
+
+- API <br>
+  Holds API related information
+  
+- Target Endpoint <br>
+  Holds endpoint related information
+    
+- Security <br>
+  Holds security related information
+
+- Rate Limiting <br>
+  Holds rate limiting related information
+
+#### Kubernetes CLI(kubectl) plugins 
+
+We have two kubectl plugins which helps to add an API and update an API. As part of installing the kubectl, users will have to install these plugins.
+
+---
+
+## Quick Start Guide
+
+##### Step 1: Install [Kubernetes v1.12 or above](https://kubernetes.io/docs/setup/)
+
+##### Step 2: Download [wso2am-k8s-crds-1.0.zip](https://github.com/wso2/k8s-apim-operator/releases) and extract the zip
+
+1. This zip contains the artifacts that required to deploy in Kubernetes.
+2. Extract wso2am-k8s-crds-1.0.zip and navigate to the \<APIM-K8s-CRD-HOME>/ directory.
+```
+cd <APIM-K8s-CRD-HOME>/
+```
+   
+**Note:** You need to run all kubectl commands from within the <APIM-K8s-CRD-HOME>/ directory.
+
+##### Step 3: Deploy K8s client extensions
 
 - Give executable permission to the extension files
 
 ```
 chmod +x ./deploy/kubectl-extension/kubectl-add
 chmod +x ./deploy/kubectl-extension/kubectl-update
-chmod +x ./deploy/kubectl-extension/kubectl-show
 ```
 
 - Copy the extensions to ***/usr/local/bin/***
 ```
 cp ./deploy/kubectl-extension/kubectl-add /usr/local/bin
 cp ./deploy/kubectl-extension/kubectl-update /usr/local/bin
-cp ./deploy/kubectl-extension/kubectl-show /usr/local/bin
 ```
 
-##### Deploy K8s CRD artifacts
-
-- Before deploying the role you have to make yourself as a cluster admin. (Replace "email-address" with the proper value)
-
-```
-kubectl create clusterrolebinding email-address --clusterrole=cluster-admin --user=email-address
-```
+##### Step 4: Deploy K8s CRD artifacts
 
 - Deploying CRDs for API, TargetEndpoint, Security, RateLimiting
 ```
 kubectl apply -f ./deploy/crds/
+```
+
+- Deploying namespace, roles/role binding and service account associated with the operator
+```
+kubectl apply -f ./deploy/controller-artifacts/
 ```
 
 - Deploying controller level configurations
@@ -41,12 +90,7 @@ Update the ***user's docker registry*** in the controller_conf.yaml. Enter the b
 kubectl apply -f ./deploy/controller-configs/
 ```
 
-- Deploying namespace, roles/role binding and service account associated with the operator
-```
-kubectl apply -f ./deploy/controller-artifacts/
-```
-
-##### Deploying an API in K8s cluster
+##### Step 5: Deploy an API in K8s cluster
 
 - Deploy the API petstore
 ```
@@ -78,128 +122,74 @@ Optional Parameters
 kubectl add api "api_name" --from-file="location to the api swagger definition" --replicas="number of replicas" --namespace="desired namespace"
 ```
 
-***Note:***
-Namespace and replicas are optional parameters. If they are not provided default namespace will be used and 1 replica will be created. However, the namespace used in all the commands related to particular API name must match.
+**Note:** Namespace and replicas are optional parameters. If they are not provided default namespace will be used and 1 replica will be created. However, the namespace used in all the commands related to particular API name must match.
+
+##### Step 6: Invoke the Petstore API
+
+###### Step 6.1: Obtain a token
+
+After the APIs are exposed via WSO2 API Microgateway, you can invoke an API with a valid JWT token or an opaque access token. In order to use JWT tokens, WSO2 API Microgateway should be presented with a JWT signed by a trusted OAuth2 service.
+Let's use the following sample JWT token for the quick start guide. Here we will be using an never expiring jwt token acquired from WSO2 API Manager.
+
+Sample Token
+```
+eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6Ik5UQXhabU14TkRNeVpEZzNNVFUxWkdNME16RXpPREpoWldJNE5ETmxaRFUxT0dGa05qRmlNUSJ9.eyJhdWQiOiJodHRwOlwvXC9vcmcud3NvMi5hcGltZ3RcL2dhdGV3YXkiLCJzdWIiOiJhZG1pbiIsImFwcGxpY2F0aW9uIjp7ImlkIjoyLCJuYW1lIjoiSldUX0FQUCIsInRpZXIiOiJVbmxpbWl0ZWQiLCJvd25lciI6ImFkbWluIn0sInNjb3BlIjoiYW1fYXBwbGljYXRpb25fc2NvcGUgZGVmYXVsdCIsImlzcyI6Imh0dHBzOlwvXC9sb2NhbGhvc3Q6OTQ0M1wvb2F1dGgyXC90b2tlbiIsImtleXR5cGUiOiJQUk9EVUNUSU9OIiwic3Vic2NyaWJlZEFQSXMiOltdLCJjb25zdW1lcktleSI6Ilg5TGJ1bm9oODNLcDhLUFAxbFNfcXF5QnRjY2EiLCJleHAiOjM3MDMzOTIzNTMsImlhdCI6MTU1NTkwODcwNjk2MSwianRpIjoiMjI0MTMxYzQtM2Q2MS00MjZkLTgyNzktOWYyYzg5MWI4MmEzIn0=.b_0E0ohoWpmX5C-M1fSYTkT9X4FN--_n7-bEdhC3YoEEk6v8So6gVsTe3gxC0VjdkwVyNPSFX6FFvJavsUvzTkq528mserS3ch-TFLYiquuzeaKAPrnsFMh0Hop6CFMOOiYGInWKSKPgI-VOBtKb1pJLEa3HvIxT-69X9CyAkwajJVssmo0rvn95IJLoiNiqzH8r7PRRgV_iu305WAT3cymtejVWH9dhaXqENwu879EVNFF9udMRlG4l57qa2AaeyrEguAyVtibAsO0Hd-DFy5MW14S6XSkZsis8aHHYBlcBhpy2RqcP51xRog12zOb-WcROy6uvhuCsv-hje_41WQ==
+```
+
+###### Step 6.2: Invoke the API
+
+Execute the command below to set a self-contained OAuth2.0 access token in the JWT format as a variable on your terminal session.
+
+```
+TOKEN=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6Ik5UQXhabU14TkRNeVpEZzNNVFUxWkdNME16RXpPREpoWldJNE5ETmxaRFUxT0dGa05qRmlNUSJ9.eyJhdWQiOiJodHRwOlwvXC9vcmcud3NvMi5hcGltZ3RcL2dhdGV3YXkiLCJzdWIiOiJhZG1pbiIsImFwcGxpY2F0aW9uIjp7ImlkIjoyLCJuYW1lIjoiSldUX0FQUCIsInRpZXIiOiJVbmxpbWl0ZWQiLCJvd25lciI6ImFkbWluIn0sInNjb3BlIjoiYW1fYXBwbGljYXRpb25fc2NvcGUgZGVmYXVsdCIsImlzcyI6Imh0dHBzOlwvXC9sb2NhbGhvc3Q6OTQ0M1wvb2F1dGgyXC90b2tlbiIsImtleXR5cGUiOiJQUk9EVUNUSU9OIiwic3Vic2NyaWJlZEFQSXMiOltdLCJjb25zdW1lcktleSI6Ilg5TGJ1bm9oODNLcDhLUFAxbFNfcXF5QnRjY2EiLCJleHAiOjM3MDMzOTIzNTMsImlhdCI6MTU1NTkwODcwNjk2MSwianRpIjoiMjI0MTMxYzQtM2Q2MS00MjZkLTgyNzktOWYyYzg5MWI4MmEzIn0=.b_0E0ohoWpmX5C-M1fSYTkT9X4FN--_n7-bEdhC3YoEEk6v8So6gVsTe3gxC0VjdkwVyNPSFX6FFvJavsUvzTkq528mserS3ch-TFLYiquuzeaKAPrnsFMh0Hop6CFMOOiYGInWKSKPgI-VOBtKb1pJLEa3HvIxT-69X9CyAkwajJVssmo0rvn95IJLoiNiqzH8r7PRRgV_iu305WAT3cymtejVWH9dhaXqENwu879EVNFF9udMRlG4l57qa2AaeyrEguAyVtibAsO0Hd-DFy5MW14S6XSkZsis8aHHYBlcBhpy2RqcP51xRog12zOb-WcROy6uvhuCsv-hje_41WQ==
+```
+
+The API service is exposed as the Load Balancer service type. You can get the service endpoint details by using the following command.
+
+```
+kubectl get services
+```
+
+Sample Output:
+
+```
+NAME          TYPE         CLUSTER-IP      EXTERNAL-IP          PORT(S)                     AGE
+petstore   LoadBalancer    10.0.3.74     104.199.77.249   9095:30453/TCP,9090:32422/TCP     1m
+```
+
+You can now invoke the API running on the Microgateway using cURL as below
+
+Format
+```
+curl -X GET "<EXTERNAL-IP>:<MICROGATEWAY-PORT>/<API-context>/<API-resource>" -H "accept: application/xml" -H "Authorization:Bearer <JWT_TOKEN>" -k
+```
+
+Examples
+
+```
+curl -X GET "https://104.199.77.249:9095/petstore/v1/pet/findByStatus?status=available" -H "accept: application/xml" -H "Authorization:Bearer $TOKEN" -k
+ 
+curl -X GET "https://104.199.77.249:9095/petstore/v1/pet/1" -H "accept: application/xml" -H "Authorization:Bearer $TOKEN" -k
+```
 
 ##### Cleanup
 
 ```
-kubectl delete -f ./deploy/controller-artifacts/
 kubectl delete -f ./deploy/controller-configs/
+kubectl delete -f ./deploy/controller-artifacts/
 kubectl delete -f ./deploy/crds/
 ```
     
-##### Incorporating analytics to the k8s operator
+##### Sample Scenarios
 
-- To enable analytics, modify the analytics-config configmap given in the ./deploy/apim-analytics-configs/apim-analytics-conf.yaml and set the field analyticsEnabled to "true". The other parameters also can be modified with required values.
-- Create a secret with the public certificate of the wso2am-analytics server and provide the name of the created secret along with the username and password to the wso2am-analytics server (all fields must be base 64 encoded). Use the template provided for analytics-secret in apim_analytics_secret_template.yaml
+1. [Sample 1: Basic Petstore Sample](scenarios/scenario-1)
+1. [Sample 2: Secure an API with basic authentication](scenarios/scenario-2)
+1. [Sample 3: Secure an API with JWT](scenarios/scenario-3)
+1. [Sample 4: Secure an API with OAuth2 tokens](scenarios/scenario-4)
+1. [Sample 5: Apply rate limiting for an API](scenarios/scenario-5)
+1. [Sample 6: Private jet mode for API and Endpoint](scenarios/scenario-6)
+1. [Sample 7: Sidecar mode for API and Endpoint](scenarios/scenario-7)
 
-##### Applying security for APIs 
-- APIs created with kubernetes apim operator can be secured by defining security with security kind. It supports basic, JWT and Oauth2 security types.
+##### Troubleshooting Guide
 
-   **Securing API with JWT authentication**
-   
-    i. Create a secret with the certificate
-
-   `
-   kubectl create secret generic <secret name> -n <namespace> --from-file=<path to cert>
-   `
-  
-   ii. Create a security with security kind. Include the name of the secret created in step (i) in certificate field
-   ```
-   apiVersion: <version>
-   kind: Security
-   metadata:
-     name: <security name>
-   spec:
-     type: JWT
-     certificate: <name of the secret created in step 1>
-     issuer: <issuer>
-     audience: <audience>
-   ```
-   **Securing API with Oauth2 authentication**
-   
-    i. Create a secret with the certificate of the wso2am server
-   
-   `
-   kubectl create secret generic <secret name> -n <namespace> --from-file=<path to cert>
-   `
-   
-    ii. Create a secret with user credentials 
-   ```
-   apiVersion: v1
-   kind: Secret
-   metadata:
-     name: <secret name>
-   type: Opaque
-   data:
-     username: base64 encoded user name 
-     password: base64 encoded password
-   ```  
-    iii. Create a security with security kind. Include the name of the secret created in step (i) in certificate field and name of the secret created in step (ii) in credentials field.
-   ```
-   apiVersion: <version>
-   kind: Security
-   metadata:
-     name: <security name>
-     namespace: <namespace>
-   spec:
-     type: Oauth
-     certificate: <name of the secret created in step 1>
-     endpoint: <endpoint>
-     credentials: <name of the secret created in step 2>
-   ```
-   **NOTE:** Modify the configurations related to wso2am using the template provided in ./deploy/apim-analytics-configs/apim-analytics-conf.yaml : apim-config configmap.
-
-   **Securing API with Basic authentication**
-   
-    i. Create a secret with user credentials 
-   ```
-   apiVersion: v1
-   kind: Secret
-   metadata:
-     name: <secret name>
-   type: Opaque
-   data:
-     username: base64 encoded username 
-     password: base64 encoded password
-   ```
-    ii. Create a security with security kind. Include the name of the secret created in step (i) in credentials field.
-   ```
-   apiVersion: <version>
-   kind: Security
-   metadata:
-     name: <security name>
-     namespace: <namespace>
-   spec:
-     type: basic
-     credentials: <name of the secret created in step 1>
-   ``` 
-   **Defining the securities in swagger definition**
-
-    Security can be defined in swagger definition under security keyword in both API and resource levels. Define the property scopes for OAuth2 security scheme. 
-
-   **Defining security in API level**
-   
-     ```
-      security:
-          - petstorebasic: []  
-          - oauthtest: 
-            - read
-     ```
-
-   **Defining security in resource level**
-   
-     ```
-      paths:
-        "/pet/findByStatus":
-          get:
-            security:
-              - basicauth:
-                - read:pets
-                - write:pets
-              - petstorebasic: []
-     ```
-
-
-   sample security definitions are provided in ./deploy/sample-definitions/security_definitions.yaml
+You can refer [troubleshooting guide](docs/Troubleshooting/troubleshooting.md).
