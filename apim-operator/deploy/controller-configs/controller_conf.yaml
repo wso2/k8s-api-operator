@@ -24,4 +24,9 @@ data:
   mgwRuntimeImg: wso2/wso2micro-gw:3.0.1
   kanikoImg: gcr.io/kaniko-project/executor
   dockerRegistry: <user-docker-registry>
-
+  hpaMaxReplicas: <max-pods-hpa>
+  hpaTargetAverageUtilizationCPU: <target-avg-cpu-utilization>
+  resourceRequestCPU: <resource-req-cpu>
+  resourceRequestMemory: <resource-req-memory>
+  resourceLimitCPU: <resource-limit-cpu>
+  resourceLimitMemory: <resource-limit-memory>

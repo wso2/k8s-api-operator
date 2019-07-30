@@ -256,41 +256,39 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 	log.Info("image exist? " + strconv.FormatBool(imageExist))
 
-	endpointNames, newSwagger := mgwSwaggerHandler(r, swagger, mode)
+	endpointNames, newSwagger := mgwSwaggerHandler(r, swagger, mode, userNameSpace)
 
 	for endpointNameL, _ := range endpointNames {
 		log.Info("Endpoint name " + endpointNameL)
 	}
+	var containerList []corev1.Container
 	//Creating sidecar endpoint deployment
 	if mode == sidecar {
 		for endpointName, _ := range endpointNames {
-			targetEndpointCr := &wso2v1alpha1.TargetEndpoint{}
-			erCr := r.client.Get(context.TODO(),
-				types.NamespacedName{Namespace: wso2NameSpaceConst, Name: endpointName}, targetEndpointCr)
-			if erCr == nil {
-				if targetEndpointCr.Spec.Deploy.DockerImage != "" {
-					if err := r.reconcileDeploymentForSidecarEndpoint(targetEndpointCr, userNameSpace,
-						instance); err != nil {
-						return reconcile.Result{}, err
+			if endpointName != "" {
+				targetEndpointCr := &wso2v1alpha1.TargetEndpoint{}
+				erCr := r.client.Get(context.TODO(),
+					types.NamespacedName{Namespace: userNameSpace, Name: endpointName}, targetEndpointCr)
+				if erCr == nil {
+					if targetEndpointCr.Spec.Deploy.DockerImage != "" {
+						sidecarContainer := corev1.Container{
+							Image: targetEndpointCr.Spec.Deploy.DockerImage,
+							Name:  targetEndpointCr.Spec.Deploy.Name,
+							Ports: []corev1.ContainerPort{{
+								ContainerPort: targetEndpointCr.Spec.Port,
+							}},
+						}
+						containerList = append(containerList, sidecarContainer)
+						if err := r.reconcileSidecarEndpointService(targetEndpointCr, userNameSpace, instance); err != nil {
+							return reconcile.Result{}, err
+						}
 					}
-					if err := r.reconcileSidecarEndpointService(targetEndpointCr, userNameSpace, instance); err != nil {
-						return reconcile.Result{}, err
-					}
+				} else {
+					log.Info("Failed to deploy the sidecar endpoint " + endpointName)
+					return reconcile.Result{}, erCr
 				}
-			} else {
-				log.Info("Failed to deplpy the sidecar endpoint " + endpointName)
-				return reconcile.Result{}, erCr
 			}
 		}
-	}
-	//update configmap with modified swagger
-
-	swaggerConfMap := createConfigMap(apiConfigMapRef, swaggerDataFile, newSwagger, userNameSpace, owner)
-
-	log.Info("Updating swagger configmap")
-	errConf := r.client.Update(context.TODO(), swaggerConfMap)
-	if errConf != nil {
-		log.Error(err, "Error in modified swagger configmap update")
 	}
 
 	reqLogger.Info("getting security instance")
@@ -421,7 +419,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			}
 		}
 		if strings.EqualFold(securityInstance.Spec.Type, securityJWT) {
-			log.Info("retriving data for security type JWT")
+			log.Info("retrieving data for security type JWT")
 			certificateAlias = alias
 			if securityInstance.Spec.Issuer != "" {
 				issuer = securityInstance.Spec.Issuer
@@ -451,8 +449,29 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	//adding security scheme to swagger
-	swagger.Components.Extensions[securitySchemeExtension] = securityDefinition
+	if len(securityDefinition) > 0 {
+		newSwagger.Components.Extensions[securitySchemeExtension] = securityDefinition
+	}
+	//reformatting swagger
+	var prettyJSON bytes.Buffer
+	final, err := newSwagger.MarshalJSON()
+	if err != nil {
+		log.Error(err, "swagger marshal error")
+	}
+	errIndent := json.Indent(&prettyJSON, final, "", "  ")
+	if errIndent != nil {
+		log.Error(errIndent, "Error in pretty json")
+	}
 
+	formattedSwagger := string(prettyJSON.Bytes())
+	//update configmap with modified swagger
+	swaggerConfMap := createConfigMap(apiConfigMapRef, swaggerDataFile, formattedSwagger, userNameSpace, owner)
+
+	log.Info("Updating swagger configmap")
+	errConf := r.client.Update(context.TODO(), swaggerConfMap)
+	if errConf != nil {
+		log.Error(err, "Error in modified swagger configmap update")
+	}
 	if isDefined == false && len(securityDef.Security) == 0 {
 		log.Info("use default security")
 		//use default security
@@ -620,7 +639,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	analyticsEnabledBool, _ := strconv.ParseBool(analyticsEnabled)
 	dep := createMgwDeployment(instance, imageName, controlConf, analyticsEnabledBool, r, userNameSpace, owner,
-		getResourceReqCPU, getResourceReqMemory, getResourceLimitCPU, getResourceLimitMemory)
+		getResourceReqCPU, getResourceReqMemory, getResourceLimitCPU, getResourceLimitMemory, containerList)
 	depFound := &appsv1.Deployment{}
 	deperr := r.client.Get(context.TODO(), types.NamespacedName{Name: dep.Name, Namespace: dep.Namespace}, depFound)
 
@@ -990,10 +1009,10 @@ func mgwSwaggerLoader(swaggerDataMap map[string]string) (*openapi3.Swagger, stri
 }
 
 //Get endpoint from swagger and replace it with targetendpoint kind service endpoint
-func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string) (map[string]string, string) {
+func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string, userNameSpace string) (map[string]string, *openapi3.Swagger) {
 
 	endpointNames := make(map[string]string)
-
+	var checkt []string
 	//api level endpoint
 	endpointData, checkEndpoint := swagger.Extensions[endpointExtension]
 	if checkEndpoint {
@@ -1003,27 +1022,34 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string) 
 		if checkJsonRaw {
 			err := json.Unmarshal(endpointJson, &endPoint)
 			if err == nil {
-				log.Info("Parsing endpoints and not availble root service endpoint")
+				log.Info("Parsing endpoints and not available root service endpoint")
 				//check if service & targetendpoint cr object are available
 				currentService := &corev1.Service{}
 				targetEndpointCr := &wso2v1alpha1.TargetEndpoint{}
-				err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: wso2NameSpaceConst,
+				err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: userNameSpace,
 					Name: endPoint}, currentService)
-				erCr := r.client.Get(context.TODO(), types.NamespacedName{Namespace: wso2NameSpaceConst, Name: endPoint}, targetEndpointCr)
+				erCr := r.client.Get(context.TODO(), types.NamespacedName{Namespace: userNameSpace, Name: endPoint}, targetEndpointCr)
 
-				if err != nil && errors.IsNotFound(err) {
+				if err != nil && errors.IsNotFound(err) && mode != sidecar {
 					log.Error(err, "Service is not found")
 				} else if erCr != nil && errors.IsNotFound(erCr) {
-					log.Error(err, "targetendpoint CRD object is not found")
-				} else if err != nil {
+					log.Error(err, "targetEndpoint CRD object is not found")
+				} else if err != nil && mode != sidecar {
 					log.Error(err, "Error in getting service")
 				} else if erCr != nil {
 					log.Error(err, "Error in getting targetendpoint CRD object")
 				} else {
 					protocol := targetEndpointCr.Spec.Protocol
-					endpointNames[endPoint] = endPoint
+					//endpointNames[endPoint] = endPoint
+					if mode == sidecar {
+						endPointSidecar := protocol + "://" + "localhost:" + strconv.Itoa(int(targetEndpointCr.Spec.Port))
+						endpointNames[targetEndpointCr.Name] = endPointSidecar
+						checkt = append(checkt, endPointSidecar)
+
+					}
 					endPoint = protocol + "://" + endPoint
-					checkt := []string{endPoint}
+					checkt = append(checkt, endPoint)
+
 					prodEp.Urls = checkt
 					swagger.Extensions[endpointExtension] = prodEp
 				}
@@ -1038,18 +1064,27 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string) 
 						if err != nil {
 							currentService := &corev1.Service{}
 							targetEndpointCr := &wso2v1alpha1.TargetEndpoint{}
-							err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: wso2NameSpaceConst,
+							err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: userNameSpace,
 								Name: urlVal}, currentService)
-							erCr := r.client.Get(context.TODO(), types.NamespacedName{Namespace: wso2NameSpaceConst, Name: urlVal}, targetEndpointCr)
-							if (err == nil && erCr == nil) || mode == sidecar {
-								endpointNames[urlVal] = urlVal
+							erCr := r.client.Get(context.TODO(), types.NamespacedName{Namespace: userNameSpace, Name: urlVal}, targetEndpointCr)
+							if err == nil && erCr == nil {
 								protocol := targetEndpointCr.Spec.Protocol
 								urlVal = protocol + "://" + urlVal
-								endpointList[index] = urlVal
+								if mode == sidecar {
+									urlValSidecar := protocol + "://" + "localhost:" + strconv.Itoa(int(targetEndpointCr.Spec.Port))
+									endpointNames[urlVal] = urlValSidecar
+									endpointList[index] = urlValSidecar
+
+								} else {
+									endpointList[index] = urlVal
+								}
 								isServiceDef = true
 							}
 						} else {
-							endpointNames[endpointUrl.Hostname()] = endpointUrl.Hostname()
+							if endpointUrl.Hostname() != "localhost" {
+								endpointNames[endpointUrl.Hostname()] = endpointUrl.Hostname()
+							}
+
 						}
 					}
 
@@ -1057,6 +1092,8 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string) 
 						prodEp.Urls = endpointList
 						swagger.Extensions[endpointExtension] = prodEp
 					}
+				} else {
+					log.Info("error unmarshal endpoint")
 				}
 			}
 		}
@@ -1075,9 +1112,9 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string) 
 					//check if service & targetendpoint cr object are available
 					currentService := &corev1.Service{}
 					targetEndpointCr := &wso2v1alpha1.TargetEndpoint{}
-					err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: wso2NameSpaceConst,
+					err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: userNameSpace,
 						Name: endPoint}, currentService)
-					erCr := r.client.Get(context.TODO(), types.NamespacedName{Namespace: wso2NameSpaceConst, Name: endPoint}, targetEndpointCr)
+					erCr := r.client.Get(context.TODO(), types.NamespacedName{Namespace: userNameSpace, Name: endPoint}, targetEndpointCr)
 
 					if err != nil && errors.IsNotFound(err) {
 						log.Error(err, "Service is not found")
@@ -1106,9 +1143,9 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string) 
 							if err != nil {
 								currentService := &corev1.Service{}
 								targetEndpointCr := &wso2v1alpha1.TargetEndpoint{}
-								err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: wso2NameSpaceConst,
+								err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: userNameSpace,
 									Name: urlVal}, currentService)
-								erCr := r.client.Get(context.TODO(), types.NamespacedName{Namespace: wso2NameSpaceConst, Name: urlVal}, targetEndpointCr)
+								erCr := r.client.Get(context.TODO(), types.NamespacedName{Namespace: userNameSpace, Name: urlVal}, targetEndpointCr)
 								if (err == nil && erCr == nil) || mode == sidecar {
 									endpointNames[urlVal] = urlVal
 									protocol := targetEndpointCr.Spec.Protocol
@@ -1130,22 +1167,7 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string) 
 			}
 		}
 	}
-
-	//reformatting swagger
-	var prettyJSON bytes.Buffer
-	final, err := swagger.MarshalJSON()
-	if err != nil {
-		log.Error(err, "swagger marshal error")
-	}
-	errIndent := json.Indent(&prettyJSON, final, "", "  ")
-	if errIndent != nil {
-		log.Error(errIndent, "Error in pretty json")
-	}
-
-	newSwagger := string(prettyJSON.Bytes())
-
-	return endpointNames, newSwagger
-
+	return endpointNames, swagger
 }
 
 func getCredentials(r *ReconcileAPI, name string, securityType string, userNameSpace string) error {
@@ -1194,11 +1216,10 @@ func getCredentials(r *ReconcileAPI, name string, securityType string, userNameS
 // generate relevant MGW deployment/services for the given API definition
 func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.ConfigMap, analyticsEnabled bool,
 	r *ReconcileAPI, nameSpace string, owner []metav1.OwnerReference, resourceReqCPU string, resourceReqMemory string,
-	resourceLimitCPU string, resourceLimitMemory string) *appsv1.Deployment {
+	resourceLimitCPU string, resourceLimitMemory string, containerList []corev1.Container) *appsv1.Deployment {
 	labels := map[string]string{
 		"app": cr.Name,
 	}
-
 	controlConfigData := conf.Data
 	dockerRegistry := controlConfigData[dockerRegistryConst]
 	reps := int32(cr.Spec.Replicas)
@@ -1221,7 +1242,21 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 		corev1.ResourceCPU:    resource.MustParse(resourceLimitCPU),
 		corev1.ResourceMemory: resource.MustParse(resourceLimitMemory),
 	}
+	apiContainer := corev1.Container{
+		Name:            "mgw" + cr.Name,
+		Image:           dockerRegistry + "/" + imageName,
+		ImagePullPolicy: "Always",
+		Resources: corev1.ResourceRequirements{
+			Requests: req,
+			Limits:   lim,
+		},
+		VolumeMounts: deployVolumeMount,
+		Ports: []corev1.ContainerPort{{
+			ContainerPort: 9095,
+		}},
+	}
 
+	containerList = append(containerList, apiContainer)
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            cr.Name,
@@ -1239,22 +1274,8 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 					Labels: labels,
 				},
 				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Name:            "mgw" + cr.Name,
-							Image:           dockerRegistry + "/" + imageName,
-							ImagePullPolicy: "Always",
-							Resources: corev1.ResourceRequirements{
-								Requests: req,
-								Limits:   lim,
-							},
-							VolumeMounts: deployVolumeMount,
-							Ports: []corev1.ContainerPort{{
-								ContainerPort: 9095,
-							}},
-						},
-					},
-					Volumes: deployVolume,
+					Containers: containerList,
+					Volumes:    deployVolume,
 				},
 			},
 		},
@@ -1266,7 +1287,7 @@ func dockerfileHandler(r *ReconcileAPI, certList map[string]string, existcert bo
 	owner []metav1.OwnerReference, cr *wso2v1alpha1.API) (*corev1.ConfigMap, error) {
 	var dockerTemplate string
 	truststorePass := getTruststorePassword(r)
-	dockerTemplateConfigmap, err := getConfigmap(r, dockerFileTemplate, cr.Namespace)
+	dockerTemplateConfigmap, err := getConfigmap(r, dockerFileTemplate, wso2NameSpaceConst)
 	if err != nil && errors.IsNotFound(err) {
 		log.Error(err, "docker template configmap not found")
 		return nil, err
@@ -1309,7 +1330,6 @@ func dockerfileHandler(r *ReconcileAPI, certList map[string]string, existcert bo
 	} else if err != nil {
 		return dockerfileConfmap, err
 	}
-
 	//update existing dockerfile
 	dockerfileConfmap.Data["Dockerfile"] = builder.String()
 	errorupdate := r.client.Update(context.TODO(), dockerfileConfmap)

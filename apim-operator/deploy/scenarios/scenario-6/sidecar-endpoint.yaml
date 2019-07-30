@@ -1,0 +1,14 @@
+apiVersion: wso2.com/v1alpha1
+kind: TargetEndpoint
+metadata:
+  name: helloworld
+  labels:
+    app: wso2
+spec:
+  protocol: http
+  port: 8080
+  deploy:
+    name: helloworldservice
+    dockerImage: shehani123/helloworld:v1
+    count: 2
+  mode : sidecar
