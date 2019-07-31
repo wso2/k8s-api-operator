@@ -1,40 +1,56 @@
 ---
 openapi: 3.0.0
 servers:
-  - url: https://petstore.swagger.io/v2
-  - url: http://petstore.swagger.io/v2
+  - url: http://35.194.32.123:60001
+  - url: http://35.194.32.123:60001
 info:
   description: 'This is a sample server Petstore server.  You can find out more about
     Swagger at [http://swagger.io](http://swagger.io) or on [irc.freenode.net, #swagger](http://swagger.io/irc/).  For
     this sample, you can use the api key `special-key` to test the authorization filters.'
   version: 1.0.3
-  title: Swagger Petstore testing
-  termsOfService: http://swagger.io/terms/
-  contact:
-    email: apiteam@swagger.io
-  license:
-    name: Apache 2.0
-    url: http://www.apache.org/licenses/LICENSE-2.0.html
-tags:
-  - name: pet
-    description: Everything about your Pets
-    externalDocs:
-      description: Find out more
-      url: http://swagger.io
-  - name: store
-    description: Access to Petstore orders
-  - name: user
-    description: Operations about user
-    externalDocs:
-      description: Find out more about our store
-      url: http://swagger.io
+  title: Hello world endpoint
 x-wso2-basePath: /petstore/v1
-x-wso2-production-endpoints:
-  urls:
-    - https://petstore.swagger.io/v2
-security:
-  - petstorebasic: []
+x-wso2-production-endpoints: helloworld
+x-wso2-mode: privateJet
 paths:
+  "/":
+    get:
+      tags:
+        - hello
+      summary: Fconnects to hello world server
+      description: Multiple status values can be provided with comma separated strings
+      operationId: findPetsByStatus
+      parameters:
+        - name: status
+          in: query
+          description: Status values that need to be considered for filter
+          required: true
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - available
+                - pending
+                - sold
+              default: available
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/xml:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/Pet"
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/Pet"
+        '400':
+          description: Invalid status value
   "/pet/findByStatus":
     get:
       tags:
