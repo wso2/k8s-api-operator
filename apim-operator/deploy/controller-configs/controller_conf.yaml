@@ -30,3 +30,4 @@ data:
   resourceRequestMemory: <resource-req-memory>
   resourceLimitCPU: <resource-limit-cpu>
   resourceLimitMemory: <resource-limit-memory>
+  generatekubernbetesartifactsformgw: <true/false>

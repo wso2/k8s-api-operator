@@ -632,6 +632,11 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		log.Info("Successfully created secret")
 	}
 
+	generateK8sArtifacsForMgw := controlConfigData[generatekubernbetesartifactsformgw]
+	genArtifacts, errGenArtifacts := strconv.ParseBool(generateK8sArtifacsForMgw)
+	if errGenArtifacts != nil {
+		log.Error(errGenArtifacts, "error reading value for generate k8s artifacts")
+	}
 	getResourceReqCPU := controlConfigData[resourceRequestCPU]
 	getResourceReqMemory := controlConfigData[resourceRequestMemory]
 	getResourceLimitCPU := controlConfigData[resourceLimitCPU]
@@ -672,15 +677,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		log.Error(errGettingHpa, "Error getting HPA")
 	}
 
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		glog.Errorf("Can't load in cluster config: %v", err)
-	}
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		glog.Errorf("Can't get client set: %v", err)
-	}
-
 	if instance.Spec.UpdateTimeStamp != "" {
 		//Schedule Kaniko pod
 		reqLogger.Info("Updating the API", "API.Name", instance.Name, "API.Namespace", instance.Namespace)
@@ -700,49 +696,37 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		} else if jobErr != nil {
 			return reconcile.Result{}, jobErr
 		}
-		deletePolicy := metav1.DeletePropagationBackground
-		deleteOptions := metav1.DeleteOptions{PropagationPolicy: &deletePolicy}
-		//get list of exsisting jobs
-		getListOfJobs, errGetJobs := clientset.BatchV1().Jobs(job.Namespace).List(metav1.ListOptions{})
-		if len(getListOfJobs.Items) != 0 {
-			for _, kanikoJob := range getListOfJobs.Items {
-				if kanikoJob.Status.Succeeded > 0 {
-					reqLogger.Info("Job "+kanikoJob.Name+" completed successfully", "Job.Namespace", job.Namespace, "Job.Name", job.Name)
-					reqLogger.Info("Deleting job "+kanikoJob.Name, "Job.Namespace", job.Namespace, "Job.Name", job.Name)
-					//deleting completed jobs
-					errDelete := clientset.BatchV1().Jobs(kanikoJob.Namespace).Delete(kanikoJob.Name, &deleteOptions)
-					if errDelete != nil {
-						reqLogger.Error(errDelete, "error while deleting "+kanikoJob.Name+" job")
-					} else {
-						reqLogger.Info("successfully deleted job "+kanikoJob.Name, "Job.Namespace", job.Namespace, "Job.Name", job.Name)
-					}
-				}
-			}
-		} else if errGetJobs != nil {
-			reqLogger.Error(errGetJobs, "error retrieving jobs")
+		errDeleteJob := deleteCompletedJobs(instance.Namespace)
+		if errDeleteJob != nil {
+			log.Error(errDeleteJob, "error deleting completed jobs")
 		}
 		// if kaniko job is succeeded, edit the deployment
 		if kubeJob.Status.Succeeded > 0 {
-			reqLogger.Info("Job completed successfully", "Job.Namespace", job.Namespace, "Job.Name", job.Name)
-			if deperr != nil && errors.IsNotFound(deperr) {
-				reqLogger.Info("Creating a new Dep", "Dep.Namespace", dep.Namespace, "Dep.Name", dep.Name)
-				deperr = r.client.Create(context.TODO(), dep)
-				if deperr != nil {
+			if genArtifacts {
+				reqLogger.Info("Job completed successfully", "Job.Namespace", job.Namespace, "Job.Name", job.Name)
+				if deperr != nil && errors.IsNotFound(deperr) {
+					reqLogger.Info("Creating a new Dep", "Dep.Namespace", dep.Namespace, "Dep.Name", dep.Name)
+					deperr = r.client.Create(context.TODO(), dep)
+					if deperr != nil {
+						return reconcile.Result{}, deperr
+					}
+					// deployment created successfully - go to create service
+				} else if deperr != nil {
 					return reconcile.Result{}, deperr
 				}
-				// deployment created successfully - go to create service
-			} else if deperr != nil {
-				return reconcile.Result{}, deperr
-			}
-			reqLogger.Info("Updating the found deployment", "Dep.Namespace", dep.Namespace, "Dep.Name", dep.Name)
-			updateEr := r.client.Update(context.TODO(), dep)
-			if updateEr != nil {
-				log.Error(updateEr, "Error in updating deployment")
-				return reconcile.Result{}, updateEr
-			}
+				reqLogger.Info("Updating the found deployment", "Dep.Namespace", dep.Namespace, "Dep.Name", dep.Name)
+				updateEr := r.client.Update(context.TODO(), dep)
+				if updateEr != nil {
+					log.Error(updateEr, "Error in updating deployment")
+					return reconcile.Result{}, updateEr
+				}
 
-			reqLogger.Info("Skip reconcile: Deployment updated", "Dep.Name", depFound.Name)
-			return reconcile.Result{}, nil
+				reqLogger.Info("Skip reconcile: Deployment updated", "Dep.Name", depFound.Name)
+				return reconcile.Result{}, nil
+			} else {
+				log.Info("skip updating kubernetes artifacts")
+				return reconcile.Result{}, nil
+			}
 		} else {
 			reqLogger.Info("Job is still not completed.", "Job.Status", job.Status)
 			return reconcile.Result{Requeue: true}, nil
@@ -750,56 +734,15 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	} else if imageExist {
 		log.Info("Image already exist, hence skipping the kaniko job")
-		if deperr != nil && errors.IsNotFound(deperr) {
-			reqLogger.Info("Creating a new Dep", "Dep.Namespace", dep.Namespace, "Dep.Name", dep.Name)
-			deperr = r.client.Create(context.TODO(), dep)
-			if deperr != nil {
-				return reconcile.Result{}, deperr
-			}
-			// deployment created successfully - go to create service
-		} else if deperr != nil {
-			return reconcile.Result{}, deperr
+		errDeleteJob := deleteCompletedJobs(instance.Namespace)
+		if errDeleteJob != nil {
+			log.Error(errDeleteJob, "error deleting completed jobs")
 		}
 
-		if svcErr != nil && errors.IsNotFound(svcErr) {
-			reqLogger.Info("Creating a new Service", "SVC.Namespace", svc.Namespace, "SVC.Name", svc.Name)
-			svcErr = r.client.Create(context.TODO(), svc)
-			if svcErr != nil {
-				return reconcile.Result{}, svcErr
-			}
-			//Service created successfully - don't requeue
-			return reconcile.Result{}, nil
-		} else if svcErr != nil {
-			return reconcile.Result{}, svcErr
-		}
-		// if service already exsits
-		reqLogger.Info("Skip reconcile: Service already exists", "SVC.Namespace",
-			svcFound.Namespace, "SVC.Name", svcFound.Name)
-		return reconcile.Result{}, nil
-	} else {
-		//Schedule Kaniko pod
-		job := scheduleKanikoJob(instance, imageName, controlConf, jobVolumeMount, jobVolume, instance.Spec.UpdateTimeStamp, owner)
-		if err := controllerutil.SetControllerReference(instance, job, r.scheme); err != nil {
-			return reconcile.Result{}, err
-		}
-		kubeJob := &batchv1.Job{}
-		jobErr := r.client.Get(context.TODO(), types.NamespacedName{Name: job.Name, Namespace: job.Namespace}, kubeJob)
-		// if Job is not available
-		if jobErr != nil && errors.IsNotFound(jobErr) {
-			reqLogger.Info("Creating a new Job", "Job.Namespace", job.Namespace, "Job.Name", job.Name)
-			jobErr = r.client.Create(context.TODO(), job)
-			if jobErr != nil {
-				return reconcile.Result{}, jobErr
-			}
-		} else if jobErr != nil {
-			return reconcile.Result{}, jobErr
-		}
-
-		// if kaniko job is succeeded, create the deployment
-		if kubeJob.Status.Succeeded > 0 {
-			reqLogger.Info("Job completed successfully", "Job.Namespace", job.Namespace, "Job.Name", job.Name)
+		if genArtifacts {
+			log.Info("generating kubernetes artifacts")
 			if deperr != nil && errors.IsNotFound(deperr) {
-				reqLogger.Info("Creating a new Deployment", "Dep.Namespace", dep.Namespace, "Dep.Name", dep.Name)
+				reqLogger.Info("Creating a new Dep", "Dep.Namespace", dep.Namespace, "Dep.Name", dep.Name)
 				deperr = r.client.Create(context.TODO(), dep)
 				if deperr != nil {
 					return reconcile.Result{}, deperr
@@ -823,13 +766,67 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			// if service already exsits
 			reqLogger.Info("Skip reconcile: Service already exists", "SVC.Namespace",
 				svcFound.Namespace, "SVC.Name", svcFound.Name)
-			return reconcile.Result{}, nil
+		} else {
+			log.Info("skip generating kubernetes artifacts")
+		}
+
+		return reconcile.Result{}, nil
+	} else {
+		//Schedule Kaniko pod
+		job := scheduleKanikoJob(instance, imageName, controlConf, jobVolumeMount, jobVolume, instance.Spec.UpdateTimeStamp, owner)
+		if err := controllerutil.SetControllerReference(instance, job, r.scheme); err != nil {
+			return reconcile.Result{}, err
+		}
+		kubeJob := &batchv1.Job{}
+		jobErr := r.client.Get(context.TODO(), types.NamespacedName{Name: job.Name, Namespace: job.Namespace}, kubeJob)
+		// if Job is not available
+		if jobErr != nil && errors.IsNotFound(jobErr) {
+			reqLogger.Info("Creating a new Job", "Job.Namespace", job.Namespace, "Job.Name", job.Name)
+			jobErr = r.client.Create(context.TODO(), job)
+			if jobErr != nil {
+				return reconcile.Result{}, jobErr
+			}
+		} else if jobErr != nil {
+			return reconcile.Result{}, jobErr
+		}
+
+		if kubeJob.Status.Succeeded > 0 {
+			reqLogger.Info("Job completed successfully", "Job.Namespace", job.Namespace, "Job.Name", job.Name)
+			if genArtifacts {
+				if deperr != nil && errors.IsNotFound(deperr) {
+					reqLogger.Info("Creating a new Deployment", "Dep.Namespace", dep.Namespace, "Dep.Name", dep.Name)
+					deperr = r.client.Create(context.TODO(), dep)
+					if deperr != nil {
+						return reconcile.Result{}, deperr
+					}
+					// deployment created successfully - go to create service
+				} else if deperr != nil {
+					return reconcile.Result{}, deperr
+				}
+				if svcErr != nil && errors.IsNotFound(svcErr) {
+					reqLogger.Info("Creating a new Service", "SVC.Namespace", svc.Namespace, "SVC.Name", svc.Name)
+					svcErr = r.client.Create(context.TODO(), svc)
+					if svcErr != nil {
+						return reconcile.Result{}, svcErr
+					}
+					//Service created successfully - don't requeue
+					return reconcile.Result{}, nil
+				} else if svcErr != nil {
+					return reconcile.Result{}, svcErr
+				}
+				// if service already exsits
+				reqLogger.Info("Skip reconcile: Service already exists", "SVC.Namespace",
+					svcFound.Namespace, "SVC.Name", svcFound.Name)
+				return reconcile.Result{}, nil
+			} else {
+				log.Info("Skip generating kubernetes artifacts")
+				return reconcile.Result{}, nil
+			}
 		} else {
 			reqLogger.Info("Job is still not completed.", "Job.Status", job.Status)
 			return reconcile.Result{}, deperr
 		}
 	}
-
 }
 
 // gets the data from analytics secret
@@ -1938,6 +1935,44 @@ func (r *ReconcileAPI) reconcileDeploymentForSidecarEndpoint(m *wso2v1alpha1.Tar
 		// Deployment created successfully - return and requeue
 	} else if err != nil {
 		log.WithValues("Failed to get Deployment: %v\n", err)
+		return err
+	}
+	return nil
+}
+
+func deleteCompletedJobs(namespace string) error {
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		glog.Errorf("Can't load in cluster config: %v", err)
+		return err
+	}
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		glog.Errorf("Can't get client set: %v", err)
+		return err
+	}
+
+	deletePolicy := metav1.DeletePropagationBackground
+	deleteOptions := metav1.DeleteOptions{PropagationPolicy: &deletePolicy}
+	//get list of exsisting jobs
+	getListOfJobs, errGetJobs := clientset.BatchV1().Jobs(namespace).List(metav1.ListOptions{})
+	if len(getListOfJobs.Items) != 0 {
+		for _, kanikoJob := range getListOfJobs.Items {
+			if kanikoJob.Status.Succeeded > 0 {
+				log.Info("Job "+kanikoJob.Name+" completed successfully", "Job.Namespace", kanikoJob.Namespace, "Job.Name", kanikoJob.Name)
+				log.Info("Deleting job "+kanikoJob.Name, "Job.Namespace", kanikoJob.Namespace, "Job.Name", kanikoJob.Name)
+				//deleting completed jobs
+				errDelete := clientset.BatchV1().Jobs(kanikoJob.Namespace).Delete(kanikoJob.Name, &deleteOptions)
+				if errDelete != nil {
+					log.Error(errDelete, "error while deleting "+kanikoJob.Name+" job")
+					return errDelete
+				} else {
+					log.Info("successfully deleted job "+kanikoJob.Name, "Job.Namespace", kanikoJob.Namespace, "Job.Name", kanikoJob.Name)
+				}
+			}
+		}
+	} else if errGetJobs != nil {
+		log.Error(errGetJobs, "error retrieving jobs")
 		return err
 	}
 	return nil

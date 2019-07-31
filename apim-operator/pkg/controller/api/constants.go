@@ -108,8 +108,9 @@ const (
 	hpaTargetAverageUtilizationCPU    = "hpaTargetAverageUtilizationCPU"
 	hpaTargetAverageUtilizationMemory = "hpaTargetAverageUtilizationMemory"
 
-	resourceRequestCPU    = "resourceRequestCPU"
-	resourceRequestMemory = "resourceRequestMemory"
-	resourceLimitCPU      = "resourceLimitCPU"
-	resourceLimitMemory   = "resourceLimitMemory"
+	resourceRequestCPU                 = "resourceRequestCPU"
+	resourceRequestMemory              = "resourceRequestMemory"
+	resourceLimitCPU                   = "resourceLimitCPU"
+	resourceLimitMemory                = "resourceLimitMemory"
+	generatekubernbetesartifactsformgw = "generatekubernbetesartifactsformgw"
 )
