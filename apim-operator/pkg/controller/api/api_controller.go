@@ -227,6 +227,12 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		return reconcile.Result{}, err
 	}
 
+	//add owner reference to the swagger configmap and update it
+	apiConfigMap.OwnerReferences = owner
+	errorUpdateConf := r.client.Update(context.TODO(), apiConfigMap)
+	if errorUpdateConf != nil {
+		log.Error(errorUpdateConf, "error in updating swagger config map with owner reference")
+	}
 	//Fetch swagger data from configmap, reads and modifies swagger
 	swaggerDataMap := apiConfigMap.Data
 	swagger, swaggerDataFile, err := mgwSwaggerLoader(swaggerDataMap)
@@ -255,9 +261,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		log.Error(errImage, "Error in image finding")
 	}
 	log.Info("image exist? " + strconv.FormatBool(imageExist))
-
-	endpointNames, newSwagger := mgwSwaggerHandler(r, swagger, mode, userNameSpace)
-
+	endpointNames, newSwagger := mgwSwaggerHandler(r, swagger, mode, userNameSpace, instance.Name)
 	for endpointNameL, _ := range endpointNames {
 		log.Info("Endpoint name " + endpointNameL)
 	}
@@ -464,14 +468,20 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	formattedSwagger := string(prettyJSON.Bytes())
-	//update configmap with modified swagger
-	swaggerConfMap := createConfigMap(apiConfigMapRef, swaggerDataFile, formattedSwagger, userNameSpace, owner)
-
-	log.Info("Updating swagger configmap")
-	errConf := r.client.Update(context.TODO(), swaggerConfMap)
-	if errConf != nil {
-		log.Error(err, "Error in modified swagger configmap update")
+	//create configmap with modified swagger
+	swaggerConfMap := createConfigMap(apiConfigMapRef + "-mgw", swaggerDataFile, formattedSwagger, userNameSpace, owner)
+	log.Info("Creating swagger configmap for mgw")
+	_, errgetConf := getConfigmap(r, apiConfigMapRef + "-mgw", userNameSpace)
+	if errgetConf != nil && errors.IsNotFound(errgetConf){
+		log.Info("swagger-mgw is not found. Hence creating new configmap")
+		errConf := r.client.Create(context.TODO(), swaggerConfMap)
+		if errConf != nil {
+			log.Error(err, "Error in mgw swagger configmap create")
+		}
+	} else if errgetConf != nil {
+		log.Error(errgetConf,"error getting swagger-mgw")
 	}
+
 	if isDefined == false && len(securityDef.Security) == 0 {
 		log.Info("use default security")
 		//use default security
@@ -1006,8 +1016,30 @@ func mgwSwaggerLoader(swaggerDataMap map[string]string) (*openapi3.Swagger, stri
 }
 
 //Get endpoint from swagger and replace it with targetendpoint kind service endpoint
-func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string, userNameSpace string) (map[string]string, *openapi3.Swagger) {
+func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string, userNameSpace string, apiName string) (map[string]string, *openapi3.Swagger) {
 
+	var editedSwaggerData string
+	var mgwSwagger *openapi3.Swagger
+	var errMgwSwgr error
+	//var resLevelEp = make(map[*openapi3.PathItem]XMGWProductionEndpoints)
+	var resLevelEp = make(map[string]XMGWProductionEndpoints)
+	mapName := apiName + "-swagger-mgw"
+	//get mgw swagger if available
+	configmapOfNewSwagger, err := getConfigmap(r, mapName,userNameSpace)
+	if err != nil && errors.IsNotFound(err){
+		log.Info("configmap for mgw swagger is not found.Creating a new configmap")
+		mgwSwagger = swagger
+	} else if err != nil {
+		log.Error(err,"error getting configmap of mgw swagger file")
+	}else {
+		for _, value := range configmapOfNewSwagger.Data {
+			editedSwaggerData = value
+		}
+		mgwSwagger, errMgwSwgr = openapi3.NewSwaggerLoader().LoadSwaggerFromData([]byte(editedSwaggerData))
+		if errMgwSwgr != nil {
+			log.Error(errMgwSwgr, "error generate swagger for mgw")
+		}
+	}
 	endpointNames := make(map[string]string)
 	var checkt []string
 	//api level endpoint
@@ -1042,13 +1074,12 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string, 
 						endPointSidecar := protocol + "://" + "localhost:" + strconv.Itoa(int(targetEndpointCr.Spec.Port))
 						endpointNames[targetEndpointCr.Name] = endPointSidecar
 						checkt = append(checkt, endPointSidecar)
-
+					} else {
+						endPoint = protocol + "://" + endPoint
+						checkt = append(checkt, endPoint)
 					}
-					endPoint = protocol + "://" + endPoint
-					checkt = append(checkt, endPoint)
-
 					prodEp.Urls = checkt
-					swagger.Extensions[endpointExtension] = prodEp
+					mgwSwagger.Extensions[endpointExtension] = prodEp
 				}
 			} else {
 				err := json.Unmarshal(endpointJson, &prodEp)
@@ -1078,16 +1109,13 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string, 
 								isServiceDef = true
 							}
 						} else {
-							if endpointUrl.Hostname() != "localhost" {
 								endpointNames[endpointUrl.Hostname()] = endpointUrl.Hostname()
-							}
-
 						}
 					}
 
 					if isServiceDef {
 						prodEp.Urls = endpointList
-						swagger.Extensions[endpointExtension] = prodEp
+						mgwSwagger.Extensions[endpointExtension] = prodEp
 					}
 				} else {
 					log.Info("error unmarshal endpoint")
@@ -1097,7 +1125,8 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string, 
 	}
 
 	//resource level endpoint
-	for _, path := range swagger.Paths {
+	for pathName, path := range swagger.Paths {
+		var checkr []string
 		resourceEndpointData, checkResourceEP := path.Get.Extensions[endpointExtension]
 		if checkResourceEP {
 			prodEp := XMGWProductionEndpoints{}
@@ -1112,22 +1141,26 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string, 
 					err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: userNameSpace,
 						Name: endPoint}, currentService)
 					erCr := r.client.Get(context.TODO(), types.NamespacedName{Namespace: userNameSpace, Name: endPoint}, targetEndpointCr)
-
-					if err != nil && errors.IsNotFound(err) {
+					if err != nil && errors.IsNotFound(err) && mode != sidecar{
 						log.Error(err, "Service is not found")
 					} else if erCr != nil && errors.IsNotFound(erCr) {
 						log.Error(err, "targetendpoint CRD object is not found")
-					} else if err != nil {
+					} else if err != nil && mode != sidecar{
 						log.Error(err, "Error in getting service")
 					} else if erCr != nil {
 						log.Error(err, "Error in getting targetendpoint CRD object")
 					} else {
 						protocol := targetEndpointCr.Spec.Protocol
-						endpointNames[endPoint] = endPoint
-						endPoint = protocol + "://" + endPoint
-						checkt := []string{endPoint}
-						prodEp.Urls = checkt
-						path.Get.Extensions[endpointExtension] = prodEp
+						if mode == sidecar {
+							endPointSidecar := protocol + "://" + "localhost:" + strconv.Itoa(int(targetEndpointCr.Spec.Port))
+							endpointNames[endPoint] = endPointSidecar
+							checkr = append(checkr, endPointSidecar)
+						} else {
+							endPoint = protocol + "://" + endPoint
+							checkr = append(checkr, endPoint)
+						}
+						prodEp.Urls = checkr
+						resLevelEp[pathName] = prodEp
 					}
 				} else {
 					err := json.Unmarshal(ResourceEndpointJson, &prodEp)
@@ -1143,28 +1176,41 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string, 
 								err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: userNameSpace,
 									Name: urlVal}, currentService)
 								erCr := r.client.Get(context.TODO(), types.NamespacedName{Namespace: userNameSpace, Name: urlVal}, targetEndpointCr)
-								if (err == nil && erCr == nil) || mode == sidecar {
+								if err == nil && erCr == nil || mode == sidecar {
 									endpointNames[urlVal] = urlVal
 									protocol := targetEndpointCr.Spec.Protocol
-									urlVal = protocol + "://" + urlVal
-									endpointList[index] = urlVal
+									if mode == sidecar {
+										urlValSidecar := protocol + "://" + "localhost:" + strconv.Itoa(int(targetEndpointCr.Spec.Port))
+										endpointNames[urlVal] = urlValSidecar
+										endpointList[index] = urlValSidecar
+									} else {
+										urlVal = protocol + "://" + urlVal
+										endpointList[index] = urlVal
+									}
 									isServiceDef = true
 								}
 							} else {
-								endpointNames[endpointUrl.Hostname()] = endpointUrl.Hostname()
+									endpointNames[endpointUrl.Hostname()] = endpointUrl.Hostname()
 							}
 						}
 
 						if isServiceDef {
 							prodEp.Urls = endpointList
-							path.Get.Extensions[endpointExtension] = prodEp
+							resLevelEp[pathName] = prodEp
 						}
 					}
 				}
 			}
 		}
 	}
-	return endpointNames, swagger
+	for pathName, path := range mgwSwagger.Paths {
+		for mapPath, value := range resLevelEp{
+			if strings.EqualFold(pathName,mapPath) {
+				path.Get.Extensions[endpointExtension] = value
+			}
+		}
+	}
+	return endpointNames, mgwSwagger
 }
 
 func getCredentials(r *ReconcileAPI, name string, securityType string, userNameSpace string) error {
@@ -1597,7 +1643,7 @@ func getVolumes(cr *wso2v1alpha1.API) ([]corev1.VolumeMount, []corev1.Volume) {
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: cr.Spec.Definition.ConfigmapName,
+						Name: cr.Spec.Definition.ConfigmapName + "-mgw",
 					},
 				},
 			},
