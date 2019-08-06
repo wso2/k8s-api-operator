@@ -1021,7 +1021,6 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string, 
 	var editedSwaggerData string
 	var mgwSwagger *openapi3.Swagger
 	var errMgwSwgr error
-	//var resLevelEp = make(map[*openapi3.PathItem]XMGWProductionEndpoints)
 	var resLevelEp = make(map[string]XMGWProductionEndpoints)
 	mapName := apiName + "-swagger-mgw"
 	//get mgw swagger if available
@@ -1069,7 +1068,6 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string, 
 					log.Error(err, "Error in getting targetendpoint CRD object")
 				} else {
 					protocol := targetEndpointCr.Spec.Protocol
-					//endpointNames[endPoint] = endPoint
 					if mode == sidecar {
 						endPointSidecar := protocol + "://" + "localhost:" + strconv.Itoa(int(targetEndpointCr.Spec.Port))
 						endpointNames[targetEndpointCr.Name] = endPointSidecar
@@ -1448,9 +1446,6 @@ func isImageExist(image string, tag string, r *ReconcileAPI) (bool, error) {
 //Schedule Kaniko Job to generate micro-gw image
 func scheduleKanikoJob(cr *wso2v1alpha1.API, imageName string, conf *corev1.ConfigMap, jobVolumeMount []corev1.VolumeMount,
 	jobVolume []corev1.Volume, timeStamp string, owner []metav1.OwnerReference) *batchv1.Job {
-	//labels := map[string]string{
-	//	"app": cr.Name,
-	//}
 	kanikoJobName := cr.Name + "kaniko"
 	if timeStamp != "" {
 		kanikoJobName = kanikoJobName + "-" + timeStamp
@@ -1774,7 +1769,6 @@ func getAnalyticsPVClaim(r *ReconcileAPI, deployVolumeMount []corev1.VolumeMount
 			},
 		},
 	}
-	//}
 	return deployVolumeMount, deployVolume, nil
 }
 
