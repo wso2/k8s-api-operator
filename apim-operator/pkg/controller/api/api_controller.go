@@ -469,17 +469,17 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	formattedSwagger := string(prettyJSON.Bytes())
 	//create configmap with modified swagger
-	swaggerConfMap := createConfigMap(apiConfigMapRef + "-mgw", swaggerDataFile, formattedSwagger, userNameSpace, owner)
+	swaggerConfMap := createConfigMap(apiConfigMapRef+"-mgw", swaggerDataFile, formattedSwagger, userNameSpace, owner)
 	log.Info("Creating swagger configmap for mgw")
-	_, errgetConf := getConfigmap(r, apiConfigMapRef + "-mgw", userNameSpace)
-	if errgetConf != nil && errors.IsNotFound(errgetConf){
+	_, errgetConf := getConfigmap(r, apiConfigMapRef+"-mgw", userNameSpace)
+	if errgetConf != nil && errors.IsNotFound(errgetConf) {
 		log.Info("swagger-mgw is not found. Hence creating new configmap")
 		errConf := r.client.Create(context.TODO(), swaggerConfMap)
 		if errConf != nil {
 			log.Error(err, "Error in mgw swagger configmap create")
 		}
 	} else if errgetConf != nil {
-		log.Error(errgetConf,"error getting swagger-mgw")
+		log.Error(errgetConf, "error getting swagger-mgw")
 	}
 
 	if isDefined == false && len(securityDef.Security) == 0 {
@@ -1025,13 +1025,13 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string, 
 	var resLevelEp = make(map[string]XMGWProductionEndpoints)
 	mapName := apiName + "-swagger-mgw"
 	//get mgw swagger if available
-	configmapOfNewSwagger, err := getConfigmap(r, mapName,userNameSpace)
-	if err != nil && errors.IsNotFound(err){
+	configmapOfNewSwagger, err := getConfigmap(r, mapName, userNameSpace)
+	if err != nil && errors.IsNotFound(err) {
 		log.Info("configmap for mgw swagger is not found.Creating a new configmap")
 		mgwSwagger = swagger
 	} else if err != nil {
-		log.Error(err,"error getting configmap of mgw swagger file")
-	}else {
+		log.Error(err, "error getting configmap of mgw swagger file")
+	} else {
 		for _, value := range configmapOfNewSwagger.Data {
 			editedSwaggerData = value
 		}
@@ -1109,7 +1109,7 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string, 
 								isServiceDef = true
 							}
 						} else {
-								endpointNames[endpointUrl.Hostname()] = endpointUrl.Hostname()
+							endpointNames[endpointUrl.Hostname()] = endpointUrl.Hostname()
 						}
 					}
 
@@ -1141,11 +1141,11 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string, 
 					err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: userNameSpace,
 						Name: endPoint}, currentService)
 					erCr := r.client.Get(context.TODO(), types.NamespacedName{Namespace: userNameSpace, Name: endPoint}, targetEndpointCr)
-					if err != nil && errors.IsNotFound(err) && mode != sidecar{
+					if err != nil && errors.IsNotFound(err) && mode != sidecar {
 						log.Error(err, "Service is not found")
 					} else if erCr != nil && errors.IsNotFound(erCr) {
 						log.Error(err, "targetendpoint CRD object is not found")
-					} else if err != nil && mode != sidecar{
+					} else if err != nil && mode != sidecar {
 						log.Error(err, "Error in getting service")
 					} else if erCr != nil {
 						log.Error(err, "Error in getting targetendpoint CRD object")
@@ -1190,7 +1190,7 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string, 
 									isServiceDef = true
 								}
 							} else {
-									endpointNames[endpointUrl.Hostname()] = endpointUrl.Hostname()
+								endpointNames[endpointUrl.Hostname()] = endpointUrl.Hostname()
 							}
 						}
 
@@ -1204,8 +1204,8 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string, 
 		}
 	}
 	for pathName, path := range mgwSwagger.Paths {
-		for mapPath, value := range resLevelEp{
-			if strings.EqualFold(pathName,mapPath) {
+		for mapPath, value := range resLevelEp {
+			if strings.EqualFold(pathName, mapPath) {
 				path.Get.Extensions[endpointExtension] = value
 			}
 		}
