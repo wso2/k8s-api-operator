@@ -74,9 +74,10 @@ then
         done
 
         apiName=$2
+        configmapName="$apiName-swagger"
 
         echo -e "\nCreating configmap with name "$apiName $namespace
-        kubectl create configmap $apiName $3 $namespace
+        kubectl create configmap $configmapName $3 $namespace
 
 
         if [ $? -eq 0 ]; then
@@ -89,7 +90,7 @@ metadata:
  name: "${apiName}"
 spec:
  definition:
-  configmapName: "${apiName}"
+  configmapName: "${configmapName}"
   type: swagger
  replicas: ${replicas}
  mode: privateJet
