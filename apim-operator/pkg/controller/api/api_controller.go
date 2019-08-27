@@ -249,7 +249,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		log.Info("Deployment mode is not set in the swagger. Hence default to privateJet mode")
 	}
 
-	image := strings.ToLower(strings.ReplaceAll(swagger.Info.Title, " ", ""))
+	image := strings.ToLower(strings.ReplaceAll(instance.Name, " ", ""))
 	tag := swagger.Info.Version
 	if instance.Spec.UpdateTimeStamp != "" {
 		tag = tag + "-" + instance.Spec.UpdateTimeStamp
