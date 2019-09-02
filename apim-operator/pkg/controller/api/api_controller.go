@@ -1295,6 +1295,26 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 		Ports: []corev1.ContainerPort{{
 			ContainerPort: 9095,
 		}},
+		ReadinessProbe: &corev1.Probe{
+			Handler: corev1.Handler{
+				TCPSocket: &corev1.TCPSocketAction{
+					Port: intstr.FromInt(9090),
+				},
+			},
+			InitialDelaySeconds: 5,
+			PeriodSeconds: 5,
+			TimeoutSeconds: 1,
+		},
+		LivenessProbe: &corev1.Probe{
+			Handler: corev1.Handler{
+				TCPSocket: &corev1.TCPSocketAction{
+					Port: intstr.FromInt(9090),
+				},
+			},
+			InitialDelaySeconds: 5,
+			PeriodSeconds: 15,
+			TimeoutSeconds: 1,
+		},
 	}
 
 	containerList = append(containerList, apiContainer)
