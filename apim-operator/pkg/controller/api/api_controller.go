@@ -215,6 +215,10 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	//Check if the configmap mentioned in crd object exist
 	apiConfigMapRef := instance.Spec.Definition.ConfigmapName
+	fmt.Println("instance configmap name")
+	fmt.Println(apiConfigMapRef)
+	fmt.Println("instance name")
+	fmt.Println(instance.Name)
 	apiConfigMap, err := getConfigmap(r, apiConfigMapRef, userNameSpace)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -236,7 +240,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	//Fetch swagger data from configmap, reads and modifies swagger
 	swaggerDataMap := apiConfigMap.Data
 	swagger, swaggerDataFile, err := mgwSwaggerLoader(swaggerDataMap)
-
+	fmt.Println("swagger info description data")
+	fmt.Println(swagger.Info.Description)
 	modeExt, isModeDefined := swagger.Extensions[deploymentMode]
 	mode := privateJet
 	if isModeDefined {
@@ -251,6 +256,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	image := strings.ToLower(strings.ReplaceAll(instance.Name, " ", ""))
 	tag := swagger.Info.Version
+	fmt.Println("image tag")
+	fmt.Println(tag)
 	if instance.Spec.UpdateTimeStamp != "" {
 		tag = tag + "-" + instance.Spec.UpdateTimeStamp
 	}
@@ -261,10 +268,12 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		log.Error(errImage, "Error in image finding")
 	}
 	log.Info("image exist? " + strconv.FormatBool(imageExist))
-	endpointNames, newSwagger := mgwSwaggerHandler(r, swagger, mode, userNameSpace, instance.Name)
+	endpointNames, newSwagger := mgwSwaggerHandler(r, swagger, mode, userNameSpace)
 	for endpointNameL, _ := range endpointNames {
 		log.Info("Endpoint name " + endpointNameL)
 	}
+	fmt.Println("new swagger with endpoints")
+	fmt.Println(newSwagger.Info.Description)
 	var containerList []corev1.Container
 	//Creating sidecar endpoint deployment
 	if mode == sidecar {
@@ -456,6 +465,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	if len(securityDefinition) > 0 {
 		newSwagger.Components.Extensions[securitySchemeExtension] = securityDefinition
 	}
+	fmt.Println("new swagger with security")
+	fmt.Println(newSwagger.Info.Description)
 	//reformatting swagger
 	var prettyJSON bytes.Buffer
 	final, err := newSwagger.MarshalJSON()
@@ -469,9 +480,9 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	formattedSwagger := string(prettyJSON.Bytes())
 	//create configmap with modified swagger
-	swaggerConfMap := createConfigMap(apiConfigMapRef+"-mgw", swaggerDataFile, formattedSwagger, userNameSpace, owner)
+	swaggerConfMap := createConfigMap(instance.Name+"-swagger-mgw", swaggerDataFile, formattedSwagger, userNameSpace, owner)
 	log.Info("Creating swagger configmap for mgw")
-	_, errgetConf := getConfigmap(r, apiConfigMapRef+"-mgw", userNameSpace)
+	foundConfMap, errgetConf := getConfigmap(r, instance.Name+"-swagger-mgw", userNameSpace)
 	if errgetConf != nil && errors.IsNotFound(errgetConf) {
 		log.Info("swagger-mgw is not found. Hence creating new configmap")
 		errConf := r.client.Create(context.TODO(), swaggerConfMap)
@@ -480,8 +491,21 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		}
 	} else if errgetConf != nil {
 		log.Error(errgetConf, "error getting swagger-mgw")
+	} else {
+		if instance.Spec.UpdateTimeStamp != "" {
+			//updating configmap
+			fmt.Println("updating configmap with new swagger definition")
+			foundConfMap.Data[swaggerDataFile] = formattedSwagger
+			updateEr := r.client.Update(context.TODO(), foundConfMap)
+			if updateEr != nil {
+				log.Error(updateEr, "Error in updating configmap with updated swagger definition")
+			}
+			fmt.Println("formatted swagger")
+			fmt.Println(string(formattedSwagger))
+			fmt.Println("foundconf after update")
+			fmt.Println(string(foundConfMap.Data[swaggerDataFile]))
+		}
 	}
-
 	if isDefined == false && len(securityDef.Security) == 0 {
 		log.Info("use default security")
 		//use default security
@@ -519,35 +543,98 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 					return reconcile.Result{}, errc
 				}
 				//copying default cert as a secret to user namespace
-				noOwner := []metav1.OwnerReference{}
 				for cert, value := range defaultCert.Data {
 					defaultCertName = cert
 					defaultCertvalue = value
 				}
-				newDefaultSecret := createSecret(securityDefault.Spec.Certificate, defaultCertName, string(defaultCertvalue), userNameSpace, noOwner)
+				newDefaultSecret := createSecret(securityDefault.Spec.Certificate, defaultCertName, string(defaultCertvalue), userNameSpace, owner)
 				errCreateSec := r.client.Create(context.TODO(), newDefaultSecret)
 				if errCreateSec != nil {
 					log.Error(errCreateSec, "error creating secret for default security in user namespace")
 					return reconcile.Result{}, errCreateSec
+				} else {
+					//mount certs
+					volumemountTemp, volumeTemp := certMoutHandler(r, newDefaultSecret, jobVolumeMount, jobVolume)
+					jobVolumeMount = volumemountTemp
+					jobVolume = volumeTemp
+					alias = newDefaultSecret.Name + certAlias
+					existcert = true
+					for k := range newDefaultSecret.Data {
+						certName = k
+					}
+					//add cert path and alias as key value pairs
+					certList[alias] = certPath + newDefaultSecret.Name + "/" + certName
+					certificateAlias = alias
 				}
 			} else if errCertUserns != nil {
 				log.Error(errCertUserns, "error in getting default certificate from "+userNameSpace+"namespace")
 				return reconcile.Result{}, errCertUserns
+			} else {
+				//mount certs
+				volumemountTemp, volumeTemp := certMoutHandler(r, defaultCert, jobVolumeMount, jobVolume)
+				jobVolumeMount = volumemountTemp
+				jobVolume = volumeTemp
+				alias = defaultCert.Name + certAlias
+				existcert = true
+				for k := range defaultCert.Data {
+					certName = k
+				}
+				//add cert path and alias as key value pairs
+				certList[alias] = certPath + defaultCert.Name + "/" + certName
+				certificateAlias = alias
+				fmt.Println("cert alias")
+				fmt.Println(certificateAlias)
 			}
 			//copying default security to user namespace
 			log.Info("copying default security to " + userNameSpace)
-			newDefaultSecurity := copyDefaultSecurity(securityDefault, userNameSpace)
+			newDefaultSecurity := copyDefaultSecurity(securityDefault, userNameSpace, owner)
 			errCreateSecurity := r.client.Create(context.TODO(), newDefaultSecurity)
 			if errCreateSecurity != nil {
 				log.Error(errCreateSecurity, "error creating secret for default security in user namespace")
 				return reconcile.Result{}, errCreateSecurity
 			}
 			log.Info("default security successfully copied to " + userNameSpace + " namespace")
+			if newDefaultSecurity.Spec.Issuer != "" {
+				issuer = newDefaultSecurity.Spec.Issuer
+			}
+			if newDefaultSecurity.Spec.Audience != "" {
+				audience = newDefaultSecurity.Spec.Audience
+			}
 		} else if errGetSec != nil {
 			log.Error(errGetSec, "error getting default security from user namespace")
 			return reconcile.Result{}, errGetSec
 		} else {
 			log.Info("default security exists in " + userNameSpace + " namespace")
+			//check default cert exist in usernamespace
+			var defaultCertUsrNs = &corev1.Secret{}
+			errCertUserns := r.client.Get(context.TODO(), types.NamespacedName{Name: securityDefault.Spec.Certificate, Namespace: userNameSpace}, defaultCertUsrNs)
+			if errCertUserns != nil && errors.IsNotFound(errCertUserns) {
+				log.Error(errCertUserns, "default certificate is not found in user namespace")
+				return reconcile.Result{}, errCertUserns
+			} else if errCertUserns != nil {
+				log.Error(errCertUserns, "error retrieving default certificate in user namespace")
+				return reconcile.Result{}, errCertUserns
+			} else {
+				//mount certs
+				volumemountTemp, volumeTemp := certMoutHandler(r, defaultCertUsrNs, jobVolumeMount, jobVolume)
+				jobVolumeMount = volumemountTemp
+				jobVolume = volumeTemp
+				alias = defaultCertUsrNs.Name + certAlias
+				existcert = true
+				for k := range defaultCertUsrNs.Data {
+					certName = k
+				}
+				//add cert path and alias as key value pairs
+				certList[alias] = certPath + defaultCertUsrNs.Name + "/" + certName
+				certificateAlias = alias
+			}
+			if securityDefault.Spec.Issuer != "" {
+				issuer = securityDefault.Spec.Issuer
+			}
+			if securityDefault.Spec.Audience != "" {
+				audience = securityDefault.Spec.Audience
+			}
+
 		}
 	}
 	// gets analytics configuration
@@ -642,8 +729,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		log.Info("Successfully created secret")
 	}
 
-	generateK8sArtifacsForMgw := controlConfigData[generatekubernbetesartifactsformgw]
-	genArtifacts, errGenArtifacts := strconv.ParseBool(generateK8sArtifacsForMgw)
+	generateK8sArtifactsForMgw := controlConfigData[generatekubernbetesartifactsformgw]
+	genArtifacts, errGenArtifacts := strconv.ParseBool(generateK8sArtifactsForMgw)
 	if errGenArtifacts != nil {
 		log.Error(errGenArtifacts, "error reading value for generate k8s artifacts")
 	}
@@ -673,16 +760,9 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	if err != nil {
 		log.Error(err, "error getting hpa target average utilization for CPU")
 	}
-	GetAvgUtilMemory := controlConfigData[hpaTargetAverageUtilizationMemory]
-	intValueUtilMemory, err := strconv.ParseInt(GetAvgUtilMemory, 10, 32)
-	if err != nil {
-		log.Error(err, "error getting hpa target average utilization for memory")
-	}
 	targetAvgUtilizationCPU := int32(intValueUtilCPU)
-	targetAvgUtilizationMemory := int32(intValueUtilMemory)
 	minReplicas := int32(instance.Spec.Replicas)
-	errGettingHpa := createHorizontalPodAutoscaler(dep, r, owner, minReplicas, maxReplicas, targetAvgUtilizationCPU,
-		targetAvgUtilizationMemory)
+	errGettingHpa := createHorizontalPodAutoscaler(dep, r, owner, minReplicas, maxReplicas, targetAvgUtilizationCPU)
 	if errGettingHpa != nil {
 		log.Error(errGettingHpa, "Error getting HPA")
 	}
@@ -897,7 +977,7 @@ func createMGWSecret(r *ReconcileAPI, confData string, owner []metav1.OwnerRefer
 }
 
 func createHorizontalPodAutoscaler(dep *appsv1.Deployment, r *ReconcileAPI, owner []metav1.OwnerReference,
-	minReplicas int32, maxReplicas int32, targetAverageUtilizationCPU int32, targetAverageUtilizationMemory int32) error {
+	minReplicas int32, maxReplicas int32, targetAverageUtilizationCPU int32) error {
 
 	targetResource := v2beta1.CrossVersionObjectReference{
 		Kind:       "Deployment",
@@ -1016,29 +1096,13 @@ func mgwSwaggerLoader(swaggerDataMap map[string]string) (*openapi3.Swagger, stri
 }
 
 //Get endpoint from swagger and replace it with targetendpoint kind service endpoint
-func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string, userNameSpace string, apiName string) (map[string]string, *openapi3.Swagger) {
+func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string, userNameSpace string) (map[string]string, *openapi3.Swagger) {
 
-	var editedSwaggerData string
 	var mgwSwagger *openapi3.Swagger
-	var errMgwSwgr error
 	var resLevelEp = make(map[string]XMGWProductionEndpoints)
-	mapName := apiName + "-swagger-mgw"
-	//get mgw swagger if available
-	configmapOfNewSwagger, err := getConfigmap(r, mapName, userNameSpace)
-	if err != nil && errors.IsNotFound(err) {
-		log.Info("configmap for mgw swagger is not found.Creating a new configmap")
-		mgwSwagger = swagger
-	} else if err != nil {
-		log.Error(err, "error getting configmap of mgw swagger file")
-	} else {
-		for _, value := range configmapOfNewSwagger.Data {
-			editedSwaggerData = value
-		}
-		mgwSwagger, errMgwSwgr = openapi3.NewSwaggerLoader().LoadSwaggerFromData([]byte(editedSwaggerData))
-		if errMgwSwgr != nil {
-			log.Error(errMgwSwgr, "error generate swagger for mgw")
-		}
-	}
+	mgwSwagger = swagger
+	fmt.Println("mgw swagger data")
+	fmt.Println(mgwSwagger.Info.Description)
 	endpointNames := make(map[string]string)
 	var checkt []string
 	//api level endpoint
@@ -1446,7 +1510,7 @@ func isImageExist(image string, tag string, r *ReconcileAPI) (bool, error) {
 //Schedule Kaniko Job to generate micro-gw image
 func scheduleKanikoJob(cr *wso2v1alpha1.API, imageName string, conf *corev1.ConfigMap, jobVolumeMount []corev1.VolumeMount,
 	jobVolume []corev1.Volume, timeStamp string, owner []metav1.OwnerReference) *batchv1.Job {
-	kanikoJobName := cr.Name + "kaniko"
+	kanikoJobName := cr.Name + "-kaniko"
 	if timeStamp != "" {
 		kanikoJobName = kanikoJobName + "-" + timeStamp
 	}
@@ -1638,7 +1702,7 @@ func getVolumes(cr *wso2v1alpha1.API) ([]corev1.VolumeMount, []corev1.Volume) {
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: cr.Spec.Definition.ConfigmapName + "-mgw",
+						Name: cr.Name + "-swagger-mgw",
 					},
 				},
 			},
@@ -1849,12 +1913,13 @@ func getOperatorOwner(r *ReconcileAPI) ([]metav1.OwnerReference, error) {
 	}, nil
 }
 
-func copyDefaultSecurity(securityDefault *wso2v1alpha1.Security, userNameSpace string) *wso2v1alpha1.Security {
+func copyDefaultSecurity(securityDefault *wso2v1alpha1.Security, userNameSpace string, owner []metav1.OwnerReference) *wso2v1alpha1.Security {
 
 	return &wso2v1alpha1.Security{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      defaultSecurity,
-			Namespace: userNameSpace,
+			Name:            defaultSecurity,
+			Namespace:       userNameSpace,
+			OwnerReferences: owner,
 		},
 		Spec: wso2v1alpha1.SecuritySpec{
 			Type:        securityDefault.Spec.Type,
