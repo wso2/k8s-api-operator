@@ -215,10 +215,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	//Check if the configmap mentioned in crd object exist
 	apiConfigMapRef := instance.Spec.Definition.ConfigmapName
-	fmt.Println("instance configmap name")
-	fmt.Println(apiConfigMapRef)
-	fmt.Println("instance name")
-	fmt.Println(instance.Name)
 	apiConfigMap, err := getConfigmap(r, apiConfigMapRef, userNameSpace)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -240,8 +236,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	//Fetch swagger data from configmap, reads and modifies swagger
 	swaggerDataMap := apiConfigMap.Data
 	swagger, swaggerDataFile, err := mgwSwaggerLoader(swaggerDataMap)
-	fmt.Println("swagger info description data")
-	fmt.Println(swagger.Info.Description)
 	modeExt, isModeDefined := swagger.Extensions[deploymentMode]
 	mode := privateJet
 	if isModeDefined {
@@ -256,8 +250,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	image := strings.ToLower(strings.ReplaceAll(instance.Name, " ", ""))
 	tag := swagger.Info.Version
-	fmt.Println("image tag")
-	fmt.Println(tag)
 	if instance.Spec.UpdateTimeStamp != "" {
 		tag = tag + "-" + instance.Spec.UpdateTimeStamp
 	}
@@ -272,8 +264,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	for endpointNameL, _ := range endpointNames {
 		log.Info("Endpoint name " + endpointNameL)
 	}
-	fmt.Println("new swagger with endpoints")
-	fmt.Println(newSwagger.Info.Description)
 	var containerList []corev1.Container
 	//Creating sidecar endpoint deployment
 	if mode == sidecar {
@@ -465,8 +455,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	if len(securityDefinition) > 0 {
 		newSwagger.Components.Extensions[securitySchemeExtension] = securityDefinition
 	}
-	fmt.Println("new swagger with security")
-	fmt.Println(newSwagger.Info.Description)
 	//reformatting swagger
 	var prettyJSON bytes.Buffer
 	final, err := newSwagger.MarshalJSON()
@@ -494,16 +482,11 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	} else {
 		if instance.Spec.UpdateTimeStamp != "" {
 			//updating configmap
-			fmt.Println("updating configmap with new swagger definition")
 			foundConfMap.Data[swaggerDataFile] = formattedSwagger
 			updateEr := r.client.Update(context.TODO(), foundConfMap)
 			if updateEr != nil {
 				log.Error(updateEr, "Error in updating configmap with updated swagger definition")
 			}
-			fmt.Println("formatted swagger")
-			fmt.Println(string(formattedSwagger))
-			fmt.Println("foundconf after update")
-			fmt.Println(string(foundConfMap.Data[swaggerDataFile]))
 		}
 	}
 	if isDefined == false && len(securityDef.Security) == 0 {
@@ -582,8 +565,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 				//add cert path and alias as key value pairs
 				certList[alias] = certPath + defaultCert.Name + "/" + certName
 				certificateAlias = alias
-				fmt.Println("cert alias")
-				fmt.Println(certificateAlias)
 			}
 			//copying default security to user namespace
 			log.Info("copying default security to " + userNameSpace)
@@ -1101,8 +1082,6 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string, 
 	var mgwSwagger *openapi3.Swagger
 	var resLevelEp = make(map[string]XMGWProductionEndpoints)
 	mgwSwagger = swagger
-	fmt.Println("mgw swagger data")
-	fmt.Println(mgwSwagger.Info.Description)
 	endpointNames := make(map[string]string)
 	var checkt []string
 	//api level endpoint
