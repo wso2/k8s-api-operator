@@ -22,7 +22,7 @@ metadata:
 spec:
   type: JWT
   certificate: wso2am260-secret
-  issuer: https://localhost:9443/oauth2/token
+  issuer: https://wso2apim:9443/oauth2/token
   audience: http://org.wso2.apimgt/gateway
 ---
 apiVersion: v1
