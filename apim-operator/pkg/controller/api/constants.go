@@ -62,6 +62,8 @@ const (
 	dockertemplatepath                  = "/usr/local/bin/dockerFile.gotmpl"
 	mgwConfTemplate                     = "mgw-conf-template";
 	mgwConfGoTmpl                       = "mgwConf.gotmpl";
+	dockerSecretMustache                = "docker-secret-mustache";
+	dockerSecretMustacheTemplate        = "docketMustache.gotmpl";
 	certConfig                          = "apim-certs"
 	encodedTrustsorePassword            = "YmFsbGVyaW5h"
 	truststoreSecretName                = "truststorepass"
