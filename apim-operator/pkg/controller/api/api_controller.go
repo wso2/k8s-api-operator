@@ -674,7 +674,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	//Retrieving configmap related to micro-gateway configuration mustache/template
-	confTemplate, confErr := getConfigmap(r, mgwConfTemplate, wso2NameSpaceConst)
+	confTemplate, confErr := getConfigmap(r, mgwConfMustache, wso2NameSpaceConst)
 	if confErr != nil {
 		log.Error(err, "error in retrieving the config map ")
 	}
@@ -1573,9 +1573,12 @@ func dockerConfigCreator(r *ReconcileAPI, operatorOwner []metav1.OwnerReference,
 	rawCredentials := dockerUsername + ":" + dockerPassword
 	credentials := b64.StdEncoding.EncodeToString([]byte(rawCredentials))
 
-	//make the docker-config template
-	filename := "/usr/local/bin/dockerSecretTemplate.mustache"
-	output, err := mustache.RenderFile(filename, map[string]string{
+	//Retrieve docker secret mustache configmap
+	dockerSecretMustacheConfigMap, err := getConfigmap(r, dockerSecretMustache, wso2NameSpaceConst)
+	//Retrive docker secret template from the configmap
+	dockerSecretTemplate := dockerSecretMustacheConfigMap.Data[dockerSecretMustacheTemplate]
+	//Populate docker-secret configmap from provided values
+	output, err := mustache.Render(dockerSecretTemplate, map[string]string{
 		"docker_url":  "https://index.docker.io/v1/",
 		"credentials": credentials})
 	if err != nil {
