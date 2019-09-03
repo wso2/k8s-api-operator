@@ -60,7 +60,7 @@ const (
 	certPath                            = "/usr/wso2/certs/"
 	mgwConfTemplatePath                 = "/usr/local/bin/microgwconf.mustache"
 	dockertemplatepath                  = "/usr/local/bin/dockerFile.gotmpl"
-	mgwConfTemplate                     = "mgw-conf-template";
+	mgwConfMustache                     = "mgw-conf-mustache";
 	mgwConfGoTmpl                       = "mgwConf.gotmpl";
 	dockerSecretMustache                = "docker-secret-mustache";
 	dockerSecretMustacheTemplate        = "docketMustache.gotmpl";

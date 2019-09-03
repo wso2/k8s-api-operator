@@ -17,7 +17,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: mgw-conf-template
+  name: mgw-conf-mustache
   namespace: wso2-system
 data:
   mgwConf.gotmpl: |

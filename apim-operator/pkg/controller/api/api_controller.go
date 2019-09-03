@@ -674,7 +674,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	//Retrieving configmap related to micro-gateway configuration mustache/template
-	confTemplate, confErr := getConfigmap(r, mgwConfTemplate, wso2NameSpaceConst)
+	confTemplate, confErr := getConfigmap(r, mgwConfMustache, wso2NameSpaceConst)
 	if confErr != nil {
 		log.Error(err, "error in retrieving the config map ")
 	}
