@@ -60,6 +60,8 @@ const (
 	certPath                            = "/usr/wso2/certs/"
 	mgwConfTemplatePath                 = "/usr/local/bin/microgwconf.mustache"
 	dockertemplatepath                  = "/usr/local/bin/dockerFile.gotmpl"
+	mgwConfTemplate						= "mgw-conf-template";
+	mgwConfGoTmpl						= "mgwConf.gotmpl";
 	certConfig                          = "apim-certs"
 	encodedTrustsorePassword            = "YmFsbGVyaW5h"
 	truststoreSecretName                = "truststorepass"

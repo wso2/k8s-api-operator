@@ -673,9 +673,15 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		verifyHostname = verifyHostNameVal
 	}
 
-	//writes into the conf file
-	filename := mgwConfTemplatePath
-	output, err := mustache.RenderFile(filename, map[string]string{
+	//Retrieving configmap related to micro-gateway configuration mustache/template
+	confTemplate, confErr := getConfigmap(r, mgwConfTemplate, wso2NameSpaceConst)
+	if confErr != nil {
+		log.Error(err, "error in retrieving the config map ")
+	}
+	//retrieve micro-gw-conf from the configmap
+	confTemp := confTemplate.Data[mgwConfGoTmpl]
+	//populate the configuration file with the proper values
+	output, err := mustache.Render(confTemp, map[string]string{
 		keystorePathConst:                   keystorePath,
 		keystorePasswordConst:               keystorePassword,
 		truststorePathConst:                 truststorePath,
@@ -702,10 +708,10 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	if err != nil {
 		log.Error(err, "error in rendering ")
 	}
-	//writes the created conf file to secret
+	//creating k8s secret from the rendered mgw-conf file
 	errCreateSecret := createMGWSecret(r, output, owner, instance)
 	if errCreateSecret != nil {
-		log.Error(errCreateSecret, "Error in creating conf secret")
+		log.Error(errCreateSecret, "Error in creating micro-gateway conf secret")
 	} else {
 		log.Info("Successfully created secret")
 	}
@@ -1422,9 +1428,9 @@ func dockerfileHandler(r *ReconcileAPI, certList map[string]string, existcert bo
 		return nil, err
 	}
 
-	dockerfileConfmap, err := getConfigmap(r, cr.Name+"-"+dockerFile, cr.Namespace)
+	dockerfileConfmap, err := getConfigmap(r, cr.Name + "-" + dockerFile, cr.Namespace)
 	if err != nil && errors.IsNotFound(err) {
-		dockerConf := createConfigMap(cr.Name+"-"+dockerFile, "Dockerfile", builder.String(), cr.Namespace, owner)
+		dockerConf := createConfigMap(cr.Name + "-" + dockerFile, "Dockerfile", builder.String(), cr.Namespace, owner)
 
 		errorMap := r.client.Create(context.TODO(), dockerConf)
 		if errorMap != nil {
