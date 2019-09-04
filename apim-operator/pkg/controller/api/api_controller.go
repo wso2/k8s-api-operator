@@ -471,9 +471,9 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	formattedSwagger := string(prettyJSON.Bytes())
 	//create configmap with modified swagger
-	swaggerConfMap := createConfigMap(instance.Name+"-swagger-mgw", swaggerDataFile, formattedSwagger, userNameSpace, owner)
+	swaggerConfMap := createConfigMap(instance.Name + "-swagger-mgw", swaggerDataFile, formattedSwagger, userNameSpace, owner)
 	log.Info("Creating swagger configmap for mgw")
-	foundConfMap, errgetConf := getConfigmap(r, instance.Name+"-swagger-mgw", userNameSpace)
+	foundConfMap, errgetConf := getConfigmap(r, instance.Name + "-swagger-mgw", userNameSpace)
 	if errgetConf != nil && errors.IsNotFound(errgetConf) {
 		log.Info("swagger-mgw is not found. Hence creating new configmap")
 		errConf := r.client.Create(context.TODO(), swaggerConfMap)
@@ -659,14 +659,14 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		}
 	}
 	//get interceptors if available
-	interceptorConfigmap, err := getConfigmap(r, instance.Name+"-interceptors", userNameSpace)
+	interceptorConfigmap, err := getConfigmap(r, instance.Name + "-interceptors", userNameSpace)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Interceptors are not defined
 			log.Info("interceptors are not defined")
 		} else {
 			// Error getting interceptors configmap.
-			log.Error(err, "error retrieving configmap " + instance.Name+"-interceptors")
+			log.Error(err, "error retrieving configmap " + instance.Name + "-interceptors")
 			return reconcile.Result{}, err
 		}
 	} else {
@@ -674,12 +674,12 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		//mount interceptors configmap to the volume
 		log.Info("Mounting interceptors configmap to volume.")
 		jobVolumeMount = append(jobVolumeMount, corev1.VolumeMount{
-			Name:      "interceptors-volume",
-			MountPath: "usr/wso2/interceptors/",
+			Name:      interceptorsVolume,
+			MountPath: interceptorsVolumeLocation,
 			ReadOnly:  true,
 		})
 		jobVolume = append(jobVolume, corev1.Volume{
-			Name: "interceptors-volume",
+			Name: interceptorsVolume,
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{

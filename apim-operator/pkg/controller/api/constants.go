@@ -16,24 +16,26 @@
 package api
 
 const (
-	dockerConfig  = "docker-config"
-	mgwDockerFile = "dockerfile-conf"
-	swaggerVolume = "swagger-volume"
+	dockerConfig       = "docker-config"
+	mgwDockerFile      = "dockerfile-conf"
+	swaggerVolume      = "swagger-volume"
+	interceptorsVolume = "interceptors-volume"
 
-	swaggerLocation         = "/usr/wso2/swagger/"
-	dockerFileLocation      = "/usr/wso2/dockerfile/"
-	dockerConfLocation      = "/kaniko/.docker"
-	dockerFile              = "dockerfile"
-	dockerFileTemplate      = "dockerfile-template"
-	policyyamlFile          = "policy-file"
-	policyyamlLocation      = "/usr/wso2/policy/"
-	mgwConfFile             = "conf-file"
-	mgwConfLocation         = "/usr/wso2/mgwconf/"
-	analyticsCertFile       = "analytics-cert"
-	analyticsCertLocation   = "/usr/wso2/analyticssecret/"
-	analyticsVolumeName     = "analytics-volume-storage"
-	analyticsVolumeLocation = "/home/ballerina/api-usage-data/"
-	analyticsConfName       = "analytics-config"
+	swaggerLocation            = "/usr/wso2/swagger/"
+	dockerFileLocation         = "/usr/wso2/dockerfile/"
+	dockerConfLocation         = "/kaniko/.docker"
+	dockerFile                 = "dockerfile"
+	dockerFileTemplate         = "dockerfile-template"
+	policyyamlFile             = "policy-file"
+	policyyamlLocation         = "/usr/wso2/policy/"
+	mgwConfFile                = "conf-file"
+	mgwConfLocation            = "/usr/wso2/mgwconf/"
+	analyticsCertFile          = "analytics-cert"
+	analyticsCertLocation      = "/usr/wso2/analyticssecret/"
+	analyticsVolumeName        = "analytics-volume-storage"
+	analyticsVolumeLocation    = "/home/ballerina/api-usage-data/"
+	analyticsConfName          = "analytics-config"
+	interceptorsVolumeLocation = "usr/wso2/interceptors/"
 
 	mgwToolkitImgConst    = "mgwToolkitImg"
 	mgwRuntimeImgConst    = "mgwRuntimeImg"
@@ -60,10 +62,10 @@ const (
 	certPath                            = "/usr/wso2/certs/"
 	mgwConfTemplatePath                 = "/usr/local/bin/microgwconf.mustache"
 	dockertemplatepath                  = "/usr/local/bin/dockerFile.gotmpl"
-	mgwConfMustache                     = "mgw-conf-mustache";
-	mgwConfGoTmpl                       = "mgwConf.gotmpl";
-	dockerSecretMustache                = "docker-secret-mustache";
-	dockerSecretMustacheTemplate        = "docketMustache.gotmpl";
+	mgwConfMustache                     = "mgw-conf-mustache"
+	mgwConfGoTmpl                       = "mgwConf.gotmpl"
+	dockerSecretMustache                = "docker-secret-mustache"
+	dockerSecretMustacheTemplate        = "docketMustache.gotmpl"
 	certConfig                          = "apim-certs"
 	encodedTrustsorePassword            = "YmFsbGVyaW5h"
 	truststoreSecretName                = "truststorepass"
