@@ -33,6 +33,7 @@ type APISpec struct {
 	UpdateTimeStamp string     `json:"updateTimeStamp"`
 	Replicas        int        `json:"replicas"`
 	Definition      Definition `json:"definition"`
+	InterceptorConfName string `json:"interceptorConfName"`
 }
 
 // APIStatus defines the observed state of API
@@ -66,8 +67,8 @@ type APIList struct {
 
 //Definition contains api definition related values
 type Definition struct {
-	ConfigmapName string `json:"configmapName"`
-	Type          string `json:"type"`
+	ConfigmapName       string `json:"configmapName"`
+	Type                string `json:"type"`
 }
 
 type Mode string

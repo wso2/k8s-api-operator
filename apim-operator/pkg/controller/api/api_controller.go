@@ -229,10 +229,9 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	//add owner reference to the swagger configmap and update it
-	apiConfigMap.OwnerReferences = owner
-	errorUpdateConf := r.client.Update(context.TODO(), apiConfigMap)
-	if errorUpdateConf != nil {
-		log.Error(errorUpdateConf, "error in updating swagger config map with owner reference")
+	errUpdateApiConf := updateConfMapWithOwner(r, owner, apiConfigMap)
+	if errUpdateApiConf != nil {
+		log.Error(errUpdateApiConf, "error in updating swagger config map with owner reference")
 	}
 	//Fetch swagger data from configmap, reads and modifies swagger
 	swaggerDataMap := apiConfigMap.Data
@@ -659,11 +658,12 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		}
 	}
 	//get interceptors if available
-	interceptorConfigmap, err := getConfigmap(r, instance.Name + "-interceptors", userNameSpace)
+	interceptorConfigmap, err := getConfigmap(r, instance.Spec.InterceptorConfName, userNameSpace)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Interceptors are not defined
 			log.Info("interceptors are not defined")
+			existInterceptors = false
 		} else {
 			// Error getting interceptors configmap.
 			log.Error(err, "error retrieving configmap " + instance.Name + "-interceptors")
@@ -683,15 +683,14 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: instance.Name + "-interceptors",
+						Name: instance.Spec.InterceptorConfName,
 					},
 				},
 			},
 		})
 		//update configmap with owner reference
 		log.Info("updating interceptors configmap with owner reference")
-		interceptorConfigmap.OwnerReferences = owner
-		errorUpdateinterceptConf := r.client.Update(context.TODO(), interceptorConfigmap)
+		errorUpdateinterceptConf := updateConfMapWithOwner(r, owner, interceptorConfigmap)
 		if errorUpdateinterceptConf != nil {
 			log.Error(errorUpdateinterceptConf, "error in updating interceptors config map with owner reference")
 		}
@@ -2129,6 +2128,15 @@ func deleteCompletedJobs(namespace string) error {
 	} else if errGetJobs != nil {
 		log.Error(errGetJobs, "error retrieving jobs")
 		return err
+	}
+	return nil
+}
+
+func updateConfMapWithOwner(r *ReconcileAPI,  owner []metav1.OwnerReference, configMap *corev1.ConfigMap) error  {
+	configMap.OwnerReferences = owner
+	errorUpdateinterceptConf := r.client.Update(context.TODO(), configMap)
+	if errorUpdateinterceptConf != nil {
+		return errorUpdateinterceptConf
 	}
 	return nil
 }

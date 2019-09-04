@@ -110,9 +110,8 @@ const (
 	shared                  = "shared"
 	verifyHostNameVal       = "false"
 
-	hpaMaxReplicas                    = "hpaMaxReplicas"
-	hpaTargetAverageUtilizationCPU    = "hpaTargetAverageUtilizationCPU"
-	hpaTargetAverageUtilizationMemory = "hpaTargetAverageUtilizationMemory"
+	hpaMaxReplicas                 = "hpaMaxReplicas"
+	hpaTargetAverageUtilizationCPU = "hpaTargetAverageUtilizationCPU"
 
 	resourceRequestCPU                 = "resourceRequestCPU"
 	resourceRequestMemory              = "resourceRequestMemory"
