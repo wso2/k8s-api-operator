@@ -72,11 +72,12 @@ type XMGWProductionEndpoints struct {
 
 //This struct use to import multiple certificates to trsutstore
 type DockerfileArtifacts struct {
-	CertFound    bool
-	Password     string
-	Certs        map[string]string
-	BaseImage    string
-	RuntimeImage string
+	CertFound         bool
+	Password          string
+	Certs             map[string]string
+	BaseImage         string
+	RuntimeImage      string
+	InterceptorsFound bool
 }
 
 //These structs used to build the security schema in json
@@ -299,6 +300,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	var alias string
 	//keep to track the existance of certificates
 	var existcert bool
+	//keep to track the existance of interceptors
+	var existInterceptors bool
 	//to add multiple certs with alias
 	certList := make(map[string]string)
 	var certName string
@@ -468,9 +471,9 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	formattedSwagger := string(prettyJSON.Bytes())
 	//create configmap with modified swagger
-	swaggerConfMap := createConfigMap(instance.Name + "-swagger-mgw", swaggerDataFile, formattedSwagger, userNameSpace, owner)
+	swaggerConfMap := createConfigMap(instance.Name+"-swagger-mgw", swaggerDataFile, formattedSwagger, userNameSpace, owner)
 	log.Info("Creating swagger configmap for mgw")
-	foundConfMap, errgetConf := getConfigmap(r, instance.Name + "-swagger-mgw", userNameSpace)
+	foundConfMap, errgetConf := getConfigmap(r, instance.Name+"-swagger-mgw", userNameSpace)
 	if errgetConf != nil && errors.IsNotFound(errgetConf) {
 		log.Info("swagger-mgw is not found. Hence creating new configmap")
 		errConf := r.client.Create(context.TODO(), swaggerConfMap)
@@ -655,9 +658,47 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			}
 		}
 	}
+	//get interceptors if available
+	interceptorConfigmap, err := getConfigmap(r, instance.Name+"-interceptors", userNameSpace)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			// Interceptors are not defined
+			log.Info("interceptors are not defined")
+		} else {
+			// Error getting interceptors configmap.
+			log.Error(err, "error retrieving configmap " + instance.Name+"-interceptors")
+			return reconcile.Result{}, err
+		}
+	} else {
+		existInterceptors = true
+		//mount interceptors configmap to the volume
+		log.Info("Mounting interceptors configmap to volume.")
+		jobVolumeMount = append(jobVolumeMount, corev1.VolumeMount{
+			Name:      "interceptors-volume",
+			MountPath: "usr/wso2/interceptors/",
+			ReadOnly:  true,
+		})
+		jobVolume = append(jobVolume, corev1.Volume{
+			Name: "interceptors-volume",
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: instance.Name + "-interceptors",
+					},
+				},
+			},
+		})
+		//update configmap with owner reference
+		log.Info("updating interceptors configmap with owner reference")
+		interceptorConfigmap.OwnerReferences = owner
+		errorUpdateinterceptConf := r.client.Update(context.TODO(), interceptorConfigmap)
+		if errorUpdateinterceptConf != nil {
+			log.Error(errorUpdateinterceptConf, "error in updating interceptors config map with owner reference")
+		}
+	}
 
 	//Handles the creation of dockerfile configmap
-	dockerfileConfmap, errDocker := dockerfileHandler(r, certList, existcert, controlConfigData, owner, instance)
+	dockerfileConfmap, errDocker := dockerfileHandler(r, certList, existcert, controlConfigData, owner, instance, existInterceptors)
 	if errDocker != nil {
 		log.Error(errDocker, "error in docker configmap handling")
 		return reconcile.Result{}, errDocker
@@ -1351,8 +1392,8 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 				},
 			},
 			InitialDelaySeconds: 5,
-			PeriodSeconds: 5,
-			TimeoutSeconds: 1,
+			PeriodSeconds:       5,
+			TimeoutSeconds:      1,
 		},
 		LivenessProbe: &corev1.Probe{
 			Handler: corev1.Handler{
@@ -1361,8 +1402,8 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 				},
 			},
 			InitialDelaySeconds: 5,
-			PeriodSeconds: 15,
-			TimeoutSeconds: 1,
+			PeriodSeconds:       15,
+			TimeoutSeconds:      1,
 		},
 	}
 
@@ -1394,7 +1435,7 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 
 //Handles dockerfile configmap creation
 func dockerfileHandler(r *ReconcileAPI, certList map[string]string, existcert bool, conf map[string]string,
-	owner []metav1.OwnerReference, cr *wso2v1alpha1.API) (*corev1.ConfigMap, error) {
+	owner []metav1.OwnerReference, cr *wso2v1alpha1.API, existInterceptors bool) (*corev1.ConfigMap, error) {
 	var dockerTemplate string
 	truststorePass := getTruststorePassword(r)
 	dockerTemplateConfigmap, err := getConfigmap(r, dockerFileTemplate, wso2NameSpaceConst)
@@ -1409,11 +1450,12 @@ func dockerfileHandler(r *ReconcileAPI, certList map[string]string, existcert bo
 		dockerTemplate = string(val)
 	}
 	certs := &DockerfileArtifacts{
-		CertFound:    existcert,
-		Password:     truststorePass,
-		Certs:        certList,
-		BaseImage:    conf[mgwToolkitImgConst],
-		RuntimeImage: conf[mgwRuntimeImgConst],
+		CertFound:         existcert,
+		Password:          truststorePass,
+		Certs:             certList,
+		BaseImage:         conf[mgwToolkitImgConst],
+		RuntimeImage:      conf[mgwRuntimeImgConst],
+		InterceptorsFound: existInterceptors,
 	}
 	//generate dockerfile from the template
 	tmpl, err := template.New("").Parse(dockerTemplate)
