@@ -52,6 +52,11 @@ data:
     #copy policy yaml to the project
     RUN cp /usr/wso2/policy/* ./project/
 
+    #copy interceptors to the project
+    {{ if .InterceptorsFound }}
+    RUN cp usr/wso2/interceptors/* ./project/interceptors/
+    {{ end }}
+
     #generate the executable
     RUN micro-gw build project
 
