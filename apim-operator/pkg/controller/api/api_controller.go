@@ -229,10 +229,9 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	//add owner reference to the swagger configmap and update it
-	apiConfigMap.OwnerReferences = owner
-	errorUpdateConf := r.client.Update(context.TODO(), apiConfigMap)
-	if errorUpdateConf != nil {
-		log.Error(errorUpdateConf, "error in updating swagger config map with owner reference")
+	errUpdateApiConf := updateConfMapWithOwner(r, owner, apiConfigMap)
+	if errUpdateApiConf != nil {
+		log.Error(errUpdateApiConf, "error in updating swagger config map with owner reference")
 	}
 	//Fetch swagger data from configmap, reads and modifies swagger
 	swaggerDataMap := apiConfigMap.Data
@@ -658,43 +657,10 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			}
 		}
 	}
-	//get interceptors if available
-	interceptorConfigmap, err := getConfigmap(r, instance.Name + "-interceptors", userNameSpace)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			// Interceptors are not defined
-			log.Info("interceptors are not defined")
-		} else {
-			// Error getting interceptors configmap.
-			log.Error(err, "error retrieving configmap " + instance.Name + "-interceptors")
-			return reconcile.Result{}, err
-		}
-	} else {
-		existInterceptors = true
-		//mount interceptors configmap to the volume
-		log.Info("Mounting interceptors configmap to volume.")
-		jobVolumeMount = append(jobVolumeMount, corev1.VolumeMount{
-			Name:      interceptorsVolume,
-			MountPath: interceptorsVolumeLocation,
-			ReadOnly:  true,
-		})
-		jobVolume = append(jobVolume, corev1.Volume{
-			Name: interceptorsVolume,
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: instance.Name + "-interceptors",
-					},
-				},
-			},
-		})
-		//update configmap with owner reference
-		log.Info("updating interceptors configmap with owner reference")
-		interceptorConfigmap.OwnerReferences = owner
-		errorUpdateinterceptConf := r.client.Update(context.TODO(), interceptorConfigmap)
-		if errorUpdateinterceptConf != nil {
-			log.Error(errorUpdateinterceptConf, "error in updating interceptors config map with owner reference")
-		}
+	//Handle interceptors if available
+	existInterceptors, jobVolumeMount, jobVolume, errInterceptor := interceptorHandler(r, instance, owner, jobVolumeMount, jobVolume, userNameSpace)
+	if errInterceptor != nil {
+		return reconcile.Result{}, errInterceptor
 	}
 
 	//Handles the creation of dockerfile configmap
@@ -2131,4 +2097,57 @@ func deleteCompletedJobs(namespace string) error {
 		return err
 	}
 	return nil
+}
+
+//update configmaps with OwnerReference
+func updateConfMapWithOwner(r *ReconcileAPI, owner []metav1.OwnerReference, configMap *corev1.ConfigMap) error {
+	configMap.OwnerReferences = owner
+	errorUpdateinterceptConf := r.client.Update(context.TODO(), configMap)
+	if errorUpdateinterceptConf != nil {
+		return errorUpdateinterceptConf
+	}
+	return nil
+}
+
+//Hanldling interceptors to modify request and response flows
+func interceptorHandler(r *ReconcileAPI, instance *wso2v1alpha1.API, owner []metav1.OwnerReference,
+	jobVolumeMount []corev1.VolumeMount, jobVolume []corev1.Volume, userNameSpace string) (bool, []corev1.VolumeMount, []corev1.Volume, error) {
+
+	interceptorConfigmap, err := getConfigmap(r, instance.Spec.InterceptorConfName, userNameSpace)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			// Interceptors are not defined
+			log.Info("interceptors are not defined")
+			return false, nil, nil, nil
+		} else {
+			// Error getting interceptors configmap.
+			log.Error(err, "error retrieving configmap "+instance.Name+"-interceptors")
+			return false, nil, nil, err
+		}
+	} else {
+		//mount interceptors configmap to the volume
+		log.Info("Mounting interceptors configmap to volume.")
+		jobVolumeMount = append(jobVolumeMount, corev1.VolumeMount{
+			Name:      interceptorsVolume,
+			MountPath: interceptorsVolumeLocation,
+			ReadOnly:  true,
+		})
+		jobVolume = append(jobVolume, corev1.Volume{
+			Name: interceptorsVolume,
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: instance.Spec.InterceptorConfName,
+					},
+				},
+			},
+		})
+		//update configmap with owner reference
+		log.Info("updating interceptors configmap with owner reference")
+		errorUpdateinterceptConf := updateConfMapWithOwner(r, owner, interceptorConfigmap)
+		if errorUpdateinterceptConf != nil {
+			log.Error(errorUpdateinterceptConf, "error in updating interceptors config map with owner reference")
+		}
+		return true, jobVolumeMount, jobVolume, nil
+	}
 }
