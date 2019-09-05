@@ -470,9 +470,9 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	formattedSwagger := string(prettyJSON.Bytes())
 	//create configmap with modified swagger
-	swaggerConfMap := createConfigMap(instance.Name+"-swagger-mgw", swaggerDataFile, formattedSwagger, userNameSpace, owner)
+	swaggerConfMap := createConfigMap(instance.Name + "-swagger-mgw", swaggerDataFile, formattedSwagger, userNameSpace, owner)
 	log.Info("Creating swagger configmap for mgw")
-	foundConfMap, errgetConf := getConfigmap(r, instance.Name+"-swagger-mgw", userNameSpace)
+	foundConfMap, errgetConf := getConfigmap(r, instance.Name + "-swagger-mgw", userNameSpace)
 	if errgetConf != nil && errors.IsNotFound(errgetConf) {
 		log.Info("swagger-mgw is not found. Hence creating new configmap")
 		errConf := r.client.Create(context.TODO(), swaggerConfMap)
@@ -1436,9 +1436,9 @@ func dockerfileHandler(r *ReconcileAPI, certList map[string]string, existcert bo
 		return nil, err
 	}
 
-	dockerfileConfmap, err := getConfigmap(r, cr.Name+"-"+dockerFile, cr.Namespace)
+	dockerfileConfmap, err := getConfigmap(r, cr.Name + "-" + dockerFile, cr.Namespace)
 	if err != nil && errors.IsNotFound(err) {
-		dockerConf := createConfigMap(cr.Name+"-"+dockerFile, "Dockerfile", builder.String(), cr.Namespace, owner)
+		dockerConf := createConfigMap(cr.Name + "-" + dockerFile, "Dockerfile", builder.String(), cr.Namespace, owner)
 
 		errorMap := r.client.Create(context.TODO(), dockerConf)
 		if errorMap != nil {
