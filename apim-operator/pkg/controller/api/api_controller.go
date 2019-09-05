@@ -657,7 +657,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			}
 		}
 	}
-	//get interceptors if available
+	//Handle interceptors if available
 	existInterceptors, jobVolumeMount, jobVolume, errInterceptor := interceptorHandler(r, instance, owner, jobVolumeMount, jobVolume, userNameSpace)
 	if errInterceptor != nil {
 		return reconcile.Result{}, errInterceptor
@@ -2099,6 +2099,7 @@ func deleteCompletedJobs(namespace string) error {
 	return nil
 }
 
+//update configmaps with OwnerReference
 func updateConfMapWithOwner(r *ReconcileAPI, owner []metav1.OwnerReference, configMap *corev1.ConfigMap) error {
 	configMap.OwnerReferences = owner
 	errorUpdateinterceptConf := r.client.Update(context.TODO(), configMap)
@@ -2108,10 +2109,11 @@ func updateConfMapWithOwner(r *ReconcileAPI, owner []metav1.OwnerReference, conf
 	return nil
 }
 
+//Hanldling interceptors to modify request and response flows
 func interceptorHandler(r *ReconcileAPI, instance *wso2v1alpha1.API, owner []metav1.OwnerReference,
 	jobVolumeMount []corev1.VolumeMount, jobVolume []corev1.Volume, userNameSpace string) (bool, []corev1.VolumeMount, []corev1.Volume, error) {
 
-	interceptorConfigmap, err := getConfigmap(r, instance.Name+"-interceptors", userNameSpace)
+	interceptorConfigmap, err := getConfigmap(r, instance.Spec.InterceptorConfName, userNameSpace)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Interceptors are not defined
@@ -2135,7 +2137,7 @@ func interceptorHandler(r *ReconcileAPI, instance *wso2v1alpha1.API, owner []met
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: instance.Name + "-interceptors",
+						Name: instance.Spec.InterceptorConfName,
 					},
 				},
 			},
