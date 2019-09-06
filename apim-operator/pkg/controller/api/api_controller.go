@@ -658,7 +658,9 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		}
 	}
 	//Handle interceptors if available
-	existInterceptors, jobVolumeMount, jobVolume, errInterceptor := interceptorHandler(r, instance, owner, jobVolumeMount, jobVolume, userNameSpace)
+	existInterceptors, jobVolumeMountTemp, jobVolumeTemp, errInterceptor := interceptorHandler(r, instance, owner, jobVolumeMount, jobVolume, userNameSpace)
+	jobVolumeMount = jobVolumeMountTemp
+	jobVolume = jobVolumeTemp
 	if errInterceptor != nil {
 		return reconcile.Result{}, errInterceptor
 	}
@@ -2118,11 +2120,11 @@ func interceptorHandler(r *ReconcileAPI, instance *wso2v1alpha1.API, owner []met
 		if errors.IsNotFound(err) {
 			// Interceptors are not defined
 			log.Info("interceptors are not defined")
-			return false, nil, nil, nil
+			return false, jobVolumeMount, jobVolume, nil
 		} else {
 			// Error getting interceptors configmap.
 			log.Error(err, "error retrieving configmap "+instance.Name+"-interceptors")
-			return false, nil, nil, err
+			return false, jobVolumeMount, jobVolume, err
 		}
 	} else {
 		//mount interceptors configmap to the volume
