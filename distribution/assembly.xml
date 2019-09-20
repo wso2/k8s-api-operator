@@ -49,6 +49,14 @@
             <outputDirectory>/apim-operator/apim-deployment/</outputDirectory>
             <directory>../install/</directory>
         </fileSet>
+        <fileSet>
+            <directory>../scenarios</directory>
+            <outputDirectory>/apim-operator/deploy/scenarios</outputDirectory>
+            <useDefaultExcludes>true</useDefaultExcludes>
+            <excludes>
+                <exclude>scenario-advance/**</exclude>
+            </excludes>
+        </fileSet>
     </fileSets>
 </assembly>
 

@@ -2,7 +2,7 @@
 
 ## Scenario 2
 
-> ##### This scenario demonstrates Basic Authe protected API deployment and invocation
+> ##### This scenario demonstrates Basic Auth protected API deployment and invocation
 
 - Follow the main README and deploy the apim-operator and configuration files. Make sure to set the analyticsEnabled to "true" and deploy analytics secret with credentials to analytics server and certificate, if you want to check analytics
  
