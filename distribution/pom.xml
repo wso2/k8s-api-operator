@@ -43,7 +43,7 @@
                             <descriptors>
                                 <descriptor>assembly.xml</descriptor>
                             </descriptors>
-                            <finalName>wso2am-k8s-crds-${version}</finalName>
+                            <finalName>wso2am-k8s-crds</finalName>
                         </configuration>
                     </execution>
                 </executions>
