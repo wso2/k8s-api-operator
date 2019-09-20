@@ -49,7 +49,7 @@ We have two kubectl plugins which helps to add an API and update an API. As part
 
 ##### Step 1: Install [Kubernetes v1.12 or above](https://kubernetes.io/docs/setup/)
 
-##### Step 2: Download [wso2am-k8s-crds-v0.8-alpha.zip](https://github.com/wso2/k8s-apim-operator/releases) and extract the zip
+##### Step 2: Download [wso2am-k8s-crds-v0.8-alpha.zip](https://github.com/wso2/k8s-apim-operator/releases/download/v0.8-alpha/wso2am-k8s-crds-v0.8-alpha.zip) and extract the zip
 
 1. This zip contains the artifacts that required to deploy in Kubernetes.
 2. Extract wso2am-k8s-crds-1.0.zip and navigate to the \<APIM-K8s-CRD-HOME>/ directory.
@@ -60,8 +60,8 @@ cd <APIM-K8s-CRD-HOME>/
 **Note:** You need to run all commands from within the <APIM-K8s-CRD-HOME>/ directory.
 
 ##### Step 3: Configure APIM CLI tool
-- Navigate to the API Management Tooling page - https://github.com/wso2/product-apim-tooling/releases
-- Download tooling archive suitable for your platform (i.e., Mac, Windows, Linux) and extract it the CLI tool that you downloaded to a desired location and cd into it.
+- Navigate to the API Management Tooling page - https://github.com/wso2/product-apim-tooling/releases/
+- Download tooling archive (from v3.0.0-alpha onwards) suitable for your platform (i.e., Mac, Windows, Linux) and extract it the CLI tool that you downloaded to a desired location and cd into it.
 
 - Navigate to the working directory where the executable CLI Tool resides.
 
