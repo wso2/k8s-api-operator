@@ -29,4 +29,4 @@
     - ***curl -X GET "https://\<external IP of LB service>:9095/petstore/v1/pet/55" -H "accept: application/xml" -H "Authorization:Bearer $opaqueToken" -k***
 
 - Delete API <br /> 
-    - ***apimcli delete api petstore-jwt***
+    - ***apimcli delete api petstore-oauth***

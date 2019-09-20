@@ -8,11 +8,14 @@
  
 ##### Navigate to the scenarios/scenario-3 directory and execute the following command
 
+- Deploye JWT security kind <br /> 
+    - ***apimcli apply -f jwt-security.yaml***
+
 - Create API <br /> 
-    - ***apimcli add api -n petstore-jwt --from-file=petstore_basic.yaml***
+    - ***apimcli add api -n petstore-jwt --from-file=petstore_security_jwt.yaml***
 
 - Update API <br /> 
-    - ***apimcli update api -n petstore-jwt --from-file=petstore_basic.yaml***
+    - ***apimcli update api -n petstore-jwt --from-file=petstore_security_jwt.yaml***
     
 - Get available API <br /> 
     - ***apimcli get apis***
