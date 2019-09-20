@@ -25,3 +25,42 @@ spec:
   unitTime: 1
   requestCount:
    limit: 5
+---
+apiVersion: wso2.com/v1alpha1
+kind: RateLimiting
+metadata:
+  name: advance3
+  namespace: wso2-test-ns2
+spec:
+  type: advance             
+  description: Allow 3 requests per minute   # optional
+  timeUnit: min
+  unitTime: 1
+  requestCount:
+   limit: 3
+---
+apiVersion: wso2.com/v1alpha1
+kind: RateLimiting
+metadata:
+  name: app4
+  namespace: wso2-test-ns1
+spec:
+  type: application             
+  description: Allow 4 requests per minute   # optional
+  timeUnit: min
+  unitTime: 1
+  requestCount:
+   limit: 4
+---
+apiVersion: wso2.com/v1alpha1
+kind: RateLimiting
+metadata:
+  name: sub6
+  namespace: wso2-test-ns2
+spec:
+  type: subscription             
+  description: Allow 6 requests per minute   # optional
+  timeUnit: min
+  unitTime: 1
+  requestCount:
+   limit: 6

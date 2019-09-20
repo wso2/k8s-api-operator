@@ -23,7 +23,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.wso2.apim</groupId>
     <artifactId>k8s-apim-operator-distribution</artifactId>
-    <version>0.6</version>
+    <version>v0.8-alpha</version>
     <name>K8s APIM Operator Distribution</name>
 
     <build>
@@ -39,10 +39,11 @@
                             <goal>single</goal>
                         </goals>
                         <configuration>
+<!--                            <appendAssemblyId>false</appendAssemblyId>-->
                             <descriptors>
                                 <descriptor>assembly.xml</descriptor>
                             </descriptors>
-                            <finalName>wso2am-k8s-crds-0.6</finalName>
+                            <finalName>wso2am-k8s-crds-${version}</finalName>
                         </configuration>
                     </execution>
                 </executions>

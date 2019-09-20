@@ -33,7 +33,7 @@ data:
   #Avg CPU utliazation(%) to spin up the next pod.  Default->  hpaTargetAverageUtilizationCPU: "50"
   hpaTargetAverageUtilizationCPU: "50"
   #Required CPU usage for pods.   Default-> resourceRequestCPU: "50"
-  resourceRequestCPU: "2000m"
+  resourceRequestCPU: "1000m"
   #Required Memory usage pods can use.   Default->  resourceRequestMemory: "256Mi"
   resourceRequestMemory: "256Mi"
   #Max CPU usage limit a pod can use.   Default->  resourceLimitCPU: "3000m"

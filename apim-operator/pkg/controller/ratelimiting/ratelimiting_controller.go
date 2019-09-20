@@ -196,15 +196,16 @@ func (r *ReconcileRateLimiting) Reconcile(request reconcile.Request) (reconcile.
 	var newSub []map[string]Policy
 	var newApp []map[string]Policy
 
-	if policyType == resourceConst {
+
+	if policyType == resourceConst && !IsPolicyExist(oldRes, name) {
 		newRes = append(oldRes, newPolObj)
 		newSub = oldSub
 		newApp = oldApp
-	} else if policyType == subscriptionConst {
+	} else if policyType == subscriptionConst && !IsPolicyExist(oldSub, name){
 		newRes = oldRes
 		newSub = append(oldSub, newPolObj)
 		newApp = oldApp
-	} else if policyType == applicationConst {
+	} else if policyType == applicationConst && !IsPolicyExist(oldApp, name) {
 		newRes = oldRes
 		newSub = oldSub
 		newApp = append(oldApp, newPolObj)
@@ -252,6 +253,21 @@ func CreatePolicyConfigMap(output string, operatorOwner []metav1.OwnerReference,
 		},
 	}, nil
 }
+
+//Check if the policy already exists in the existing policy map
+func IsPolicyExist(policyArrayMap []map[string]Policy, name string) bool {
+
+	oldPolicies := policyArrayMap[0]
+	if policy, exist := oldPolicies[name]; exist {
+		fmt.Println("Key found value is: ", policy)
+		return true
+	} else {
+		fmt.Println("Key not found")
+		return false
+	}
+}
+
+
 
 // CreateDefault creates the structure of policy yaml with default policies
 func CreateDefault() string {

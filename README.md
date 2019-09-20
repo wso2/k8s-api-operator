@@ -36,6 +36,11 @@ We have initially introduced four custom resources for Kubernetes.
 
 #### Kubernetes CLI(kubectl) plugins 
 
+
+We have introduced this feature with [APIM CLI](https://github.com/wso2/product-apim-tooling/releases) tool to deploy and manger APIs and related services in kubernetes cluster without any hassle.
+
+Alternative:
+
 We have two kubectl plugins which helps to add an API and update an API. As part of installing the kubectl, users will have to install these plugins.
 
 ---
@@ -44,7 +49,7 @@ We have two kubectl plugins which helps to add an API and update an API. As part
 
 ##### Step 1: Install [Kubernetes v1.12 or above](https://kubernetes.io/docs/setup/)
 
-##### Step 2: Download [wso2am-k8s-crds-1.0.zip](https://github.com/wso2/k8s-apim-operator/releases) and extract the zip
+##### Step 2: Download [wso2am-k8s-crds-v0.8-alpha.zip](https://github.com/wso2/k8s-apim-operator/releases) and extract the zip
 
 1. This zip contains the artifacts that required to deploy in Kubernetes.
 2. Extract wso2am-k8s-crds-1.0.zip and navigate to the \<APIM-K8s-CRD-HOME>/ directory.
@@ -52,12 +57,40 @@ We have two kubectl plugins which helps to add an API and update an API. As part
 cd <APIM-K8s-CRD-HOME>/
 ```
    
-**Note:** You need to run all kubectl commands from within the <APIM-K8s-CRD-HOME>/ directory.
+**Note:** You need to run all commands from within the <APIM-K8s-CRD-HOME>/ directory.
 
-##### Step 3: Deploy K8s client extensions
+##### Step 3: Configure APIM CLI tool
+- Navigate to the API Management Tooling page - https://github.com/wso2/product-apim-tooling/releases
+- Download tooling archive suitable for your platform (i.e., Mac, Windows, Linux) and extract it the CLI tool that you downloaded to a desired location and cd into it.
 
+- Navigate to the working directory where the executable CLI Tool resides.
+
+- Execute the following command to start the CLI tool.
+
+```
+./apimcli
+```
+
+Add the location of the extracted folder to your system's $PATH variable to be able to access the executable from anywhere.
+
+For further instructions execute the following command.
+```
+apimcli --help
+```
+Set the APIM CLI tool's mode to kubernetes or k8s to be compatible with kubectl commands
+
+```$xslt
+apimcli set --mode k8s
+```
+ or 
+```
+apimcli set --mode kubernetes
+```
+
+###### Alternative (without cli)
 - Give executable permission to the extension files
 
+**Note: It is highly recommend to use the apimcli approach instead of going ahead with kubectl extensions**
 ```
 chmod +x ./deploy/kubectl-extension/kubectl-add
 chmod +x ./deploy/kubectl-extension/kubectl-update
@@ -69,16 +102,17 @@ cp ./deploy/kubectl-extension/kubectl-add /usr/local/bin
 cp ./deploy/kubectl-extension/kubectl-update /usr/local/bin
 ```
 
+
 ##### Step 4: Deploy K8s CRD artifacts
 
 - Deploying CRDs for API, TargetEndpoint, Security, RateLimiting
 ```
-kubectl apply -f ./deploy/crds/
+apimcli apply -f ./deploy/crds/
 ```
 
 - Deploying namespace, roles/role binding and service account associated with the operator
 ```
-kubectl apply -f ./deploy/controller-artifacts/
+apimcli apply -f ./deploy/controller-artifacts/
 ```
 
 - Deploying controller level configurations
@@ -87,30 +121,30 @@ kubectl apply -f ./deploy/controller-artifacts/
 Update the ***user's docker registry*** in the controller_conf.yaml. Enter the base 64 encoded username and password of the user's docker registry into the docker_secret_template.yaml.
 
 ```
-kubectl apply -f ./deploy/controller-configs/
+apimcli apply -f ./deploy/controller-configs/
 ```
 
 ##### Step 5: Deploy an API in K8s cluster
 
 - Deploy the API
 ```
-kubectl add api "api_name" --from-file="location to the api swagger definition"
+apimcli add api -n "api_name" --from-file="location to the api swagger definition"
 
-kubectl add api petstore --from-file=./deploy/scenarios/scenario-1/petstore_basic.yaml
+apimcli add api -n petstore --from-file=./deploy/scenarios/scenario-1/petstore_basic.yaml
 ```
   
 - Update the API
 ```
-kubectl update api "api_name" --from-file="location to the api swagger definition"
+apimcli update api -n "api_name" --from-file="location to the api swagger definition"
 
-kubectl update api petstore --from-file=./deploy/scenarios/scenario-1/petstore_basic.yaml
+apimcli update api -n petstore --from-file=./deploy/scenarios/scenario-1/petstore_basic.yaml
 ```
   
 - Delete the API
 ```
-kubectl delete api "api_name"
+apimcli delete api "api_name"
 
-kubectl delete api petstore
+apimcli delete api petstore
 ```
 
 Optional Parameters
@@ -119,7 +153,7 @@ Optional Parameters
 --replicas=3          Number of replicas
 --namespace=wso2      Namespace to deploy the API
 
-kubectl add api "api_name" --from-file="location to the api swagger definition" --replicas="number of replicas" --namespace="desired namespace"
+apimcli add api -n "api_name" --from-file="location to the api swagger definition" --replicas="number of replicas" --namespace="desired namespace"
 ```
 
 **Note:** Namespace and replicas are optional parameters. If they are not provided default namespace will be used and 1 replica will be created. However, the namespace used in all the commands related to particular API name must match.
@@ -147,7 +181,7 @@ TOKEN=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6Ik5UQXhabU14TkRNeVpEZzNNVFUxWk
 The API service is exposed as the Load Balancer service type. You can get the service endpoint details by using the following command.
 
 ```
-kubectl get services
+apimcli get services
 ```
 
 Sample Output:
@@ -175,9 +209,24 @@ curl -X GET "https://104.199.77.249:9095/petstore/v1/pet/1" -H "accept: applicat
 ##### Cleanup
 
 ```
-kubectl delete -f ./deploy/controller-configs/
-kubectl delete -f ./deploy/controller-artifacts/
-kubectl delete -f ./deploy/crds/
+apimcli delete -f ./deploy/controller-configs/
+apimcli delete -f ./deploy/controller-artifacts/
+apimcli delete -f ./deploy/crds/
+```
+##### Deploying APIM and APIM Analytics in K8s Cluster
+
+Kubernetes artifacts to deploy APIM and APIM analytics deployment are shipped with the this distribution.
+
+Navigate to wso2am-k8s-crds-v0.8-alpha/apim-operator/apim-deployment
+
+- Deploy API Manager in Kubernetes Cluster
+
+```$xslt
+apimcli apply -f api-manager
+```
+- Deploy APIM Analytics in Kubernetes Cluster
+```$xslt
+apimcli apply -f analytics
 ```
     
 ##### Sample Scenarios
