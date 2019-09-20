@@ -77,10 +77,20 @@ For further instructions execute the following command.
 ```
 apimcli --help
 ```
+Set the APIM CLI tool's mode to kubernetes or k8s to be compatible with kubectl commands
+
+```$xslt
+apimcli set --mode k8s
+```
+ or 
+```
+apimcli set --mode kubernetes
+```
 
 ###### Alternative (without cli)
 - Give executable permission to the extension files
 
+**Note: It is highly recommend to use the apimcli approach instead of going ahead with kubectl extensions**
 ```
 chmod +x ./deploy/kubectl-extension/kubectl-add
 chmod +x ./deploy/kubectl-extension/kubectl-update
@@ -92,7 +102,6 @@ cp ./deploy/kubectl-extension/kubectl-add /usr/local/bin
 cp ./deploy/kubectl-extension/kubectl-update /usr/local/bin
 ```
 
-**Note: It is highly recommend to use the apimcli approach instead of going ahead with kubectl extensions**
 
 ##### Step 4: Deploy K8s CRD artifacts
 
@@ -203,6 +212,21 @@ curl -X GET "https://104.199.77.249:9095/petstore/v1/pet/1" -H "accept: applicat
 apimcli delete -f ./deploy/controller-configs/
 apimcli delete -f ./deploy/controller-artifacts/
 apimcli delete -f ./deploy/crds/
+```
+##### Deploying APIM and APIM Analytics in K8s Cluster
+
+Kubernetes artifacts to deploy APIM and APIM analytics deployment are shipped with the this distribution.
+
+Navigate to wso2am-k8s-crds-v0.8-alpha/apim-operator/apim-deployment
+
+- Deploy API Manager in Kubernetes Cluster
+
+```$xslt
+apimcli apply -f api-manager
+```
+- Deploy APIM Analytics in Kubernetes Cluster
+```$xslt
+apimcli apply -f analytics
 ```
     
 ##### Sample Scenarios
