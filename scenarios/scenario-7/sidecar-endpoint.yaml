@@ -1,7 +1,7 @@
 apiVersion: wso2.com/v1alpha1
 kind: TargetEndpoint
 metadata:
-  name: helloworld
+  name: helloworld-sidecar
   labels:
     app: wso2
 spec:

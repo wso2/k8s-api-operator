@@ -23,6 +23,7 @@
     http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2
       http://maven.apache.org/xsd/assembly-1.1.2.xsd"
 >
+    <id>zip</id>
     <formats>
         <format>zip</format>
     </formats>
@@ -44,8 +45,12 @@
             </excludes>
         </fileSet>
         <fileSet>
-            <outputDirectory>/scenarios</outputDirectory>
-            <directory>../apim-operator/deploy/scenarios</directory>
+            <useDefaultExcludes>true</useDefaultExcludes>
+            <outputDirectory>/apim-operator/scenarios</outputDirectory>
+            <directory>../scenarios</directory>
+            <excludes>
+                <exclude>scenario-advance/**</exclude>
+            </excludes>
         </fileSet>
     </fileSets>
 </assembly>
