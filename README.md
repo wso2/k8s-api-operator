@@ -49,7 +49,7 @@ We have two kubectl plugins which helps to add an API and update an API. As part
 
 ##### Step 1: Install [Kubernetes v1.12 or above](https://kubernetes.io/docs/setup/)
 
-##### Step 2: Download [wso2am-k8s-crds-v0.8-alpha.zip](https://github.com/wso2/k8s-apim-operator/releases/download/v0.8-alpha/wso2am-k8s-crds-v0.8-alpha.zip) and extract the zip
+##### Step 2: Download [wso2am-k8s-crds-v1.0.0-alpha.zip](https://github.com/wso2/k8s-apim-operator/releases/download/v1.0.0-alpha/wso2am-k8s-crds-v1.0.0-alpha.zip) and extract the zip
 
 1. This zip contains the artifacts that required to deploy in Kubernetes.
 2. Extract wso2am-k8s-crds-1.0.zip and navigate to the \<APIM-K8s-CRD-HOME>/ directory.
@@ -217,7 +217,7 @@ apimcli delete -f ./deploy/crds/
 
 Kubernetes artifacts to deploy APIM and APIM analytics deployment are shipped with the this distribution.
 
-Navigate to wso2am-k8s-crds-v0.8-alpha/apim-operator/apim-deployment
+Navigate to wso2am-k8s-crds-v1.0.0-alpha/apim-operator/apim-deployment
 
 - Deploy API Manager in Kubernetes Cluster
 
