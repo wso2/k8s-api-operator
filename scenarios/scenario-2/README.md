@@ -17,6 +17,14 @@
 
 - Get service details to invoke the API<br />
     - ***apimcli get services***
+    
+    - Sample Output:
+    
+    ```
+    NAME          TYPE         CLUSTER-IP      EXTERNAL-IP          PORT(S)                     AGE
+    petstore   LoadBalancer    10.0.3.74     104.199.77.249   9095:30453/TCP,9090:32422/TCP     1m
+    ```
+
     - Note: Get the external IP of the service
  
 - Invoking the API <br />
