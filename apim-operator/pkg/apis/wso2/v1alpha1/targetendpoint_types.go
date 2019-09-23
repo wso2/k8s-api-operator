@@ -33,6 +33,7 @@ type TargetEndpointSpec struct {
 	Protocol         string           `json:"protocol"`
 	Hostname         string           `json:"hostname"`
 	Port             int32            `json:"port"`
+	TargetPort       int32            `json:"targetPort"`
 	Deploy           Deploy           `json:"deploy"`
 	EndpointName     string           `json:"endpointName"`
 	EndpointSecurity EndpointSecurity `json:"endpointSecurity"`
@@ -58,6 +59,7 @@ type Deploy struct {
 	DockerImage string `json:"dockerImage"`
 	Count       int32  `json:"count"`
 }
+
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // TargetEndpoint is the Schema for the targetendpoints API
