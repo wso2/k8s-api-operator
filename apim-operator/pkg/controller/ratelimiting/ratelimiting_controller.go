@@ -286,7 +286,7 @@ func CreateDefault() string {
 
 	res := make([]map[string]Policy, 3)
 	app := make([]map[string]Policy, 3)
-	sub := make([]map[string]Policy, 4)
+	sub := make([]map[string]Policy, 5)
 
 	res[0] = map[string]Policy{
 		"50kPerMin": res1,
@@ -326,6 +326,10 @@ func CreateDefault() string {
 
 	sub[3] = map[string]Policy{
 		"Unauthenticated": sub4,
+	}
+
+	sub[4] = map[string]Policy{
+		"Default": sub4,
 	}
 
 	polyout, yamler := yaml.Marshal(&PolicyYaml{ResourcePolicies: res, ApplicationPolicies: app, SubscriptionPolicies: sub})
