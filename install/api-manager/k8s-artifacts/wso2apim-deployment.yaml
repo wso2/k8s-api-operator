@@ -35,7 +35,7 @@ spec:
     spec:
       containers:
         - name: wso2apim
-          image: pubudu/wso2am:3.0.0-snapshot
+          image: dinushad/wso2am:3.0.0-beta-1
           resources:
             limits:
               memory: "2Gi"
@@ -47,7 +47,7 @@ spec:
                 - /bin/bash
                 - -c
                 - nc -z localhost 9443
-            initialDelaySeconds: 90
+            initialDelaySeconds: 180
             periodSeconds: 10
           readinessProbe:
             exec:
@@ -55,7 +55,7 @@ spec:
                 - /bin/bash
                 - -c
                 - nc -z localhost 9443
-            initialDelaySeconds: 90
+            initialDelaySeconds: 180
             periodSeconds: 10
           imagePullPolicy: Always
           ports:
@@ -89,8 +89,6 @@ spec:
           volumeMounts:
             - name: apim-conf
               mountPath: /home/wso2carbon/wso2-config-volume/repository/conf
-            - name: import-export
-              mountPath: /home/wso2carbon/wso2-artifact-volume/repository/deployment/server/webapps
       hostAliases:
         - ip: "127.0.0.1"
           hostnames:
@@ -99,6 +97,3 @@ spec:
         - name: apim-conf
           configMap:
             name: apim-conf
-        - name: import-export
-          configMap:
-            name: import-export

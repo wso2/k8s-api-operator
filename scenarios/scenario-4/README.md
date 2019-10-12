@@ -19,6 +19,24 @@
 - Get available API <br /> 
     - ***apimcli get apis***
 
+- Publish the API in the API Manager deployment<br> subcribe to an application and get an opaque oauth token.
+    - Using the APIM CLI command, adding the environment to the CLI configs/
+        ```
+        apimcli add-env -e k8s --registration https://wso2apim:9443/client-registration/v0.15/register --apim https://wso2apim:9443 --token https://wso2apim:8243/token --admin https://wso2apim:9443/api/am/admin/v0.15 --api_list https://wso2apim:9443/api/am/publisher/v0.15/apis --app_list https://wso2apim:9443/api/am/store/v0.15/applications
+        
+        ```
+    - Init the API project using CLI command
+
+        ```
+        apimcli init petstore --oas=./deploy/scenarios/scenario-1/petstore_basic.yaml
+        ```
+
+    - Import the API to the k8s environment.
+(You need to change the API life cycle status before importing, to published in the api.yaml file to publish the API)
+        ```
+        ./apimcli import-api -f petstore/ -e k8s -k 
+        ```
+
 - Get service details to invoke the API<br />
     - ***apimcli get services***
     - Note: Get the external IP of the service

@@ -30,13 +30,13 @@ RUN mkdir -p /home/exec
 RUN cp ./project/target/* /home/exec/
 
 #Stage 2: Generate balx will be passed to the micro-gw runtime
-FROM wso2/wso2micro-gw:3.0.0-beta2
+FROM wso2/wso2micro-gw:3.0.2
 #change permission to create and copy the executable
 USER root
 RUN  mkdir -p /home/exec
 COPY --from=toolkit /home/exec /home/exec
 
-RUN keytool -list -storepass ballerina -v -keystore /ballerina/runtime/bre/security/ballerinaTruststore.p12
+RUN keytool -list -storepass ballerina -v -keystore /home/ballerina/wso2/runtime/bre/security/ballerinaTruststore.p12
 
 USER ballerina
 #project name has to be passed to the ballerina image as a env variable

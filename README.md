@@ -34,14 +34,26 @@ We have initially introduced four custom resources for Kubernetes.
 - Rate Limiting <br>
   Holds rate limiting related information
 
-#### Kubernetes CLI(kubectl) plugins 
+#### APIM CLI for Kubernetes CRDs
 
 
 We have introduced this feature with [APIM CLI](https://github.com/wso2/product-apim-tooling/releases) tool to deploy and manger APIs and related services in kubernetes cluster without any hassle.
 
-Alternative:
+##### Deploying APIM in  K8S Cluster
 
-We have two kubectl plugins which helps to add an API and update an API. As part of installing the kubectl, users will have to install these plugins.
+Kubernetes artifacts to deploy APIM and APIM analytics deployment are shipped with the this distribution.
+
+Navigate to wso2am-k8s-crds/apim-operator/apim-deployment/api-manager
+
+- Deploy API Manager in Kubernetes Cluster
+
+```$xslt
+apimcli apply -f api-manager/k8s-artifacts
+```
+- Deploy APIM Analytics in Kubernetes Cluster
+```$xslt
+apimcli apply -f api-manager/analytics
+```
 
 ---
 
@@ -49,10 +61,10 @@ We have two kubectl plugins which helps to add an API and update an API. As part
 
 ##### Step 1: Install [Kubernetes v1.12 or above](https://kubernetes.io/docs/setup/)
 
-##### Step 2: Download [wso2am-k8s-crds-v1.0.0-alpha.zip](https://github.com/wso2/k8s-apim-operator/releases/download/v1.0.0-alpha/wso2am-k8s-crds-v1.0.0-alpha.zip) and extract the zip
+##### Step 2: Download [wso2am-k8s-crds-v1.0.0-beta.zip](https://github.com/wso2/k8s-apim-operator/releases/download/v1.0.0-beta/wso2am-k8s-crds-v1.0.0-beta.zip) and extract the zip
 
 1. This zip contains the artifacts that required to deploy in Kubernetes.
-2. Extract wso2am-k8s-crds-1.0.zip and navigate to the \<APIM-K8s-CRD-HOME>/ directory.
+2. Extract wso2am-k8s-crds-1.0-beta.zip and navigate to the \<APIM-K8s-CRD-HOME>/apim-operator directory.
 ```
 cd <APIM-K8s-CRD-HOME>/
 ```
@@ -61,7 +73,7 @@ cd <APIM-K8s-CRD-HOME>/
 
 ##### Step 3: Configure APIM CLI tool
 - Navigate to the API Management Tooling page - https://github.com/wso2/product-apim-tooling/releases/
-- Download tooling archive (from v3.0.0-alpha onwards) suitable for your platform (i.e., Mac, Windows, Linux) and extract it the CLI tool that you downloaded to a desired location and cd into it.
+- Download tooling archive (from v3.0.0-beta onwards) suitable for your platform (i.e., Mac, Windows, Linux) and extract it the CLI tool that you downloaded to a desired location and cd into it.
 
 - Navigate to the working directory where the executable CLI Tool resides.
 
@@ -87,22 +99,6 @@ apimcli set --mode k8s
 apimcli set --mode kubernetes
 ```
 
-###### Alternative (without cli)
-- Give executable permission to the extension files
-
-**Note: It is highly recommend to use the apimcli approach instead of going ahead with kubectl extensions**
-```
-chmod +x ./deploy/kubectl-extension/kubectl-add
-chmod +x ./deploy/kubectl-extension/kubectl-update
-```
-
-- Copy the extensions to ***/usr/local/bin/***
-```
-cp ./deploy/kubectl-extension/kubectl-add /usr/local/bin
-cp ./deploy/kubectl-extension/kubectl-update /usr/local/bin
-```
-
-
 ##### Step 4: Deploy K8s CRD artifacts
 
 - Deploying CRDs for API, TargetEndpoint, Security, RateLimiting
@@ -124,7 +120,7 @@ Update the ***user's docker registry*** in the controller_conf.yaml. Enter the b
 apimcli apply -f ./deploy/controller-configs/
 ```
 
-##### Step 5: Deploy an API in K8s cluster
+##### Step 5: Deploy an API in K8s cluster via CRDs
 
 - Deploy the API
 ```
@@ -160,6 +156,34 @@ apimcli add api -n "api_name" --from-file="location to the api swagger definitio
 
 ##### Step 6: Invoke the Petstore API
 
+###### Publishing API in the API Manager
+
+Since APIM deployment is already deployed in the k8s cluster (refer  **Deploying APIM in K8S Cluster** in ReadMe), App developers/subscribers can navigate to the devportal (https://wso2apim:9443/devportal) and obtain a JWT access token by subscribing the APIs.
+To subscribe the APIs to the application, the API is needed to be published in the API Manager in k8s.
+
+<br>Following commands will help you to publish the API in the API manager.
+Using the APIM CLI tool, init the project using the sample swagger file and import that to the API Manager in Kubernetes deployment.
+Commands of the CLI can be found [here](https://github.com/wso2/product-apim-tooling/blob/v3.0.0-beta/import-export-cli/docs/apimcli.md)  
+
+Using the APIM CLI command, adding the environment to the CLI configs/
+```
+apimcli add-env -e k8s --registration https://wso2apim:9443/client-registration/v0.15/register --apim https://wso2apim:9443 --token https://wso2apim:8243/token --admin https://wso2apim:9443/api/am/admin/v0.15 --api_list https://wso2apim:9443/api/am/publisher/v0.15/apis --app_list https://wso2apim:9443/api/am/store/v0.15/applications
+
+```
+Init the API project using CLI command
+
+```
+apimcli init petstore --oas=./deploy/scenarios/scenario-1/petstore_basic.yaml
+```
+
+Import the API to the k8s environment.
+(You need to change the API life cycle status before importing, to published in the api.yaml file to publish the API)
+```
+./apimcli import-api -f petstore/ -e k8s -k 
+
+```
+
+
 ###### Step 6.1: Obtain a token
 
 After the APIs are exposed via WSO2 API Microgateway, you can invoke an API with a valid JWT token or an opaque access token. In order to use JWT tokens, WSO2 API Microgateway should be presented with a JWT signed by a trusted OAuth2 service.
@@ -167,7 +191,7 @@ Let's use the following sample JWT token for the quick start guide. Here we will
 
 Sample Token
 ```
-eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6Ik5UQXhabU14TkRNeVpEZzNNVFUxWkdNME16RXpPREpoWldJNE5ETmxaRFUxT0dGa05qRmlNUSJ9.eyJhdWQiOiJodHRwOlwvXC9vcmcud3NvMi5hcGltZ3RcL2dhdGV3YXkiLCJzdWIiOiJhZG1pbiIsImFwcGxpY2F0aW9uIjp7ImlkIjoyLCJuYW1lIjoiSldUX0FQUCIsInRpZXIiOiJVbmxpbWl0ZWQiLCJvd25lciI6ImFkbWluIn0sInNjb3BlIjoiYW1fYXBwbGljYXRpb25fc2NvcGUgZGVmYXVsdCIsImlzcyI6Imh0dHBzOlwvXC9sb2NhbGhvc3Q6OTQ0M1wvb2F1dGgyXC90b2tlbiIsImtleXR5cGUiOiJQUk9EVUNUSU9OIiwic3Vic2NyaWJlZEFQSXMiOltdLCJjb25zdW1lcktleSI6Ilg5TGJ1bm9oODNLcDhLUFAxbFNfcXF5QnRjY2EiLCJleHAiOjM3MDMzOTIzNTMsImlhdCI6MTU1NTkwODcwNjk2MSwianRpIjoiMjI0MTMxYzQtM2Q2MS00MjZkLTgyNzktOWYyYzg5MWI4MmEzIn0=.b_0E0ohoWpmX5C-M1fSYTkT9X4FN--_n7-bEdhC3YoEEk6v8So6gVsTe3gxC0VjdkwVyNPSFX6FFvJavsUvzTkq528mserS3ch-TFLYiquuzeaKAPrnsFMh0Hop6CFMOOiYGInWKSKPgI-VOBtKb1pJLEa3HvIxT-69X9CyAkwajJVssmo0rvn95IJLoiNiqzH8r7PRRgV_iu305WAT3cymtejVWH9dhaXqENwu879EVNFF9udMRlG4l57qa2AaeyrEguAyVtibAsO0Hd-DFy5MW14S6XSkZsis8aHHYBlcBhpy2RqcP51xRog12zOb-WcROy6uvhuCsv-hje_41WQ==
+eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6IlpqUm1ZVE13TlRKak9XVTVNbUl6TWpnek5ESTNZMkl5TW1JeVkyRXpNamRoWmpWaU1qYzBaZz09In0=.eyJhdWQiOiJodHRwOlwvXC9vcmcud3NvMi5hcGltZ3RcL2dhdGV3YXkiLCJzdWIiOiJhZG1pbkBjYXJib24uc3VwZXIiLCJhcHBsaWNhdGlvbiI6eyJvd25lciI6ImFkbWluIiwidGllciI6IlVubGltaXRlZCIsIm5hbWUiOiJzYW1wbGUtY3JkLWFwcGxpY2F0aW9uIiwiaWQiOjV9LCJzY29wZSI6ImFtX2FwcGxpY2F0aW9uX3Njb3BlIGRlZmF1bHQiLCJpc3MiOiJodHRwczpcL1wvd3NvMmFwaW06OTQ0M1wvb2F1dGgyXC90b2tlbiIsInRpZXJJbmZvIjp7fSwia2V5dHlwZSI6IlBST0RVQ1RJT04iLCJzdWJzY3JpYmVkQVBJcyI6W10sImNvbnN1bWVyS2V5IjoiOFpWV1lQYkk2Rm1lY0ZoeXdVaDVVSXJaNEFvYSIsImV4cCI6MzcxODI5OTU1MiwiaWF0IjoxNTcwODE1OTA1LCJqdGkiOiJkMGI2NTgwNC05NDk3LTQ5ZjktOTcxNC01OTJmODFiNzJhYjMifQ==.HYCPxCbNcALcd0svu47EqFoxnnBAkVJSnCPnW6jJ1lZQTzSAiuiPcGzTnyP1JHodQknhYsSrvdZDIzWzU_mRH2i3-lMVdm0t43r-0Ti0EdBSX2756ilo266MVeWhxbz9p3hPm5ndDCoo_bfB4KbjigjmhXv_PJyUMuWtMo669sHQNs5FkiOT2X0gzFP1iJUFf-H9y762TEIYpylKedVDzQP8x4LCRZsO54e1iA-DZ5h5MKQhJsbKZZ_MMXGmtdo8refPyTCc7HIuevUXIWAaSNRFYj_HZTSRYhFEUtDWn_tJiySn2umRuP3XqxPmQal0SxD7JiV8DQxxyylsGw9k6g==
 ```
 
 ###### Step 6.2: Invoke the API
@@ -175,7 +199,7 @@ eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6Ik5UQXhabU14TkRNeVpEZzNNVFUxWkdNME16
 Execute the command below to set a self-contained OAuth2.0 access token in the JWT format as a variable on your terminal session.
 
 ```
-TOKEN=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6Ik5UQXhabU14TkRNeVpEZzNNVFUxWkdNME16RXpPREpoWldJNE5ETmxaRFUxT0dGa05qRmlNUSJ9.eyJhdWQiOiJodHRwOlwvXC9vcmcud3NvMi5hcGltZ3RcL2dhdGV3YXkiLCJzdWIiOiJhZG1pbiIsImFwcGxpY2F0aW9uIjp7ImlkIjoyLCJuYW1lIjoiSldUX0FQUCIsInRpZXIiOiJVbmxpbWl0ZWQiLCJvd25lciI6ImFkbWluIn0sInNjb3BlIjoiYW1fYXBwbGljYXRpb25fc2NvcGUgZGVmYXVsdCIsImlzcyI6Imh0dHBzOlwvXC9sb2NhbGhvc3Q6OTQ0M1wvb2F1dGgyXC90b2tlbiIsImtleXR5cGUiOiJQUk9EVUNUSU9OIiwic3Vic2NyaWJlZEFQSXMiOltdLCJjb25zdW1lcktleSI6Ilg5TGJ1bm9oODNLcDhLUFAxbFNfcXF5QnRjY2EiLCJleHAiOjM3MDMzOTIzNTMsImlhdCI6MTU1NTkwODcwNjk2MSwianRpIjoiMjI0MTMxYzQtM2Q2MS00MjZkLTgyNzktOWYyYzg5MWI4MmEzIn0=.b_0E0ohoWpmX5C-M1fSYTkT9X4FN--_n7-bEdhC3YoEEk6v8So6gVsTe3gxC0VjdkwVyNPSFX6FFvJavsUvzTkq528mserS3ch-TFLYiquuzeaKAPrnsFMh0Hop6CFMOOiYGInWKSKPgI-VOBtKb1pJLEa3HvIxT-69X9CyAkwajJVssmo0rvn95IJLoiNiqzH8r7PRRgV_iu305WAT3cymtejVWH9dhaXqENwu879EVNFF9udMRlG4l57qa2AaeyrEguAyVtibAsO0Hd-DFy5MW14S6XSkZsis8aHHYBlcBhpy2RqcP51xRog12zOb-WcROy6uvhuCsv-hje_41WQ==
+TOKEN=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6IlpqUm1ZVE13TlRKak9XVTVNbUl6TWpnek5ESTNZMkl5TW1JeVkyRXpNamRoWmpWaU1qYzBaZz09In0=.eyJhdWQiOiJodHRwOlwvXC9vcmcud3NvMi5hcGltZ3RcL2dhdGV3YXkiLCJzdWIiOiJhZG1pbkBjYXJib24uc3VwZXIiLCJhcHBsaWNhdGlvbiI6eyJvd25lciI6ImFkbWluIiwidGllciI6IlVubGltaXRlZCIsIm5hbWUiOiJzYW1wbGUtY3JkLWFwcGxpY2F0aW9uIiwiaWQiOjV9LCJzY29wZSI6ImFtX2FwcGxpY2F0aW9uX3Njb3BlIGRlZmF1bHQiLCJpc3MiOiJodHRwczpcL1wvd3NvMmFwaW06OTQ0M1wvb2F1dGgyXC90b2tlbiIsInRpZXJJbmZvIjp7fSwia2V5dHlwZSI6IlBST0RVQ1RJT04iLCJzdWJzY3JpYmVkQVBJcyI6W10sImNvbnN1bWVyS2V5IjoiOFpWV1lQYkk2Rm1lY0ZoeXdVaDVVSXJaNEFvYSIsImV4cCI6MzcxODI5OTU1MiwiaWF0IjoxNTcwODE1OTA1LCJqdGkiOiJkMGI2NTgwNC05NDk3LTQ5ZjktOTcxNC01OTJmODFiNzJhYjMifQ==.HYCPxCbNcALcd0svu47EqFoxnnBAkVJSnCPnW6jJ1lZQTzSAiuiPcGzTnyP1JHodQknhYsSrvdZDIzWzU_mRH2i3-lMVdm0t43r-0Ti0EdBSX2756ilo266MVeWhxbz9p3hPm5ndDCoo_bfB4KbjigjmhXv_PJyUMuWtMo669sHQNs5FkiOT2X0gzFP1iJUFf-H9y762TEIYpylKedVDzQP8x4LCRZsO54e1iA-DZ5h5MKQhJsbKZZ_MMXGmtdo8refPyTCc7HIuevUXIWAaSNRFYj_HZTSRYhFEUtDWn_tJiySn2umRuP3XqxPmQal0SxD7JiV8DQxxyylsGw9k6g==
 ```
 
 The API service is exposed as the Load Balancer service type. You can get the service endpoint details by using the following command.
@@ -212,21 +236,6 @@ curl -X GET "https://104.199.77.249:9095/petstore/v1/pet/1" -H "accept: applicat
 apimcli delete -f ./deploy/controller-configs/
 apimcli delete -f ./deploy/controller-artifacts/
 apimcli delete -f ./deploy/crds/
-```
-##### Deploying APIM and APIM Analytics in K8s Cluster
-
-Kubernetes artifacts to deploy APIM and APIM analytics deployment are shipped with the this distribution.
-
-Navigate to wso2am-k8s-crds-v1.0.0-alpha/apim-operator/apim-deployment
-
-- Deploy API Manager in Kubernetes Cluster
-
-```$xslt
-apimcli apply -f api-manager
-```
-- Deploy APIM Analytics in Kubernetes Cluster
-```$xslt
-apimcli apply -f analytics
 ```
     
 ##### Sample Scenarios

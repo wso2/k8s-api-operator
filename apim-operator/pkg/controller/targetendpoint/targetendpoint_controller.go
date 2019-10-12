@@ -245,8 +245,28 @@ func (r *ReconcileTargetEndpoint) reconcileDeployment(m *wso2v1alpha1.TargetEndp
 
 // NewService assembles the ClusterIP service for the Nginx
 func (r *ReconcileTargetEndpoint) newServiceForCR(m *wso2v1alpha1.TargetEndpoint) *corev1.Service {
-	var port int
-	port = int(m.Spec.Port)
+
+	protocol := m.Spec.Protocol
+	port := int(m.Spec.Port)
+	targetPort := int(m.Spec.TargetPort)
+
+	switch protocol {
+	case "https":
+		if port == 0 {
+			port = 443
+		}
+		if targetPort == 0 {
+			targetPort = 443
+		}
+	case "http":
+		if port == 0 {
+			port = 80
+		}
+		if targetPort == 0 {
+			targetPort = 80
+		}
+	}
+
 	service := corev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
@@ -259,7 +279,7 @@ func (r *ReconcileTargetEndpoint) newServiceForCR(m *wso2v1alpha1.TargetEndpoint
 		Spec: corev1.ServiceSpec{
 			Selector: m.ObjectMeta.Labels,
 			Ports: []corev1.ServicePort{
-				corev1.ServicePort{Port: m.Spec.Port, TargetPort: intstr.FromInt(port)},
+				corev1.ServicePort{Port: m.Spec.Port, TargetPort: intstr.FromInt(targetPort)},
 			},
 		},
 	}
