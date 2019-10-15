@@ -806,8 +806,21 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 					log.Error(updateEr, "Error in updating deployment")
 					return reconcile.Result{}, updateEr
 				}
-
 				reqLogger.Info("Skip reconcile: Deployment updated", "Dep.Name", depFound.Name)
+				if svcErr != nil && errors.IsNotFound(svcErr) {
+					reqLogger.Info("Creating a new Service", "SVC.Namespace", svc.Namespace, "SVC.Name", svc.Name)
+					svcErr = r.client.Create(context.TODO(), svc)
+					if svcErr != nil {
+						return reconcile.Result{}, svcErr
+					}
+					//Service created successfully - don't requeue
+					return reconcile.Result{}, nil
+				} else if svcErr != nil {
+					return reconcile.Result{}, svcErr
+				}
+				// if service already exsits
+				reqLogger.Info("Skip reconcile: Service already exists", "SVC.Namespace",
+					svcFound.Namespace, "SVC.Name", svcFound.Name)
 				return reconcile.Result{}, nil
 			} else {
 				log.Info("skip updating kubernetes artifacts")
