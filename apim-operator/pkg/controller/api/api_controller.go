@@ -831,7 +831,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			return reconcile.Result{Requeue: true}, nil
 		}
 
-	} else if imageExist {
+	} else if imageExist &&  !instance.Spec.Override {
 		log.Info("Image already exist, hence skipping the kaniko job")
 		errDeleteJob := deleteCompletedJobs(instance.Namespace)
 		if errDeleteJob != nil {
