@@ -1,4 +1,4 @@
-# WSO2 API Manager Operator for Kubernetes
+	# WSO2 API Manager Operator for Kubernetes
 
 ## Introduction
 
