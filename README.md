@@ -16,7 +16,7 @@ Open API definition is considered as the single source of truth to the WSO2 API 
 
 ![alt text](https://raw.githubusercontent.com/wso2/k8s-apim-operator/master/apim-operator.png)
 
-The developer first approach is used when creating the API Manager Operator for Kubernetes. When a user requires to expose an API for the service he created, he only needs to provide the Open API definition to the API Manager command line tool. API Manager command line tool can take open API definition take open API as input argument and pass it to kaniko job running on Kubernetes. This job will create docker image and push it to the remote registry. Then it will create API Microgateway runtime from that docker image and deploy it in Kubernetes. This API will be exposed as Load Balancer service type in Kubernetes. 
+The developer first approach is used when creating the API Manager Operator for Kubernetes. When a user requires to expose an API for the service created, user only needs to provide the Open API definition to the API Controller. API Controller can take open API definition take open API as input argument and pass it to kaniko job running on Kubernetes. This job will create docker image and push it to the remote registry. Then it will create API Microgateway runtime from that docker image and deploy it in Kubernetes. This API will be exposed as Load Balancer service type in Kubernetes. 
 
 #### API Manager Custom Resources for Kubernetes
 
@@ -48,13 +48,13 @@ Navigate to wso2am-k8s-crds/apim-operator/apim-deployment/api-manager
 - Deploy API Manager in Kubernetes Cluster. Following command will deploy WSO2 API Manager all in one profile in Kubernetes. With following command API Manager default profile will start run on Kubernetes runtime under WSO2 namespace. Please see below command and its output. 
 
 ```$xslt
->>apimcli apply -f k8s-artifacts
+>>apictl apply -f k8s-artifacts
 namespace "wso2" created
 configmap "apim-conf" created
 deployment.apps "wso2apim" created
 service "wso2apim-service" created
 ```
-  You can check the the details about running server by checking running pods or services in Kubernetes runtime. You can execute following command you see how WSO2 API Manager deployed in Kubernetes.
+  You can check details of running server by checking status of running pods or services in Kubernetes runtime. You can execute following command to see how WSO2 API Manager runtime deployed in Kubernetes.
 ```$xslt
 >>kubectl get services -n wso2
 NAME               TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)      AGE
@@ -63,14 +63,14 @@ wso2apim-service   LoadBalancer   10.110.67.120   localhost     8280:30706..   4
 
 - Deploy APIM Analytics in Kubernetes Cluster. You can check the status of running service similar to previous command.
 ```console
->> apimcli apply -f analytics/k8s-artifacts/
+>> apictl apply -f analytics/k8s-artifacts/
 namespace "wso2" configured
 deployment.apps "wso2apim-analytics-deployment" created
 service "wso2apim-analytics-service" created
 ```
 
 ## Quick Start Guide
-In this section we will discuss how to use API Manager command line tool and Kubernetes crds together to deploy API in Kubernetes runtime. WSO2 API Manager CLI will primarily use to issue commands required to create API specific microgateway image and deploy that in Kubernetes. 
+In this section we will discuss about, how to use API Controller and Kubernetes crds together to deploy API in Kubernetes runtime. WSO2 API Manager CLI will primarily use to issue commands required to create API specific microgateway image and deploy that in Kubernetes. 
 ##### Step 1: Install [Kubernetes v1.12 or above](https://Kubernetes.io/docs/setup/)
 
 ##### Step 2: Download [wso2am-k8s-crds-v1.0.0-beta.zip](https://github.com/wso2/k8s-apim-operator/releases/download/v1.0.0-beta/wso2am-k8s-crds-v1.0.0-beta.zip) and extract the zip
@@ -92,35 +92,35 @@ cd <APIM-K8s-CRD-HOME>/
 - Execute the following command to start the CLI tool.
 
 ```
-./apimcli
+./apictl
 ```
 
 Add the location of the extracted folder to your system's $PATH variable to be able to access the executable from anywhere.
 
 For further instructions execute the following command.
 ```
-apimcli --help
+apictl --help
 ```
 Set the APIM CLI tool's mode to Kubernetes or k8s to be compatible with kubectl commands
 
 ```$xslt
-apimcli set --mode k8s
+apictl set --mode k8s
 ```
  or 
 ```
-apimcli set --mode Kubernetes
+apictl set --mode Kubernetes
 ```
 
 ##### Step 4: Deploy K8s CRD artifacts
 
 - Deploying CRDs for API, TargetEndpoint, Security, RateLimiting
 ```
-apimcli apply -f ./deploy/crds/
+apictl apply -f ./deploy/crds/
 ```
 
 - Deploying namespace, roles/role binding and service account associated with the operator
 ```
-apimcli apply -f ./deploy/controller-artifacts/
+apictl apply -f ./deploy/controller-artifacts/
 ```
 
 - Deploying controller level configurations
@@ -129,16 +129,16 @@ apimcli apply -f ./deploy/controller-artifacts/
 Update the ***user's docker registry*** in the controller_conf.yaml. Enter the base 64 encoded username and password of the user's docker registry into the docker_secret_template.yaml.
 
 ```
-apimcli apply -f ./deploy/controller-configs/
+apictl apply -f ./deploy/controller-configs/
 ```
 
 ##### Step 5: Deploy an API in K8s cluster via CRDs
 
 - Deploy the API
 ```
-apimcli add api -n "api_name" --from-file="location to the api swagger definition"
+apictl add api -n "api_name" --from-file="location to the api swagger definition"
 
->> apimcli add api -n petstore --from-file=./deploy/scenarios/scenario-1/petstore_basic.yaml
+>> apictl add api -n petstore --from-file=./deploy/scenarios/scenario-1/petstore_basic.yaml
 creating configmap with swagger definition
 configmap "petstore-swagger" created
 api.wso2.com "petstore" configured
@@ -146,16 +146,16 @@ api.wso2.com "petstore" configured
   
 - Update the API
 ```
-apimcli update api -n "api_name" --from-file="location to the api swagger definition"
+apictl update api -n "api_name" --from-file="location to the api swagger definition"
 
-apimcli update api -n petstore --from-file=./deploy/scenarios/scenario-1/petstore_basic.yaml
+apictl update api -n petstore --from-file=./deploy/scenarios/scenario-1/petstore_basic.yaml
 ```
   
 - Delete the API
 ```
-apimcli delete api "api_name"
+apictl delete api "api_name"
 
-apimcli delete api petstore
+apictl delete api petstore
 ```
 
 Optional Parameters
@@ -164,7 +164,7 @@ Optional Parameters
 --replicas=3          Number of replicas
 --namespace=wso2      Namespace to deploy the API
 
-apimcli add api -n "api_name" --from-file="location to the api swagger definition" --replicas="number of replicas" --namespace="desired namespace"
+apictl add api -n "api_name" --from-file="location to the api swagger definition" --replicas="number of replicas" --namespace="desired namespace"
 ```
 
 **Note:** Namespace and replicas are optional parameters. If they are not provided default namespace will be used and 1 replica will be created. However, the namespace used in all the commands related to particular API name must match.
@@ -178,23 +178,23 @@ To subscribe the APIs to the application, the API is needed to be published in t
 
 <br>Following commands will help you to publish the API in the API manager.
 Using the APIM CLI tool, init the project using the sample swagger file and import that to the API Manager in Kubernetes deployment.
-Commands of the CLI can be found [here](https://github.com/wso2/product-apim-tooling/blob/v3.0.0-beta/import-export-cli/docs/apimcli.md)  
+Commands of the CLI can be found [here](https://github.com/wso2/product-apim-tooling/blob/v3.0.0-beta/import-export-cli/docs/apictl.md)  
 
 Using the APIM CLI command, adding the environment to the CLI configs/
 ```
-apimcli add-env -e k8s --registration https://wso2apim:9443/client-registration/v0.15/register --apim https://wso2apim:9443 --token https://wso2apim:8243/token --admin https://wso2apim:9443/api/am/admin/v0.15 --api_list https://wso2apim:9443/api/am/publisher/v0.15/apis --app_list https://wso2apim:9443/api/am/store/v0.15/applications
+apictl add-env -e k8s --registration https://wso2apim:9443/client-registration/v0.15/register --apim https://wso2apim:9443 --token https://wso2apim:8243/token --admin https://wso2apim:9443/api/am/admin/v0.15 --api_list https://wso2apim:9443/api/am/publisher/v0.15/apis --app_list https://wso2apim:9443/api/am/store/v0.15/applications
 
 ```
 Init the API project using CLI command
 
 ```
-apimcli init petstore --oas=./deploy/scenarios/scenario-1/petstore_basic.yaml
+apictl init petstore --oas=./deploy/scenarios/scenario-1/petstore_basic.yaml
 ```
 
 Import the API to the k8s environment.
 (You need to change the API life cycle status before importing, to published in the api.yaml file to publish the API)
 ```
-./apimcli import-api -f petstore/ -e k8s -k 
+./apictl import-api -f petstore/ -e k8s -k 
 
 ```
 
@@ -220,7 +220,7 @@ TOKEN=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6IlpqUm1ZVE13TlRKak9XVTVNbUl6TW
 The API service is exposed as the Load Balancer service type. You can get the service endpoint details by using the following command.
 
 ```
-apimcli get services
+apictl get services
 ```
 
 Sample Output:
@@ -248,9 +248,9 @@ curl -X GET "https://104.199.77.249:9095/petstore/v1/pet/1" -H "accept: applicat
 ##### Cleanup
 
 ```
-apimcli delete -f ./deploy/controller-configs/
-apimcli delete -f ./deploy/controller-artifacts/
-apimcli delete -f ./deploy/crds/
+apictl delete -f ./deploy/controller-configs/
+apictl delete -f ./deploy/controller-artifacts/
+apictl delete -f ./deploy/crds/
 ```
     
 ##### Sample Scenarios
