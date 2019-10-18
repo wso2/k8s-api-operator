@@ -250,4 +250,4 @@ apimcli delete -f ./deploy/crds/
 
 ##### Troubleshooting Guide
 
-You can refer [troubleshooting guide](docs/Troubleshooting/troubleshooting.md).s
+You can refer [troubleshooting guide](docs/Troubleshooting/troubleshooting.md).
