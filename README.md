@@ -16,7 +16,7 @@ Open API definition is considered as the single source of truth to the WSO2 API 
 
 ![alt text](https://raw.githubusercontent.com/wso2/k8s-apim-operator/master/apim-operator.png)
 
-The developer first approach is used when creating the API Manager Operator for Kubernetes. When a user requires to expose an API for the service he created, he only needs to provide the Open API definition to the API Manager command line tool. API Manager command line tool can take open API definition take open API as input argument and pass it to kaniko job running on kubernetes. This job will create docker image and push it to the remote registry. Then it will create API Microgateway runtime from that docker image and deploy it in kubernetes. This API will be exposed as Load Balancer service type in Kubernetes. 
+The developer first approach is used when creating the API Manager Operator for Kubernetes. When a user requires to expose an API for the service he created, he only needs to provide the Open API definition to the API Manager command line tool. API Manager command line tool can take open API definition take open API as input argument and pass it to kaniko job running on Kubernetes. This job will create docker image and push it to the remote registry. Then it will create API Microgateway runtime from that docker image and deploy it in Kubernetes. This API will be exposed as Load Balancer service type in Kubernetes. 
 
 #### API Manager Custom Resources for Kubernetes
 
@@ -37,15 +37,15 @@ We have initially introduced four custom resources for Kubernetes.
 #### APIM CLI for Kubernetes CRDs
 
 
-We have introduced this feature with [APIM CLI](https://github.com/wso2/product-apim-tooling/releases) tool to deploy and manger APIs and related services in kubernetes cluster without any hassle.
+We have introduced this feature with [APIM CLI](https://github.com/wso2/product-apim-tooling/releases) tool to deploy and manger APIs and related services in Kubernetes cluster without any hassle.
 
 ##### Deploying APIM in  K8S Cluster
 
-Kubernetes artifacts to deploy APIM and APIM analytics deployment are shipped with the this distribution. Below commands allow users to run API Manager default profile and API Manager Analytics profile in kubernetes runtime. Please note you will need to have enough memory and CPU to run below commands.
+Kubernetes artifacts to deploy APIM and APIM analytics deployment are shipped with the this distribution. Below commands allow users to run API Manager default profile and API Manager Analytics profile in Kubernetes runtime. Please note you will need to have enough memory and CPU to run below commands.
 
 Navigate to wso2am-k8s-crds/apim-operator/apim-deployment/api-manager
 
-- Deploy API Manager in Kubernetes Cluster. Following command will deploy WSO2 API Manager all in one profile in kubernetes. With following command API Manager default profile will start run on kubernetes runtime under WSO2 namespace. Please see below command and its output. 
+- Deploy API Manager in Kubernetes Cluster. Following command will deploy WSO2 API Manager all in one profile in Kubernetes. With following command API Manager default profile will start run on Kubernetes runtime under WSO2 namespace. Please see below command and its output. 
 
 ```$xslt
 >>apimcli apply -f k8s-artifacts
@@ -54,7 +54,7 @@ configmap "apim-conf" created
 deployment.apps "wso2apim" created
 service "wso2apim-service" created
 ```
-  You can check the the details about running server by checking running pods or services in kubernetes runtime. You can execute following command you see how WSO2 API Manager deployed in kubernetes.
+  You can check the the details about running server by checking running pods or services in Kubernetes runtime. You can execute following command you see how WSO2 API Manager deployed in Kubernetes.
 ```$xslt
 >>kubectl get services -n wso2
 NAME               TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)      AGE
@@ -70,8 +70,8 @@ service "wso2apim-analytics-service" created
 ```
 
 ## Quick Start Guide
-In this section we will discuss how to use API Manager command line tool and kubernetes crds together to deploy API in kubernetes runtime. WSO2 API Manager CLI will primarily use to issue commands required to create API specific microgateway image and deploy that in kubernetes. 
-##### Step 1: Install [Kubernetes v1.12 or above](https://kubernetes.io/docs/setup/)
+In this section we will discuss how to use API Manager command line tool and Kubernetes crds together to deploy API in Kubernetes runtime. WSO2 API Manager CLI will primarily use to issue commands required to create API specific microgateway image and deploy that in Kubernetes. 
+##### Step 1: Install [Kubernetes v1.12 or above](https://Kubernetes.io/docs/setup/)
 
 ##### Step 2: Download [wso2am-k8s-crds-v1.0.0-beta.zip](https://github.com/wso2/k8s-apim-operator/releases/download/v1.0.0-beta/wso2am-k8s-crds-v1.0.0-beta.zip) and extract the zip
 
@@ -101,14 +101,14 @@ For further instructions execute the following command.
 ```
 apimcli --help
 ```
-Set the APIM CLI tool's mode to kubernetes or k8s to be compatible with kubectl commands
+Set the APIM CLI tool's mode to Kubernetes or k8s to be compatible with kubectl commands
 
 ```$xslt
 apimcli set --mode k8s
 ```
  or 
 ```
-apimcli set --mode kubernetes
+apimcli set --mode Kubernetes
 ```
 
 ##### Step 4: Deploy K8s CRD artifacts
