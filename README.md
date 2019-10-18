@@ -48,7 +48,7 @@ Navigate to wso2am-k8s-crds/apim-operator/apim-deployment/api-manager
 - Deploy API Manager in Kubernetes Cluster. Following command will deploy WSO2 API Manager all in one profile in kubernetes. With following command API Manager default profile will start run on kubernetes runtime under WSO2 namespace. Please see below command and its output. 
 
 ```$xslt
->>apimcli apply -f api-manager/k8s-artifacts
+>>apimcli apply -f k8s-artifacts
 namespace "wso2" created
 configmap "apim-conf" created
 deployment.apps "wso2apim" created
