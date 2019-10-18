@@ -62,14 +62,15 @@ wso2apim-service   LoadBalancer   10.110.67.120   localhost     8280:30706..   4
 ```
 
 - Deploy APIM Analytics in Kubernetes Cluster. You can check the status of running service similar to previous command.
-```$xslt
-apimcli apply -f api-manager/analytics
+```console
+>> apimcli apply -f analytics/k8s-artifacts/
+namespace "wso2" configured
+deployment.apps "wso2apim-analytics-deployment" created
+service "wso2apim-analytics-service" created
 ```
 
----
-
 ## Quick Start Guide
-
+In this section we will discuss how to use API Manager command line tool and kubernetes crds together to deploy API in kubernetes runtime. WSO2 API Manager CLI will primarily use to issue commands required to create API specific microgateway image and deploy that in kubernetes. 
 ##### Step 1: Install [Kubernetes v1.12 or above](https://kubernetes.io/docs/setup/)
 
 ##### Step 2: Download [wso2am-k8s-crds-v1.0.0-beta.zip](https://github.com/wso2/k8s-apim-operator/releases/download/v1.0.0-beta/wso2am-k8s-crds-v1.0.0-beta.zip) and extract the zip
@@ -137,7 +138,10 @@ apimcli apply -f ./deploy/controller-configs/
 ```
 apimcli add api -n "api_name" --from-file="location to the api swagger definition"
 
-apimcli add api -n petstore --from-file=./deploy/scenarios/scenario-1/petstore_basic.yaml
+>> apimcli add api -n petstore --from-file=./deploy/scenarios/scenario-1/petstore_basic.yaml
+creating configmap with swagger definition
+configmap "petstore-swagger" created
+api.wso2.com "petstore" configured
 ```
   
 - Update the API
