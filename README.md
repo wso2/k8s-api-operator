@@ -16,7 +16,7 @@ Open API definition is considered as the single source of truth to the WSO2 API 
 
 ![alt text](https://raw.githubusercontent.com/wso2/k8s-apim-operator/master/apim-operator.png)
 
-The developer first approach is used when creating the API Manager Operator for Kubernetes. When an user requires to expose an API for the service he created, he only needs to provide the Open API definition to the Kubernetes. Then it will create the API and deploy his API in the WSO2 API Microgateway. His API is exposed as the Load Balancer service type in Kubernetes. 
+The developer first approach is used when creating the API Manager Operator for Kubernetes. When an user requires to expose an API for the service he created, he only needs to provide the Open API definition to the API Manager command line tool. API Manager command line tool can take open API definition take open API as input argument and pass it to kaniko job running on kubernetes. This job will create docker image and push it to remote registry. Then it will create API Microgateway runtime from that docker image and deploy it in kubernetes. This API will be exposed as Load Balancer service type in Kubernetes. 
 
 #### API Manager Custom Resources for Kubernetes
 
@@ -41,11 +41,11 @@ We have introduced this feature with [APIM CLI](https://github.com/wso2/product-
 
 ##### Deploying APIM in  K8S Cluster
 
-Kubernetes artifacts to deploy APIM and APIM analytics deployment are shipped with the this distribution.
+Kubernetes artifacts to deploy APIM and APIM analytics deployment are shipped with the this distribution. Below commands allow users to run API Manager default profile and API Manager Analytics profile in kubernetes runtime. Please note you will need to have enough menory and CPU to run below commands.
 
 Navigate to wso2am-k8s-crds/apim-operator/apim-deployment/api-manager
 
-- Deploy API Manager in Kubernetes Cluster
+- Deploy API Manager in Kubernetes Cluster. Following command will deploy WSO2 API Manager all in one profile in kubernetes. 
 
 ```$xslt
 apimcli apply -f api-manager/k8s-artifacts
