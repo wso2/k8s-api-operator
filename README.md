@@ -41,11 +41,11 @@ We have introduced this feature with [APIM CLI](https://github.com/wso2/product-
 
 ##### Deploying APIM in  K8S Cluster
 
-Kubernetes artifacts to deploy APIM and APIM analytics deployment are shipped with the this distribution. Below commands allow users to run API Manager default profile and API Manager Analytics profile in Kubernetes runtime. Please note you will need to have enough memory and CPU to run below commands.
+Kubernetes artifacts to deploy APIM and APIM analytics deployment are shipped with the this distribution. Below commands allow users to run API Manager and API Manager Analytics profile in Kubernetes runtime. Please note you will need to have enough memory(minimum 4GB memory) and CPU(minimum 4 CPUs) to run below commands.
 
 Navigate to wso2am-k8s-crds/apim-operator/apim-deployment/api-manager
 
-- Deploy API Manager in Kubernetes Cluster. Following command will deploy WSO2 API Manager all in one profile in Kubernetes. With following command API Manager default profile will start run on Kubernetes runtime under WSO2 namespace. Please see below command and its output. 
+- Deploy API Manager in Kubernetes Cluster. Following command will deploy WSO2 API Manager all in one profile in Kubernetes. With following command API Manager will start to run on Kubernetes runtime under WSO2 namespace. Please see below command and its output. 
 
 ```$xslt
 >>apictl apply -f k8s-artifacts
