@@ -16,7 +16,7 @@ Open API definition is considered as the single source of truth to the WSO2 API 
 
 ![alt text](https://raw.githubusercontent.com/wso2/k8s-apim-operator/master/apim-operator.png)
 
-The developer first approach is used when creating the API Manager Operator for Kubernetes. When an user requires to expose an API for the service he created, he only needs to provide the Open API definition to the API Manager command line tool. API Manager command line tool can take open API definition take open API as input argument and pass it to kaniko job running on kubernetes. This job will create docker image and push it to remote registry. Then it will create API Microgateway runtime from that docker image and deploy it in kubernetes. This API will be exposed as Load Balancer service type in Kubernetes. 
+The developer first approach is used when creating the API Manager Operator for Kubernetes. When a user requires to expose an API for the service he created, he only needs to provide the Open API definition to the API Manager command line tool. API Manager command line tool can take open API definition take open API as input argument and pass it to kaniko job running on kubernetes. This job will create docker image and push it to the remote registry. Then it will create API Microgateway runtime from that docker image and deploy it in kubernetes. This API will be exposed as Load Balancer service type in Kubernetes. 
 
 #### API Manager Custom Resources for Kubernetes
 
@@ -45,7 +45,7 @@ Kubernetes artifacts to deploy APIM and APIM analytics deployment are shipped wi
 
 Navigate to wso2am-k8s-crds/apim-operator/apim-deployment/api-manager
 
-- Deploy API Manager in Kubernetes Cluster. Following command will deploy WSO2 API Manager all in one profile in kubernetes. With following command API Manager default profile will start run on kubernetes runtime under wso2 namespace. Please see below command and its output. 
+- Deploy API Manager in Kubernetes Cluster. Following command will deploy WSO2 API Manager all in one profile in kubernetes. With following command API Manager default profile will start run on kubernetes runtime under WSO2 namespace. Please see below command and its output. 
 
 ```$xslt
 >>apimcli apply -f api-manager/k8s-artifacts
