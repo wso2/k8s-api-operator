@@ -54,7 +54,7 @@ configmap "apim-conf" created
 deployment.apps "wso2apim" created
 service "wso2apim-service" created
 ```
-  You can check details of running server by checking status of running pods or services in Kubernetes runtime. You can execute following command to see how WSO2 API Manager runtime deployed in Kubernetes.
+  You can check the details of running server by checking the status of running pods or services in Kubernetes runtime. You can execute following command to see how WSO2 API Manager runtime deployed in Kubernetes.
 ```$xslt
 >>kubectl get services -n wso2
 NAME               TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)      AGE
@@ -70,7 +70,7 @@ service "wso2apim-analytics-service" created
 ```
 
 ## Quick Start Guide
-In this section we will discuss about, how to use API Controller and Kubernetes crds together to deploy API in Kubernetes runtime. WSO2 API Manager CLI will primarily use to issue commands required to create API specific microgateway image and deploy that in Kubernetes. 
+In this section we will discuss about how to use API Controller and Kubernetes crds together to deploy API in Kubernetes runtime. WSO2 API Manager CLI will primarily use to issue commands required to create API specific microgateway image and deploy that in Kubernetes. 
 ##### Step 1: Install [Kubernetes v1.12 or above](https://Kubernetes.io/docs/setup/)
 
 ##### Step 2: Download [wso2am-k8s-crds-v1.0.0-beta.zip](https://github.com/wso2/k8s-apim-operator/releases/download/v1.0.0-beta/wso2am-k8s-crds-v1.0.0-beta.zip) and extract the zip
@@ -202,7 +202,7 @@ Import the API to the k8s environment.
 ###### Step 6.1: Obtain a token
 
 After the APIs are exposed via WSO2 API Microgateway, you can invoke an API with a valid JWT token or an opaque access token. In order to use JWT tokens, WSO2 API Microgateway should be presented with a JWT signed by a trusted OAuth2 service.
-Let's use the following sample JWT token for the quick start guide. Here we will be using an never expiring jwt token acquired from WSO2 API Manager.
+Let's use the following sample JWT token for the quick start guide. Here we will be using a never expiring jwt token acquired from WSO2 API Manager.
 
 Sample Token
 ```
@@ -266,3 +266,4 @@ apictl delete -f ./deploy/crds/
 ##### Troubleshooting Guide
 
 You can refer [troubleshooting guide](docs/Troubleshooting/troubleshooting.md).
+
