@@ -39,6 +39,14 @@
             <directory>../apim-operator/deploy</directory>
             <outputDirectory>/apim-operator/deploy</outputDirectory>
             <useDefaultExcludes>true</useDefaultExcludes>
+            <excludes>
+                <exclude>crds/**</exclude>
+            </excludes>
+        </fileSet>
+        <fileSet>
+            <directory>../apim-operator/deploy/crds</directory>
+            <outputDirectory>/apim-operator/deploy/controller-artifacts/</outputDirectory>
+            <useDefaultExcludes>true</useDefaultExcludes>
         </fileSet>
         <fileSet>
             <useDefaultExcludes>true</useDefaultExcludes>
