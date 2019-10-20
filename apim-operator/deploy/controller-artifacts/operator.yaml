@@ -33,7 +33,7 @@ spec:
       containers:
         - name: apim-operator
           # Replace this with the built image name
-          image: dinushad/apimoperator:v3.0.0-post-beta
+          image: dinushad/apimoperator:v3.0.0-post-beta-2
           command:
           - apim-operator
           imagePullPolicy: Always
