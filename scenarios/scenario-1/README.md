@@ -1,37 +1,120 @@
 # k8s-apim-operator Scenarios
 
-## Scenario 1
+## Scenario 1 - Expose a K8s service as an API
+- This scenario describes how to expose a backend service which has been already deployed in the
+kubernetes cluster as a managed API in the Kubernetes cluster.
+- First we will deploy a sample backend service (product service) in the Kubernetes cluster
+- Then the backend service (exposed k8s service) will be exposed as a managed API in the Kubernetes cluster 
 
-> ##### This scenario demonstrates Basic API deployment
+> Follow the main README and deploy the apim-operator and configuration files. Make sure to set the analyticsEnabled to "true" and deploy analytics secret with credentials to analytics server and certificate, if you want to check analytics.
 
-- Follow the main README and deploy the apim-operator and configuration files. Make sure to set the analyticsEnabled to "true" and deploy analytics secret with credentials to analytics server and certificate, if you want to check analytics
+
+ ##### Deploying the sample backendservice
  
-##### Navigate to the scenarios/scenario-1 directory and execute the following command
+ - Navigate to wso2am-k8s-crds-1.0.0/scenarios/scenario-1 directory and deploy the sample backend service using the following command.
+    ```
+        apimcli apply -f product_dep.yaml
+    ```
+    - Output:
+    ```
+        service/products created
+        deployment.apps/products-deployment created
+    ```
+ - This will deploy ***products*** backend service on port 80 with the following resources
+     - GET ***/products*** : list all the products available
+     - GET ***/products/{productId}***   : list product specific details for the given product ID
+ - Excute the following command to check if the service is present in the Kubernetes cluster.
+    ```
+        apimcli get services products
+    ``` 
+    - Output:
+    ```
+        NAME       TYPE           CLUSTER-IP    EXTERNAL-IP       PORT(S)        AGE
+        products   LoadBalancer   10.83.1.131   104.197.114.248   80:30475/TCP   27m
+    ```
+ - To test if the product service is working, execute the following commands.
+    ```
+        Command 1:
+        curl -X GET http://<EXTERNAL-IP>:80/products
+        
+        Output:
+        {"products":[{"name":"Apples", "id":101, "price":"$1.49 / lb"}, {"name":"Macaroni & Cheese", "id":151, "price":"$7.69"}, {"name":"ABC Smart TV", "id":301, "price":"$399.99"}, {"name":"Motor Oil", "id":401, "price":"$22.88"}, {"name":"Floral Sleeveless Blouse", "id":501, "price":"$21.50"}]}
+    ```
+    ```
+        Command 2:
+        curl -X GET http://104.197.114.248:80/products/101
+        
+        Output:
+        {"name":"Apples", "id":101, "price":"$1.49 / lb", "reviewScore":"0", "stockAvailability":false}
+    ``` 
+
+##### Exposing the backend service as a managed API in the K8S cluster
+
+> Please note that you need to configure the k8s-apim-operator in the Kubernetes cluster prior to trying out the scenarios.
+
+- Basic swagger definition belongs to the "products" service is available in product_basic.yaml.
+Backend endpoint of the API should be mentioned in the swagger file with the "x-wso2-production-endpoints" extension.
+In this swagger definition, the backend service of the "products" service has been mentioned as follows.
+    ```
+        x-wso2-production-endpoints:
+          urls:
+            - http://products
+    ```
 
 - Create API <br /> 
-    - ***apimcli add api -n petstore --from-file=petstore_basic.yaml***
-
-- Update API <br /> 
-    - ***apimcli update api -n petstore --from-file=petstore_basic.yaml***
+    ```
+        apimcli add api -n products-api --from-file=product_basic.yaml
+    ``` 
+    - Output:
+    ```$xslt
+        creating configmap with swagger definition
+        configmap/products-api-swagger created
+        api.wso2.com/products-api created
+    ```
     
 - Get available API <br /> 
-    - ***apimcli get apis***
+    ```
+        apimcli get apis
+    ```
+    - Output:
+    ```    
+        NAME          AGE
+        product-api   55m
+    ```
 
 - Get service details to invoke the API<br />
-    - ***apimcli get services***
-    - Sample Output:
+    ```
+        apimcli get services
+    ```
+    - Output:
     
     ```
-    NAME          TYPE         CLUSTER-IP      EXTERNAL-IP          PORT(S)                     AGE
-    petstore   LoadBalancer    10.0.3.74     104.199.77.249   9095:30453/TCP,9090:32422/TCP     1m
+        NAME                 TYPE           CLUSTER-IP     EXTERNAL-IP       PORT(S)                         AGE
+        products-api         LoadBalancer   10.83.9.188    34.66.153.49      9095:32087/TCP,9090:32572/TCP   98m
+        products             LoadBalancer   10.83.1.131    104.197.114.248   80:30475/TCP                    77m
     ```
-
-    - Note: Get the external IP of the service
+    - You can see both the backend(products) service and the managed API service(products-api) is available.
+    - Get the external IP of the managed API's service
  
 - Invoking the API <br />
-    - ***TOKEN=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6IlpqUm1ZVE13TlRKak9XVTVNbUl6TWpnek5ESTNZMkl5TW1JeVkyRXpNamRoWmpWaU1qYzBaZz09In0=.eyJhdWQiOiJodHRwOlwvXC9vcmcud3NvMi5hcGltZ3RcL2dhdGV3YXkiLCJzdWIiOiJhZG1pbkBjYXJib24uc3VwZXIiLCJhcHBsaWNhdGlvbiI6eyJvd25lciI6ImFkbWluIiwidGllciI6IlVubGltaXRlZCIsIm5hbWUiOiJzYW1wbGUtY3JkLWFwcGxpY2F0aW9uIiwiaWQiOjV9LCJzY29wZSI6ImFtX2FwcGxpY2F0aW9uX3Njb3BlIGRlZmF1bHQiLCJpc3MiOiJodHRwczpcL1wvd3NvMmFwaW06OTQ0M1wvb2F1dGgyXC90b2tlbiIsInRpZXJJbmZvIjp7fSwia2V5dHlwZSI6IlBST0RVQ1RJT04iLCJzdWJzY3JpYmVkQVBJcyI6W10sImNvbnN1bWVyS2V5IjoiOFpWV1lQYkk2Rm1lY0ZoeXdVaDVVSXJaNEFvYSIsImV4cCI6MzcxODI5OTU1MiwiaWF0IjoxNTcwODE1OTA1LCJqdGkiOiJkMGI2NTgwNC05NDk3LTQ5ZjktOTcxNC01OTJmODFiNzJhYjMifQ==.HYCPxCbNcALcd0svu47EqFoxnnBAkVJSnCPnW6jJ1lZQTzSAiuiPcGzTnyP1JHodQknhYsSrvdZDIzWzU_mRH2i3-lMVdm0t43r-0Ti0EdBSX2756ilo266MVeWhxbz9p3hPm5ndDCoo_bfB4KbjigjmhXv_PJyUMuWtMo669sHQNs5FkiOT2X0gzFP1iJUFf-H9y762TEIYpylKedVDzQP8x4LCRZsO54e1iA-DZ5h5MKQhJsbKZZ_MMXGmtdo8refPyTCc7HIuevUXIWAaSNRFYj_HZTSRYhFEUtDWn_tJiySn2umRuP3XqxPmQal0SxD7JiV8DQxxyylsGw9k6g==***
+    ```
+        TOKEN=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6IlpqUm1ZVE13TlRKak9XVTVNbUl6TWpnek5ESTNZMkl5TW1JeVkyRXpNamRoWmpWaU1qYzBaZz09In0=.eyJhdWQiOiJodHRwOlwvXC9vcmcud3NvMi5hcGltZ3RcL2dhdGV3YXkiLCJzdWIiOiJhZG1pbkBjYXJib24uc3VwZXIiLCJhcHBsaWNhdGlvbiI6eyJvd25lciI6ImFkbWluIiwidGllciI6IlVubGltaXRlZCIsIm5hbWUiOiJzYW1wbGUtY3JkLWFwcGxpY2F0aW9uIiwiaWQiOjV9LCJzY29wZSI6ImFtX2FwcGxpY2F0aW9uX3Njb3BlIGRlZmF1bHQiLCJpc3MiOiJodHRwczpcL1wvd3NvMmFwaW06OTQ0M1wvb2F1dGgyXC90b2tlbiIsInRpZXJJbmZvIjp7fSwia2V5dHlwZSI6IlBST0RVQ1RJT04iLCJzdWJzY3JpYmVkQVBJcyI6W10sImNvbnN1bWVyS2V5IjoiOFpWV1lQYkk2Rm1lY0ZoeXdVaDVVSXJaNEFvYSIsImV4cCI6MzcxODI5OTU1MiwiaWF0IjoxNTcwODE1OTA1LCJqdGkiOiJkMGI2NTgwNC05NDk3LTQ5ZjktOTcxNC01OTJmODFiNzJhYjMifQ==.HYCPxCbNcALcd0svu47EqFoxnnBAkVJSnCPnW6jJ1lZQTzSAiuiPcGzTnyP1JHodQknhYsSrvdZDIzWzU_mRH2i3-lMVdm0t43r-0Ti0EdBSX2756ilo266MVeWhxbz9p3hPm5ndDCoo_bfB4KbjigjmhXv_PJyUMuWtMo669sHQNs5FkiOT2X0gzFP1iJUFf-H9y762TEIYpylKedVDzQP8x4LCRZsO54e1iA-DZ5h5MKQhJsbKZZ_MMXGmtdo8refPyTCc7HIuevUXIWAaSNRFYj_HZTSRYhFEUtDWn_tJiySn2umRuP3XqxPmQal0SxD7JiV8DQxxyylsGw9k6g==
+    ```
    
-    - ***curl -X GET "https://\<external IP of LB service>:9095/petstore/v1/pet/55" -H "accept: application/xml" -H "Authorization:Bearer $TOKEN" -k***
+    ```
+        curl -X GET "https://<external IP of LB service>:9095/store/v1.0.0/products" -H "accept: application/json" -H "Authorization:Bearer $TOKEN" -k
+    ```
+    - Once you execute the above command, it will call to the managed API (products-api), which then call its endpoint("products" service) available in the cluster. If the request is success, you would be able to see the response as below.
+    ```
+        {"products":[{"name":"Apples", "id":101, "price":"$1.49 / lb"}, {"name":"Macaroni & Cheese", "id":151, "price":"$7.69"}, {"name":"ABC Smart TV", "id":301, "price":"$399.99"}, {"name":"Motor Oil", "id":401, "price":"$22.88"}, {"name":"Floral Sleeveless Blouse", "id":501, "price":"$21.50"}]}
+    ```
+    
 
-- Delete API <br /> 
-    - ***apimcli delete api petstore***
+- Delete the  API <br /> 
+    ```
+        apimcli delete api products-api
+    ```
+    -  Output:
+    ```
+        api.wso2.com "products-api" deleted
+    ```
