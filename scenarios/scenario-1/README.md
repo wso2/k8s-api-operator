@@ -1,4 +1,5 @@
 ## Scenario 1 - Expose a K8s service as an API
+
 - This scenario describes how to expose a backend service which has been already deployed in the
 kubernetes cluster as a managed API in the Kubernetes cluster.
 - First we will deploy a sample backend service (product service) in the Kubernetes cluster
@@ -11,26 +12,32 @@ kubernetes cluster as a managed API in the Kubernetes cluster.
  ##### Deploying the sample backendservice
  
  - Navigate to wso2am-k8s-crds-1.0.0/scenarios/scenario-1 directory and deploy the sample backend service using the following command.
+ 
     ```
-        apimcli apply -f product_dep.yaml
+        apictl apply -f product_dep.yaml
     ```
+    
     - Output:
     ```
         service/products created
         deployment.apps/products-deployment created
     ```
+    
  - This will deploy ***products*** backend service on port 80 with the following resources
      - GET ***/products*** : list all the products available
      - GET ***/products/{productId}***   : list product specific details for the given product ID
+     
  - Execute the following command to check if the service is present in the Kubernetes cluster.
     ```
-        apimcli get services products
+        apictl get services products
     ``` 
+    
     - Output:
     ```
         NAME       TYPE           CLUSTER-IP    EXTERNAL-IP       PORT(S)        AGE
         products   LoadBalancer   10.83.1.131   104.197.114.248   80:30475/TCP   27m
     ```
+    
  - To test if the product service is working, execute the following commands.
     ```
         Command 1:
@@ -39,6 +46,7 @@ kubernetes cluster as a managed API in the Kubernetes cluster.
         Output:
         {"products":[{"name":"Apples", "id":101, "price":"$1.49 / lb"}, {"name":"Macaroni & Cheese", "id":151, "price":"$7.69"}, {"name":"ABC Smart TV", "id":301, "price":"$399.99"}, {"name":"Motor Oil", "id":401, "price":"$22.88"}, {"name":"Floral Sleeveless Blouse", "id":501, "price":"$21.50"}]}
     ```
+    
     ```
         Command 2:
         curl -X GET http://104.197.114.248:80/products/101
@@ -55,6 +63,7 @@ kubernetes cluster as a managed API in the Kubernetes cluster.
 Backend endpoint of the API should be mentioned in the swagger file with the "x-wso2-production-endpoints" extension.
 In this swagger definition, the backend service of the "products" service has been mentioned as follows.
     ```
+        x-wso2-basePath: /store/v1.0.0
         x-wso2-production-endpoints:
           urls:
             - http://products
@@ -62,7 +71,7 @@ In this swagger definition, the backend service of the "products" service has be
 
 - Create API <br /> 
     ```
-        apimcli add api -n products-api --from-file=product_basic.yaml
+        apictl add api -n products-api --from-file=product_basic.yaml
     ``` 
     - Output:
     ```$xslt
@@ -73,7 +82,7 @@ In this swagger definition, the backend service of the "products" service has be
     
 - Get available API <br /> 
     ```
-        apimcli get apis
+        apictl get apis
     ```
     - Output:
     ```    
@@ -83,7 +92,7 @@ In this swagger definition, the backend service of the "products" service has be
 
 - Get service details to invoke the API<br />
     ```
-        apimcli get services
+        apictl get services
     ```
     - Output:
     
@@ -111,7 +120,7 @@ In this swagger definition, the backend service of the "products" service has be
 
 - Delete the  API <br /> 
     ```
-        apimcli delete api products-api
+        apictl delete api products-api
     ```
     -  Output:
     ```

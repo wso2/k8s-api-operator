@@ -17,7 +17,7 @@ In this swagger definition, the backend service of the "petstore" service has be
 
 - Create API <br /> 
     ```
-        apimcli add api -n petstore-api --from-file=swagger.yaml
+        apictl add api -n petstore-api --from-file=swagger.yaml
     ``` 
     - Output:
     ```
@@ -28,7 +28,7 @@ In this swagger definition, the backend service of the "petstore" service has be
     
 - Get available API <br /> 
     ```
-        apimcli get apis
+        apictl get apis
     ```
     - Output:
     ```    
@@ -38,7 +38,7 @@ In this swagger definition, the backend service of the "petstore" service has be
 
 - Get service details to invoke the API. (Please wait until the external-IP is populated in the corresponding service)
     ```
-        apimcli get services
+        apictl get services
     ```
     - Output:
     
@@ -66,7 +66,7 @@ In this swagger definition, the backend service of the "petstore" service has be
 - Delete the  API <br /> 
     - Following command will delete all the artifacts created with this API including pods, deployment and services.
     ```
-        apimcli delete api petstore-api
+        apictl delete api petstore-api
     ```
     -  Output:
     ```

@@ -13,7 +13,7 @@ kubernetes cluster as a managed API in the Kubernetes cluster.
  
  - Navigate to wso2am-k8s-crds-1.0.0/scenarios/scenario-1 directory and deploy the sample backend service using the following command.
     ```
-        apimcli apply -f product_dep.yaml
+        apictl apply -f product_dep.yaml
     ```
     - Output:
     ```
@@ -25,7 +25,7 @@ kubernetes cluster as a managed API in the Kubernetes cluster.
      - GET ***/products/{productId}***   : list product specific details for the given product ID
  - Excute the following command to check if the service is present in the Kubernetes cluster.
     ```
-        apimcli get services products
+        apictl get services products
     ``` 
     - Output:
     ```
@@ -63,7 +63,7 @@ In this swagger definition, the backend service of the "products" service has be
 
 - Create API <br /> 
     ```
-        apimcli add api -n products-api --from-file=product_basic.yaml
+        apictl add api -n products-api --from-file=product_basic.yaml
     ``` 
     - Output:
     ```$xslt
@@ -74,7 +74,7 @@ In this swagger definition, the backend service of the "products" service has be
     
 - Get available API <br /> 
     ```
-        apimcli get apis
+        apictl get apis
     ```
     - Output:
     ```    
@@ -84,7 +84,7 @@ In this swagger definition, the backend service of the "products" service has be
 
 - Get service details to invoke the API<br />
     ```
-        apimcli get services
+        apictl get services
     ```
     - Output:
     
@@ -112,7 +112,7 @@ In this swagger definition, the backend service of the "products" service has be
 
 - Delete the  API <br /> 
     ```
-        apimcli delete api products-api
+        apictl delete api products-api
     ```
     -  Output:
     ```
