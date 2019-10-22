@@ -1,5 +1,3 @@
-# k8s-apim-operator Scenarios
-
 ## Scenario 2 - Deploy Pet-store service as a managed API in k8s cluster
 - This scenario describes how to deploy the petstore service(https://petstore.swagger.io/v2) on a kubernetes cluster as a managed API.
 

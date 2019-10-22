@@ -1,5 +1,3 @@
-# k8s-apim-operator Scenarios
-
 ## Scenario 8 - Deploy APIs in k8s with sidecar mode
 - This scenario describes how to expose a service as a managed API in sidecar mode.
 - In sidecar mode, backend and the managed API will be deployed in the same pod.

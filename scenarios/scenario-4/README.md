@@ -1,5 +1,3 @@
-# k8s-apim-operator Scenarios
-
 ## Scenario 4 - Deploy petstore service as a managed API secured with JWT
 - This scenario describes how to deploy the petstore service(https://petstore.swagger.io/v2) on a kubernetes cluster as a managed API secured with JWT. Hence the API invocation will be done with a JWT token only.
 - First, we will create a Kubernetes secret from the the public cert of the auth server(JWT token issuer).

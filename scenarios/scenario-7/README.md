@@ -1,5 +1,3 @@
-# k8s-apim-operator Scenarios
-
 ## Scenario 7 - Deploy APIs in k8s with private jet mode
 - This scenario describes how to expose a service as a managed API in private jet mode.
 - In private jet mode, backend and the managed API will be deployed in two different pods.
