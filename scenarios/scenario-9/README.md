@@ -6,7 +6,6 @@ kubernetes cluster as a managed API in the Kubernetes cluster.
 - First we will deploy a sample backend service (product service) in the Kubernetes cluster
 - Then the backend service (exposed k8s service) will be exposed as a managed API in the Kubernetes cluster 
 
- ***Important:***
 > Follow the main README and deploy the apim-operator and configuration files. Make sure to set the analyticsEnabled to "true" and deploy analytics secret with credentials to analytics server and certificate, if you want to check analytics.
 
 
@@ -24,7 +23,7 @@ kubernetes cluster as a managed API in the Kubernetes cluster.
  - This will deploy ***products*** backend service on port 80 with the following resources
      - GET ***/products*** : list all the products available
      - GET ***/products/{productId}***   : list product specific details for the given product ID
- - Execute the following command to check if the service is present in the Kubernetes cluster.
+ - Excute the following command to check if the service is present in the Kubernetes cluster.
     ```
         apimcli get services products
     ``` 
