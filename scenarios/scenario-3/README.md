@@ -22,7 +22,7 @@
     ```
 - Deploying "Security" custom resource in the k8s cluster.<br /> 
     ```$xslt
-        apictl apply -f basic-security.yaml
+        apictl apply -f petstore-basic.yaml
     ```
     - Output:
     ```$xslt
