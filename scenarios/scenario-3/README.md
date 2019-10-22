@@ -78,6 +78,8 @@
     ```
      
 - Delete the  API <br /> 
+    - Following command will delete all the artifacts created with this API including pods, deployment and services.
+
     ```
         apimcli delete api petstore-basic
     ```
