@@ -1,5 +1,3 @@
-# k8s-apim-operator Scenarios
-
 ## Scenario 6 - Apply rate-limiting to managed API in Kubernetes cluster
 - This scenario describes how to apply rate-limiting to a managed API in Kubernetes cluster
 - First, we will deploy a rate-limiting custom resource which contains the policy ( 5 requests per minute)

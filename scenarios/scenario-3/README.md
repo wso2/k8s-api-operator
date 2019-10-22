@@ -1,5 +1,3 @@
-# k8s-apim-operator Scenarios
-
 ## Scenario 3 - Deploy Basic Auth Protected API in Kubernetes Cluster
 
 - This scenario demonstrates how to deploy basic auth protected API in Kubernetes cluster.

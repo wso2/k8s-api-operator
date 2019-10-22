@@ -1,6 +1,4 @@
-# k8s-apim-operator Scenarios
-
-## Scenario 4 - Deploy petstore service as a managed API secured with OAuth2
+## Scenario 5 - Deploy petstore service as a managed API secured with OAuth2
 - This scenario describes how to deploy the petstore service(https://petstore.swagger.io/v2) on a kubernetes cluster as a managed API secured with OAuth2. Hence the API invocation will be done with a opaque OAuth2 token only.
 - First, we will create Kubernetes opaque secret with username and password of the key manager server.
 - Then, we will create another Kubernetes secret from the the public cert of the auth server(Key Manager).
