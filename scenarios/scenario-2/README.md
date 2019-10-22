@@ -1,4 +1,5 @@
-## Scenario 2 - Deploy Pet-store service as a managed API in k8s cluster
+## Scenario 2 - Deploy pet store service as a managed API in k8s cluster
+
 - This scenario describes how to deploy the petstore service(https://petstore.swagger.io/v2) on a kubernetes cluster as a managed API.
 
  ***Important:***
@@ -6,9 +7,10 @@
 
 - Navigate to wso2am-k8s-crds-1.0.0/scenarios/scenario-2 directory.
 - Prepared petstore basic swagger definition can be found within this directory.
-- Backend endpoint of the API should be mentioned in the swagger file with the "x-wso2-production-endpoints" extension.
+- Base path of the API and backend endpoint of the API should be mentioned in the swagger file with the  "x-wso2-basePath" and "x-wso2-production-endpoints" extensions respectively. <br>
 In this swagger definition, the backend service of the "petstore" service has been mentioned as follows.
     ```
+        x-wso2-basePath: /petstore/v1
         x-wso2-production-endpoints:
           urls:
             - https://petstore.swagger.io/v
@@ -17,7 +19,7 @@ In this swagger definition, the backend service of the "petstore" service has be
 
 - Create API <br /> 
     ```
-        apimcli add api -n petstore-api --from-file=swagger.yaml
+        apictl add api -n petstore-api --from-file=swagger.yaml
     ``` 
     - Output:
     ```
@@ -28,7 +30,7 @@ In this swagger definition, the backend service of the "petstore" service has be
     
 - Get available API <br /> 
     ```
-        apimcli get apis
+        apictl get apis
     ```
     - Output:
     ```    
@@ -38,7 +40,7 @@ In this swagger definition, the backend service of the "petstore" service has be
 
 - Get service details to invoke the API. (Please wait until the external-IP is populated in the corresponding service)
     ```
-        apimcli get services
+        apictl get services
     ```
     - Output:
     
@@ -66,7 +68,7 @@ In this swagger definition, the backend service of the "petstore" service has be
 - Delete the  API <br /> 
     - Following command will delete all the artifacts created with this API including pods, deployment and services.
     ```
-        apimcli delete api petstore-api
+        apictl delete api petstore-api
     ```
     -  Output:
     ```
