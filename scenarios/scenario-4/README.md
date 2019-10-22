@@ -12,7 +12,19 @@
 > Follow the main README and deploy the apim-operator and configuration files. Make sure to set the analyticsEnabled to "true" and deploy analytics secret with credentials to analytics server and certificate, if you want to check analytics.
 
 - Navigate to wso2am-k8s-crds-1.0.0/scenarios/scenario-4 directory.
+
+- Deploy Kubernetes secret of the public cert of the JWT token issues and JWT Security custom resource.
+    ```$xslt
+        apictl apply -f jwt-security.yaml
+    ```
+    - Output:
+    ```$xslt
+        security.wso2.com/petstorejwt created
+        secret/wso2am300-secret created
+    ```
+
 - Prepared petstore swagger definition can be found within this directory.
+
 - Security schema of the API is referred in the swagger file with the "security" extension.
 In this swagger definition, the security schema of the "petstore" service has been mentioned as follows.
     ```
@@ -24,7 +36,7 @@ In this swagger definition, the security schema of the "petstore" service has be
 
 - Deploy the  API <br /> 
     ```
-        apimcli add api -n petstore-jwt --from-file=swagger.yaml
+        apictl add api -n petstore-jwt --from-file=swagger.yaml
     ``` 
     - Output:
     ```
@@ -35,7 +47,7 @@ In this swagger definition, the security schema of the "petstore" service has be
     
 - Get available API <br /> 
     ```
-        apimcli get apis
+        apictl get apis
     ```
     - Output:
     ```    
@@ -45,7 +57,7 @@ In this swagger definition, the security schema of the "petstore" service has be
 
 - Get service details to invoke the API. (Please wait until the external-IP is populated in the corresponding service)
     ```
-        apimcli get services
+        apictl get services
     ```
     - Output:
     
@@ -73,7 +85,7 @@ In this swagger definition, the security schema of the "petstore" service has be
 - Delete the  API <br /> 
     - Following command will delete all the artifacts created with this API including pods, deployment and services.
     ```
-        apimcli delete api petstore-jwt
+        apictl delete api petstore-jwt
     ```
     -  Output:
     ```

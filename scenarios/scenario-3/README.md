@@ -3,7 +3,7 @@
 ## Scenario 3 - Deploy Basic Auth Protected API in Kubernetes Cluster
 
 - This scenario demonstrates how to deploy basic auth protected API in Kubernetes cluster.
-- First we will create Kubernetes opaque secret with username and password in the kubernetes cluster.
+- First we will create Kubernetes opaque secret with username and password of the user.
 - Then we wil deploy "Security" custom resource(CR) for the basic auth by referring the secret created above in the kubernetes cluster.
 - Created "Security" CR will be referred in the swagger definition.
 - We deploy an API using that swagger file in the Kubernetes custer.
@@ -16,7 +16,7 @@
 - Creating the opaque secret with basic credentials
     - In this scenario, we are using username "admin" and password "admin".
     ```$xslt
-        apimcli apply -f secret-basic.yaml
+        apictl apply -f secret-basic.yaml
     ```
     - Output:
     ```$xslt
@@ -24,7 +24,7 @@
     ```
 - Deploying "Security" custom resource in the k8s cluster.<br /> 
     ```$xslt
-        apimcli apply -f petstore-basic.yaml
+        apictl apply -f petstore-basic.yaml
     ```
     - Output:
     ```$xslt
@@ -40,7 +40,7 @@
     - Following command with deploy the petstore service as a managed API in the k8s cluster.
     
     ```
-        apimcli add api -n petstore-basic --from-file=swagger.yaml
+        apictl add api -n petstore-basic --from-file=swagger.yaml
     ```
     - Output:
     ```$xslt
@@ -50,7 +50,7 @@
     ```
 - Check the API's service is deployed<br />
     ```
-        apimcli get services
+        apictl get services
     ```
     - Sample Output:
     
@@ -72,7 +72,7 @@
     ```
         curl -X GET "https://\<external IP of LB service>:9095/petstore/v1/pet/55" -H "accept: application/xml" -H "Authorization:Basic $BASIC" -k
     ```    
-    - Once you execute the above command, it will call to the managed API (petstore-api), which then call its endpoint(https://petstore.swagger.io/v2). If the request is success, you would be able to see the response as below.
+    - Once you execute the above command, it will call to the managed API (petstore-basic), which then call its endpoint(https://petstore.swagger.io/v2). If the request is success, you would be able to see the response as below.
     ```
         <?xml version="1.0" encoding="UTF-8" standalone="yes"?><Pet><category><id>55</id><name>string</name></category><id>55</id><name>SRC_TIME_SIZE</name><photoUrls><photoUrl>string</photoUrl></photoUrls><status>available</status><tags><tag><id>55</id><name>string</name></tag></tags></Pet>
     ```
@@ -81,7 +81,7 @@
     - Following command will delete all the artifacts created with this API including pods, deployment and services.
 
     ```
-        apimcli delete api petstore-basic
+        apictl delete api petstore-basic
     ```
     -  Output:
     ```
