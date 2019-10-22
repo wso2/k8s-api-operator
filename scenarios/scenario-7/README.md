@@ -2,17 +2,17 @@
 
 ## Scenario 7
 
-> ##### This scenario demonstrates sidecar mode
+> ##### This scenario demonstrates ratelimiting(throttling) scenario
 
 - Follow the main README and deploy the apim-operator and configuration files. Make sure to set the analyticsEnabled to "true" and deploy analytics secret with credentials to analytics server and certificate, if you want to check analytics
  
 ##### Navigate to the scenarios/scenario-6 directory and execute the following command
 
 - Deploy targetendpoint kind in the cluster <br /> 
-    - ***apimcli apply -f sidecar-endpoint.yaml***
+    - ***apimcli apply -f privateJet-endpoint.yaml***
     
 - Create API <br /> 
-    - ***apimcli add api -n petstore-sidecar --from-file=swagger-sidecar-dep.yaml***
+    - ***apimcli add api -n petstore-privatejet --from-file=swagger-privateJet-dep.yaml***
 
 - Get target endpoint
     - ***apimcli get targetendpoints***
@@ -27,4 +27,4 @@
     - ***curl -X GET "https://\<external IP of LB service>:9095/petstore/v1/pet/55" -H "accept: application/xml" -H "Authorization:Bearer $TOKEN" -k***
 
 - Delete API <br /> 
-    - ***apimcli delete api petstore-sidecar***
+    - ***apimcli delete api petstore-privatejet***

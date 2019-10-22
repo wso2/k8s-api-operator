@@ -1,0 +1,14 @@
+apiVersion: wso2.com/v1alpha1
+kind: TargetEndpoint
+metadata:
+  name: products-ep
+  labels:
+    app: wso2
+spec:
+  protocol: http
+  port: 80
+  targetPort: 9090
+  deploy:
+    name: productservice
+    dockerImage: pubudu/products:1.0.0
+    count: 1

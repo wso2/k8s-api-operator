@@ -1,0 +1,72 @@
+openapi: 3.0.0
+info:
+  title: OnlineStore
+  version: v1.0.0
+  description: This API contains operations related to online shopping store.
+servers:
+  - url: /store
+x-wso2-basePath: /store/v1.0.0
+paths:
+  /products:
+    get:
+      x-wso2-production-endpoints: product-ep
+      responses:
+        "200":
+          description: ""
+
+  "/products/{productId}":
+    get:
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      x-wso2-production-endpoints: product-ep
+  "/review/{productId}":
+    get:
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      x-wso2-production-endpoints: review-ep
+  "/inventory/{productId}":
+    get:
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      x-wso2-production-endpoints: inventory-ep
+    post:
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                payload:
+                  type: string
+        description: Request Body
+      responses:
+        "200":
+          description: ""
+      x-wso2-production-endpoints: inventory-ep
