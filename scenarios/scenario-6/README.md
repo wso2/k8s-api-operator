@@ -15,18 +15,18 @@
   
  - Deploy the sample rate-limiting CR using the following command.
     ```
-        apicli apply -f advance5.yaml
+        apicli apply -f five-req-policy.yaml
     ```
     - Output:
     ```
-        ratelimiting.wso2.com/advance5 created
+        ratelimiting.wso2.com/five-req-policy created
     ```
 
 - Prepared petstore basic swagger definition can be found within this directory.
 - Rate limiting policies to be applied on the API, should be mentioned in the swagger file with the "x-wso2-throttling-tier" extension.
 In this swagger definition, the rate limiting policy has been mentioned as follows.
     ```
-        x-wso2-throttling-tier: advance5
+        x-wso2-throttling-tier: five-req-policy
     ```
 - Execute the following to expose pet-store as an API.
 

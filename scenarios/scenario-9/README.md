@@ -1,6 +1,5 @@
-# k8s-apim-operator Scenarios
+## Scenario 9 - Expose an API with multiple service endpoints
 
-## Scenario 1 - Expose a K8s service as an API
 - This scenario describes how to expose a backend service which has been already deployed in the
 kubernetes cluster as a managed API in the Kubernetes cluster.
 - First we will deploy a sample backend service (product service) in the Kubernetes cluster

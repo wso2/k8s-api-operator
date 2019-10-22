@@ -1,4 +1,5 @@
-## Scenario 2 - Deploy Pet-store service as a managed API in k8s cluster
+## Scenario 2 - Deploy pet store service as a managed API in k8s cluster
+
 - This scenario describes how to deploy the petstore service(https://petstore.swagger.io/v2) on a kubernetes cluster as a managed API.
 
  ***Important:***
@@ -6,9 +7,10 @@
 
 - Navigate to wso2am-k8s-crds-1.0.0/scenarios/scenario-2 directory.
 - Prepared petstore basic swagger definition can be found within this directory.
-- Backend endpoint of the API should be mentioned in the swagger file with the "x-wso2-production-endpoints" extension.
+- Base path of the API and backend endpoint of the API should be mentioned in the swagger file with the  "x-wso2-basePath" and "x-wso2-production-endpoints" extensions respectively. <br>
 In this swagger definition, the backend service of the "petstore" service has been mentioned as follows.
     ```
+        x-wso2-basePath: /petstore/v1
         x-wso2-production-endpoints:
           urls:
             - https://petstore.swagger.io/v

@@ -9,12 +9,12 @@ kubernetes cluster as a managed API in the Kubernetes cluster.
 > Follow the main README and deploy the apim-operator and configuration files. Make sure to set the analyticsEnabled to "true" and deploy analytics secret with credentials to analytics server and certificate, if you want to check analytics.
 
 
- ##### Deploying the sample backendservice
+ ##### Deploying the sample backend service
  
  - Navigate to wso2am-k8s-crds-1.0.0/scenarios/scenario-1 directory and deploy the sample backend service using the following command.
  
     ```
-        apictl apply -f product_dep.yaml
+        apictl apply -f products_dep.yaml
     ```
     
     - Output:
@@ -59,9 +59,12 @@ kubernetes cluster as a managed API in the Kubernetes cluster.
 
 > Please note that you need to configure the k8s-apim-operator in the Kubernetes cluster prior to trying out the scenarios.
 
-- Basic swagger definition belongs to the "products" service is available in product_basic.yaml.
-Backend endpoint of the API should be mentioned in the swagger file with the "x-wso2-production-endpoints" extension.
-In this swagger definition, the backend service of the "products" service has been mentioned as follows.
+- Basic swagger definition belongs to the "products" service is available in products_swagger.yaml.<br>
+
+    Base path of the API and backend endpoint of the API should be mentioned in the swagger file with the  "x-wso2-basePath" and "x-wso2-production-endpoints" extensions respectively. <br>
+
+    In this swagger definition, the backend service of the "products" service has been mentioned as follows.
+
     ```
         x-wso2-basePath: /store/v1.0.0
         x-wso2-production-endpoints:
@@ -71,13 +74,13 @@ In this swagger definition, the backend service of the "products" service has be
 
 - Create API <br /> 
     ```
-        apictl add api -n products-api --from-file=product_basic.yaml
+        apictl add api -n OnlineStore --from-file=products_swagger.yaml
     ``` 
     - Output:
     ```$xslt
         creating configmap with swagger definition
-        configmap/products-api-swagger created
-        api.wso2.com/products-api created
+        configmap/OnlineStore-swagger created
+        api.wso2.com/OnlineStore created
     ```
     
 - Get available API <br /> 
@@ -87,7 +90,7 @@ In this swagger definition, the backend service of the "products" service has be
     - Output:
     ```    
         NAME          AGE
-        product-api   55m
+        OnlineStore   55m
     ```
 
 - Get service details to invoke the API<br />
@@ -98,10 +101,10 @@ In this swagger definition, the backend service of the "products" service has be
     
     ```
         NAME                 TYPE           CLUSTER-IP     EXTERNAL-IP       PORT(S)                         AGE
-        products-api         LoadBalancer   10.83.9.188    34.66.153.49      9095:32087/TCP,9090:32572/TCP   98m
-        products             LoadBalancer   10.83.1.131    104.197.114.248   80:30475/TCP                    77m
+        OnlineStore         LoadBalancer   10.83.9.188    34.66.153.49      9095:32087/TCP,9090:32572/TCP   98m
+        products            LoadBalancer   10.83.1.131    104.197.114.248   80:30475/TCP                    77m
     ```
-    - You can see both the backend(products) service and the managed API service(products-api) is available.
+    - You can see both the backend(products) service and the managed API service(OnlineStore) is available.
     - Get the external IP of the managed API's service
  
 - Invoking the API <br />
@@ -112,7 +115,7 @@ In this swagger definition, the backend service of the "products" service has be
     ```
         curl -X GET "https://<external IP of LB service>:9095/store/v1.0.0/products" -H "accept: application/json" -H "Authorization:Bearer $TOKEN" -k
     ```
-    - Once you execute the above command, it will call to the managed API (products-api), which then call its endpoint("products" service) available in the cluster. If the request is success, you would be able to see the response as below.
+    - Once you execute the above command, it will call to the managed API (OnlineStore), which then call its endpoint("products" service) available in the cluster. If the request is success, you would be able to see the response as below.
     ```
         {"products":[{"name":"Apples", "id":101, "price":"$1.49 / lb"}, {"name":"Macaroni & Cheese", "id":151, "price":"$7.69"}, {"name":"ABC Smart TV", "id":301, "price":"$399.99"}, {"name":"Motor Oil", "id":401, "price":"$22.88"}, {"name":"Floral Sleeveless Blouse", "id":501, "price":"$21.50"}]}
     ```
@@ -120,9 +123,9 @@ In this swagger definition, the backend service of the "products" service has be
 
 - Delete the  API <br /> 
     ```
-        apictl delete api products-api
+        apictl delete api OnlineStore
     ```
     -  Output:
     ```
-        api.wso2.com "products-api" deleted
+        api.wso2.com "OnlineStore" deleted
     ```

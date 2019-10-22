@@ -44,7 +44,7 @@ tags:
       description: Find out more about our store
       url: http://swagger.io
 x-wso2-basePath: /petstore/v1
-x-wso2-throttling-tier: advance5
+x-wso2-throttling-tier: five-req-policy
 x-wso2-production-endpoints:
   urls:
     - https://petstore.swagger.io/v2

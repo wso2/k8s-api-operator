@@ -1,4 +1,4 @@
-## Scenario 3 - Deploy Basic Auth Protected API in Kubernetes Cluster
+## Scenario 3 - Deploy pet store service as a managed API secured with Basic Auth
 
 - This scenario demonstrates how to deploy basic auth protected API in Kubernetes cluster.
 - First we will create Kubernetes opaque secret with username and password of the user.
@@ -22,7 +22,7 @@
     ```
 - Deploying "Security" custom resource in the k8s cluster.<br /> 
     ```$xslt
-        apictl apply -f petstore-basic.yaml
+        apictl apply -f basic-security.yaml
     ```
     - Output:
     ```$xslt
