@@ -9,7 +9,9 @@
 ***Important:***
 > Follow the main README and deploy the apim-operator and configuration files. Make sure to set the analyticsEnabled to "true" and deploy analytics secret with credentials to analytics server and certificate, if you want to check analytics
  
-##### Navigate to the scenarios/scenario-3 directory and execute the following command
+ ##### Deploying the artifacts
+
+- Navigate to the scenarios/scenario-3 directory and execute the following command
 
 - Creating the opaque secret with basic credentials
     - In this scenario, we are using username "admin" and password "admin".

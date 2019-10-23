@@ -9,6 +9,8 @@
  ***Important:***
 > Follow the main README and deploy the apim-operator and configuration files. Make sure to set the analyticsEnabled to "true" and deploy analytics secret with credentials to analytics server and certificate, if you want to check analytics.
 
+ ##### Deploying the artifacts
+ 
 - Navigate to wso2am-k8s-crds-1.0.0/scenarios/scenario-4 directory.
 
 - Deploy Kubernetes secret of the public cert of the JWT token issues and JWT Security custom resource.

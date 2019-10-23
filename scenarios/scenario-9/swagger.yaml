@@ -17,7 +17,7 @@
 openapi: 3.0.0
 info:
   title: OnlineStore
-  version: v1.0.0
+  version: v1.0-tep
   description: This API contains operations related to online shopping store.
 servers:
   - url: /store
@@ -25,7 +25,7 @@ x-wso2-basePath: /store/v1.0.0
 paths:
   /products:
     get:
-      x-wso2-production-endpoints: product-ep
+      x-wso2-production-endpoints: products-ep
       responses:
         "200":
           description: ""
@@ -38,10 +38,10 @@ paths:
           required: true
           schema:
             type: string
+      x-wso2-production-endpoints: products-ep
       responses:
         "200":
           description: ""
-      x-wso2-production-endpoints: product-ep
   "/review/{productId}":
     get:
       parameters:
@@ -50,10 +50,10 @@ paths:
           required: true
           schema:
             type: string
+      x-wso2-production-endpoints: review-ep
       responses:
         "200":
           description: ""
-      x-wso2-production-endpoints: review-ep
   "/inventory/{productId}":
     get:
       parameters:
@@ -62,10 +62,10 @@ paths:
           required: true
           schema:
             type: string
+      x-wso2-production-endpoints: inventory-ep
       responses:
         "200":
           description: ""
-      x-wso2-production-endpoints: inventory-ep
     post:
       parameters:
         - name: productId
@@ -73,6 +73,7 @@ paths:
           required: true
           schema:
             type: string
+      x-wso2-production-endpoints: inventory-ep
       requestBody:
         content:
           application/json:
@@ -85,4 +86,3 @@ paths:
       responses:
         "200":
           description: ""
-      x-wso2-production-endpoints: inventory-ep
