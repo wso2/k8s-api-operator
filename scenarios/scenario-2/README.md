@@ -5,6 +5,8 @@
  ***Important:***
 > Follow the main README and deploy the apim-operator and configuration files. Make sure to set the analyticsEnabled to "true" and deploy analytics secret with credentials to analytics server and certificate, if you want to check analytics.
 
+##### Deploying the artifacts
+
 - Navigate to wso2am-k8s-crds-1.0.0/scenarios/scenario-2 directory.
 - Prepared petstore basic swagger definition can be found within this directory.
 - Base path of the API and backend endpoint of the API should be mentioned in the swagger file with the  "x-wso2-basePath" and "x-wso2-production-endpoints" extensions respectively. <br>
