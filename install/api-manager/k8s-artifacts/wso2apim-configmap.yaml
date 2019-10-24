@@ -20,7 +20,7 @@ metadata:
 data:
   deployment.toml: |-
     [server]
-    hostname = "wso2apim"
+    hostname = "localhost"
     node_ip = "127.0.0.1"
     #offset=0
     mode = "single" #single or ha
@@ -38,7 +38,7 @@ data:
 
     [database.apim_db]
     type = "h2"
-    url = "jdbc:h2:./repository/database/WSO2AM_DB;DB_CLOSE_ON_EXIT=FALSE"
+    url = "jdbc:h2:./repository/database/WSO2AM_DB;AUTO_SERVER=TRUE;DB_CLOSE_ON_EXIT=FALSE"
     username = "wso2carbon"
     password = "wso2carbon"
 
@@ -103,7 +103,6 @@ data:
     #username = "$ref{super_admin.username}"
     #password = "$ref{super_admin.password}"
     #event_publisher_type = "default"
-    #event_publisher_type = "custom"
     #event_publisher_impl = "org.wso2.carbon.apimgt.usage.publisher.APIMgtUsageDataBridgeDataPublisher"
     #publish_response_size = true
 
@@ -199,7 +198,7 @@ data:
     #service_url = "https://localhost:9445/bpmn"
     #username = "$ref{super_admin.username}"
     #password = "$ref{super_admin.password}"
-    #callback_endpoint = "https://localhost:${mgt.transport.https.port}/api/am/publisher/v0.15/workflows/update-workflow-status"
+    #callback_endpoint = "https://localhost:${mgt.transport.https.port}/api/am/admin/v0.15/workflows/update-workflow-status"
     #token_endpoint = "https://localhost:${https.nio.port}/token"
     #client_registration_endpoint = "https://localhost:${mgt.transport.https.port}/client-registration/v0.15/register"
     #client_registration_username = "$ref{super_admin.username}"
