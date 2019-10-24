@@ -127,4 +127,4 @@ data:
         password = "root"
 
     [httpClients]
-      verifyHostname=false
+      verifyHostname={{verifyHostname}}

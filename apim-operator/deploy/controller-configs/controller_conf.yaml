@@ -43,3 +43,13 @@ data:
   #Stop at docker image creation or continue to deploy kubernetes artifact.
   #Default->  generatekubernbetesartifactsformgw: "true"
   generatekubernbetesartifactsformgw: "true"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: apim-config
+  namespace: wso2-system
+data:
+  #By default hostname verification is disabled. In a production scenario, this has to be enabled.
+  verifyHostname: "false"
