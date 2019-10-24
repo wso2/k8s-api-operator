@@ -15,7 +15,7 @@
   
  - Deploy the sample rate-limiting CR using the following command.
     ```
-        apicli apply -f five-req-policy.yaml
+        apictl apply -f five-req-policy.yaml
     ```
     - Output:
     ```

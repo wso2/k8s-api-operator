@@ -22,8 +22,8 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.wso2.apim</groupId>
     <artifactId>k8s-apim-operator</artifactId>
-    <version>1.0.0-beta</version>
-    <name>WSO2 APIM Kubernetes APIM Operator</name>
+    <version>1.0.0</version>
+    <name>API Operator For K8S</name>
     <packaging>pom</packaging>
 
     <modules>

@@ -64,21 +64,8 @@ In this swagger definition, the security schema of the "petstore" service has be
         NAME             AGE
         petstore-oauth   3m
     ```
-
-- Get service details to invoke the API. (Please wait until the external-IP is populated in the corresponding service)
-    ```
-        apictl get services
-    ```
-    - Output:
-    
-    ```
-        NAME             TYPE           CLUSTER-IP     EXTERNAL-IP     PORT(S)                         AGE
-        petstore-oauth   LoadBalancer   10.83.10.125   35.188.53.193   9095:32465/TCP,9090:30163/TCP   4m39s
-    ```
-    - You can see petstore service has been exposed as a managed API.
-    - Get the external IP of the managed API's service
-    
-- Obtain an access token
+   
+- Obtain an access token to invoke the API
     - Publish the API in WSO2 API Manager deployment.
         - Add the APIM deployment as an environment to the apictl
             ```$xslt
@@ -94,7 +81,9 @@ In this swagger definition, the security schema of the "petstore" service has be
                 Project initialized
                 Open README file to learn more
             ```
-            
+        - First line of the output shows the location of the API project.
+        - Open that project and change API's status to "PUBLISHED" in Meta-Information/api.yaml
+        (By default it is in created status)     
         - Import the API to API Manager deployment
             ```$xslt
                 apictl import-api -f petstore-oauth -e k8s -k --update
@@ -125,6 +114,20 @@ In this swagger definition, the security schema of the "petstore" service has be
                 Access Token:  15d11e99-2004-3194-93ac-394efd9510e9
             ```
 - Invoking the API <br />
+
+    - Get service details to invoke the API. (Please wait until the external-IP is populated in the corresponding service)
+        ```
+            apictl get services
+        ```
+        - Output:
+        
+        ```
+            NAME             TYPE           CLUSTER-IP     EXTERNAL-IP     PORT(S)                         AGE
+            petstore-oauth   LoadBalancer   10.83.10.125   35.188.53.193   9095:32465/TCP,9090:30163/TCP   4m39s
+        ```
+        - You can see petstore service has been exposed as a managed API.
+        - Get the external IP of the managed API's service
+     
     
     ```
         curl -X GET "https://<external IP of LB service>:9095/petstore/v1/pet/55" -H "accept: application/xml" -H "Authorization:Bearer 15d11e99-2004-3194-93ac-394efd9510e9" -k
