@@ -48,11 +48,11 @@ Navigate to wso2am-k8s-crds/apim-operator/apim-deployment/api-manager
 - Deploy API Manager in Kubernetes Cluster
 
 ```$xslt
-apimcli apply -f api-manager/k8s-artifacts
+apimcli apply -f install/api-manager/k8s-artifacts
 ```
 - Deploy APIM Analytics in Kubernetes Cluster
 ```$xslt
-apimcli apply -f api-manager/analytics
+apimcli apply -f install/api-analytics/k8s-artifacts
 ```
 
 ---
@@ -103,12 +103,12 @@ apimcli set --mode kubernetes
 
 - Deploying CRDs for API, TargetEndpoint, Security, RateLimiting
 ```
-apimcli apply -f ./deploy/crds/
+apimcli apply -f ./apim-operator/deploy/crds/
 ```
 
 - Deploying namespace, roles/role binding and service account associated with the operator
 ```
-apimcli apply -f ./deploy/controller-artifacts/
+apimcli apply -f ./apim-operator/deploy/controller-artifacts/
 ```
 
 - Deploying controller level configurations
@@ -117,7 +117,7 @@ apimcli apply -f ./deploy/controller-artifacts/
 Update the ***user's docker registry*** in the controller_conf.yaml. Enter the base 64 encoded username and password of the user's docker registry into the docker_secret_template.yaml.
 
 ```
-apimcli apply -f ./deploy/controller-configs/
+apimcli apply -f ./apim-operator/deploy/controller-configs/
 ```
 
 ##### Step 5: Deploy an API in K8s cluster via CRDs
