@@ -54,8 +54,7 @@
      endpoint: <endpoint>
      credentials: <name of the secret created in step 2>
    ```
-   **NOTE:** Modify the configurations related to wso2am using the template provided in ./deploy/apim-analytics-configs/apim-analytics-conf.yaml : apim-config configmap.
-
+   
    **Securing API with Basic authentication**
    
     i. Create a secret with user credentials 
