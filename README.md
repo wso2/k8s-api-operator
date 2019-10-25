@@ -41,9 +41,9 @@ We have introduced this feature with [APIM CLI](https://github.com/wso2/product-
 
 ##### Deploying APIM in  K8S Cluster
 
-Kubernetes artifacts to deploy APIM and APIM analytics deployment are shipped with the this distribution.
+Kubernetes artifacts to deploy APIM and APIM analytics deployment are shipped with this distribution.
 
-Navigate to wso2am-k8s-crds/apim-operator/apim-deployment/
+Navigate to wso2am-k8s-crds/
 
 - Deploy API Manager in Kubernetes Cluster
 
@@ -52,7 +52,7 @@ apimcli apply -f api-manager/k8s-artifacts/
 ```
 - Deploy APIM Analytics in Kubernetes Cluster
 ```$xslt
-apimcli apply -f analytics/k8s-artifacts/
+apimcli apply -f api-analytics/k8s-artifacts/
 ```
 
 ---
