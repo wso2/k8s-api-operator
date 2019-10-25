@@ -1,7 +1,7 @@
 ## Scenario 10 - Apply interceptors to the API
 - This scenario describes how to apply interceptors to carry out transformations and mediations on the requests and responses.
-- First, we need to implement custom request interceptors and response interceptors. For more information about implementing custom interceptors you can refer the document [adding interceptors.](https://docs.wso2.com/display/MG300/Adding+Interceptors)
-- Then we need to Initialize a new WSO2 API Manager project and add the custom interceptor files in interceptors folder.
+- First, we need to implement custom request interceptors and response interceptors. We have provided sample request and response interceptors in ./scenarios/scenario-10/. If you want to learn more about implementing custom interceptors you can refer the document [adding interceptors.](https://docs.wso2.com/display/MG300/Adding+Interceptors)
+- Then we need to Initialize a new API project and add the custom interceptor files in interceptors folder.
 - We need to refer the interceptors in swagger definition in order to apply them on the requests and responses.
 - Finally, we will invoke the API and observe how the added interceptors act on requests and responses.
 
@@ -11,7 +11,7 @@
 
  ##### Deploying the artifacts
  
- - Init the API project using CLI. This will Initialize a new WSO2 API Manager project in same directory.
+ - Init the API project using CLI. This will Initialize a new API project in same directory.
      ```
         apictl init petstore-int --oas=./scenarios/scenario-10/interceptor_swagger.yaml
      ```
@@ -78,7 +78,7 @@
     ```
    
     ```
-        curl -X GET "https://10.83.4.44:9095/petstore/v1/pet/findByStatus?status=available"  -H "accept: application/xml" -H "Authorization:Bearer $TOKEN" -k
+        curl -X GET "https://104.197.114.248:9095/petstore/v1/pet/findByStatus?status=available"  -H "accept: application/xml" -H "Authorization:Bearer $TOKEN" -k
     ```
     - Once you execute the above command, it will call to the managed API (petstore-int), which then call its endpoint(https://petstore.swagger.io/v2). If the request is success, you would be able to see the response as below.
     ```
