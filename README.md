@@ -43,16 +43,16 @@ We have introduced this feature with [APIM CLI](https://github.com/wso2/product-
 
 Kubernetes artifacts to deploy APIM and APIM analytics deployment are shipped with the this distribution.
 
-Navigate to wso2am-k8s-crds/apim-operator/apim-deployment/api-manager
+Navigate to wso2am-k8s-crds/
 
 - Deploy API Manager in Kubernetes Cluster
 
 ```$xslt
-apimcli apply -f api-manager/k8s-artifacts
+apimcli apply -f apim-operator/apim-deployment/api-manager/k8s-artifacts/
 ```
 - Deploy APIM Analytics in Kubernetes Cluster
 ```$xslt
-apimcli apply -f api-manager/analytics
+apimcli apply -f apim-operator/apim-deployment/analytics/k8s-artifacts/
 ```
 
 ---
@@ -66,7 +66,7 @@ apimcli apply -f api-manager/analytics
 1. This zip contains the artifacts that required to deploy in Kubernetes.
 2. Extract wso2am-k8s-crds-1.0-beta.zip and navigate to the \<APIM-K8s-CRD-HOME>/apim-operator directory.
 ```
-cd <APIM-K8s-CRD-HOME>/
+cd <APIM-K8s-CRD-HOME>/apim-opertor/
 ```
    
 **Note:** You need to run all commands from within the <APIM-K8s-CRD-HOME>/ directory.
