@@ -9,4 +9,4 @@
 1. [Sample 7: Deploy APIs in k8s in private jet mode](scenario-7)
 1. [Sample 8: Deploy APIs in k8s in sidecar mode](scenario-8)
 1. [Sample 9: Expose an API with multiple service endpoints](scenario-9)
-1. [Sample 10: Apply request interceptor to the API](scenario-10)
+1. [Sample 10: Apply interceptors to the API](scenario-10)
