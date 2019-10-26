@@ -15,13 +15,13 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: wso2apim-analytics-deployment
-  namespace: wso2
+  name: wso2apim
+  #namespace: wso2
 spec:
   replicas: 1
   selector:
     matchLabels:
-      deployment: wso2apim-analytics
+      deployment: wso2apim
   minReadySeconds: 30
   strategy:
     rollingUpdate:
@@ -31,11 +31,11 @@ spec:
   template:
     metadata:
       labels:
-        deployment: wso2apim-analytics
+        deployment: wso2apim
     spec:
       containers:
-        - name: wso2apim-analytics
-          image: wso2/wso2am-analytics-worker:2.6.0
+        - name: wso2apim
+          image: dinushad/wso2am:rc2
           resources:
             limits:
               memory: "2Gi"
@@ -44,54 +44,56 @@ spec:
           livenessProbe:
             exec:
               command:
-                - /bin/sh
+                - /bin/bash
                 - -c
-                - nc -z localhost 7712
-            initialDelaySeconds: 30
+                - nc -z localhost 9443
+            initialDelaySeconds: 180
             periodSeconds: 10
           readinessProbe:
             exec:
               command:
-                - /bin/sh
+                - /bin/bash
                 - -c
-                - nc -z localhost 7712
-            initialDelaySeconds: 30
+                - nc -z localhost 9443
+            initialDelaySeconds: 180
             periodSeconds: 10
-          lifecycle:
-            preStop:
-              exec:
-                command:  ['sh', '-c', '${WSO2_SERVER_HOME}/bin/worker.sh stop']
           imagePullPolicy: Always
-          securityContext:
-            runAsUser: 802
           ports:
             -
-              containerPort: 9764
+              containerPort: 8280
               protocol: "TCP"
             -
-              containerPort: 9444
+              containerPort: 8243
               protocol: "TCP"
             -
-              containerPort: 7612
+              containerPort: 9763
               protocol: "TCP"
             -
-              containerPort: 7712
+              containerPort: 9443
               protocol: "TCP"
             -
-              containerPort: 9091
+              containerPort: 5672
               protocol: "TCP"
             -
-              containerPort: 7071
+              containerPort: 9711
               protocol: "TCP"
             -
-              containerPort: 7444
+              containerPort: 9611
               protocol: "TCP"
             -
-              containerPort: 7575
+              containerPort: 7711
               protocol: "TCP"
             -
-              containerPort: 7576
+              containerPort: 7611
               protocol: "TCP"
-            -
-              containerPort: 7577
-              protocol: "TCP"
+          volumeMounts:
+            - name: apim-conf
+              mountPath: /home/wso2carbon/wso2-config-volume/repository/conf
+      hostAliases:
+        - ip: "127.0.0.1"
+          hostnames:
+            - "wso2apim"
+      volumes:
+        - name: apim-conf
+          configMap:
+            name: apim-conf
