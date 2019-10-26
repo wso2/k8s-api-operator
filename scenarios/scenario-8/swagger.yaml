@@ -16,8 +16,8 @@
 
 openapi: 3.0.0
 info:
-  title: OnlineStore
-  version: sc-v1
+  title: inventory-sc
+  version: v1
   description: This API contains operations related to online shopping store.
 servers:
   - url: /store
