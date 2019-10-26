@@ -40,6 +40,14 @@ data:
   resourceLimitCPU: "2000m"
   #Max Memory usage limit a pod can use.   Default->  resourceLimitMemory: "512Mi"
   resourceLimitMemory: "256Mi"
+  #Configure readiness probe initial delay for API pod
+  readinessProbeInitialDelaySeconds: "8"
+  #Configure readiness prob interval for API pod
+  readinessProbePeriodSeconds: "5"
+  #Configure liveness probe initial delay for API pod
+  livenessProbeInitialDelaySeconds: "10"
+  #Configure liveness probe interval for API pod
+  livenessProbePeriodSeconds: "30"
   #Stop at docker image creation or continue to deploy kubernetes artifact.
   #Default->  generatekubernbetesartifactsformgw: "true"
   generatekubernbetesartifactsformgw: "true"

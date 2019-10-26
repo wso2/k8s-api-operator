@@ -1440,6 +1440,10 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 	}
 	controlConfigData := conf.Data
 	dockerRegistry := controlConfigData[dockerRegistryConst]
+	liveDelay, _ := strconv.ParseInt(controlConfigData[livenessProbeInitialDelaySeconds], 10, 32)
+	livePeriod, _ := strconv.ParseInt(controlConfigData[livenessProbePeriodSeconds], 10, 32)
+	readDelay, _ := strconv.ParseInt(controlConfigData[readinessProbeInitialDelaySeconds], 10, 32)
+	readPeriod, _ := strconv.ParseInt(controlConfigData[readinessProbePeriodSeconds], 10, 32)
 	reps := int32(cr.Spec.Replicas)
 	deployVolumeMount := []corev1.VolumeMount{}
 	deployVolume := []corev1.Volume{}
@@ -1478,8 +1482,8 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 					Port: intstr.FromInt(9090),
 				},
 			},
-			InitialDelaySeconds: 5,
-			PeriodSeconds:       5,
+			InitialDelaySeconds: int32(readDelay),
+			PeriodSeconds:       int32(readPeriod),
 			TimeoutSeconds:      1,
 		},
 		LivenessProbe: &corev1.Probe{
@@ -1488,8 +1492,8 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 					Port: intstr.FromInt(9090),
 				},
 			},
-			InitialDelaySeconds: 5,
-			PeriodSeconds:       15,
+			InitialDelaySeconds: int32(liveDelay),
+			PeriodSeconds:       int32(livePeriod),
 			TimeoutSeconds:      1,
 		},
 	}
