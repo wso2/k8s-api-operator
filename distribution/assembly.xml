@@ -38,7 +38,7 @@
         </fileSet>
         <fileSet>
             <directory>../apim-operator/deploy</directory>
-            <outputDirectory>/apim-operator/deploy</outputDirectory>
+            <outputDirectory>/apim-operator</outputDirectory>
             <useDefaultExcludes>true</useDefaultExcludes>
             <excludes>
                 <exclude>crds/**</exclude>
@@ -46,26 +46,18 @@
         </fileSet>
         <fileSet>
             <directory>../apim-operator/deploy/crds</directory>
-            <outputDirectory>/apim-operator/deploy/controller-artifacts/</outputDirectory>
+            <outputDirectory>/apim-operator/controller-artifacts/</outputDirectory>
             <useDefaultExcludes>true</useDefaultExcludes>
         </fileSet>
         <fileSet>
             <useDefaultExcludes>true</useDefaultExcludes>
-            <outputDirectory>/api-manager</outputDirectory>
-            <directory>../install/api-manager</directory>
-        </fileSet>
-        <fileSet>
-            <useDefaultExcludes>true</useDefaultExcludes>
-            <outputDirectory>/api-analytics</outputDirectory>
-            <directory>../install/api-analytics</directory>
+            <outputDirectory>/k8s-artifacts</outputDirectory>
+            <directory>../k8s-artifacts</directory>
         </fileSet>
         <fileSet>
             <directory>../scenarios</directory>
             <outputDirectory>/scenarios</outputDirectory>
             <useDefaultExcludes>true</useDefaultExcludes>
-            <excludes>
-                <exclude>scenario-advance/**</exclude>
-            </excludes>
         </fileSet>
         <fileSet>
             <directory>../docs</directory>
