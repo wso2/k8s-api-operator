@@ -47,7 +47,7 @@ spec:
                 - /bin/bash
                 - -c
                 - nc -z localhost 9443
-            initialDelaySeconds: 90
+            initialDelaySeconds: 180
             periodSeconds: 10
           readinessProbe:
             exec:
@@ -55,7 +55,7 @@ spec:
                 - /bin/bash
                 - -c
                 - nc -z localhost 9443
-            initialDelaySeconds: 90
+            initialDelaySeconds: 180
             periodSeconds: 10
           imagePullPolicy: IfNotPresent
           ports:
