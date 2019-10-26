@@ -25,18 +25,22 @@ spec:
   ports:
     # ports that this service should serve on
     - name: pass-through-http
-      port: 8280
-      targetPort: 8280
+      #for 8280 with port offset 22558
+      port: 30838
+      targetPort: 30801
       nodePort: 32004
     - name: pass-through-https
-      port: 8243
-      targetPort: 8243
+      #for 8243 with port offset 22558
+      port: 30801
+      targetPort: 30801
       nodePort: 32003
     - name: servlet-http
-      port: 9763
-      targetPort: 9763
+      #for 9763 with port offset 22558
+      port: 32321
+      targetPort: 32321
       nodePort: 32002
     - name: servlet-https
-      port: 9443
-      targetPort: 9443
+      #for 9443 with port offset 22558
+      port: 32001
+      targetPort: 32001
       nodePort: 32001
