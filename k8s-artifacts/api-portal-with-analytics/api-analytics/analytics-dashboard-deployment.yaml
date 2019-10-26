@@ -61,7 +61,7 @@ spec:
             preStop:
               exec:
                 command:  ['sh', '-c', '${WSO2_SERVER_HOME}/bin/dashboard.sh stop']
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           securityContext:
             runAsUser: 802
           ports:

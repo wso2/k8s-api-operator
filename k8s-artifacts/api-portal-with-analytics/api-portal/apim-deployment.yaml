@@ -57,7 +57,7 @@ spec:
                 - nc -z localhost 9443
             initialDelaySeconds: 180
             periodSeconds: 10
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           ports:
             -
               containerPort: 8280

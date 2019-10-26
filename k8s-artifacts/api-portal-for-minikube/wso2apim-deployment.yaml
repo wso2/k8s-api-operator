@@ -35,7 +35,7 @@ spec:
     spec:
       containers:
         - name: wso2apim
-          image: dinushad/wso2am:rc2
+          image: pubudu/wso2am:3.0.0
           resources:
             limits:
               memory: "2Gi"
@@ -57,7 +57,7 @@ spec:
                 - nc -z localhost 32001
             initialDelaySeconds: 300
             periodSeconds: 10
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           ports:
             -
               #8280 with port off set 22558

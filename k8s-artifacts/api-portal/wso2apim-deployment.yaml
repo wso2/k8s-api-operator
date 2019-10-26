@@ -35,7 +35,7 @@ spec:
     spec:
       containers:
         - name: wso2apim
-          image: dinushad/wso2am:rc2
+          image: pubudu/wso2am:3.0.0
           resources:
             limits:
               memory: "2Gi"
@@ -47,7 +47,7 @@ spec:
                 - /bin/bash
                 - -c
                 - nc -z localhost 9443
-            initialDelaySeconds: 180
+            initialDelaySeconds: 90
             periodSeconds: 10
           readinessProbe:
             exec:
@@ -55,9 +55,9 @@ spec:
                 - /bin/bash
                 - -c
                 - nc -z localhost 9443
-            initialDelaySeconds: 180
+            initialDelaySeconds: 90
             periodSeconds: 10
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           ports:
             -
               containerPort: 8280

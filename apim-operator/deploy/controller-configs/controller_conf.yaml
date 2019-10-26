@@ -26,8 +26,8 @@ data:
   mgwRuntimeImg: wso2/wso2micro-gw:3.0.2
   #kaniko image for the kaniko pod which builds the mgw api runtime and pushes to the registry
   kanikoImg: gcr.io/kaniko-project/executor
-  #docker registry name the mgw image to be pushed.  eg->  dockerRegistry: sampleuser
-  dockerRegistry: <user-docker-registry>
+  #docker registry name which the mgw image to be pushed.  eg->  dockerRegistry: username
+  dockerRegistry: <username-docker-registry>
   #Maximum number of replicas for the Horizontal Pod Auto-scale. Default->  hpaMaxReplicas: "5"
   hpaMaxReplicas: "5"
   #Avg CPU utliazation(%) to spin up the next pod.  Default->  hpaTargetAverageUtilizationCPU: "50"
