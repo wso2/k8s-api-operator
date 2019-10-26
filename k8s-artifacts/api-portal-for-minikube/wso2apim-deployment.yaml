@@ -46,16 +46,16 @@ spec:
               command:
                 - /bin/bash
                 - -c
-                - nc -z localhost 9443
-            initialDelaySeconds: 180
+                - nc -z localhost 32001
+            initialDelaySeconds: 300
             periodSeconds: 10
           readinessProbe:
             exec:
               command:
                 - /bin/bash
                 - -c
-                - nc -z localhost 9443
-            initialDelaySeconds: 180
+                - nc -z localhost 32001
+            initialDelaySeconds: 300
             periodSeconds: 10
           imagePullPolicy: Always
           ports:

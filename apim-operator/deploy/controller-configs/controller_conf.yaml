@@ -39,7 +39,7 @@ data:
   #Max CPU usage limit a pod can use.   Default->  resourceLimitCPU: "3000m"
   resourceLimitCPU: "2000m"
   #Max Memory usage limit a pod can use.   Default->  resourceLimitMemory: "512Mi"
-  resourceLimitMemory: "512Mi"
+  resourceLimitMemory: "256Mi"
   #Stop at docker image creation or continue to deploy kubernetes artifact.
   #Default->  generatekubernbetesartifactsformgw: "true"
   generatekubernbetesartifactsformgw: "true"
