@@ -112,6 +112,10 @@ const (
 
 	hpaMaxReplicas                 = "hpaMaxReplicas"
 	hpaTargetAverageUtilizationCPU = "hpaTargetAverageUtilizationCPU"
+	readinessProbeInitialDelaySeconds = "readinessProbeInitialDelaySeconds"
+	readinessProbePeriodSeconds = "readinessProbePeriodSeconds"
+	livenessProbeInitialDelaySeconds = "livenessProbeInitialDelaySeconds"
+	livenessProbePeriodSeconds = "livenessProbePeriodSeconds"
 
 	resourceRequestCPU                 = "resourceRequestCPU"
 	resourceRequestMemory              = "resourceRequestMemory"
