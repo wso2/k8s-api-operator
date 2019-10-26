@@ -13,7 +13,7 @@
  
  - Navigate to wso2am-k8s-crds-1.0.0/scenarios/scenario-7 directory and deploy the sample backend service using the following command.
     ```
-        apictl apply -f product_privatejet.yaml
+        apictl apply -f products-privatejet.yaml
     ```
     - Output:
     ```

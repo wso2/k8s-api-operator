@@ -13,7 +13,7 @@
  
  - Navigate to wso2am-k8s-crds-1.0.0/scenarios/scenario-8 directory and deploy the sample backend service using the following command.
     ```
-        apictl apply -f inventory_sidecar.yaml
+        apictl apply -f inventory-sidecar.yaml
     ```
     - Output:
     ```
