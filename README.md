@@ -41,18 +41,18 @@ We have introduced this feature with [APIM CLI](https://github.com/wso2/product-
 
 ##### Deploying APIM in  K8S Cluster
 
-Kubernetes artifacts to deploy APIM and APIM analytics deployment are shipped with the this distribution.
+Kubernetes artifacts to deploy APIM and APIM analytics deployment are shipped with this distribution.
 
-Navigate to wso2am-k8s-crds/apim-operator/apim-deployment/api-manager
+Navigate to wso2am-k8s-crds/
 
 - Deploy API Manager in Kubernetes Cluster
 
 ```$xslt
-apimcli apply -f api-manager/k8s-artifacts
+apimcli apply -f api-manager/k8s-artifacts/
 ```
 - Deploy APIM Analytics in Kubernetes Cluster
 ```$xslt
-apimcli apply -f api-manager/analytics
+apimcli apply -f api-analytics/k8s-artifacts/
 ```
 
 ---
@@ -63,17 +63,17 @@ apimcli apply -f api-manager/analytics
 
 ##### Step 2: Download [wso2am-k8s-crds-v1.0.0-beta.zip](https://github.com/wso2/k8s-apim-operator/releases/download/v1.0.0-beta/wso2am-k8s-crds-v1.0.0-beta.zip) and extract the zip
 
-1. This zip contains the artifacts that required to deploy in Kubernetes.
+1. This zip contains the artifacts that are required to deploy in Kubernetes.
 2. Extract wso2am-k8s-crds-1.0-beta.zip and navigate to the \<APIM-K8s-CRD-HOME>/apim-operator directory.
 ```
-cd <APIM-K8s-CRD-HOME>/
+cd <APIM-K8s-CRD-HOME>/apim-operator/
 ```
    
-**Note:** You need to run all commands from within the <APIM-K8s-CRD-HOME>/ directory.
+**Note:** You need to run all commands from within the <APIM-K8s-CRD-HOME>/apim-operator directory.
 
 ##### Step 3: Configure APIM CLI tool
 - Navigate to the API Management Tooling page - https://github.com/wso2/product-apim-tooling/releases/
-- Download tooling archive (from v3.0.0-beta onwards) suitable for your platform (i.e., Mac, Windows, Linux) and extract it the CLI tool that you downloaded to a desired location and cd into it.
+- Download tooling archive (from v3.0.0-beta onwards) suitable for your platform (i.e., Mac, Windows, Linux) and extract the CLI tool that you downloaded to a desired location and cd into it.
 
 - Navigate to the working directory where the executable CLI Tool resides.
 
