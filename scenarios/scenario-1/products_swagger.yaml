@@ -14,31 +14,32 @@
 # specific language governing permissions and limitations
 # under the License.
 
-swagger: '2.0'
+openapi: 3.0.0
 info:
   title: Online-Store
   version: v1.0.0
   description: This API contains operations related to online shopping store.
 x-wso2-basePath: /store/v1.0.0
-x-wso2-production-endpoints:
-  urls:
-    - http://products
 paths:
   /products:
     get:
       responses:
         "200":
           description: sucessful operation
-
+      x-wso2-production-endpoints:
+        urls:
+          - http://products
   "/products/{productId}":
     get:
       parameters:
         - name: productId
           in: path
           required: true
-          description: ID of the product
-          type: integer
-          format: int64
+          schema:
+            type: string
       responses:
         "200":
           description: sucessful operation
+      x-wso2-production-endpoints:
+        urls:
+          - http://products
