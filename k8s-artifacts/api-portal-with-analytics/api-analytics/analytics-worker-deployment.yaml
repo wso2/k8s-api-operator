@@ -35,7 +35,7 @@ spec:
     spec:
       containers:
         - name: wso2apim-analytics
-          image: rameshakaru/wso2analytics:worker300
+          image: pubudu/wso2am-analytics-worker:3.0.0
           resources:
             limits:
               memory: "2Gi"

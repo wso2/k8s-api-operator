@@ -13,6 +13,30 @@
 # limitations under the License.
 
 apiVersion: v1
-kind: Namespace
+kind: Service
 metadata:
-  name: wso2
+  name: wso2apim
+  namespace: wso2
+spec:
+  type: LoadBalancer
+  # label keys and values that must match in order to receive traffic for this service
+  selector:
+    deployment: wso2apim
+  ports:
+    # ports that this service should serve on
+    - name: pass-through-http
+      port: 8280
+      targetPort: 8280
+#      nodePort: 32004
+    - name: pass-through-https
+      port: 8243
+      targetPort: 8243
+#      nodePort: 32003
+    - name: servlet-http
+      port: 9763
+      targetPort: 9763
+#      nodePort: 32002
+    - name: servlet-https
+      port: 9443
+      targetPort: 9443
+#      nodePort: 32001

@@ -22,7 +22,7 @@ spec:
   type: Oauth
   #create secret with certificate and add secret name
   certificate: wso2am300-secret
-  endpoint: "https://wso2apim-service.wso2:9443"
+  endpoint: "https://wso2apim.wso2:9443"
   credentials: oauth-credentials
 
 ---
