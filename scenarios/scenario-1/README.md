@@ -62,11 +62,14 @@ kubernetes cluster as a managed API in the Kubernetes cluster.
 - Basic swagger definition belongs to the "products" service is available in products_swagger.yaml.<br>
 
     Base path of the API and backend endpoint of the API should be mentioned in the swagger file with the  "x-wso2-basePath" and "x-wso2-production-endpoints" extensions respectively. <br>
+    ```$xslt
+        x-wso2-basePath: /store/v1.0.0
+    ```
 
-    In this swagger definition, the backend service of the "products" service has been mentioned as follows.
+    In this swagger definition, the backend service of the "products" service has been mentioned as follows. It can be either globally or resource level.
+    In the scenarios, we have defined it in resource level.
 
     ```
-        x-wso2-basePath: /store/v1.0.0
         x-wso2-production-endpoints:
           urls:
             - http://products

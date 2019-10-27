@@ -43,10 +43,7 @@ tags:
     externalDocs:
       description: Find out more about our store
       url: http://swagger.io
-x-wso2-basePath: /petstore/v1
-x-wso2-production-endpoints:
-  urls:
-    - https://petstore.swagger.io/v2
+x-wso2-basePath: /petstorebasic/v1
 security:
   - petstorebasic: []
 paths:
@@ -88,6 +85,9 @@ paths:
                   "$ref": "#/components/schemas/Pet"
         '400':
           description: Invalid status value
+      x-wso2-production-endpoints:
+        urls:
+          - https://petstore.swagger.io/v2
   "/pet/{petId}":
     get:
       tags:
@@ -117,6 +117,9 @@ paths:
           description: Invalid ID supplied
         '404':
           description: Pet not found
+      x-wso2-production-endpoints:
+        urls:
+          - https://petstore.swagger.io/v2
 components:
   schemas:
     Category:
