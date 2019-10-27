@@ -65,10 +65,10 @@ data:
     service_url = "https://localhost:${mgt.transport.https.port}/services/"
     username= "${admin.username}"
     password= "${admin.password}"
-    ws_endpoint = "ws://localhost:9099"
-    wss_endpoint = "wss://localhost:8099"
-    http_endpoint = "http://localhost:${http.nio.port}"
-    https_endpoint = "https://localhost:${https.nio.port}"
+    ws_endpoint = "ws://wso2apim:9099"
+    wss_endpoint = "wss://wso2apim:8099"
+    http_endpoint = "http://wso2apim:${http.nio.port}"
+    https_endpoint = "https://wso2apim:${https.nio.port}"
     #[apim.cache.gateway_token]
     #enable = true
     #expiry_time = "900s"
@@ -129,8 +129,9 @@ data:
     #revoke_endpoint = "https://localhost:${https.nio.port}/revoke"
     #enable_token_encryption = false
     #enable_token_hashing = false
-    #[apim.devportal]
-    #url = "https://localhost:${mgt.transport.https.port}/devportal"
+
+    [apim.devportal]
+    url = "https://wso2apim:${mgt.transport.https.port}/devportal"
     #enable_application_sharing = false
     #if application_sharing_type, application_sharing_impl both defined priority goes to application_sharing_impl
     #application_sharing_type = "default" #changed type, saml, default #todo: check the new config for rest api

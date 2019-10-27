@@ -18,7 +18,7 @@ metadata:
   name: wso2apim-dashboard-analytics-service
   namespace: wso2
 spec:
-  type: NodePort
+  type: LoadBalancer
   # label keys and values that must match in order to receive traffic for this service
   selector:
     deployment: wso2apim-dashboard-analytics
@@ -27,5 +27,5 @@ spec:
     -
       name: 'rest-api-port'
       port: 9643
-      protocol: TCP
-      nodePort: 30163
+      targetPort: 9643
+#      nodePort: 30163

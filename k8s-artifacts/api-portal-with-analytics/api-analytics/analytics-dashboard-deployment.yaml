@@ -35,7 +35,7 @@ spec:
     spec:
       containers:
         - name: wso2apim-dashboard-analytics
-          image: rameshakaru/wso2analytics:dashboard300
+          image: pubudu/wso2am-analytics-dashboard:3.0.0
           resources:
             limits:
               memory: "2Gi"
@@ -71,7 +71,16 @@ spec:
           volumeMounts:
           - name: apim-analytics-conf-dashboard
             mountPath: /home/wso2carbon/wso2-config-volume/conf/dashboard
+#          - name: apim-analytics-bin-dashboard
+#            mountPath: /home/wso2carbon/wso2-config-volume/wso2/dashboard/bin
       volumes:
       - name: apim-analytics-conf-dashboard
         configMap:
           name: dash-conf
+#      - name: apim-analytics-bin-dashboard
+#        configMap:
+#          name: dash-bin
+      hostAliases:
+        - ip: "127.0.0.1"
+          hostnames:
+            - "wso2apim-analytics"

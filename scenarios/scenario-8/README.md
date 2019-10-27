@@ -33,7 +33,7 @@ In this swagger definition, the backend service of the "products" service and th
         apictl add api -n inventory-sc --from-file=swagger.yaml
     ``` 
     - Output:
-    ```$xslt
+    ```
         creating configmap with swagger definition
         configmap/inventory-sc-swagger created
         api.wso2.com/inventory-sc created
