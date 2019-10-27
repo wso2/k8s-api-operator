@@ -46,7 +46,7 @@ spec:
               command:
                 - /bin/sh
                 - -c
-                - nc -z localhost 9643
+                - nc -z localhost 32201
             initialDelaySeconds: 30
             periodSeconds: 10
           readinessProbe:
@@ -54,7 +54,7 @@ spec:
               command:
                 - /bin/sh
                 - -c
-                - nc -z localhost 9643
+                - nc -z localhost 32201
             initialDelaySeconds: 30
             periodSeconds: 10
           lifecycle:

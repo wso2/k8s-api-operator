@@ -18,25 +18,29 @@ metadata:
   name: wso2apim
   namespace: wso2
 spec:
-  type: LoadBalancer
+  type: NodePort
   # label keys and values that must match in order to receive traffic for this service
   selector:
     deployment: wso2apim
   ports:
     # ports that this service should serve on
     - name: pass-through-http
-      port: 8280
-      targetPort: 8280
-#      nodePort: 32004
+      #for 8280 with port offset 22558
+      port: 30838
+      targetPort: 30838
+      nodePort: 32004
     - name: pass-through-https
-      port: 8243
-      targetPort: 8243
-#      nodePort: 32003
+      #for 8243 with port offset 22558
+      port: 30801
+      targetPort: 30801
+      nodePort: 32003
     - name: servlet-http
-      port: 9763
-      targetPort: 9763
-#      nodePort: 32002
+      #for 9763 with port offset 22558
+      port: 32321
+      targetPort: 32321
+      nodePort: 32002
     - name: servlet-https
-      port: 9443
-      targetPort: 9443
-#      nodePort: 32001
+      #for 9443 with port offset 22558
+      port: 32001
+      targetPort: 32001
+      nodePort: 32001

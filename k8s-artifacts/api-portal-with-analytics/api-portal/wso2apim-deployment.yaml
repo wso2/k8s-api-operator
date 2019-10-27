@@ -46,7 +46,7 @@ spec:
               command:
                 - /bin/bash
                 - -c
-                - nc -z localhost 9443
+                - nc -z localhost 32001
             initialDelaySeconds: 180
             periodSeconds: 10
           readinessProbe:
@@ -54,37 +54,37 @@ spec:
               command:
                 - /bin/bash
                 - -c
-                - nc -z localhost 9443
+                - nc -z localhost 32001
             initialDelaySeconds: 180
             periodSeconds: 10
           imagePullPolicy: IfNotPresent
           ports:
-            -
-              containerPort: 8280
+            - #8280 with port off set 22558
+              containerPort: 30838
               protocol: "TCP"
-            -
-              containerPort: 8243
+            - #8243 with port off set 22558
+              containerPort: 30801
               protocol: "TCP"
-            -
-              containerPort: 9763
+            - #9763 with port off set 22558
+              containerPort: 32321
               protocol: "TCP"
-            -
-              containerPort: 9443
+            - #9443 with port off set 22558
+              containerPort: 32001
               protocol: "TCP"
-            -
-              containerPort: 5672
+            - #5672 with port off set 22558
+              containerPort: 28230
               protocol: "TCP"
-            -
-              containerPort: 9711
+            - #9711 with port off set 22558
+              containerPort: 32269
               protocol: "TCP"
-            -
-              containerPort: 9611
+            - #9611 with port off set 22558
+              containerPort: 32169
               protocol: "TCP"
-            -
-              containerPort: 7711
+            - #7711 with port off set 22558
+              containerPort: 30269
               protocol: "TCP"
-            -
-              containerPort: 7611
+            - #7611 with port off set 22558
+              containerPort: 30169
               protocol: "TCP"
           volumeMounts:
             - name: apim-conf
