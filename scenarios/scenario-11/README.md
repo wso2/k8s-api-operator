@@ -72,7 +72,8 @@ wso2apim-with-analytics-rdbms-service   ClusterIP   10.0.23.125   <none>        
 ---
 ```
 
-**Note:** To access the API portal and Analytics dashboard, add host mapping entries to the /etc/hosts file. As we have exposed services in Node Port type, you can use any Kubernetes node external IP.
+**Note:** To access the API portal and Analytics dashboard, add host mapping entries to the /etc/hosts file. As we have exposed the services in Node Port type, you can use the IP address of any Kubernetes node.
+
 
 ```
 <Any K8s Node IP>  wso2apim
