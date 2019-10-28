@@ -163,7 +163,7 @@ Hence, in this swagger definition endpoint has been referred in resource level.
    
    - Invoking the products endpoint
     ```
-        curl -X GET "https://<external IP of LB service>:9095/store/v1.0.0/products" -H "accept: application/json" -H "Authorization:Bearer $TOKEN" -k
+        curl -X GET "https://<external IP of LB service>:9095/storetep/v1.0.0/products" -H "accept: application/json" -H "Authorization:Bearer $TOKEN" -k
     ```
     - Once you execute the above command, it will call to the managed API (online-store-api), which then call its endpoint("products-ep" service) available in the cluster. If the request is success, you would be able to see the response as below.
     ```

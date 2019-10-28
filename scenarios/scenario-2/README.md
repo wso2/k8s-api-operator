@@ -9,13 +9,18 @@
 
 - Navigate to wso2am-k8s-crds-1.0.0/scenarios/scenario-2 directory.
 - Prepared petstore basic swagger definition can be found within this directory.
-- Base path of the API and backend endpoint of the API should be mentioned in the swagger file with the  "x-wso2-basePath" and "x-wso2-production-endpoints" extensions respectively. <br>
-In this swagger definition, the backend service of the "petstore" service has been mentioned as follows.
+- Base path of the API should be mentioned in the swagger file with the  "x-wso2-basePath".
     ```
         x-wso2-basePath: /petstore/v1
+    ```
+
+- In this swagger definition, the backend service of the "petstore" service has been mentioned as follows. It can be either globally or resource level.
+In the scenarios, we have defined it in resource level.
+
+    ```
         x-wso2-production-endpoints:
           urls:
-            - https://petstore.swagger.io/v
+            - https://petstore.swagger.io/v2
     ```
 - Execute the following to expose pet-store as an API.
 

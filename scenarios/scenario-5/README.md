@@ -130,7 +130,7 @@ In this swagger definition, the security schema of the "petstore" service has be
      
     
     ```
-        curl -X GET "https://<external IP of LB service>:9095/petstore/v1/pet/55" -H "accept: application/xml" -H "Authorization:Bearer <Access-Token>" -k
+        curl -X GET "https://<external IP of LB service>:9095/petstoreoauth/v1/pet/55" -H "accept: application/xml" -H "Authorization:Bearer <Access-Token>" -k
     ```
     - Once you execute the above command, it will call to the managed API (petstore-oauth), which then call its endpoint(https://petstore.swagger.io/v2). If the request is success, you would be able to see the response as below.
     ```

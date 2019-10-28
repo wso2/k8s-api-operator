@@ -70,7 +70,7 @@
                 ```
    
     ```
-        curl -X GET "https://<external IP of LB service>:9095/petstore/v1/pet/55" -H "accept: application/xml" -H "Authorization:Basic $BASIC" -k
+        curl -X GET "https://<external IP of LB service>:9095/petstorebasic/v1/pet/55" -H "accept: application/xml" -H "Authorization:Basic $BASIC" -k
     ```    
     - Once you execute the above command, it will call to the managed API (petstore-basic), which then call its endpoint(https://petstore.swagger.io/v2). If the request is success, you would be able to see the response as below.
     ```

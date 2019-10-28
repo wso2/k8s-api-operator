@@ -21,7 +21,7 @@ info:
   description: This API contains operations related to online shopping store.
 servers:
   - url: /store
-x-wso2-basePath: /store/v1.0.0
+x-wso2-basePath: /storetep/v1.0.0
 paths:
   /products:
     get:

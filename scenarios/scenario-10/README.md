@@ -79,7 +79,7 @@
     ```
    
     ```
-        curl -X GET "https://104.197.114.248:9095/petstore/v1/pet/findByStatus?status=available"  -H "accept: application/xml" -H "Authorization:Bearer $TOKEN" -k
+        curl -X GET "https://104.197.114.248:9095/petstoreint/v1/pet/findByStatus?status=available"  -H "accept: application/xml" -H "Authorization:Bearer $TOKEN" -k
     ```
     - Once you execute the above command, it will call to the managed API (petstore-int), which then call its endpoint(https://petstore.swagger.io/v2). If the request is success, you would be able to see the response as below.
     ```
@@ -87,7 +87,7 @@
     ```
     - Then invoke the API without "status" query parameter to test the request interceptor as follows.
     ```
-        curl -X GET "https://192.168.99.126:32469/petstore/v1/pet/findByStatus"  -H "accept: application/xml" -H "Authorization:Bearer $TOKEN" -k
+        curl -X GET "https://192.168.99.126:32469/petstoreint/v1/pet/findByStatus"  -H "accept: application/xml" -H "Authorization:Bearer $TOKEN" -k
     ```
     - Once you execute the above command, you will get the error message by indicating invalid request as follows.
     ```
@@ -95,7 +95,7 @@
     ```
     - Then invoke the API with "accept: application/json" header to test the response interceptor as follows.
     ```
-        curl -X GET "https://192.168.99.126:32469/petstore/v1/pet/findByStatus?status=available"  -H "accept: application/json" -H "Authorization:Bearer $TOKEN" -k -v
+        curl -X GET "https://192.168.99.126:32469/petstoreint/v1/pet/findByStatus?status=available"  -H "accept: application/json" -H "Authorization:Bearer $TOKEN" -k -v
     ```
     - Once you execute the above command, you will get the response as follows.
     ```
