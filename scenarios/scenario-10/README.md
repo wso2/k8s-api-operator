@@ -1,4 +1,4 @@
-## Scenario 10 - Apply interceptors to the API
+## Scenario 10 - Apply interceptors to an API
 
 - This scenario describes how to apply interceptors to carry out transformations and mediations on the requests and responses.
 - First, we need to implement custom request interceptors and response interceptors. We have provided sample request and response interceptors in ./scenarios/scenario-10/. If you want to learn more about implementing custom interceptors you can refer the document [adding interceptors.](https://docs.wso2.com/display/MG300/Adding+Interceptors)

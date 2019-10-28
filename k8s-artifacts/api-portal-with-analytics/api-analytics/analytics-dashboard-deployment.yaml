@@ -46,7 +46,7 @@ spec:
               command:
                 - /bin/sh
                 - -c
-                - nc -z localhost 9643
+                - nc -z localhost 32201
             initialDelaySeconds: 30
             periodSeconds: 10
           readinessProbe:
@@ -54,7 +54,7 @@ spec:
               command:
                 - /bin/sh
                 - -c
-                - nc -z localhost 9643
+                - nc -z localhost 32201
             initialDelaySeconds: 30
             periodSeconds: 10
           lifecycle:
@@ -71,15 +71,10 @@ spec:
           volumeMounts:
           - name: apim-analytics-conf-dashboard
             mountPath: /home/wso2carbon/wso2-config-volume/conf/dashboard
-#          - name: apim-analytics-bin-dashboard
-#            mountPath: /home/wso2carbon/wso2-config-volume/wso2/dashboard/bin
       volumes:
       - name: apim-analytics-conf-dashboard
         configMap:
           name: dash-conf
-#      - name: apim-analytics-bin-dashboard
-#        configMap:
-#          name: dash-bin
       hostAliases:
         - ip: "127.0.0.1"
           hostnames:

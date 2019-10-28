@@ -12,9 +12,7 @@ To try out the scenario navigate to wso2am-k8s-crds-1.0.0 directory.
 
 ###### Step 1: Deploy and configure API Portal and Analytics Dashbaord
 
-- Execute the following commands based on your Kubernetes environment
-
-<details><summary>If you are using GKE, Docker for desktop, etc.(Load Balancer Service Type)</summary>
+- Execute the following commands
 
 ```
 >> apictl apply -f k8s-artifacts/api-portal-with-analytics/wso2-namespace.yaml
@@ -48,45 +46,6 @@ deployment.apps/wso2apim created
 service/wso2apim created
 ---
 ```
-</details>
-
-
-
-<details><summary>If you are using minikube (NodePort Service Type)</summary>
-
-```
->> apictl apply -f k8s-artifacts/api-portal-with-analytics-for-minikube/wso2-namespace.yaml
-
----
-namespace/wso2 created  
----
-
->> apictl apply -f k8s-artifacts/api-portal-with-analytics-for-minikube/mysql/
-
----
-configmap/mysql-dbscripts created
-deployment.apps/wso2apim-with-analytics-mysql-deployment created
-service/wso2apim-with-analytics-rdbms-service created
----
-
->> apictl apply -f k8s-artifacts/api-portal-with-analytics-for-minikube/api-analytics/
-
----
-configmap/dash-bin created
-configmap/dash-conf created
-deployment.apps/wso2apim-dashboard-analytics-deployment created
-service/wso2apim-dashboard-analytics-service created
----
-
->> apictl apply -f k8s-artifacts/api-portal-with-analytics-for-minikube/api-portal/
-
----
-configmap/apim-conf created
-deployment.apps/wso2apim created
-service/wso2apim created
----
-```
-</details>
 
 You can verify the installation by checking the pods and services as follows.
 
@@ -104,27 +63,25 @@ wso2apim-with-analytics-mysql-deployment-749dd5fb7b-fh7cd   1/1     Running   0 
 >> apictl get services -n wso2
 
 ---
-NAME                                    TYPE           CLUSTER-IP    EXTERNAL-IP      PORT(S)                                                                            AGE
-wso2apim                                LoadBalancer   10.0.29.36    104.154.100.37   8280:30858/TCP,8243:30536/TCP,9763:31828/TCP,9443:30248/TCP                        3m20s
-wso2apim-analytics-service              ClusterIP      10.0.18.193   <none>           7612/TCP,7712/TCP,9444/TCP,9091/TCP,7071/TCP,7444/TCP,7575/TCP,7576/TCP,7577/TCP   3m24s
-wso2apim-dashboard-analytics-service    LoadBalancer   10.0.28.250   35.193.108.59    9643:30620/TCP                                                                     3m28s
-wso2apim-with-analytics-rdbms-service   ClusterIP      10.0.17.109   <none>           3306/TCP
+
+NAME                                    TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)                                                                            AGE
+wso2apim                                NodePort    10.0.28.252   <none>        30838:32004/TCP,30801:32003/TCP,32321:32002/TCP,32001:32001/TCP                    69m
+wso2apim-analytics-service              ClusterIP   10.0.18.144   <none>        7612/TCP,7712/TCP,9444/TCP,9091/TCP,7071/TCP,7444/TCP,7575/TCP,7576/TCP,7577/TCP   69m
+wso2apim-dashboard-analytics-service    NodePort    10.0.24.27    <none>        32201:32201/TCP                                                                    70m
+wso2apim-with-analytics-rdbms-service   ClusterIP   10.0.23.125   <none>        3306/TCP                                                                           70m
 ---
 ```
 
-**Note:** To access the API portal and Analytics dashboard, add a host mapping entry to the /etc/hosts file. Use the above external IP of each service as the IP address to the host wso2apim and wso2apim-analytics.
+**Note:** To access the API portal and Analytics dashboard, add host mapping entries to the /etc/hosts file. As we have exposed the services in Node Port type, you can use the IP address of any Kubernetes node.
+
 
 ```
-<EXTERNAL-IP_of_service_wso2apim>  wso2apim
-<EXTERNAL-IP_of_service_wso2apim-dashboard-analytics-service>  wso2apim-analytics
+<Any K8s Node IP>  wso2apim
+<Any K8s Node IP>  wso2apim-analytics
 ```
 
-- For Docker for Mac “external-IP” should be “localhost” and port is 9443 <br>
-
-    **API Portal** - https://wso2apim:9443/devportal <br>
-    **API Analytics Dashbaord** - https://wso2apim-analytics:9643/analytics-dashboard
-
-- For Minikube “external-ip” is Minikube VM IP (Use minikube ip command to get the IP) and port is 32001 <br>
+- For Docker for Mac use "localhost" for the K8s node IP 
+- For Minikube, use minikube ip command to get the K8s node IP
 	 
     **API Portal** - https://wso2apim:32001/devportal <br>
     **API Analytics Dashbaord** - https://wso2apim-analytics:32201/analytics-dashboard
