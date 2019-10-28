@@ -12,7 +12,18 @@ To try out the scenario navigate to wso2am-k8s-crds-1.0.0 directory.
 
 ###### Step 1: Deploy and configure API Portal and Analytics Dashbaord
 
-- Execute the following commands
+**Note:** If you have already deployed the API portal without enabling analytics, please remove it by executing the below command.
+
+```
+>> kubectl delete -f k8s-artifacts/api-portal/
+---
+namespace "wso2" deleted
+configmap "apim-conf" deleted
+deployment.apps "wso2apim" deleted
+service "wso2apim" deleted
+```
+
+- Execute the following commands to deploy the API Portal and Analytics Dashboard
 
 ```
 >> apictl apply -f k8s-artifacts/api-portal-with-analytics/wso2-namespace.yaml
@@ -89,7 +100,7 @@ wso2apim-with-analytics-rdbms-service   ClusterIP   10.0.23.125   <none>        
 
 ###### Step 2: Enable API Analytics in the API Operator
 
-- If you haven't deployed the API Operator please follow the quick start guide in root readme.
+- If you haven't deployed the API Operator please follow the quick start guide in root readme and follow step 1,2 and 4.
 - By deploying the analytics configmaps, you can enable analytics as follows.
 
 ```
@@ -107,6 +118,14 @@ secret/wso2analytics300-secret created
 Please follow the scenario 1 readme and deploy the API.
 
 Use the API Analytics dashboard url which configured in Step 1 to browse the analytics information for the API.
+
+You will be able to monitor the analytics as shown in below images.
+
+![Alt text](images/Analytics-Dashboard.png?raw=true "Title")
+
+![Alt text](images/Developer-Analytics.png?raw=true "Title")
+
+![Alt text](images/Publisher-Analytics.png?raw=true "Title")
 
 
 #### Customize API Analytics 
