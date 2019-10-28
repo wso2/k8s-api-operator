@@ -37,61 +37,57 @@ Minimum CPU and Memory for the K8s cluster: **2 vCPU, 8GB of Memory**
  
 **_Note:_** You need to run all commands from within the ***api-k8s-crds-1.0.0*** directory.
 
-##### Step 1: Deploy a sample microservice in K8s
+<br />
+
+#### Step 1: Deploy a sample microservice in Kubernetes
 
 
-Let’s deploy a sample microservice in K8s which lists the details of products. This will deploy a pod and service for the sample service.
+- Let’s deploy a sample microservice in K8s which lists the details of products. This will deploy a pod and service for the sample service.
 
+    ```
+    >> kubectl apply -f scenarios/scenario-1/products_dep.yaml
+    service/products created
+    deployment.apps/products-deployment created
+    ```
 
-```
->> kubectl apply -f  ./scenarios/scenario-1/products_dep.yaml
-service/products created
-deployment.apps/products-deployment created
-```
+    The following command will give you the details of the microservice.
 
-Following command will give you the details of the microservice.
+    ```
+    >> kubectl get services products
+  
+    Output:
+    NAME       TYPE           CLUSTER-IP    EXTERNAL-IP       PORT(S)        AGE
+    products   LoadBalancer   10.83.1.131   104.197.114.248   80:30475/TCP   27m
+    ```
 
-```
-kubectl get services products
-```
- 
- - Output:
- ```
-      NAME       TYPE           CLUSTER-IP    EXTERNAL-IP       PORT(S)        AGE
-      products   LoadBalancer   10.83.1.131   104.197.114.248   80:30475/TCP   27m
-  ```
- 
-> If you are using Minikube
-**_Note:_**  By default API operator requires the LoadBalancer service type which is not supported in Minikube by default. Here is how you can enable it on Minikube.
+    **_Note:_**  By default API operator requires the LoadBalancer service type which is not supported in Minikube by default. Here is how you can enable it on Minikube.
 
-On Minikube, the LoadBalancer type makes the Service accessible through the minikube service command.
-```
-minikube service <SERVICE_NAME> --url
-minikube service products --url
-```
+    On Minikube, the LoadBalancer type makes the Service accessible through the minikube service command.
 
+    ```
+    >> minikube service <SERVICE_NAME> --url
+    >> minikube service products --url
+    ```
 
-- To test if the microservice, execute the following commands.
-    ```      
-    curl -X GET http://<EXTERNAL-IP>:80/products
-     
+- To test the microservice, execute the following commands.
+    ```
+    >> curl -X GET http://<EXTERNAL-IP>:80/products
+         
     Output:
     {"products":[{"name":"Apples", "id":101, "price":"$1.49 / lb"}, {"name":"Macaroni & Cheese", "id":151, "price":"$7.69"}, {"name":"ABC Smart TV", "id":301, "price":"$399.99"}, {"name":"Motor Oil", "id":401, "price":"$22.88"}, {"name":"Floral Sleeveless Blouse", "id":501, "price":"$21.50"}]}
     ```
  
-    ```  
-    curl -X GET http://<EXTERNAL-IP>:80/products/101
-     
+    ```
+    >> curl -X GET http://<EXTERNAL-IP>:80/products/101
+         
     Output:
     {"name":"Apples", "id":101, "price":"$1.49 / lb", "reviewScore":"0", "stockAvailability":false}
-
     ```
-
 <br />
 
-##### Step 2: Install API Operator
+#### Step 2: Install API Operator
 
-- Deploying Controller artifacts
+* Deploy the Controller artifacts
 
 This will deploy the artifacts related to the API Operator
 ```
@@ -110,7 +106,7 @@ customresourcedefinition.apiextensions.k8s.io/securities.wso2.com created
 customresourcedefinition.apiextensions.k8s.io/targetendpoints.wso2.com created
 ```
 
-- Deploying controller level configurations **[IMPORTANT]**
+* Deploy the controller level configurations **[IMPORTANT]**
 
     When you deploy an API, this will create a docker image for the API and be pushed to Docker-Hub. For this, your Docker-Hub credentials are required.
     
@@ -145,17 +141,16 @@ customresourcedefinition.apiextensions.k8s.io/targetendpoints.wso2.com created
         ```
 <br />
         
+#### Step 3: Install the API portal and security token service
 
-##### Step 3: Install API portal and security token service
+Kubernetes installation artifacts for API portal and security token service are available in the k8s-artifacts directory.
 
-Kubernetes installation artifacts for API portal and security token service are available in ***k8s-artifacts*** directory.
+The following command will deploy API portal & token service under a namespace called “wso2”. 
 
-Following command will deploy API portal & token service under a namespace called “wso2”. 
-
-Please see below command and its output.
-
-```$xslt
+```
 >> kubectl apply -f k8s-artifacts/api-portal/
+
+Output:
 namespace "wso2" created
 configmap "apim-conf" created
 deployment.apps "wso2apim" created
@@ -322,7 +317,7 @@ You now have a microgateway deployed in Kubernetes that runs your API for the mi
     You can find a sample token below.
     
     ```
-   TOKEN=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6IlpqUm1ZVE13TlRKak9XVTVNbUl6TWpnek5ESTNZMkl5TW1JeVkyRXpNamRoWmpWaU1qYzBaZz09In0=.eyJhdWQiOiJodHRwOlwvXC9vcmcud3NvMi5hcGltZ3RcL2dhdGV3YXkiLCJzdWIiOiJhZG1pbkBjYXJib24uc3VwZXIiLCJhcHBsaWNhdGlvbiI6eyJvd25lciI6ImFkbWluIiwidGllciI6IlVubGltaXRlZCIsIm5hbWUiOiJzYW1wbGUtY3JkLWFwcGxpY2F0aW9uIiwiaWQiOjV9LCJzY29wZSI6ImFtX2FwcGxpY2F0aW9uX3Njb3BlIGRlZmF1bHQiLCJpc3MiOiJodHRwczpcL1wvd3NvMmFwaW06OTQ0M1wvb2F1dGgyXC90b2tlbiIsInRpZXJJbmZvIjp7fSwia2V5dHlwZSI6IlBST0RVQ1RJT04iLCJzdWJzY3JpYmVkQVBJcyI6W10sImNvbnN1bWVyS2V5IjoiOFpWV1lQYkk2Rm1lY0ZoeXdVaDVVSXJaNEFvYSIsImV4cCI6MzcxODI5OTU1MiwiaWF0IjoxNTcwODE1OTA1LCJqdGkiOiJkMGI2NTgwNC05NDk3LTQ5ZjktOTcxNC01OTJmODFiNzJhYjMifQ==.HYCPxCbNcALcd0svu47EqFoxnnBAkVJSnCPnW6jJ1lZQTzSAiuiPcGzTnyP1JHodQknhYsSrvdZDIzWzU_mRH2i3-lMVdm0t43r-0Ti0EdBSX2756ilo266MVeWhxbz9p3hPm5ndDCoo_bfB4KbjigjmhXv_PJyUMuWtMo669sHQNs5FkiOT2X0gzFP1iJUFf-H9y762TEIYpylKedVDzQP8x4LCRZsO54e1iA-DZ5h5MKQhJsbKZZ_MMXGmtdo8refPyTCc7HIuevUXIWAaSNRFYj_HZTSRYhFEUtDWn_tJiySn2umRuP3XqxPmQal0SxD7JiV8DQxxyylsGw9k6g==
+   TOKEN=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6IlpqUm1ZVE13TlRKak9XVTVNbUl6TWpnek5ESTNZMkl5TW1JeVkyRXpNamRoWmpWaU1qYzBaZz09In0.eyJhdWQiOiJodHRwOlwvXC9vcmcud3NvMi5hcGltZ3RcL2dhdGV3YXkiLCJzdWIiOiJhZG1pbkBjYXJib24uc3VwZXIiLCJhcHBsaWNhdGlvbiI6eyJvd25lciI6ImFkbWluIiwidGllciI6IlVubGltaXRlZCIsIm5hbWUiOiJzYW1wbGUtY3JkLWFwcGxpY2F0aW9uIiwiaWQiOjMsInV1aWQiOm51bGx9LCJzY29wZSI6ImFtX2FwcGxpY2F0aW9uX3Njb3BlIGRlZmF1bHQiLCJpc3MiOiJodHRwczpcL1wvd3NvMmFwaW06MzIwMDFcL29hdXRoMlwvdG9rZW4iLCJ0aWVySW5mbyI6e30sImtleXR5cGUiOiJQUk9EVUNUSU9OIiwic3Vic2NyaWJlZEFQSXMiOltdLCJjb25zdW1lcktleSI6IjNGSWlUM1R3MWZvTGFqUTVsZjVVdHVTTWpsUWEiLCJleHAiOjM3MTk3Mzk4MjYsImlhdCI6MTU3MjI1NjE3OSwianRpIjoiZDI3N2VhZmUtNTZlOS00MTU2LTk3NzUtNDQwNzA3YzFlZWFhIn0.W0N9wmCuW3dxz5nTHAhKQ-CyjysR-fZSEvoS26N9XQ9IOIlacB4R5x9NgXNLLE-EjzR5Si8ou83mbt0NuTwoOdOQVkGqrkdenO11qscpBGCZ-Br4Gnawsn3Yw4a7FHNrfzYnS7BZ_zWHPCLO_JqPNRizkWGIkCxvAg8foP7L1T4AGQofGLodBMtA9-ckuRHjx3T_sFOVGAHXcMVwpdqS_90DeAoT4jLQ3darDqSoE773mAyDIRz6CAvNzzsWQug-i5lH5xVty2kmZKPobSIziAYes-LPuR-sp61EIjwiKxnUlSsxtDCttKYHGZcvKF12y7VF4AqlTYmtwYSGLkXXXw
     ```
     Copy and paste the above token in the command line. Now you can invoke the API using the cURL command as below.
     
@@ -380,6 +375,7 @@ The following commands will help you to push the API to the API portal in Kubern
 - Import the API to the API portal. **[IMPORTANT]**
 
     You need to change the API life cycle status to **PUBLISHED** before importing the API. You can edit the api.yaml file located in online-store/Meta-information/
+    For testing purpose use *admin* as username and password when prompted.
     ```
     >> apictl import-api -f online-store/ -e k8s -k
     
