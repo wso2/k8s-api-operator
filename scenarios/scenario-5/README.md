@@ -5,7 +5,7 @@
 - After that, we will deploy Security custom resource(CR) according to OAuth2 security related configurations including the above created secret. 
 - Created OAuth2 Security CR will be referred in the swagger definition of the API.
 - Then the petstore service will be deployed in the Kubernetes cluster as a managed API with OAuth2 secured.
-- Then we will create the API and push it to API Manager deployment to obtain OAuth2 access token. Hence we would need API Manager deployment in the Kubernetes cluster to try out this scenario. 
+- Then we will create the API and push it to API Manager deployment to obtain OAuth2 access token. **Hence we would need API Portal in the Kubernetes cluster to try out this scenario**. 
 
  ***Important:***
 > Follow the main README and deploy the apim-operator and configuration files. Make sure to set the analyticsEnabled to "true" and deploy analytics secret with credentials to analytics server and certificate, if you want to check analytics.
@@ -69,7 +69,7 @@ In this swagger definition, the security schema of the "petstore" service has be
     - Publish the API in WSO2 API Manager deployment.
         - Add the APIM deployment as an environment to the apictl
             ```$xslt
-                apictl add-env -e k8s --registration https://wso2apim:9443/client-registration/v0.15/register --apim https://wso2apim:9443 --token https://wso2apim:8243/token --admin https://wso2apim:9443/api/am/admin/v0.15 --api_list https://wso2apim:9443/api/am/publisher/v0.15/apis --app_list https://wso2apim:9443/api/am/store/v0.15/applications
+                apictl add-env -e k8s --registration https://wso2apim:32001/client-registration/v0.15/register --apim https://wso2apim:32001 --token https://wso2apim:32003/token --admin https://wso2apim:32001/api/am/admin/v0.15 --api_list https://wso2apim:32001/api/am/publisher/v0.15/apis --app_list https://wso2apim:32001/api/am/store/v0.15/applications
             ```
         - Create the API project using swagger file
             ```$xslt
@@ -94,24 +94,30 @@ In this swagger definition, the security schema of the "petstore" service has be
                 Username:admin
                 Password:
                 Logged into k8s environment
-                WARNING: credentials are stored as a plain text in /home/user/.wso2apimcli/keys.json
-                
+                WARNING: credentials are stored as a plain text in /Users/ramesha/.wso2apictl/keys.json
+
                 The specified API was not found.
-                Creating: SwaggerPetstoreNew oauth-v1.0
+                Creating: Petstore-Oauth v1
                 Successfully imported API
 
             ```
         - Obtain OAuth2 access token
             ```$xslt
                 apictl set --token-type oauth
-                
-                apictl get-keys -n SwaggerPetstoreNew -v oauth-v1.0 -r admin -k -e k8s
             ```
             - Output: 
             ```$xslt
-                API name:  SwaggerPetstoreNew & version:  oauth-v1.0 exists
-                API  SwaggerPetstoreNew : oauth-v1.0 subscribed successfully.
-                Access Token:  15d11e99-2004-3194-93ac-394efd9510e9
+                Token type set to:  oauth
+            ```
+                
+            ```    
+                apictl get-keys -n Petstore-Oauth -v v1 -r admin -k -e k8s
+            ```
+            - Output: 
+            ```
+                API name:  Petstore-Oauth & version:  v1 exists
+                API  Petstore-Oauth : v1 subscribed successfully.
+                Access Token:  a68e6467-023e-3670-909c-11752449997e
             ```
 - Invoking the API <br />
 
