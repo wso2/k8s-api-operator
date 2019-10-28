@@ -35,7 +35,7 @@ Minimum CPU and Memory for the K8s cluster: **2 vCPU, 8GB of Memory**
     cd api-k8s-crds-1.0.0
     ```
  
-    **_Note:_** You need to run all commands from within the ***api-k8s-crds-1.0.0*** directory.
+**_Note:_** You need to run all commands from within the ***api-k8s-crds-1.0.0*** directory.
 
 <br />
 
@@ -111,6 +111,8 @@ Minimum CPU and Memory for the K8s cluster: **2 vCPU, 8GB of Memory**
          username: ENTER YOUR BASE64 ENCODED USERNAME
          password: ENTER YOUR BASE64 ENCODED PASSWORD
         ```
+        Once you done with the above configurations, execute the following command to deploy controller configurations.
+
         ```
         >> kubectl apply -f apim-operator/controller-configs/
         ```

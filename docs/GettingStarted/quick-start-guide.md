@@ -35,7 +35,7 @@ Minimum CPU and Memory for the K8s cluster: **2 vCPU, 8GB of Memory**
     cd api-k8s-crds-1.0.0
     ```
  
-    **_Note:_** You need to run all commands from within the ***api-k8s-crds-1.0.0*** directory.
+**_Note:_** You need to run all commands from within the ***api-k8s-crds-1.0.0*** directory.
 
 <br />
 
@@ -46,6 +46,8 @@ Minimum CPU and Memory for the K8s cluster: **2 vCPU, 8GB of Memory**
 
     ```
     >> kubectl apply -f scenarios/scenario-1/products_dep.yaml
+    service/products created
+    deployment.apps/products-deployment created
     ```
 
     The following command will give you the details of the microservice.
@@ -87,10 +89,22 @@ Minimum CPU and Memory for the K8s cluster: **2 vCPU, 8GB of Memory**
 
 * Deploy the Controller artifacts
 
-    This will deploy the artifacts related to the API Operator
-    ```
-    >> kubectl apply -f apim-operator/controller-artifacts/
-    ```
+This will deploy the artifacts related to the API Operator
+```
+kubectl apply -f apim-operator/controller-artifacts/
+
+Output:
+
+namespace/wso2-system created
+deployment.apps/apim-operator created
+clusterrole.rbac.authorization.k8s.io/apim-operator created
+clusterrolebinding.rbac.authorization.k8s.io/apim-operator created
+serviceaccount/apim-operator created
+customresourcedefinition.apiextensions.k8s.io/apis.wso2.com created
+customresourcedefinition.apiextensions.k8s.io/ratelimitings.wso2.com created
+customresourcedefinition.apiextensions.k8s.io/securities.wso2.com created
+customresourcedefinition.apiextensions.k8s.io/targetendpoints.wso2.com created
+```
 
 * Deploy the controller level configurations **[IMPORTANT]**
 
@@ -111,8 +125,19 @@ Minimum CPU and Memory for the K8s cluster: **2 vCPU, 8GB of Memory**
          username: ENTER YOUR BASE64 ENCODED USERNAME
          password: ENTER YOUR BASE64 ENCODED PASSWORD
         ```
+        Once you done with the above configurations, execute the following command to deploy controller configurations.
+
         ```
         >> kubectl apply -f apim-operator/controller-configs/
+        
+        configmap/controller-config created
+        configmap/apim-config created
+        security.wso2.com/default-security-jwt created
+        secret/wso2am300-secret created
+        configmap/docker-secret-mustache created
+        secret/docker-secret created
+        configmap/dockerfile-template created
+        configmap/mgw-conf-mustache created
         ```
 <br />
         
@@ -133,12 +158,11 @@ service "wso2apim" created
 ```
 You can check the details of the running server by checking the status of running pods or services in Kubernetes. 
 
-```
+```$xslt
 >> kubectl get services -n wso2
+NAME       TYPE       CLUSTER-IP   EXTERNAL-IP   PORT(S)                                                           AGE
+wso2apim   NodePort   10.97.8.86   <none>        30838:32004/TCP,30801:32003/TCP,32321:32002/TCP,32001:32001/TCP   16s
 
-Output:
-NAME                                    TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)                                                                            AGE
-wso2apim                                NodePort    10.0.28.252   <none>        30838:32004/TCP,30801:32003/TCP,32321:32002/TCP,32001:32001/TCP                    13h
 ```
 
 **_Note:_** To access the API portal, add host mapping entries to the /etc/hosts file. As we have exposed the API portal service in Node Port type, you can use the IP address of any Kubernetes node.
@@ -150,6 +174,11 @@ wso2apim                                NodePort    10.0.28.252   <none>        
 
 - For Docker for Mac use "localhost" for the K8s node IP
 - For Minikube, use minikube ip command to get the K8s node IP
+- For GKE
+    ```$xslt
+    (kubectl get nodes -o jsonpath='{ $.items[*].status.addresses[?(@.type=="ExternalIP")].address }')
+    ```
+    - This will give the external IPs of the nodes available in the cluster. Pick any IP to include in /etc/hosts file.
   
    **API Portal** - https://wso2apim:32001/devportal 
 
@@ -288,7 +317,7 @@ You now have a microgateway deployed in Kubernetes that runs your API for the mi
     You can find a sample token below.
     
     ```
-   TOKEN=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6IlpqUm1ZVE13TlRKak9XVTVNbUl6TWpnek5ESTNZMkl5TW1JeVkyRXpNamRoWmpWaU1qYzBaZz09In0=.eyJhdWQiOiJodHRwOlwvXC9vcmcud3NvMi5hcGltZ3RcL2dhdGV3YXkiLCJzdWIiOiJhZG1pbkBjYXJib24uc3VwZXIiLCJhcHBsaWNhdGlvbiI6eyJvd25lciI6ImFkbWluIiwidGllciI6IlVubGltaXRlZCIsIm5hbWUiOiJzYW1wbGUtY3JkLWFwcGxpY2F0aW9uIiwiaWQiOjV9LCJzY29wZSI6ImFtX2FwcGxpY2F0aW9uX3Njb3BlIGRlZmF1bHQiLCJpc3MiOiJodHRwczpcL1wvd3NvMmFwaW06OTQ0M1wvb2F1dGgyXC90b2tlbiIsInRpZXJJbmZvIjp7fSwia2V5dHlwZSI6IlBST0RVQ1RJT04iLCJzdWJzY3JpYmVkQVBJcyI6W10sImNvbnN1bWVyS2V5IjoiOFpWV1lQYkk2Rm1lY0ZoeXdVaDVVSXJaNEFvYSIsImV4cCI6MzcxODI5OTU1MiwiaWF0IjoxNTcwODE1OTA1LCJqdGkiOiJkMGI2NTgwNC05NDk3LTQ5ZjktOTcxNC01OTJmODFiNzJhYjMifQ==.HYCPxCbNcALcd0svu47EqFoxnnBAkVJSnCPnW6jJ1lZQTzSAiuiPcGzTnyP1JHodQknhYsSrvdZDIzWzU_mRH2i3-lMVdm0t43r-0Ti0EdBSX2756ilo266MVeWhxbz9p3hPm5ndDCoo_bfB4KbjigjmhXv_PJyUMuWtMo669sHQNs5FkiOT2X0gzFP1iJUFf-H9y762TEIYpylKedVDzQP8x4LCRZsO54e1iA-DZ5h5MKQhJsbKZZ_MMXGmtdo8refPyTCc7HIuevUXIWAaSNRFYj_HZTSRYhFEUtDWn_tJiySn2umRuP3XqxPmQal0SxD7JiV8DQxxyylsGw9k6g==
+   TOKEN=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6IlpqUm1ZVE13TlRKak9XVTVNbUl6TWpnek5ESTNZMkl5TW1JeVkyRXpNamRoWmpWaU1qYzBaZz09In0.eyJhdWQiOiJodHRwOlwvXC9vcmcud3NvMi5hcGltZ3RcL2dhdGV3YXkiLCJzdWIiOiJhZG1pbkBjYXJib24uc3VwZXIiLCJhcHBsaWNhdGlvbiI6eyJvd25lciI6ImFkbWluIiwidGllciI6IlVubGltaXRlZCIsIm5hbWUiOiJzYW1wbGUtY3JkLWFwcGxpY2F0aW9uIiwiaWQiOjMsInV1aWQiOm51bGx9LCJzY29wZSI6ImFtX2FwcGxpY2F0aW9uX3Njb3BlIGRlZmF1bHQiLCJpc3MiOiJodHRwczpcL1wvd3NvMmFwaW06MzIwMDFcL29hdXRoMlwvdG9rZW4iLCJ0aWVySW5mbyI6e30sImtleXR5cGUiOiJQUk9EVUNUSU9OIiwic3Vic2NyaWJlZEFQSXMiOltdLCJjb25zdW1lcktleSI6IjNGSWlUM1R3MWZvTGFqUTVsZjVVdHVTTWpsUWEiLCJleHAiOjM3MTk3Mzk4MjYsImlhdCI6MTU3MjI1NjE3OSwianRpIjoiZDI3N2VhZmUtNTZlOS00MTU2LTk3NzUtNDQwNzA3YzFlZWFhIn0.W0N9wmCuW3dxz5nTHAhKQ-CyjysR-fZSEvoS26N9XQ9IOIlacB4R5x9NgXNLLE-EjzR5Si8ou83mbt0NuTwoOdOQVkGqrkdenO11qscpBGCZ-Br4Gnawsn3Yw4a7FHNrfzYnS7BZ_zWHPCLO_JqPNRizkWGIkCxvAg8foP7L1T4AGQofGLodBMtA9-ckuRHjx3T_sFOVGAHXcMVwpdqS_90DeAoT4jLQ3darDqSoE773mAyDIRz6CAvNzzsWQug-i5lH5xVty2kmZKPobSIziAYes-LPuR-sp61EIjwiKxnUlSsxtDCttKYHGZcvKF12y7VF4AqlTYmtwYSGLkXXXw
     ```
     Copy and paste the above token in the command line. Now you can invoke the API using the cURL command as below.
     
@@ -346,6 +375,11 @@ The following commands will help you to push the API to the API portal in Kubern
 - Import the API to the API portal. **[IMPORTANT]**
 
     You need to change the API life cycle status to **PUBLISHED** before importing the API. You can edit the api.yaml file located in online-store/Meta-information/
+    
+    </br>
+    For testing purpose use *admin* as username and password when prompted.
+    </br>
+    
     ```
     >> apictl import-api -f online-store/ -e k8s -k
     
@@ -364,7 +398,7 @@ By default the API is secured with JWT. Hence a valid JWT token is needed to inv
 Output: 
 Token type set to: JWT
 ```
-
+Generate access token for the API with the following command.
 ```
 >> apictl get-keys -n online-store -v v1.0.0 -e k8s --provider admin -k
 
