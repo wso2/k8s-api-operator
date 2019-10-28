@@ -15,7 +15,7 @@ To try out the scenario navigate to wso2am-k8s-crds-1.0.0 directory.
 **Note:** If you have already deployed the API portal without enabling analytics, please remove it by executing the below command.
 
 ```
->> kubectl delete k8s-artifacts/api-portal/
+>> kubectl delete -f k8s-artifacts/api-portal/
 ---
 namespace "wso2" deleted
 configmap "apim-conf" deleted
