@@ -69,7 +69,7 @@ In this swagger definition, the security schema of the "petstore" service has be
     - Publish the API in WSO2 API Manager deployment.
         - Add the APIM deployment as an environment to the apictl
             ```$xslt
-                apictl add-env -e k8s4 --registration https://wso2apim:32001/client-registration/v0.15/register --apim https://wso2apim:32001 --token https://wso2apim:32003/token --admin https://wso2apim:32001/api/am/admin/v0.15 --api_list https://wso2apim:32001/api/am/publisher/v0.15/apis --app_list https://wso2apim:32001/api/am/store/v0.15/applications
+                apictl add-env -e k8s --registration https://wso2apim:32001/client-registration/v0.15/register --apim https://wso2apim:32001 --token https://wso2apim:32003/token --admin https://wso2apim:32001/api/am/admin/v0.15 --api_list https://wso2apim:32001/api/am/publisher/v0.15/apis --app_list https://wso2apim:32001/api/am/store/v0.15/applications
             ```
         - Create the API project using swagger file
             ```$xslt
@@ -90,10 +90,10 @@ In this swagger definition, the security schema of the "petstore" service has be
             ```
             - Output:
             ```$xslt
-                Login to k8s4
+                Login to k8s
                 Username:admin
                 Password:
-                Logged into k8s4 environment
+                Logged into k8s environment
                 WARNING: credentials are stored as a plain text in /Users/ramesha/.wso2apictl/keys.json
 
                 The specified API was not found.
