@@ -346,6 +346,7 @@ The following commands will help you to push the API to the API portal in Kubern
 - Import the API to the API portal. **[IMPORTANT]**
 
     You need to change the API life cycle status to **PUBLISHED** before importing the API. You can edit the api.yaml file located in online-store/Meta-information/
+    For testing purpose use *admin* as username and password when prompted.
     ```
     >> apictl import-api -f online-store/ -e k8s -k
     
@@ -369,51 +370,6 @@ Token type set to: JWT
 >> apictl get-keys -n online-store -v v1.0.0 -e k8s --provider admin -k
 
 Output:
-```
-Successfully added environment 'k8s'
-```
-
-Init the API project using API Controller
-
-```
-apictl init online-store --oas=./scenarios/scenario-1/products_swagger.yaml
-```
-```
-Initializing a new WSO2 API Manager project in /home/dinusha/wso2am-k8s-crds-1.0.0/scenarios/scenario-1/online-store
-Project initialized
-Open README file to learn more
-```
-
-Import the API to the API portal. **[IMPORTANT]**
-
-For testing purpose, use *admin* as the username and password of the API portal when prompted. 
-
-**You need to change the API life cycle status to ***PUBLISHED*** before importing the API. You can edit the api.yaml file located in online-store/Meta-information/**
-```
-apictl import-api -f online-store/ -e k8s -k
-
-```
-```
-Successfully imported API
-```
-
-###### Step 8: Generate an access token for the API
-
-By default the API is secured with JWT. 
-Hence a valid JWT token is needed to invoke the API.
-You can obtain a JWT token using the API Controller command as below.
-
-``` 
-   apictl set --token-type JWT
-```
-```
-  Token type set to: JWT
-```
-
-```
-apictl get-keys -n online-store -v v1.0.0 -e k8s --provider admin -k
-```
-```
 API name:  OnlineStore & version:  v1.0.0 exists
 API  OnlineStore : v1.0.0 subscribed successfully.
 Access Token:  eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6IlpqUm1ZVE13TlRKak9XVTVNbUl6TWpnek5ESTNZMkl5TW1JeVkyRXpNamRoWmpWaU1qYzBaZz09In0.eyJhdWQiOiJodHRwOlwvXC9vcmcud3NvMi5hcGltZ3RcL2dhdGV3YXkiLCJzdWIiOiJhZG1pbkBjYXJib24uc3VwZXIiLCJhcHBsaWNhdGlvbiI6eyJvd25lciI6ImFkbWluIiwidGllciI6IlVubGltaXRlZCIsIm5hbWUiOiJkZWZhdWx0LWFwaWN0bC1hcHAiLCJpZCI6MiwidXVpZCI6bnVsbH0sInNjb3BlIjoiYW1fYXBwbGljYXRpb25fc2NvcGUgZGVmYXVsdCIsImlzcyI6Imh0dHBzOlwvXC93c28yYXBpbTozMjAwMVwvb2F1dGgyXC90b2tlbiIsInRpZXJJbmZvIjp7IlVubGltaXRlZCI6eyJzdG9wT25RdW90YVJlYWNoIjp0cnVlLCJzcGlrZUFycmVzdExpbWl0IjowLCJzcGlrZUFycmVzdFVuaXQiOm51bGx9fSwia2V5dHlwZSI6IlBST0RVQ1RJT04iLCJzdWJzY3JpYmVkQVBJcyI6W3sic3Vic2NyaWJlclRlbmFudERvbWFpbiI6ImNhcmJvbi5zdXBlciIsIm5hbWUiOiJPbmxpbmUtU3RvcmUiLCJjb250ZXh0IjoiXC9zdG9yZVwvdjEuMC4wXC92MS4wLjAiLCJwdWJsaXNoZXIiOiJhZG1pbiIsInZlcnNpb24iOiJ2MS4wLjAiLCJzdWJzY3JpcHRpb25UaWVyIjoiVW5saW1pdGVkIn1dLCJjb25zdW1lcktleSI6Im1Hd0lmUWZuZHdZTVZxT25JVW9Rczhqc1B0Y2EiLCJleHAiOjE1NzIyNjAyMjQsImlhdCI6MTU3MjI1NjYyNCwianRpIjoiNTNlYWJkYWEtY2IyZC00MTQ0LWEzYWUtZDNjNTIxMjgwYjM4In0.QU9rt4WBLcIOXzDkdiBpo_SAN_W4jpMlymPSgdhe4mf4FmdepA6hIXa_NXdzWyOST2XcHskWleL-9bhv4GecvDaCcMUwfSKOo_8DuphYhtv0BukpGpyfzK2SZDtABxxtdRUmNDcyXJiC5NU4laXlDGzUruI_LISjkeeCaK4gA93YQC3Nd0xe14uIO940UNsSiUuI5cZkeKlB9k5vKIzjN1-M-SJCvtDkusvdPTgkSHZL29ICsMQl9rTSRm6dL4xq9rcH7osD-o_amgurkm1RvNagzN0buku6y4tuEyisZvRUlNkQ2KRzX6E6VwNKHAFQ7CG95-k-QYvXDGDXYGNisw  
