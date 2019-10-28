@@ -6,4 +6,7 @@
 
 #### How to change HPA(Horizontal Pod Autoscaler) related configurations
 
-#### How to configure default security
+#### How to configure the default security
+
+#### How to change the configurations related to the microgateway
+

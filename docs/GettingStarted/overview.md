@@ -1,4 +1,4 @@
-### Overview API Operator
+## Overview API Operator
 
 API Operator provides a fully automated experience for cloud-native API management. A user can expose an already deployed microservice as an API using the  API Operator by providing the API definition of the particular microservice.
 
@@ -10,7 +10,7 @@ Once the API is deployed, it will be deployed as a managed API.
 
 For this, API Operator introduced four new custom resource definitions(CRDs) related to the API management domain.
 
-##### Custom resource: Security
+### Custom resource: Security
 `Security` holds security-related information. You can see the API definition and data structure for Security` here. Security supports different security types: basic-auth, OAuth2, JWT, etc. The following YAML shows a sample payload for Security with JWT.
 
 ```
@@ -27,7 +27,7 @@ spec:
   certificate: wso2am-secret
 ```
 
-##### Custom resource: RateLimiting
+### Custom resource: RateLimiting
 `RateLimiting` holds rate-limiting related information. You can see the API definition and data structure for `RateLimiting` here. The following YAML shows sample payload.
 
 ```
@@ -45,7 +45,7 @@ spec:
     limit: 4
 ```
 
-##### Custom resource: TargetEndpoint
+### Custom resource: TargetEndpoint
 TargetEndpoint holds endpoint related information. You can see the API definition and data for TargetEndpoint here. 
 
 API gateway can be deployed in three patterns: shared, private-jet, and sidecar. 
@@ -75,7 +75,7 @@ spec:
   mode : sidecar
 ```
 
-##### Custom resource: API
+### Custom resource: API
 `API` holds API-related information. You can see the API definition and data structure for API  here. API takes the Swagger definition as a configMap along with replica count and micro-gateway deployment mode. The following YAML shows sample payload for API.
 
 ```
@@ -93,27 +93,27 @@ spec:
 
 Each of the above CRDs has corresponding custom controllers. Custom controllers are the “brains” behind the custom resources. 
 
-##### Custom Controller: Security
+### Custom Controller: Security
 
 ![Alt text](../images/security-crd.png?raw=true "Title")
 
 The security controller will store user-defined security policies corresponding to the Security API and creates a Security secret. It supports JWT, Oauth2, and basic security types out-of-the-box. When running the Kaniko job by the API controller, it will add to the keystore and then the keystore will be added to the microgateway Docker image. Refer to a Security controller implementation here.
 
 
-##### Custom Controller: RateLimiting
+### Custom Controller: RateLimiting
 
 ![Alt text](../images/ratelimiting-crd.png?raw=true "Title")
 
 
 The RateLimiting controller will store the user-defined policy corresponding to the RateLimit API in addition to default policies provided out-of -the box. It also creates policy template configMaps. When a new rate limiting policy is added, we update that policy template config map. When running the Kaniko job by the API controller, it takes this policy template configmap and uses it to build the Docker image. Please refer to a RateLimiting controller implementation here. 
 
-##### Custom Controller: TargetEndpoint
+### Custom Controller: TargetEndpoint
 
 ![Alt text](../images/targetendpoint-crd.png?raw=true "Title")
 
 The TargetEndpoint controller will store target endpoint metadata corresponding to the TargetEndpoint API. If the mode of the target endpoint is  privateJet, it will create Deployment, Service and PODs for relevant backend services. If the mode is sidecar, it will store the definition and when we add a micro gateway with this endpoint, it will create PODs with the gateway attached as a sidecar to the service. You can see a TargetEndpoint controller implementation here.
 
-##### Custom Controller: API
+### Custom Controller: API
 
 ![Alt text](../images/api-crd.png?raw=true "Title")
 
