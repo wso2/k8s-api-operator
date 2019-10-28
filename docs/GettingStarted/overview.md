@@ -10,7 +10,7 @@ Once the API is deployed, it will be deployed as a managed API.
 
 For this, API Operator introduced four new custom resource definitions(CRDs) related to the API management domain.
 
-Custom resource: Security:
+##### Custom resource: Security
 `Security` holds security-related information. You can see the API definition and data structure for Security` here. Security supports different security types: basic-auth, OAuth2, JWT, etc. The following YAML shows a sample payload for Security with JWT.
 
 ```
@@ -27,7 +27,7 @@ spec:
   certificate: wso2am-secret
 ```
 
-Custom resource: RateLimiting:
+##### Custom resource: RateLimiting
 `RateLimiting` holds rate-limiting related information. You can see the API definition and data structure for `RateLimiting` here. The following YAML shows sample payload.
 
 ```
@@ -45,8 +45,18 @@ spec:
     limit: 4
 ```
 
-Custom resource: TargetEndpoint:
-TargetEndpoint holds endpoint related information. You can see the API definition and data for TargetEndpoint here. WSO2 API Microgateway can be deployed in three patterns: shared, private-jet, and sidecar (Refer to this API Microgateway article for more information). If your backend is already running and you need to expose it via a microgateway, you can define the target URL in the Swagger itself. If your backend service is not running, but you plan to run it in the same Kubernetes cluster, you can use `TargetEndpoint` with its relevant Docker image. Then APIM Operator will spin-up the corresponding Kubernetes deployment for the defined backend service itself with the microgateway. In shared and private-jet mode, the backend can be running in separate PODs, but in sidecar mode, the gateway will run in the same POD adjacent to the backend service. The following YAML shows a sample payload for Target endpoint.
+##### Custom resource: TargetEndpoint
+TargetEndpoint holds endpoint related information. You can see the API definition and data for TargetEndpoint here. 
+
+API gateway can be deployed in three patterns: shared, private-jet, and sidecar. 
+
+If your backend is already running and you need to expose it via a microgateway, you can define the target URL in the Swagger itself. 
+
+If your backend service is not running, but you plan to run it in the same Kubernetes cluster, you can use `TargetEndpoint` with its relevant Docker image. 
+
+Then APIM Operator will spin-up the corresponding Kubernetes deployment for the defined backend service itself with the microgateway. 
+
+In shared and private-jet mode, the backend can be running in separate PODs, but in sidecar mode, the gateway will run in the same POD adjacent to the backend service. The following YAML shows a sample payload for Target endpoint.
 
 ```
 apiVersion: wso2.com/v1alpha1
@@ -65,7 +75,7 @@ spec:
   mode : sidecar
 ```
 
-Custom resource: API:
+##### Custom resource: API
 `API` holds API-related information. You can see the API definition and data structure for API  here. API takes the Swagger definition as a configMap along with replica count and micro-gateway deployment mode. The following YAML shows sample payload for API.
 
 ```
