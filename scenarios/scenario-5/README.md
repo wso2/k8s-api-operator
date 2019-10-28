@@ -12,7 +12,7 @@
 
  ##### Deploying the artifacts
 
-- Navigate to wso2am-k8s-crds-1.0.0/scenarios/scenario-5 directory.
+- Navigate to api-k8s-crds-1.0.0/scenarios/scenario-5 directory.
 
 - Deploy Kubernetes secret from the credentials of the key manager server.
     ```$xslt
@@ -82,8 +82,14 @@ In this swagger definition, the security schema of the "petstore" service has be
                 Open README file to learn more
             ```
         - First line of the output shows the location of the API project.
-        - Open that project and change API's status to "PUBLISHED" in Meta-Information/api.yaml
+        - Open that project and navigate to Meta-Information/api.yaml.
+            - Change API's status to ***"PUBLISHED"*** in Meta-Information/api.yaml file.
         (By default it is in created status)     
+            - Assign the value of "x-wso2-basePath" to "context" and "contextTemplate" in Meta-Information/api.yaml file.
+            ```$xslt
+            context: /petstoreoauth/v1
+            contextTemplate: /petstoreoauth/v1
+            ```
         - Import the API to API Manager deployment
             ```$xslt
                 apictl import-api -f petstore-oauth -e k8s -k --update
@@ -133,15 +139,14 @@ In this swagger definition, the security schema of the "petstore" service has be
         ```
         - You can see petstore service has been exposed as a managed API.
         - Get the external IP of the managed API's service
-     
-    
-    ```
+         
+        ```
         curl -X GET "https://<external IP of LB service>:9095/petstoreoauth/v1/pet/55" -H "accept: application/xml" -H "Authorization:Bearer <Access-Token>" -k
-    ```
+        ```
     - Once you execute the above command, it will call to the managed API (petstore-oauth), which then call its endpoint(https://petstore.swagger.io/v2). If the request is success, you would be able to see the response as below.
-    ```
+        ```
         <?xml version="1.0" encoding="UTF-8" standalone="yes"?><Pet><category><id>55</id><name>string</name></category><id>55</id><name>SRC_TIME_SIZE</name><photoUrls><photoUrl>string</photoUrl></photoUrls><status>available</status><tags><tag><id>55</id><name>string</name></tag></tags></Pet>
-    ```
+        ```
     
 
 - Delete the  API <br /> 

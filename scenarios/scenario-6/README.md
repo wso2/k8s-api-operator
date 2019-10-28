@@ -11,7 +11,7 @@
 
  ##### Deploying the artifacts
  
- - Navigate to wso2am-k8s-crds-1.0.0/scenarios/scenario-6 directory.
+ - Navigate to api-k8s-crds-1.0.0/scenarios/scenario-6 directory.
   
  - Deploy the sample rate-limiting CR using the following command.
     ```
