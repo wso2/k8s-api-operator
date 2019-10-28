@@ -121,11 +121,11 @@ Use the API Analytics dashboard url which configured in Step 1 to browse the ana
 
 You will be able to monitor the analytics as shown in below images.
 
-![Alt text](../images/Analytics-Dashboard.png?raw=true "Title")
+![Alt text](images/Analytics-Dashboard.png?raw=true "Title")
 
-![Alt text](../images/Developer-Analytics.png?raw=true "Title")
+![Alt text](images/Developer-Analytics.png?raw=true "Title")
 
-![Alt text](../images/Publisher-Analytics.png?raw=true "Title")
+![Alt text](images/Publisher-Analytics.png?raw=true "Title")
 
 
 #### Customize API Analytics 
