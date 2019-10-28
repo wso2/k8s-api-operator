@@ -375,7 +375,11 @@ The following commands will help you to push the API to the API portal in Kubern
 - Import the API to the API portal. **[IMPORTANT]**
 
     You need to change the API life cycle status to **PUBLISHED** before importing the API. You can edit the api.yaml file located in online-store/Meta-information/
+    
+    </br>
     For testing purpose use *admin* as username and password when prompted.
+    </br>
+    
     ```
     >> apictl import-api -f online-store/ -e k8s -k
     
