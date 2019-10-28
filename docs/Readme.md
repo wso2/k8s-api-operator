@@ -13,6 +13,7 @@ You can find the content you need to be working with the API operator in this do
     - [Apply Rate-limiting to API](HowToGuide/apply-rate-limiting-to-api.md)
     - [Working with endpoints](HowToGuide/work-with-endpoints.md)
     - [Enable Monitoring to the API](HowToGuide/enable-analytics-to-api.md)
+    - [Perform API Operations](HowToGuide/perform-api-operations.md)
     - [Kubectl Extensions](HowToGuide/using-kubectl-extensions.md)
 3. [Troubleshooting Guide](Troubleshooting)
 

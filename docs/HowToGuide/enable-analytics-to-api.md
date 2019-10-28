@@ -1,4 +1,16 @@
 ##### Incorporating analytics to the k8s operator
 
-- To enable analytics, modify the analytics-config configmap given in the ./deploy/apim-analytics-configs/apim-analytics-conf.yaml and set the field analyticsEnabled to "true". The other parameters also can be modified with required values.
-- Create a secret with the public certificate of the wso2am-analytics server and provide the name of the created secret along with the username and password to the wso2am-analytics server (all fields must be base 64 encoded). Use the template provided for analytics-secret in apim_analytics_secret_template.yaml
+By changing the following artifacts, you can point the API Operator to use the API Analytics which is deployed outside the Kuberentes cluster or anywhere which is accessible to the API Operator running Kubernetes cluster.
+
+- Create two secrets for the analytics server as follows.
+
+    1. Secret 1: Analytics certificate
+    2. Secret 2: Include admin credentials (base64 encoded username and password) and secret name of the secret 1.
+    
+    Samples can be found in apim-operator/apim-analytics-configs/apim_analytics_secret_template.yaml
+    
+- To enable analytics you can change the apim_analytics_conf.yaml analyticsEnabled to true. Give the name of the secret you created above in the analyticsSecret field value.
+
+    Samples can be found apim-operator/apim-analytics-configs/apim_analytics_conf.yaml
+
+Please refer the Scenario 11 which explained how to enable API analytics for the managed API
