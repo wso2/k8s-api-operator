@@ -35,64 +35,82 @@ Minimum CPU and Memory for the K8s cluster: **2 vCPU, 8GB of Memory**
     cd api-k8s-crds-1.0.0
     ```
  
-    **_Note:_** You need to run all commands from within the ***api-k8s-crds-1.0.0*** directory.
+**_Note:_** You need to run all commands from within the ***api-k8s-crds-1.0.0*** directory.
 
-<br />
-
-#### Step 1: Deploy a sample microservice in Kubernetes
+##### Step 1: Deploy a sample microservice in K8s
 
 
-- Let’s deploy a sample microservice in K8s which lists the details of products. This will deploy a pod and service for the sample service.
+Let’s deploy a sample microservice in K8s which lists the details of products. This will deploy a pod and service for the sample service.
 
-    ```
-    >> kubectl apply -f scenarios/scenario-1/products_dep.yaml
-    ```
 
-    The following command will give you the details of the microservice.
+```
+>> kubectl apply -f  ./scenarios/scenario-1/products_dep.yaml
+service/products created
+deployment.apps/products-deployment created
+```
 
-    ```
-    >> kubectl get services products
-  
-    Output:
-    NAME       TYPE           CLUSTER-IP    EXTERNAL-IP       PORT(S)        AGE
-    products   LoadBalancer   10.83.1.131   104.197.114.248   80:30475/TCP   27m
-    ```
+Following command will give you the details of the microservice.
 
-    **_Note:_**  By default API operator requires the LoadBalancer service type which is not supported in Minikube by default. Here is how you can enable it on Minikube.
+```
+kubectl get services products
+```
+ 
+ - Output:
+ ```
+      NAME       TYPE           CLUSTER-IP    EXTERNAL-IP       PORT(S)        AGE
+      products   LoadBalancer   10.83.1.131   104.197.114.248   80:30475/TCP   27m
+  ```
+ 
+> If you are using Minikube
+**_Note:_**  By default API operator requires the LoadBalancer service type which is not supported in Minikube by default. Here is how you can enable it on Minikube.
 
-    On Minikube, the LoadBalancer type makes the Service accessible through the minikube service command.
+On Minikube, the LoadBalancer type makes the Service accessible through the minikube service command.
+```
+minikube service <SERVICE_NAME> --url
+minikube service products --url
+```
 
-    ```
-    >> minikube service <SERVICE_NAME> --url
-    >> minikube service products --url
-    ```
 
-- To test the microservice, execute the following commands.
-    ```
-    >> curl -X GET http://<EXTERNAL-IP>:80/products
-         
+- To test if the microservice, execute the following commands.
+    ```      
+    curl -X GET http://<EXTERNAL-IP>:80/products
+     
     Output:
     {"products":[{"name":"Apples", "id":101, "price":"$1.49 / lb"}, {"name":"Macaroni & Cheese", "id":151, "price":"$7.69"}, {"name":"ABC Smart TV", "id":301, "price":"$399.99"}, {"name":"Motor Oil", "id":401, "price":"$22.88"}, {"name":"Floral Sleeveless Blouse", "id":501, "price":"$21.50"}]}
     ```
  
-    ```
-    >> curl -X GET http://<EXTERNAL-IP>:80/products/101
-         
+    ```  
+    curl -X GET http://<EXTERNAL-IP>:80/products/101
+     
     Output:
     {"name":"Apples", "id":101, "price":"$1.49 / lb", "reviewScore":"0", "stockAvailability":false}
+
     ```
+
 <br />
 
-#### Step 2: Install API Operator
+##### Step 2: Install API Operator
 
-* Deploy the Controller artifacts
+- Deploying Controller artifacts
 
-    This will deploy the artifacts related to the API Operator
-    ```
-    >> kubectl apply -f apim-operator/controller-artifacts/
-    ```
+This will deploy the artifacts related to the API Operator
+```
+kubectl apply -f apim-operator/controller-artifacts/
 
-* Deploy the controller level configurations **[IMPORTANT]**
+Output:
+
+namespace/wso2-system created
+deployment.apps/apim-operator created
+clusterrole.rbac.authorization.k8s.io/apim-operator created
+clusterrolebinding.rbac.authorization.k8s.io/apim-operator created
+serviceaccount/apim-operator created
+customresourcedefinition.apiextensions.k8s.io/apis.wso2.com created
+customresourcedefinition.apiextensions.k8s.io/ratelimitings.wso2.com created
+customresourcedefinition.apiextensions.k8s.io/securities.wso2.com created
+customresourcedefinition.apiextensions.k8s.io/targetendpoints.wso2.com created
+```
+
+- Deploying controller level configurations **[IMPORTANT]**
 
     When you deploy an API, this will create a docker image for the API and be pushed to Docker-Hub. For this, your Docker-Hub credentials are required.
     
@@ -111,21 +129,33 @@ Minimum CPU and Memory for the K8s cluster: **2 vCPU, 8GB of Memory**
          username: ENTER YOUR BASE64 ENCODED USERNAME
          password: ENTER YOUR BASE64 ENCODED PASSWORD
         ```
+        Once you done with the above configurations, execute the following command to deploy controller configurations.
+
         ```
         >> kubectl apply -f apim-operator/controller-configs/
+        
+        configmap/controller-config created
+        configmap/apim-config created
+        security.wso2.com/default-security-jwt created
+        secret/wso2am300-secret created
+        configmap/docker-secret-mustache created
+        secret/docker-secret created
+        configmap/dockerfile-template created
+        configmap/mgw-conf-mustache created
         ```
 <br />
         
-#### Step 3: Install the API portal and security token service
 
-Kubernetes installation artifacts for API portal and security token service are available in the k8s-artifacts directory.
+##### Step 3: Install API portal and security token service
 
-The following command will deploy API portal & token service under a namespace called “wso2”. 
+Kubernetes installation artifacts for API portal and security token service are available in ***k8s-artifacts*** directory.
 
-```
+Following command will deploy API portal & token service under a namespace called “wso2”. 
+
+Please see below command and its output.
+
+```$xslt
 >> kubectl apply -f k8s-artifacts/api-portal/
-
-Output:
 namespace "wso2" created
 configmap "apim-conf" created
 deployment.apps "wso2apim" created
@@ -133,12 +163,11 @@ service "wso2apim" created
 ```
 You can check the details of the running server by checking the status of running pods or services in Kubernetes. 
 
-```
+```$xslt
 >> kubectl get services -n wso2
+NAME       TYPE       CLUSTER-IP   EXTERNAL-IP   PORT(S)                                                           AGE
+wso2apim   NodePort   10.97.8.86   <none>        30838:32004/TCP,30801:32003/TCP,32321:32002/TCP,32001:32001/TCP   16s
 
-Output:
-NAME                                    TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)                                                                            AGE
-wso2apim                                NodePort    10.0.28.252   <none>        30838:32004/TCP,30801:32003/TCP,32321:32002/TCP,32001:32001/TCP                    13h
 ```
 
 **_Note:_** To access the API portal, add host mapping entries to the /etc/hosts file. As we have exposed the API portal service in Node Port type, you can use the IP address of any Kubernetes node.
@@ -150,6 +179,11 @@ wso2apim                                NodePort    10.0.28.252   <none>        
 
 - For Docker for Mac use "localhost" for the K8s node IP
 - For Minikube, use minikube ip command to get the K8s node IP
+- For GKE
+    ```$xslt
+    (kubectl get nodes -o jsonpath='{ $.items[*].status.addresses[?(@.type=="ExternalIP")].address }')
+    ```
+    - This will give the external IPs of the nodes available in the cluster. Pick any IP to include in /etc/hosts file.
   
    **API Portal** - https://wso2apim:32001/devportal 
 
@@ -364,7 +398,7 @@ By default the API is secured with JWT. Hence a valid JWT token is needed to inv
 Output: 
 Token type set to: JWT
 ```
-
+Generate access token for the API with the following command.
 ```
 >> apictl get-keys -n online-store -v v1.0.0 -e k8s --provider admin -k
 
