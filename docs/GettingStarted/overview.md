@@ -5,6 +5,9 @@ API Operator provides a fully automated experience for cloud-native API manageme
 
 Once the API is deployed, it will be deployed as a managed API. 
 
+![Alt text](../images/overview.png?raw=true "Title")
+
+
 For this, API Operator introduced four new custom resource definitions(CRDs) related to the API management domain.
 
 Custom resource: Security:
@@ -82,23 +85,27 @@ Each of the above CRDs has corresponding custom controllers. Custom controllers 
 
 ##### Custom Controller: Security
 
+![Alt text](../images/security-crd.png?raw=true "Title")
 
 The security controller will store user-defined security policies corresponding to the Security API and creates a Security secret. It supports JWT, Oauth2, and basic security types out-of-the-box. When running the Kaniko job by the API controller, it will add to the keystore and then the keystore will be added to the microgateway Docker image. Refer to a Security controller implementation here.
 
 
 ##### Custom Controller: RateLimiting
 
+![Alt text](../images/ratelimiting-crd.png?raw=true "Title")
 
 
 The RateLimiting controller will store the user-defined policy corresponding to the RateLimit API in addition to default policies provided out-of -the box. It also creates policy template configMaps. When a new rate limiting policy is added, we update that policy template config map. When running the Kaniko job by the API controller, it takes this policy template configmap and uses it to build the Docker image. Please refer to a RateLimiting controller implementation here. 
 
 ##### Custom Controller: TargetEndpoint
 
+![Alt text](../images/targetendpoint-crd.png?raw=true "Title")
 
 The TargetEndpoint controller will store target endpoint metadata corresponding to the TargetEndpoint API. If the mode of the target endpoint is  privateJet, it will create Deployment, Service and PODs for relevant backend services. If the mode is sidecar, it will store the definition and when we add a micro gateway with this endpoint, it will create PODs with the gateway attached as a sidecar to the service. You can see a TargetEndpoint controller implementation here.
 
 ##### Custom Controller: API
 
+![Alt text](../images/api-crd.png?raw=true "Title")
 
 
 API controller is quite complex compared to other controllers. It has two main tasks.  

@@ -35,7 +35,7 @@ spec:
     spec:
       containers:
         - name: wso2apim-dashboard-analytics
-          image: pubudu/wso2am-analytics-dashboard:3.0.0
+          image: chirangaalwis/wso2am-analytics-dashboard:3.0.0
           resources:
             limits:
               memory: "2Gi"
