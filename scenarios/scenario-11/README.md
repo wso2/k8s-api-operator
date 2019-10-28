@@ -10,7 +10,7 @@ Few databases of WSO2 API Manager and Analytics need to be shared with each othe
 
 To try out the scenario navigate to wso2am-k8s-crds-1.0.0 directory.
 
-###### Step 1: Deploy and configure API Portal and Analytics Dashbaord
+#### Step 1: Deploy and configure API Portal and Analytics Dashbaord
 
 **Note:** If you have already deployed the API portal without enabling analytics, please remove it by executing the below command.
 
@@ -98,7 +98,7 @@ wso2apim-with-analytics-rdbms-service   ClusterIP   10.0.23.125   <none>        
     **API Analytics Dashbaord** - https://wso2apim-analytics:32201/analytics-dashboard
 
 
-###### Step 2: Enable API Analytics in the API Operator
+#### Step 2: Enable API Analytics in the API Operator
 
 - If you haven't deployed the API Operator please follow the quick start guide in root readme and follow step 1,2 and 4.
 - By deploying the analytics configmaps, you can enable analytics as follows.
@@ -113,7 +113,7 @@ secret/wso2analytics300-secret created
 ---
 ```
 
-###### Step 3: Deploy an API
+#### Step 3: Deploy an API
 
 Please follow the scenario 1 readme and deploy the API.
 

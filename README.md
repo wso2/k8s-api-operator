@@ -181,7 +181,7 @@ Set the API Controller’s mode to Kubernetes to be compatible with kubectl comm
 
 #### Step 5: Expose the sample microservice as a managed API
 
-Let’s now deploy an API for our microservice.
+Let’s deploy an API for our microservice.
 The Open API definition of the API can be found in the scenario/scenario-1/products-swagger.yaml.
 
 The endpoint of our microservice is referred in the API definition.
@@ -349,7 +349,7 @@ The following commands will help you to push the API to the API portal in Kubern
 
 - Import the API to the API portal. **[IMPORTANT]**
 
-    You need to change the API life cycle status to **PUBLISHED** before importing the API. You can edit the api.yaml file located in online-store/Meta-information/
+    You need to change the API life cycle status to **PUBLISHED** before importing the API. You can edit the api.yaml file located in online-store/Meta-information/ location.
     For testing purpose use *admin* as username and password when prompted.
     ```
     >> apictl import-api -f online-store/ -e k8s -k
