@@ -243,7 +243,7 @@ The endpoint of our microservice is referred in the API definition.
 
 You now have a microgateway deployed in Kubernetes that runs your API for the microservice.
 
-<br />	
+<br />
 
 #### Step 6: Invoke the API
 
