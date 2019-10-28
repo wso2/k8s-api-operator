@@ -342,9 +342,11 @@ Project initialized
 Open README file to learn more
 ```
 
-Import the API to the API portal. Use *admin* as the username and password of the API portal when prompted. **[IMPORTANT]**
+Import the API to the API portal. **[IMPORTANT]**
 
-(You need to change the API life cycle status to ***PUBLISHED*** before importing the API. You can edit the api.yaml file located in online-store/Meta-information/)
+For testing purpose, use *admin* as the username and password of the API portal when prompted. 
+
+**You need to change the API life cycle status to ***PUBLISHED*** before importing the API. You can edit the api.yaml file located in online-store/Meta-information/**
 ```
 apictl import-api -f online-store/ -e k8s -k
 
