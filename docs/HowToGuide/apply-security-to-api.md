@@ -24,7 +24,7 @@
    ```
    **Securing API with Oauth2 authentication**
    
-    i. Create a secret with the certificate of the wso2am server
+    i. Create a secret with the certificate of the API Portal
    
    `
    kubectl create secret generic <secret name> -n <namespace> --from-file=<path to cert>
@@ -106,4 +106,4 @@
      ```
 
 
-   sample security definitions are provided in ./deploy/sample-definitions/security_definitions.yaml
+   sample security definitions are provided in [here](../../apim-operator/deploy/sample-definitions/security_definitions.yaml)
