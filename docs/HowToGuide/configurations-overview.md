@@ -10,7 +10,7 @@
 
     1. Open <api-k8s-crds-home>/apim-operator/controller-configs/controller_conf.yaml
 
-        - Update the ***<username-docker-registry>*** with the Docker-Hub username.
+        - Update the ***\<username-docker-registry>*** with the Docker-Hub username.
         ```$xslt
         #docker registry name which the mgw image to be pushed.  eg->  dockerRegistry: username
         dockerRegistry: <username-docker-registry>
@@ -34,7 +34,7 @@
          username: ENTER YOUR BASE64 ENCODED USERNAME
          password: ENTER YOUR BASE64 ENCODED PASSWORD
         ```
-        - Example: IF the username and password are "admin".
+        - Example: If the username and password are "admin".
         ```$xslt
         data:
          username: YWRtaW4=
@@ -78,7 +78,7 @@
 
 - API Operator provides the HPA capability to the deployed API.
 - HPA will be populated from the default values.
-- These configurations reside in the <api-k8s-crds-home>/apim-operator/controller-configs/controller_conf.yaml
+- These configurations reside in the \<api-k8s-crds-home>/apim-operator/controller-configs/controller_conf.yaml
     - Find the default values below.
     ```$xslt
       #Maximum number of replicas for the Horizontal Pod Auto-scale. Default->  hpaMaxReplicas: "5"

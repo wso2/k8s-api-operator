@@ -446,19 +446,19 @@ Execute the following commands if you wish to clean up the Kubernetes cluster by
   
 #### Sample Scenarios
 
-1. [Sample 1: Expose a K8s service as an API](scenarios/scenario-1)
-1. [Sample 2: Deploy pet store service as a managed API in k8s cluster](scenarios/scenario-2)
-1. [Sample 3: Deploy pet store service as a managed API secured with Basic Auth](scenarios/scenario-3)
-1. [Sample 4: Deploy pet store service as a managed API secured with JWT](scenarios/scenario-4)
-1. [Sample 5: Deploy pet store service as a managed API secured with OAuth2](scenarios/scenario-5)
-1. [Sample 6: Apply rate-limiting to managed API in Kubernetes cluster](scenarios/scenario-6)
+1. [Sample 1: Expose a K8s service as an API](../../scenarios/scenario-1)
+1. [Sample 2: Deploy pet store service as a managed API in k8s cluster](../../scenarios/scenario-2)
+1. [Sample 3: Deploy pet store service as a managed API secured with Basic Auth](../../scenarios/scenario-3)
+1. [Sample 4: Deploy pet store service as a managed API secured with JWT](../../scenarios/scenario-4)
+1. [Sample 5: Deploy pet store service as a managed API secured with OAuth2](../../scenarios/scenario-5)
+1. [Sample 6: Apply rate-limiting to managed API in Kubernetes cluster](../../scenarios/scenario-6)
 1. [Sample 7: Deploy APIs in k8s in private jet mode](scenarios/scenario-7)
-1. [Sample 8: Deploy APIs in k8s in sidecar mode](scenarios/scenario-8)
-1. [Sample 9: Expose an API with multiple service endpoints](scenarios/scenario-9)
-1. [Sample 10: Apply interceptors to an API](scenarios/scenario-10)
-1. [Sample 11: Enabling Analytics for managed API](scenarios/scenario-11)
+1. [Sample 8: Deploy APIs in k8s in sidecar mode](../../scenarios/scenario-8)
+1. [Sample 9: Expose an API with multiple service endpoints](../../scenarios/scenario-9)
+1. [Sample 10: Apply interceptors to an API](../../scenarios/scenario-10)
+1. [Sample 11: Enabling Analytics for managed API](../../scenarios/scenario-11)
 
 
 #### Troubleshooting Guide
 
-You can refer [troubleshooting guide](docs/Troubleshooting/troubleshooting.md).
+You can refer [troubleshooting guide](../Troubleshooting/troubleshooting.md).
