@@ -97,21 +97,20 @@ Each of the above CRDs has corresponding custom controllers. Custom controllers 
 
 ![Alt text](../images/security-crd.png?raw=true "Title")
 
-The security controller will store user-defined security policies corresponding to the Security API and creates a Security secret. It supports JWT, Oauth2, and basic security types out-of-the-box. When running the Kaniko job by the API controller, it will add to the keystore and then the keystore will be added to the microgateway Docker image. Refer to a Security controller implementation here.
-
+The security controller will store user-defined security policies corresponding to the Security API and creates a Security secret. It supports JWT, Oauth2, and basic security types out-of-the-box. When running the Kaniko job by the API controller, it will add to the keystore and then the keystore will be added to the microgateway Docker image. 
 
 ### Custom Controller: RateLimiting
 
 ![Alt text](../images/ratelimiting-crd.png?raw=true "Title")
 
 
-The RateLimiting controller will store the user-defined policy corresponding to the RateLimit API in addition to default policies provided out-of -the box. It also creates policy template configMaps. When a new rate limiting policy is added, we update that policy template config map. When running the Kaniko job by the API controller, it takes this policy template configmap and uses it to build the Docker image. Please refer to a RateLimiting controller implementation here. 
+The RateLimiting controller will store the user-defined policy corresponding to the RateLimit API in addition to default policies provided out-of -the box. It also creates policy template configMaps. When a new rate limiting policy is added, we update that policy template config map. When running the Kaniko job by the API controller, it takes this policy template configmap and uses it to build the Docker image. 
 
 ### Custom Controller: TargetEndpoint
 
 ![Alt text](../images/targetendpoint-crd.png?raw=true "Title")
 
-The TargetEndpoint controller will store target endpoint metadata corresponding to the TargetEndpoint API. If the mode of the target endpoint is  privateJet, it will create Deployment, Service and PODs for relevant backend services. If the mode is sidecar, it will store the definition and when we add a micro gateway with this endpoint, it will create PODs with the gateway attached as a sidecar to the service. You can see a TargetEndpoint controller implementation here.
+The TargetEndpoint controller will store target endpoint metadata corresponding to the TargetEndpoint API. If the mode of the target endpoint is  privateJet, it will create Deployment, Service and PODs for relevant backend services. If the mode is sidecar, it will store the definition and when we add a micro gateway with this endpoint, it will create PODs with the gateway attached as a sidecar to the service. 
 
 ### Custom Controller: API
 
@@ -119,10 +118,10 @@ The TargetEndpoint controller will store target endpoint metadata corresponding 
 
 
 API controller is quite complex compared to other controllers. It has two main tasks.  
-Build an API microgateway container and push it to the Docker-Hub.
-Create Kubernetes artifacts and deploy them into Kubernetes clusters.
+- Build an API microgateway container and push it to the Docker-Hub.
+- Create Kubernetes artifacts and deploy them into Kubernetes clusters.
 
-When the API custom controller is triggered, it will receive a Swagger definition from the attached configMap and create a Kaniko job by attaching a multi-step Dockerfile along with the Swagger definition. This Dockerfile is used pre-build the Docker image that has the API microgateway toolkit. The microgateway toolkit will generate the API microgateway runtime with the corresponding swagger file passed. Finally Kaniko build create a new API microgateway docker image and push to the configured docker registry.
+When the API custom controller is triggered, it will receive a Swagger definition from the attached configMap and create a Kaniko job by attaching a multi-step Dockerfile along with the Swagger definition. This Dockerfile is using pre-build the Docker image that has the API microgateway toolkit. The microgateway toolkit will generate the API microgateway runtime with the corresponding swagger file passed. Finally Kaniko build create a new API microgateway docker image and push to the configured docker registry.
 
 After finishing the step one, API controller will start creating relevant Kubernetes artifacts corresponding to the API definition. Depending on defined API mode, it will create Kubernetes deployment for both API microgateway and backend services. 
 
