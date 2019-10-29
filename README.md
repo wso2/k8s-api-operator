@@ -60,6 +60,9 @@ Minimum CPU and Memory for the K8s cluster: **2 vCPU, 8GB of Memory**
     products   LoadBalancer   10.83.1.131   104.197.114.248   80:30475/TCP   27m
     ```
 
+<details><summary>If you are using Minikube</summary>
+<p>
+
     **_Note:_**  By default API operator requires the LoadBalancer service type which is not supported in Minikube by default. Here is how you can enable it on Minikube.
 
     On Minikube, the LoadBalancer type makes the Service accessible through the minikube service command.
@@ -68,6 +71,9 @@ Minimum CPU and Memory for the K8s cluster: **2 vCPU, 8GB of Memory**
     >> minikube service <SERVICE_NAME> --url
     >> minikube service products --url
     ```
+
+</p>
+</details>
 
 - To test the microservice, execute the following commands.
     ```
