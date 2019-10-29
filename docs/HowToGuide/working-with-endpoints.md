@@ -1,4 +1,4 @@
-##### Working with endpoints 
+#### Working with endpoints 
 
 - During the deployment of APIs created with the apim operator sometimes it will requires to deploy the endpoint services
   associated with those APIs. The target endpoint kind provides the flexibility to deploy the backend services by specifying the 
@@ -6,7 +6,7 @@
 
    **Deploy endpoints using the target endpoint kind**
    
-    i. Create a endpoint with target endpoint kind
+    #####i. Create a endpoint with target endpoint kind
     
     The template for the target endpoint kind can be specified as follow
     
@@ -49,7 +49,7 @@
      mode : privateJet
     ```
     
-    ii. Target endpoint parameters
+    #####ii. Target endpoint parameters
     
     Target endpoint template which specified above contains several parameters which used to define specific functions.
     Here are the usages of the important parameters in the definition
@@ -76,7 +76,7 @@
                                         // In sidecar mode, target endpoint controller only add the endpoint definition but no deployment will be created 
      ```
     
-    iii. How target endpoint works
+    #####iii. How target endpoint works
     
     Using apim operator provide greater flexibility to deploy APIs in Kurbenetes. Target endpoint can be deployed in two modes. Target endpoint
     default mode is set to privateJet which means target endpoint controller will create the deployment and service for the endpoint using the
