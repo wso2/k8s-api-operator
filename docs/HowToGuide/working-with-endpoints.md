@@ -51,14 +51,13 @@
     ##### ii. Deploy the target endpoint
     The target endpoint definition can be deployed using the command line tool as follow
     
+    ```
         apictl apply -f sample-endpoint-service.yaml
     ```
     - Output:
     ```
-        targetendpoint.wso2.com/inventory-sidecar created
+        targetendpoint.wso2.com/sample-endpoint-service created
     ```        
-    Output:
-        targetendpoint.wso2.com/sample-endpoint-service created 
     
     ##### iii. Target endpoint parameters
     
