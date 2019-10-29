@@ -80,6 +80,7 @@ Minimum CPU and Memory for the K8s cluster: **2 vCPU, 8GB of Memory**
 </details>
 
 <br>
+
 - To test the microservice, execute the following commands.
     ```
     >> curl -X GET http://<EXTERNAL-IP>:80/products
@@ -87,7 +88,7 @@ Minimum CPU and Memory for the K8s cluster: **2 vCPU, 8GB of Memory**
     Output:
     {"products":[{"name":"Apples", "id":101, "price":"$1.49 / lb"}, {"name":"Macaroni & Cheese", "id":151, "price":"$7.69"}, {"name":"ABC Smart TV", "id":301, "price":"$399.99"}, {"name":"Motor Oil", "id":401, "price":"$22.88"}, {"name":"Floral Sleeveless Blouse", "id":501, "price":"$21.50"}]}
     ```
- 
+   
     ```
     >> curl -X GET http://<EXTERNAL-IP>:80/products/101
          
@@ -100,22 +101,22 @@ Minimum CPU and Memory for the K8s cluster: **2 vCPU, 8GB of Memory**
 
 * Deploy the Controller artifacts
 
-This will deploy the artifacts related to the API Operator
-```
-kubectl apply -f apim-operator/controller-artifacts/
-
-Output:
-
-namespace/wso2-system created
-deployment.apps/apim-operator created
-clusterrole.rbac.authorization.k8s.io/apim-operator created
-clusterrolebinding.rbac.authorization.k8s.io/apim-operator created
-serviceaccount/apim-operator created
-customresourcedefinition.apiextensions.k8s.io/apis.wso2.com created
-customresourcedefinition.apiextensions.k8s.io/ratelimitings.wso2.com created
-customresourcedefinition.apiextensions.k8s.io/securities.wso2.com created
-customresourcedefinition.apiextensions.k8s.io/targetendpoints.wso2.com created
-```
+- This will deploy the artifacts related to the API Operator
+    ```
+    kubectl apply -f apim-operator/controller-artifacts/
+    
+    Output:
+    
+    namespace/wso2-system created
+    deployment.apps/apim-operator created
+    clusterrole.rbac.authorization.k8s.io/apim-operator created
+    clusterrolebinding.rbac.authorization.k8s.io/apim-operator created
+    serviceaccount/apim-operator created
+    customresourcedefinition.apiextensions.k8s.io/apis.wso2.com created
+    customresourcedefinition.apiextensions.k8s.io/ratelimitings.wso2.com created
+    customresourcedefinition.apiextensions.k8s.io/securities.wso2.com created
+    customresourcedefinition.apiextensions.k8s.io/targetendpoints.wso2.com created
+    ```
 
 * Deploy the controller level configurations **[IMPORTANT]**
 
