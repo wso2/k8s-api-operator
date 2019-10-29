@@ -1,6 +1,6 @@
 ### Working with endpoints 
 
-- During the deployment of APIs created with the apim operator sometimes it will requires to deploy the endpoint services
+- During the deployment of APIs created with the apim operator sometimes it requires to deploy the endpoint services
   associated with those APIs. The target endpoint kind provides the flexibility to deploy the backend services by specifying the 
   relevant docker images and parameters. 
 
@@ -95,9 +95,13 @@
     When mode is set to sidecar, target endpoint controller will only add the definition to kubernetes registry and will not create the deployment
     as operated in the privatejet mode. In the sidecar mode, user can specify the name of the endpoint service and mode in swagger definition as follow.
       
-    Eg : x-wso2-production-endpoints: simple-endpoint-service
-         x-wso2-mode: sidecar   
+    Eg :<br>
     
+    ```
+    x-wso2-production-endpoints: simple-endpoint-service 
+    
+    x-wso2-mode: sidecar   
+    ```    
     At the time of the API is deployed, apim-operator will identify the endpoint service and create the target endpoint deployment along with the
     service. The deployed API will act as a sidecar to the deployed endpoint.
   
