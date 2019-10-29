@@ -28,7 +28,7 @@ Minimum CPU and Memory for the K8s cluster: **2 vCPU, 8GB of Memory**
 
 - An account in DockerHub or private docker registry
 
-- Download [api-k8s-crds-1.0.0.zip](https://github.com/wso2/k8s-apim-operator/releases/download/1.0.0/api-k8s-crds-1.0.0.zip) and extract the zip
+- Download [api-k8s-crds-1.0.0.zip](https://github.com/wso2/k8s-apim-operator/releases/download/v1.0.0/api-k8s-crds-1.0.0.zip) and extract the zip
 
     1. This zip contains the artifacts that required to deploy in Kubernetes.
     2. Extract api-k8s-crds-1.0.0.zip
@@ -198,7 +198,7 @@ wso2apim   NodePort   10.97.8.86   <none>        30838:32004/TCP,30801:32003/TCP
 
 #### Step 4: Configure API Controller
 
-- Download API controller v3.0.0 for your operating system from - https://github.com/wso2/product-apim-tooling/releases/
+- Download API controller v3.0.0 for your operating system from the [website](https://wso2.com/api-management/tooling/)
 
 - Extract the API controller distribution and navigate inside the extracted folder using the command-line tool
 
