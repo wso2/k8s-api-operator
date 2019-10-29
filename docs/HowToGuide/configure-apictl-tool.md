@@ -17,4 +17,8 @@
     ```
     apictl set --mode k8s 
     ```
+- If you wish to switch back to default mode, use the following command
+    ```$xslt
+    apictl set --mode default
+    ```
 <br />
