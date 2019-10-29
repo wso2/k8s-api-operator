@@ -33,7 +33,7 @@ spec:
       containers:
         - name: apim-operator
           # Replace this with the built image name
-          image: dinushad/apimop:pre-release
+          image: wso2/k8s-api-operator:1.0.0
           command:
           - apim-operator
           imagePullPolicy: Always
