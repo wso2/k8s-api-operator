@@ -56,8 +56,9 @@ In this swagger definition, the backend service of the "products" service and th
     - Output:
     
     ```
-        NAME          TYPE           CLUSTER-IP    EXTERNAL-IP     PORT(S)                         AGE
-        products-pj   LoadBalancer   10.83.2.247   35.232.129.64   9095:31818/TCP,9090:32508/TCP   2m
+        NAME                  TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)                         AGE
+        products-pj           LoadBalancer   10.99.134.132   <pending>     9095:32290/TCP,9090:30057/TCP   1s
+        products-privatejet   ClusterIP      10.101.34.213   <none>        80/TCP                          45m
     ```
     - You can see both the backend(products) service and the managed API service(product-pj) is available.
     - Get the external IP of the managed API's service
