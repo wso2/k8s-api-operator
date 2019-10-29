@@ -48,6 +48,17 @@
        count: 3
      mode : privateJet
     ```
+    ##### ii. Deploy the target endpoint
+    The target endpoint definition can be deployed using the command line tool as follow
+    
+        apictl apply -f sample-endpoint-service.yaml
+    ```
+    - Output:
+    ```
+        targetendpoint.wso2.com/inventory-sidecar created
+    ```        
+    Output:
+        targetendpoint.wso2.com/sample-endpoint-service created 
     
     ##### ii. Target endpoint parameters
     
@@ -83,9 +94,10 @@
     docker image specified in the endpoint definition. 
     
     When mode is set to sidecar, target endpoint controller will only add the definition to kubernetes registry and will not create the deployment
-    as operated in the privatejet mode. In the sidecar mode, user can specify the name of the endpoint service in swagger definition as follow.
+    as operated in the privatejet mode. In the sidecar mode, user can specify the name of the endpoint service and mode in swagger definition as follow.
       
     Eg : x-wso2-production-endpoints: simple-endpoint-service
+         x-wso2-mode: sidecar   
     
     At the time of the API is deployed, apim-operator will identify the endpoint service and create the target endpoint deployment along with the
     service. The deployed API will act as a sidecar to the deployed endpoint.
