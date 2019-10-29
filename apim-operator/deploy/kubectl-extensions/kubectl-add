@@ -29,6 +29,7 @@ Examples:
   kubectl add api petstore --from-file=./Swagger.json --replicas=3
   kubectl add api petstore --from-file=./Swagger.json --namespace=wso2
   kubectl add api petstore --from-file=./Swagger.json --replicas=3 --namespace=wso2
+  # Add an API using an API project
   kubectl add api petstore --from-file=petstore
   kubectl add api petstore --from-file=petstore --override=true
 Available Commands:
