@@ -29,10 +29,11 @@ Examples:
   kubectl update api petstore --from-file=./Swagger.json --replicas=3
   kubectl update api petstore --from-file=./Swagger.json --namespace=wso2
   kubectl update api petstore --from-file=./Swagger.json --replicas=3 --namespace=wso2
+  kubectl update api petstore --from-file=petstore
 Available Commands:
   api                 Update an API.
 Options:
-  --filename='': File Location
+  --filename='': Swagger file or location of the API project
   --replicas='': Number of replicas
 Usage:
   kubectl update api petstore --from-file=FILENAME [options] "
@@ -46,6 +47,9 @@ then
     then
         print_error
     else
+
+        apiName=$2
+        configmapName="$apiName-swagger"
 
         for var in "$@"
         do
@@ -69,13 +73,73 @@ then
             fi
         done
 
-        apiName=$2
+        for var in "$@"
+        do
+            if [[ $var == *"--from-file"* ]]; then
+              fileArg=$var
+            fi
+        done
 
-        echo -e "\nDeleteting configmap if exists with name "$apiName $namespace
-        kubectl delete configmap $apiName $namespace
+        #fileArg=$3
+        counts=0
+        PASSED=""
+        interceptors=""
+        for i in $fileArg;
+        do
+            ((counts++))
+            if [[ $counts == 2 ]]; then
+                  PASSED=$i
+            fi
+        done
+
+        if [[ -d $PASSED ]]; then
+            target=$PASSED"/Interceptors"
+            PASSED=$PASSED"/Meta-information/swagger.yaml"
+
+            if find "$target" -mindepth 1 -print -quit 2>/dev/null | grep -q .; then
+                interceptors=$target
+                interceptorConfName=$apiName"-interceptors"
+
+                echo -e "\nDeleting interceptors configmap with name "$interceptorConfName $namespace
+                kubectl delete configmap $interceptorConfName $namespace
+
+                echo -e "\nCreating interceptors configmap with name "$interceptorConfName $namespace
+                kubectl create configmap $interceptorConfName --from-file=$target $namespace
+
+                echo -e "\nDeleteting configmap if exists with name "$configmapName $namespace
+                kubectl delete configmap $configmapName $namespace
+
+                echo -e "\nCreating configmap with name "$configmapName $namespace
+                kubectl create configmap $configmapName --from-file=$PASSED $namespace
+
+                echo -e "\nUpdating the API kind"
+
+cat << EOF > wso2_v1alpha1_api_cr.yaml
+apiVersion: wso2.com/v1alpha1
+kind: API
+metadata:
+ name: "${apiName}"
+spec:
+ definition:
+  configmapName: "${configmapName}"
+  type: swagger
+ replicas: ${replicas}
+ mode: privateJet
+ updateTimeStamp: "$(date +%s)"
+ interceptorConfName: "${interceptorConfName}"
+EOF
+            kubectl apply -f wso2_v1alpha1_api_cr.yaml $namespace
+            else
+                echo "Target '$target' is empty. Please use the swagger directly"
+            fi
+
+        elif [[ -f $PASSED ]]; then
+            echo "$PASSED is a file"
+            echo -e "\nDeleteting configmap if exists with name "$apiName $namespace
+        kubectl delete configmap $configmapName $namespace
 
         echo -e "\nCreating configmap with name "$apiName $namespace
-        kubectl create configmap $apiName $3 $namespace
+        kubectl create configmap $configmapName --from-file=$PASSED $namespace
 
         echo -e "\nUpdating the API kind"
 
@@ -86,7 +150,7 @@ metadata:
  name: "${apiName}"
 spec:
  definition:
-  configmapName: "${apiName}"
+  configmapName: "${configmapName}"
   type: swagger
  replicas: ${replicas}
  mode: privateJet
@@ -94,6 +158,11 @@ spec:
 EOF
 
         kubectl apply -f wso2_v1alpha1_api_cr.yaml $namespace
+        else
+            echo "$PASSED is not valid"
+            exit 1
+        fi
+
     fi
 else
     print_error
