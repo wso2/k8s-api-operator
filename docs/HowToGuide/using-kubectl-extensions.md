@@ -92,6 +92,8 @@ configmap/petapi-swagger created
 - Update APIs using kubectl extensions
 
 ```$xslt
+kubectl update api petapi --from-file=petstore-int
+
 Deleting interceptors configmap with name petapi-interceptors
 configmap "petapi-interceptors" deleted
 
