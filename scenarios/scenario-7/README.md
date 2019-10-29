@@ -60,7 +60,7 @@ In this swagger definition, the backend service of the "products" service and th
         products-pj           LoadBalancer   10.99.134.132   <pending>     9095:32290/TCP,9090:30057/TCP   1s
         products-privatejet   ClusterIP      10.101.34.213   <none>        80/TCP                          45m
     ```
-    - You can see both the backend(products) service and the managed API service(product-pj) is available.
+    - You can see both the backend(products-privatejet) service and the managed API service(product-pj) is available.
     - Get the external IP of the managed API's service
  
 - Invoking the API <br />
@@ -71,7 +71,7 @@ In this swagger definition, the backend service of the "products" service and th
     ```
         curl -X GET "https://<external IP of LB service>:9095/storepj/v1.0.0/products" -H "accept: application/json" -H "Authorization:Bearer $TOKEN" -k
     ```
-    - Once you execute the above command, it will call to the managed API (product-pj), which then call its endpoint("products" service) available in the cluster. If the request is success, you would be able to see the response as below.
+    - Once you execute the above command, it will call to the managed API (product-pj), which then call its endpoint("products-privatejet" service) available in the cluster. If the request is success, you would be able to see the response as below.
     ```
         {"products":[{"name":"Apples", "id":101, "price":"$1.49 / lb"}, {"name":"Macaroni & Cheese", "id":151, "price":"$7.69"}, {"name":"ABC Smart TV", "id":301, "price":"$399.99"}, {"name":"Motor Oil", "id":401, "price":"$22.88"}, {"name":"Floral Sleeveless Blouse", "id":501, "price":"$21.50"}]}
     ```
