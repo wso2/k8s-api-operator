@@ -4,7 +4,7 @@
   associated with those APIs. The target endpoint kind provides the flexibility to deploy the backend services by specifying the 
   relevant docker images and parameters. 
 
-   ####Deploy endpoints using the target endpoint kind
+   #### Deploy endpoints using the target endpoint kind
    
     ##### i. Create a endpoint with target endpoint kind
     
