@@ -1,4 +1,4 @@
-##### Applying security for APIs 
+### Applying security for APIs 
 
 - APIs created with kubernetes apim operator can be secured by defining security with security kind. It supports basic, JWT and Oauth2 security types.
 
