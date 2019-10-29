@@ -1,4 +1,4 @@
-##Configure APICTL tool for API Operator
+###Configure APICTL tool for API Operator
 
 - Download API controller v3.0.0 for your operating system from - https://github.com/wso2/product-apim-tooling/releases/
 

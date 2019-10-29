@@ -1,4 +1,4 @@
-## Kubernetes Extensions for API Operator
+### Kubernetes Extensions for API Operator
 
 To work with operator, either [apictl tool](./configure-apictl-tool.md) or Kubernetes extensions are required.
 

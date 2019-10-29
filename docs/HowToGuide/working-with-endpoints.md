@@ -106,5 +106,5 @@
     service. The deployed API will act as a sidecar to the deployed endpoint.
   
     
-   Sample security definitions are provided in ./deploy/sample-definitions/wso2_v1alpha1_targetendpoint_cr.yaml
-   Sample scenarios using the target endpoint provided in ./scenarios/scenario-8 and ./scenarios/scenario-9
+   - Sample security definitions are provided in api-k8s-crds-1.0.0/apim-operator/sample-definitions/wso2_v1alpha1_targetendpoint_cr.yaml
+   - Sample scenarios using the target endpoint provided in api-k8s-crds-1.0.0/scenarios/scenario-8 and api-k8s-crds-1.0.0/scenarios/scenario-9
