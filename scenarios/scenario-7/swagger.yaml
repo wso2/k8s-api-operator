@@ -22,7 +22,6 @@ info:
 servers:
   - url: /store
 x-wso2-basePath: /storepj/v1.0.0
-x-wso2-production-endpoints: products-privatejet
 x-wso2-mode: privateJet
 paths:
   /products:
@@ -30,9 +29,8 @@ paths:
       responses:
         "200":
           description: ""
-      x-wso2-production-endpoints:
-        urls:
-          - https://petstore.swagger.io/v2
+      x-wso2-production-endpoints: products-privatejet
+
   "/products/{productId}":
     get:
       parameters:
@@ -44,6 +42,4 @@ paths:
       responses:
         "200":
           description: ""
-      x-wso2-production-endpoints:
-        urls:
-          - https://petstore.swagger.io/v2
+      x-wso2-production-endpoints: products-privatejet
