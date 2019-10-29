@@ -62,15 +62,24 @@ Minimum CPU and Memory for the K8s cluster: **2 vCPU, 8GB of Memory**
     products   LoadBalancer   10.83.1.131   104.197.114.248   80:30475/TCP   27m
     ```
 
-    **_Note:_**  By default API operator requires the LoadBalancer service type which is not supported in Minikube by default. Here is how you can enable it on Minikube.
+<details><summary>If you are using Minikube click here</summary>
+<p>
 
-    On Minikube, the LoadBalancer type makes the Service accessible through the minikube service command.
+**_Note:_**  By default API operator requires the LoadBalancer service type which is not supported in Minikube by default. Here is how you can enable it on Minikube.
+
+- On Minikube, the LoadBalancer type makes the Service accessible through the minikube service command.
 
     ```
     >> minikube service <SERVICE_NAME> --url
     >> minikube service products --url
     ```
+    
+    The IP you receive from above output can be used as the "external-IP" in the following command.
 
+</p>
+</details>
+
+<br>
 - To test the microservice, execute the following commands.
     ```
     >> curl -X GET http://<EXTERNAL-IP>:80/products
@@ -208,7 +217,7 @@ Set the API Controller’s mode to Kubernetes to be compatible with kubectl comm
 
 #### Step 5: Expose the sample microservice as a managed API
 
-Let’s now deploy an API for our microservice.
+Let’s deploy an API for our microservice.
 The Open API definition of the API can be found in the scenario/scenario-1/products-swagger.yaml.
 
 The endpoint of our microservice is referred in the API definition.
@@ -291,19 +300,28 @@ You now have a microgateway deployed in Kubernetes that runs your API for the mi
     online-store       LoadBalancer   10.83.9.142    35.232.188.134   9095:31055/TCP,9090:32718/TCP   57s
     ```
 
-    **_Note:_**  By default API operator requires the LoadBalancer service type which is not supported in Minikube by default. Here is how you can enable it on Minikube.
+<details><summary>If you are using Minikube click here</summary>
+<p>
+
+**_Note:_**  By default API operator requires the LoadBalancer service type which is not supported in Minikube by default. Here is how you can enable it on Minikube.
+
+- On Minikube, the LoadBalancer type makes the Service accessible through the minikube service command.
+
+    ```
+    >> minikube service <SERVICE_NAME> --url
+    >> minikube service online-store
+    ```
     
-    On Minikube, the LoadBalancer type makes the Service accessible through the minikube service command. 
-       
-    ```
-    >> minikube service <SERVICE_NAME>
-    ```
+    The IP you receive from above output can be used as the "external-IP" in the following command.
+
+</p>
+</details>
 
 - Invoke the API as a regular microservice
 
     Let’s observe what happens if you try to invoke the API as a regular microservice.
     ```
-    >> curl -X GET "https://35.232.188.134:9095/store/v1.0.0/products" -k
+    >> curl -X GET "https://<EXTERNAL-IP>:9095/store/v1.0.0/products" -k
     ```
     
     You will get an error as below.
@@ -326,7 +344,7 @@ You now have a microgateway deployed in Kubernetes that runs your API for the mi
     ```
     Format: 
     
-    >> curl -X GET "<EXTERNAL-IP>:<MICROGATEWAY-PORT>/<API-context>/<API-resource>" -H "accept: application/json" -H "Authorization:Bearer $TOKEN" -k
+    >> curl -X GET "https://<EXTERNAL-IP>:9095/<API-context>/<API-resource>" -H "accept: application/json" -H "Authorization:Bearer $TOKEN" -k
     ```
 
     Example commands:
@@ -376,10 +394,8 @@ The following commands will help you to push the API to the API portal in Kubern
 
 - Import the API to the API portal. **[IMPORTANT]**
 
-    You need to change the API life cycle status to **PUBLISHED** before importing the API. You can edit the api.yaml file located in online-store/Meta-information/
-    
-    </br>
-    For testing purpose use *admin* as username and password when prompted.
+    You need to change the API life cycle status to **PUBLISHED** before importing the API. You can edit the api.yaml file located in online-store/Meta-information/ location.
+    For testing purpose use ***admin*** as username and password when prompted.
     </br>
     
     ```
