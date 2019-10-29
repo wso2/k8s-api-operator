@@ -60,7 +60,7 @@
     Output:
         targetendpoint.wso2.com/sample-endpoint-service created 
     
-    ##### ii. Target endpoint parameters
+    ##### iii. Target endpoint parameters
     
     Target endpoint template which specified above contains several parameters which used to define specific functions.
     Here are the usages of the important parameters in the definition
@@ -87,7 +87,7 @@
                                         // In sidecar mode, target endpoint controller only add the endpoint definition but no deployment will be created 
      ```
     
-    ##### iii. How target endpoint works
+    ##### iv. How target endpoint works
     
     Using apim operator provide greater flexibility to deploy APIs in Kurbenetes. Target endpoint can be deployed in two modes. Target endpoint
     default mode is set to privateJet which means target endpoint controller will create the deployment and service for the endpoint using the
