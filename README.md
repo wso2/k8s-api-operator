@@ -48,6 +48,8 @@ Minimum CPU and Memory for the K8s cluster: **2 vCPU, 8GB of Memory**
 
     ```
     >> kubectl apply -f scenarios/scenario-1/products_dep.yaml
+    service/products created
+    deployment.apps/products-deployment created
     ```
 
     The following command will give you the details of the microservice.
@@ -60,21 +62,24 @@ Minimum CPU and Memory for the K8s cluster: **2 vCPU, 8GB of Memory**
     products   LoadBalancer   10.83.1.131   104.197.114.248   80:30475/TCP   27m
     ```
 
-<details><summary>If you are using Minikube</summary>
+<details><summary>If you are using Minikube click here</summary>
 <p>
 
-    **_Note:_**  By default API operator requires the LoadBalancer service type which is not supported in Minikube by default. Here is how you can enable it on Minikube.
+**_Note:_**  By default API operator requires the LoadBalancer service type which is not supported in Minikube by default. Here is how you can enable it on Minikube.
 
-    On Minikube, the LoadBalancer type makes the Service accessible through the minikube service command.
+- On Minikube, the LoadBalancer type makes the Service accessible through the minikube service command.
 
     ```
     >> minikube service <SERVICE_NAME> --url
     >> minikube service products --url
     ```
+    
+    The IP you receive from above output can be used as the "external-IP" in the following command.
 
 </p>
 </details>
 
+<br>
 - To test the microservice, execute the following commands.
     ```
     >> curl -X GET http://<EXTERNAL-IP>:80/products
@@ -95,10 +100,22 @@ Minimum CPU and Memory for the K8s cluster: **2 vCPU, 8GB of Memory**
 
 * Deploy the Controller artifacts
 
-    This will deploy the artifacts related to the API Operator
-    ```
-    >> kubectl apply -f apim-operator/controller-artifacts/
-    ```
+This will deploy the artifacts related to the API Operator
+```
+kubectl apply -f apim-operator/controller-artifacts/
+
+Output:
+
+namespace/wso2-system created
+deployment.apps/apim-operator created
+clusterrole.rbac.authorization.k8s.io/apim-operator created
+clusterrolebinding.rbac.authorization.k8s.io/apim-operator created
+serviceaccount/apim-operator created
+customresourcedefinition.apiextensions.k8s.io/apis.wso2.com created
+customresourcedefinition.apiextensions.k8s.io/ratelimitings.wso2.com created
+customresourcedefinition.apiextensions.k8s.io/securities.wso2.com created
+customresourcedefinition.apiextensions.k8s.io/targetendpoints.wso2.com created
+```
 
 * Deploy the controller level configurations **[IMPORTANT]**
 
@@ -123,6 +140,15 @@ Minimum CPU and Memory for the K8s cluster: **2 vCPU, 8GB of Memory**
 
         ```
         >> kubectl apply -f apim-operator/controller-configs/
+        
+        configmap/controller-config created
+        configmap/apim-config created
+        security.wso2.com/default-security-jwt created
+        secret/wso2am300-secret created
+        configmap/docker-secret-mustache created
+        secret/docker-secret created
+        configmap/dockerfile-template created
+        configmap/mgw-conf-mustache created
         ```
 <br />
         
@@ -145,10 +171,9 @@ You can check the details of the running server by checking the status of runnin
 
 ```
 >> kubectl get services -n wso2
+NAME       TYPE       CLUSTER-IP   EXTERNAL-IP   PORT(S)                                                           AGE
+wso2apim   NodePort   10.97.8.86   <none>        30838:32004/TCP,30801:32003/TCP,32321:32002/TCP,32001:32001/TCP   16s
 
-Output:
-NAME                                    TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)                                                                            AGE
-wso2apim                                NodePort    10.0.28.252   <none>        30838:32004/TCP,30801:32003/TCP,32321:32002/TCP,32001:32001/TCP                    13h
 ```
 
 **_Note:_** To access the API portal, add host mapping entries to the /etc/hosts file. As we have exposed the API portal service in Node Port type, you can use the IP address of any Kubernetes node.
@@ -160,6 +185,11 @@ wso2apim                                NodePort    10.0.28.252   <none>        
 
 - For Docker for Mac use "localhost" for the K8s node IP
 - For Minikube, use minikube ip command to get the K8s node IP
+- For GKE
+    ```$xslt
+    (kubectl get nodes -o jsonpath='{ $.items[*].status.addresses[?(@.type=="ExternalIP")].address }')
+    ```
+    - This will give the external IPs of the nodes available in the cluster. Pick any IP to include in /etc/hosts file.
   
    **API Portal** - https://wso2apim:32001/devportal 
 
@@ -270,19 +300,28 @@ You now have a microgateway deployed in Kubernetes that runs your API for the mi
     online-store       LoadBalancer   10.83.9.142    35.232.188.134   9095:31055/TCP,9090:32718/TCP   57s
     ```
 
-    **_Note:_**  By default API operator requires the LoadBalancer service type which is not supported in Minikube by default. Here is how you can enable it on Minikube.
+<details><summary>If you are using Minikube click here</summary>
+<p>
+
+**_Note:_**  By default API operator requires the LoadBalancer service type which is not supported in Minikube by default. Here is how you can enable it on Minikube.
+
+- On Minikube, the LoadBalancer type makes the Service accessible through the minikube service command.
+
+    ```
+    >> minikube service <SERVICE_NAME> --url
+    >> minikube service online-store
+    ```
     
-    On Minikube, the LoadBalancer type makes the Service accessible through the minikube service command. 
-       
-    ```
-    >> minikube service <SERVICE_NAME>
-    ```
+    The IP you receive from above output can be used as the "external-IP" in the following command.
+
+</p>
+</details>
 
 - Invoke the API as a regular microservice
 
     Let’s observe what happens if you try to invoke the API as a regular microservice.
     ```
-    >> curl -X GET "https://35.232.188.134:9095/store/v1.0.0/products" -k
+    >> curl -X GET "https://<EXTERNAL-IP>:9095/store/v1.0.0/products" -k
     ```
     
     You will get an error as below.
@@ -305,7 +344,7 @@ You now have a microgateway deployed in Kubernetes that runs your API for the mi
     ```
     Format: 
     
-    >> curl -X GET "<EXTERNAL-IP>:<MICROGATEWAY-PORT>/<API-context>/<API-resource>" -H "accept: application/json" -H "Authorization:Bearer $TOKEN" -k
+    >> curl -X GET "https://<EXTERNAL-IP>:9095/<API-context>/<API-resource>" -H "accept: application/json" -H "Authorization:Bearer $TOKEN" -k
     ```
 
     Example commands:
@@ -356,7 +395,9 @@ The following commands will help you to push the API to the API portal in Kubern
 - Import the API to the API portal. **[IMPORTANT]**
 
     You need to change the API life cycle status to **PUBLISHED** before importing the API. You can edit the api.yaml file located in online-store/Meta-information/ location.
-    For testing purpose use *admin* as username and password when prompted.
+    For testing purpose use ***admin*** as username and password when prompted.
+    </br>
+    
     ```
     >> apictl import-api -f online-store/ -e k8s -k
     
@@ -375,7 +416,7 @@ By default the API is secured with JWT. Hence a valid JWT token is needed to inv
 Output: 
 Token type set to: JWT
 ```
-
+Generate access token for the API with the following command.
 ```
 >> apictl get-keys -n online-store -v v1.0.0 -e k8s --provider admin -k
 
@@ -421,11 +462,3 @@ Execute the following commands if you wish to clean up the Kubernetes cluster by
 #### Troubleshooting Guide
 
 You can refer [troubleshooting guide](docs/Troubleshooting/troubleshooting.md).
-
-
-
-
-
-
-
-
