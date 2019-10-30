@@ -85,7 +85,7 @@ In this swagger definition, the security schema of the "petstore" service has be
         - Open that project and navigate to Meta-Information/api.yaml.
             - Change API's status to ***"PUBLISHED"*** in Meta-Information/api.yaml file.
         (By default it is in created status)     
-            - Assign the value of "x-wso2-basePath" to "context" and "contextTemplate" in Meta-Information/api.yaml file.
+            - Assign the value of "x-wso2-basePath" in Meta-Information/swagger.yaml, to "context" and "contextTemplate" in Meta-Information/api.yaml file.
             ```$xslt
             context: /petstoreoauth/v1
             contextTemplate: /petstoreoauth/v1
@@ -115,6 +115,7 @@ In this swagger definition, the security schema of the "petstore" service has be
             ```$xslt
                 Token type set to:  oauth
             ```
+            - Subscribe the API to to default application and get an access token using the following command.
                 
             ```    
                 apictl get-keys -n Petstore-Oauth -v v1 -r admin -k -e k8s
