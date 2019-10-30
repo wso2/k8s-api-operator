@@ -115,15 +115,20 @@ secret/wso2analytics300-secret created
 
 #### Step 3: Deploy an API
 
-Please follow the scenario 1 readme and deploy the API.
+- Please follow the scenario 1 readme and deploy the API.
 
-Use the API Analytics dashboard url which configured in Step 1 to browse the analytics information for the API.
+- Use the API Analytics dashboard url which configured in Step 1 to browse the analytics information for the API.
 
-You will be able to monitor the analytics as shown in below images.
+- You will be able to monitor the analytics as shown in below images.
 
+##### [Analytics Dashboard](https://wso2apim-analytics:32201/analytics-dashboard)
 ![Alt text](images/Analytics-Dashboard.png?raw=true "Title")
 
+##### Analytics for Developer Portal
+
 ![Alt text](images/Developer-Analytics.png?raw=true "Title")
+
+##### Analytics for Publisher
 
 ![Alt text](images/Publisher-Analytics.png?raw=true "Title")
 
