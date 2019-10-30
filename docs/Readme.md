@@ -15,7 +15,7 @@ You can find the content you need to be working with the API operator in this do
     - [Enable Monitoring to the API](HowToGuide/enable-analytics-to-api.md)
     - [Perform API Operations](HowToGuide/perform-api-operations.md)
     - [Kubectl Extensions](HowToGuide/using-kubectl-extensions.md)
-3. [Troubleshooting Guide](Troubleshooting)
+3. [Troubleshooting Guide](Troubleshooting/troubleshooting.md)
 
 > If you were not able to find the content you were looking for, please let us know by creating a GitHub issue in our [GitHub space](https://github.com/wso2/k8s-apim-operator/issues).
   

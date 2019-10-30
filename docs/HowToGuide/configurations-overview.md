@@ -8,7 +8,7 @@
 
 - You have to configure these credentials in 2 files.
 
-    1. Open <api-k8s-crds-home>/apim-operator/controller-configs/controller_conf.yaml
+    1. Open \<api-k8s-crds-home>/apim-operator/controller-configs/controller_conf.yaml
 
         - Update the ***\<username-docker-registry>*** with the Docker-Hub username.
         ```$xslt
@@ -25,7 +25,7 @@
         kubectl apply -f apim-operator/controller-configs/controller_conf.yaml
         ```
     
-    2. Open <api-k8s-crds-home>apim-operator/controller-configs/docker_secret_template.yaml
+    2. Open \<api-k8s-crds-home>apim-operator/controller-configs/docker_secret_template.yaml
 
         - Enter the base 64 encoded username and password of the Docker-Hub account in the following section.
     
@@ -55,7 +55,7 @@
 
 - Depending on you environment, you might want to change these values.
 
-- Open <api-k8s-crds-home>/apim-operator/controller-configs/controller_conf.yaml
+- Open \<api-k8s-crds-home>/apim-operator/controller-configs/controller_conf.yaml
 
 - Following are the default values present in the configuration file.
 
