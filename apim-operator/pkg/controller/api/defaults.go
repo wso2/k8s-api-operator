@@ -18,6 +18,10 @@ package api
 
 var (
 
+	//Microgateway ports
+	httpPort  string = "9090"
+	httpsPort string = "9095"
+
 	//listenerConfig
 	keystorePath       string = "${ballerina.home}/bre/security/ballerinaKeystore.p12"
 	keystorePassword   string = "ballerina"
@@ -25,12 +29,12 @@ var (
 	truststorePassword string = "ballerina"
 
 	//keymanager
-	keymanagerServerurl string = "https://localhost:9443"
+	keymanagerServerurl string = "https://wso2apim.wso2:32001"
 	keymanagerUsername  string = "admin"
 	keymanagerPassword  string = "admin"
 
 	//jwtTokenConfig
-	issuer           string = "https://localhost:9443/oauth2/token"
+	issuer           string = "https://wso2apim.wso2:32001/oauth2/token"
 	audience         string = "http://org.wso2.apimgt/gateway"
 	certificateAlias string = "wso2apim"
 
@@ -42,13 +46,18 @@ var (
 	rotatingPeriod            string = "600000"
 	uploadFiles               string = "true"
 	verifyHostname            string = "true"
-	hostname                  string = "localhost"
-	port                      string = "9444"
+	hostname                  string = "wso2apim.wso2"
+	port                      string = "32001"
 
 	//throttlingConfig
 	enabledGlobalTMEventPublishing string = "false"
+	jmsConnectionProvider          string = "wso2apim.wso2:28230"
+	throttleEndpoint               string = "wso2apim.wso2:32001"
 
 	//basic authentication
 	basicUsername string = "generalUser1"
 	basicPassword string = "5BAA61E4C9B93F3F0682250B6CF8331B7EE68FD8"
+
+	//log level
+	logLevel string = "INFO"
 )

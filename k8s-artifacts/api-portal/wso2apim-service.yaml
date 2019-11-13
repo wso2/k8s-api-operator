@@ -44,3 +44,8 @@ spec:
       port: 32001
       targetPort: 32001
       nodePort: 32001
+    - name: jms-provider
+      #for 5672 with port offset 22558
+      port: 28230
+      targetPort: 28230
+      nodePort: 32005

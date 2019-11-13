@@ -678,6 +678,12 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	apimConfig, apimEr := getConfigmap(r, apimConfName, wso2NameSpaceConst)
 	if apimEr == nil {
 		verifyHostname = apimConfig.Data[verifyHostnameConst]
+		enabledGlobalTMEventPublishing = apimConfig.Data[enabledGlobalTMEventPublishingConst]
+		jmsConnectionProvider = apimConfig.Data[jmsConnectionProviderConst]
+		throttleEndpoint = apimConfig.Data[throttleEndpointConst]
+		logLevel = apimConfig.Data[logLevelConst]
+		httpPort = apimConfig.Data[httpPortConst]
+		httpsPort = apimConfig.Data[httpsPortConst]
 	} else {
 		verifyHostname = verifyHostNameVal
 	}
@@ -702,6 +708,11 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		audienceConst:                       audience,
 		certificateAliasConst:               certificateAlias,
 		enabledGlobalTMEventPublishingConst: enabledGlobalTMEventPublishing,
+		jmsConnectionProviderConst:          jmsConnectionProvider,
+		throttleEndpointConst:               throttleEndpoint,
+		logLevelConst:                       logLevel,
+		httpPortConst:                       httpPort,
+		httpsPortConst:                      httpsPort,
 		basicUsernameConst:                  basicUsername,
 		basicPasswordConst:                  basicPassword,
 		analyticsEnabledConst:               analyticsEnabled,
