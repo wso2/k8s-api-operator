@@ -127,4 +127,7 @@ const (
 	resourceLimitCPU                   = "resourceLimitCPU"
 	resourceLimitMemory                = "resourceLimitMemory"
 	generatekubernbetesartifactsformgw = "generatekubernbetesartifactsformgw"
+
+	httpPortValConst  = 9090
+	httpsPortValConst = 9095
 )
