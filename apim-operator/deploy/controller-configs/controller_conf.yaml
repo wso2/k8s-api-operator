@@ -66,7 +66,7 @@ data:
   #Ports from which the managed API service is getting exposed
   httpPort: "9090"
   httpsPort: "9095"
-  #Enable distributed ratelimiting. Default value:false for 
+  #Enable distributed ratelimiting. Default value:false 
   enabledGlobalTMEventPublishing: "false"
   #Message broker connection URL (related to distributed ratelimiting)
   #Format: hostname_of_API_Portal:JMS_port
