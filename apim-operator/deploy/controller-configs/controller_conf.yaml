@@ -61,3 +61,17 @@ metadata:
 data:
   #By default hostname verification is disabled. In a production scenario, this has to be enabled.
   verifyHostname: "false"
+  #Log level of the managed API (microgateway). Available levels: INFO, DEBUG, TRACE
+  logLevel: "DEBUG"
+  #Ports from which the managed API service is getting exposed
+  httpPort: "9090"
+  httpsPort: "9095"
+  #Enable distributed ratelimiting
+  enabledGlobalTMEventPublishing: "true"
+  #Message broker connection URL (related to distributed ratelimiting)
+  #Format: hostname_of_API_Portal:JMS_port
+  jmsConnectionProvider: "wso2apim.wso2:28230"
+  #The central traffic management solution URL (related to distributed ratelimiting)
+  #Format: hostname_of_API_Portal:Default_port
+  throttleEndpoint: "wso2apim.wso2:32001"
+

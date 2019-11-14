@@ -40,8 +40,8 @@ data:
 
     [listenerConfig]
     host="0.0.0.0"
-    httpPort=9090
-    httpsPort=9095
+    httpPort={{httpPort}}
+    httpsPort={{httpsPort}}
     keyStore.path="{{keystorePath}}"
     keyStore.password="{{keystorePassword}}"
     trustStore.path="{{truststorePath}}"
@@ -105,10 +105,10 @@ data:
     [throttlingConfig]
     enabledGlobalTMEventPublishing = {{enabledGlobalTMEventPublishing}}
     jmsConnectioninitialContextFactory = "bmbInitialContextFactory"
-    jmsConnectionProviderUrl= "amqp://admin:admin@carbon/carbon?brokerlist='tcp://localhost:5672'"
+    jmsConnectionProviderUrl= "amqp://admin:admin@carbon/carbon?brokerlist='tcp://{{jmsConnectionProvider}}'"
     jmsConnectionUsername = ""
     jmsConnectionPassword = ""
-    throttleEndpointUrl = "https://localhost:9443/endpoints"
+    throttleEndpointUrl = "https://{{throttleEndpoint}}/endpoints"
     throttleEndpointbase64Header = "admin:admin"
 
     [tokenRevocationConfig]
@@ -128,3 +128,6 @@ data:
 
     [httpClients]
       verifyHostname={{verifyHostname}}
+    
+    [b7a.log]
+      level="{{logLevel}}"
