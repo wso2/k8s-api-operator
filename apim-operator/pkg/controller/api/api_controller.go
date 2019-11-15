@@ -683,6 +683,9 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		enabledGlobalTMEventPublishing = apimConfig.Data[enabledGlobalTMEventPublishingConst]
 		jmsConnectionProvider = apimConfig.Data[jmsConnectionProviderConst]
 		throttleEndpoint = apimConfig.Data[throttleEndpointConst]
+		enableRealtimeMessageRetrieval = apimConfig.Data[enableRealtimeMessageRetrievalConst]
+		enableRequestValidation = apimConfig.Data[enableRequestValidationConst]
+		enableResponseValidation = apimConfig.Data[enableResponseValidationConst]
 		logLevel = apimConfig.Data[logLevelConst]
 		httpPort = apimConfig.Data[httpPortConst]
 		httpsPort = apimConfig.Data[httpsPortConst]
@@ -722,6 +725,9 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		enabledGlobalTMEventPublishingConst: enabledGlobalTMEventPublishing,
 		jmsConnectionProviderConst:          jmsConnectionProvider,
 		throttleEndpointConst:               throttleEndpoint,
+		enableRealtimeMessageRetrievalConst: enableRealtimeMessageRetrieval,
+		enableRequestValidationConst:        enableRequestValidation,
+		enableResponseValidationConst:       enableResponseValidation,
 		logLevelConst:                       logLevel,
 		httpPortConst:                       httpPort,
 		httpsPortConst:                      httpsPort,
@@ -855,7 +861,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			return reconcile.Result{Requeue: true}, nil
 		}
 
-	} else if imageExist &&  !instance.Spec.Override {
+	} else if imageExist && !instance.Spec.Override {
 		log.Info("Image already exist, hence skipping the kaniko job")
 		errDeleteJob := deleteCompletedJobs(instance.Namespace)
 		if errDeleteJob != nil {
@@ -1804,7 +1810,7 @@ func createMgwService(cr *wso2v1alpha1.API, nameSpace string) *corev1.Service {
 
 //Creating a LB balancer service to expose mgw
 func createMgwLBService(cr *wso2v1alpha1.API, nameSpace string, owner []metav1.OwnerReference, httpPortVal int32,
-	 httpsPortVal int32) *corev1.Service {
+	httpsPortVal int32) *corev1.Service {
 
 	labels := map[string]string{
 		"app": cr.Name,
