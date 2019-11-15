@@ -76,7 +76,7 @@ data:
   jmsConnectionProvider: "wso2apim.wso2:28230"
   #Token revocation
   #Enable real time notifier for token revocation
-  enableRealtimeMessageRetrieval: "true"
+  enableRealtimeMessageRetrieval: "false"
   #Request and response validation
   enableRequestValidation: "false"
   enableResponseValidation: "false"
