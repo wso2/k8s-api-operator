@@ -4,7 +4,7 @@
 - First we will create Kubernetes opaque secret with username and password of the user.
 - Then we wil deploy "Security" custom resource(CR) for the basic auth by referring the secret created above in the kubernetes cluster.
 - Created "Security" CR will be referred in the swagger definition.
-- We deploy an API using that swagger file in the Kubernetes custer.
+- We deploy an API using that swagger file in the Kubernetes cluster.
 
 ***Important:***
 > Follow the main README and deploy the apim-operator and configuration files. Make sure to set the analyticsEnabled to "true" and deploy analytics secret with credentials to analytics server and certificate, if you want to check analytics
