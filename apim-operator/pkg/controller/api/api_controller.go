@@ -678,6 +678,12 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	apimConfig, apimEr := getConfigmap(r, apimConfName, wso2NameSpaceConst)
 	if apimEr == nil {
 		verifyHostname = apimConfig.Data[verifyHostnameConst]
+		enabledGlobalTMEventPublishing = apimConfig.Data[enabledGlobalTMEventPublishingConst]
+		jmsConnectionProvider = apimConfig.Data[jmsConnectionProviderConst]
+		throttleEndpoint = apimConfig.Data[throttleEndpointConst]
+		logLevel = apimConfig.Data[logLevelConst]
+		httpPort = apimConfig.Data[httpPortConst]
+		httpsPort = apimConfig.Data[httpsPortConst]
 	} else {
 		verifyHostname = verifyHostNameVal
 	}
@@ -702,6 +708,11 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		audienceConst:                       audience,
 		certificateAliasConst:               certificateAlias,
 		enabledGlobalTMEventPublishingConst: enabledGlobalTMEventPublishing,
+		jmsConnectionProviderConst:          jmsConnectionProvider,
+		throttleEndpointConst:               throttleEndpoint,
+		logLevelConst:                       logLevel,
+		httpPortConst:                       httpPort,
+		httpsPortConst:                      httpsPort,
 		basicUsernameConst:                  basicUsername,
 		basicPasswordConst:                  basicPassword,
 		analyticsEnabledConst:               analyticsEnabled,
@@ -1440,6 +1451,10 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 	}
 	controlConfigData := conf.Data
 	dockerRegistry := controlConfigData[dockerRegistryConst]
+	liveDelay, _ := strconv.ParseInt(controlConfigData[livenessProbeInitialDelaySeconds], 10, 32)
+	livePeriod, _ := strconv.ParseInt(controlConfigData[livenessProbePeriodSeconds], 10, 32)
+	readDelay, _ := strconv.ParseInt(controlConfigData[readinessProbeInitialDelaySeconds], 10, 32)
+	readPeriod, _ := strconv.ParseInt(controlConfigData[readinessProbePeriodSeconds], 10, 32)
 	reps := int32(cr.Spec.Replicas)
 	deployVolumeMount := []corev1.VolumeMount{}
 	deployVolume := []corev1.Volume{}
@@ -1478,8 +1493,8 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 					Port: intstr.FromInt(9090),
 				},
 			},
-			InitialDelaySeconds: 5,
-			PeriodSeconds:       5,
+			InitialDelaySeconds: int32(readDelay),
+			PeriodSeconds:       int32(readPeriod),
 			TimeoutSeconds:      1,
 		},
 		LivenessProbe: &corev1.Probe{
@@ -1488,8 +1503,8 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 					Port: intstr.FromInt(9090),
 				},
 			},
-			InitialDelaySeconds: 5,
-			PeriodSeconds:       15,
+			InitialDelaySeconds: int32(liveDelay),
+			PeriodSeconds:       int32(livePeriod),
 			TimeoutSeconds:      1,
 		},
 	}

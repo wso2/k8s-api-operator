@@ -1,10 +1,10 @@
-###Creating MGW-ToolKit Image <br>
-Note that the root directory is called <dockerfile-home>
+### Creating MGW-ToolKit Image <br>
+Note that the root directory is called \<dockerfile-home>
 
-1. Create a directory called "files" in <dockerfile-home>
+1. Create a directory called "files" in \<dockerfile-home>
 2. Place relevant Java distribution and MGW toolkit distribution in the "files" directory (unzipped)
 3. Change the mgw toolkit version in the Dockerfile.
-4. Place the Dockerfile in <dockerfile-home>
+4. Place the Dockerfile in \<dockerfile-home>
 5. Execute the following command to build the Dockerfile <br>
 >        docker build -t wso2am/<toolkit name and version for the image name>
 >        eg: docker build -t wso2am/wso2am-micro-gw-toolkit-3.0.1 .

@@ -16,13 +16,12 @@
 
 openapi: 3.0.0
 info:
-  title: OnlineStore
-  version: sc-v1
+  title: Inventory-Sc
+  version: v1
   description: This API contains operations related to online shopping store.
 servers:
   - url: /store
-x-wso2-basePath: /store/v1.0.0
-x-wso2-production-endpoints: inventory-sidecar
+x-wso2-basePath: /storesc/v1.0.0
 x-wso2-mode: sidecar
 paths:
   "/inventory/{productId}":
@@ -36,6 +35,7 @@ paths:
       responses:
         "200":
           description: ""
+      x-wso2-production-endpoints: inventory-sidecar
     post:
       parameters:
         - name: productId
@@ -55,3 +55,5 @@ paths:
       responses:
         "200":
           description: ""
+      x-wso2-production-endpoints: inventory-sidecar
+

@@ -23,7 +23,7 @@ info:
     Swagger at [http://swagger.io](http://swagger.io) or on [irc.freenode.net, #swagger](http://swagger.io/irc/).  For
     this sample, you can use the api key `special-key` to test the authorization filters.'
   version: v1
-  title: Swagger Petstore New
+  title: Petstore-API
   termsOfService: http://swagger.io/terms/
   contact:
     email: apiteam@swagger.io
@@ -44,9 +44,6 @@ tags:
       description: Find out more about our store
       url: http://swagger.io
 x-wso2-basePath: /petstore/v1
-x-wso2-production-endpoints:
-  urls:
-    - https://petstore.swagger.io/v2
 paths:
   "/pet/findByStatus":
     get:
@@ -86,6 +83,9 @@ paths:
                   "$ref": "#/components/schemas/Pet"
         '400':
           description: Invalid status value
+      x-wso2-production-endpoints:
+        urls:
+          - https://petstore.swagger.io/v2
   "/pet/{petId}":
     get:
       tags:
@@ -115,6 +115,9 @@ paths:
           description: Invalid ID supplied
         '404':
           description: Pet not found
+      x-wso2-production-endpoints:
+        urls:
+          - https://petstore.swagger.io/v2
 components:
   schemas:
     Category:

@@ -17,7 +17,7 @@
 apiVersion: wso2.com/v1alpha1
 kind: RateLimiting
 metadata:
-  name: five-req-policy
+  name: fivereqpolicy
 spec:
   type: advance             
   description: Allow 5 requests per minute   # optional

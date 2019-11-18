@@ -1,4 +1,4 @@
-##### Applying security for APIs 
+### Applying security for APIs 
 
 - APIs created with kubernetes apim operator can be secured by defining security with security kind. It supports basic, JWT and Oauth2 security types.
 
@@ -24,7 +24,7 @@
    ```
    **Securing API with Oauth2 authentication**
    
-    i. Create a secret with the certificate of the wso2am server
+    i. Create a secret with the certificate of the API Portal
    
    `
    kubectl create secret generic <secret name> -n <namespace> --from-file=<path to cert>
@@ -54,8 +54,7 @@
      endpoint: <endpoint>
      credentials: <name of the secret created in step 2>
    ```
-   **NOTE:** Modify the configurations related to wso2am using the template provided in ./deploy/apim-analytics-configs/apim-analytics-conf.yaml : apim-config configmap.
-
+   
    **Securing API with Basic authentication**
    
     i. Create a secret with user credentials 
@@ -107,4 +106,4 @@
      ```
 
 
-   sample security definitions are provided in ./deploy/sample-definitions/security_definitions.yaml
+   sample security definitions are provided in [here](../../apim-operator/deploy/sample-definitions/security_definitions.yaml)

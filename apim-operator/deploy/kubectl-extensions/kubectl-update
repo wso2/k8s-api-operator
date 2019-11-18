@@ -1,0 +1,170 @@
+#!/bin/bash
+#Copyright (c)  WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+#
+# WSO2 Inc. licenses this file to you under the Apache License,
+# Version 2.0 (the "License"); you may not use this file except
+# in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+# Please copy this file to /usr/local/bin and give executable permissions
+# Sample usage : kubectl update api <api-name> --from-file=<file> --replicas=<number of replicas> --namespace=<namespace>
+
+print_error()
+{
+echo "Error: must specify api, api name and Swagger file location.
+Update an API from a Swagger file.
+JSON and YAML formats are accepted.
+Examples:
+  # Add an API using a Swagger file.
+  kubectl update api petstore --from-file=./Swagger.json
+  kubectl update api petstore --from-file=./Swagger.json --replicas=3
+  kubectl update api petstore --from-file=./Swagger.json --namespace=wso2
+  kubectl update api petstore --from-file=./Swagger.json --replicas=3 --namespace=wso2
+  # Update an API using an API project
+  kubectl update api petstore --from-file=petstore
+Available Commands:
+  api                 Update an API.
+Options:
+  --filename='': Swagger file or location of the API project
+  --replicas='': Number of replicas
+Usage:
+  kubectl update api petstore --from-file=FILENAME [options] "
+}
+
+
+if [[ "$1" == "api" ]]
+then
+
+    if [[ "$2" == "" || "$3" == "" ]]
+    then
+        print_error
+    else
+
+        apiName=$2
+        configmapName="$apiName-swagger"
+
+        for var in "$@"
+        do
+            if [[ $var == *"--replicas"* ]]; then
+              replicasArg=$var
+            elif [[ "$var" == *"-n"* ]]; then
+              namespace=$var
+            fi
+        done
+
+        IFS='=';
+
+        count=0
+        replicas=1
+
+        for i in $replicasArg;
+        do
+            ((count++))
+            if [[ $count == 2 ]]; then
+                  replicas=$i
+            fi
+        done
+
+        for var in "$@"
+        do
+            if [[ $var == *"--from-file"* ]]; then
+              fileArg=$var
+            fi
+        done
+
+        #fileArg=$3
+        counts=0
+        PASSED=""
+        interceptors=""
+        for i in $fileArg;
+        do
+            ((counts++))
+            if [[ $counts == 2 ]]; then
+                  PASSED=$i
+            fi
+        done
+
+        if [[ -d $PASSED ]]; then
+            target=$PASSED"/Interceptors"
+            PASSED=$PASSED"/Meta-information/swagger.yaml"
+
+            if find "$target" -mindepth 1 -print -quit 2>/dev/null | grep -q .; then
+                interceptors=$target
+                interceptorConfName=$apiName"-interceptors"
+
+                echo -e "\nDeleting interceptors configmap with name "$interceptorConfName $namespace
+                kubectl delete configmap $interceptorConfName $namespace
+
+                echo -e "\nCreating interceptors configmap with name "$interceptorConfName $namespace
+                kubectl create configmap $interceptorConfName --from-file=$target $namespace
+
+                echo -e "\nDeleteting configmap if exists with name "$configmapName $namespace
+                kubectl delete configmap $configmapName $namespace
+
+                echo -e "\nCreating configmap with name "$configmapName $namespace
+                kubectl create configmap $configmapName --from-file=$PASSED $namespace
+
+                echo -e "\nUpdating the API kind"
+
+cat << EOF > wso2_v1alpha1_api_cr.yaml
+apiVersion: wso2.com/v1alpha1
+kind: API
+metadata:
+ name: "${apiName}"
+spec:
+ definition:
+  configmapName: "${configmapName}"
+  type: swagger
+ replicas: ${replicas}
+ mode: privateJet
+ updateTimeStamp: "$(date +%s)"
+ interceptorConfName: "${interceptorConfName}"
+EOF
+            kubectl apply -f wso2_v1alpha1_api_cr.yaml $namespace
+            else
+                echo "Target '$target' is empty. Please use the swagger directly"
+            fi
+
+        elif [[ -f $PASSED ]]; then
+            echo "$PASSED is a file"
+            echo -e "\nDeleteting configmap if exists with name "$apiName $namespace
+        kubectl delete configmap $configmapName $namespace
+
+        echo -e "\nCreating configmap with name "$apiName $namespace
+        kubectl create configmap $configmapName --from-file=$PASSED $namespace
+
+        echo -e "\nUpdating the API kind"
+
+cat << EOF > wso2_v1alpha1_api_cr.yaml
+apiVersion: wso2.com/v1alpha1
+kind: API
+metadata:
+ name: "${apiName}"
+spec:
+ definition:
+  configmapName: "${configmapName}"
+  type: swagger
+ replicas: ${replicas}
+ mode: privateJet
+ updateTimeStamp: "$(date +%s)"
+EOF
+
+        kubectl apply -f wso2_v1alpha1_api_cr.yaml $namespace
+        else
+            echo "$PASSED is not valid"
+            exit 1
+        fi
+
+    fi
+else
+    print_error
+fi

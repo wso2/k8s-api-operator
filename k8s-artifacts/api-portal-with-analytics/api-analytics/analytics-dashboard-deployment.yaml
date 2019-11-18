@@ -15,13 +15,13 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: wso2apim-analytics-deployment
+  name: wso2apim-dashboard-analytics-deployment
   namespace: wso2
 spec:
   replicas: 1
   selector:
     matchLabels:
-      deployment: wso2apim-analytics
+      deployment: wso2apim-dashboard-analytics
   minReadySeconds: 30
   strategy:
     rollingUpdate:
@@ -31,11 +31,11 @@ spec:
   template:
     metadata:
       labels:
-        deployment: wso2apim-analytics
+        deployment: wso2apim-dashboard-analytics
     spec:
       containers:
-        - name: wso2apim-analytics
-          image: wso2/wso2am-analytics-worker:2.6.0
+        - name: wso2apim-dashboard-analytics
+          image: wso2/wso2am-analytics-dashboard:3.0.0
           resources:
             limits:
               memory: "2Gi"
@@ -46,7 +46,7 @@ spec:
               command:
                 - /bin/sh
                 - -c
-                - nc -z localhost 7712
+                - nc -z localhost 32201
             initialDelaySeconds: 30
             periodSeconds: 10
           readinessProbe:
@@ -54,44 +54,28 @@ spec:
               command:
                 - /bin/sh
                 - -c
-                - nc -z localhost 7712
+                - nc -z localhost 32201
             initialDelaySeconds: 30
             periodSeconds: 10
           lifecycle:
             preStop:
               exec:
-                command:  ['sh', '-c', '${WSO2_SERVER_HOME}/bin/worker.sh stop']
-          imagePullPolicy: Always
+                command:  ['sh', '-c', '${WSO2_SERVER_HOME}/bin/dashboard.sh stop']
+          imagePullPolicy: IfNotPresent
           securityContext:
             runAsUser: 802
           ports:
             -
-              containerPort: 9764
+              containerPort: 9643
               protocol: "TCP"
-            -
-              containerPort: 9444
-              protocol: "TCP"
-            -
-              containerPort: 7612
-              protocol: "TCP"
-            -
-              containerPort: 7712
-              protocol: "TCP"
-            -
-              containerPort: 9091
-              protocol: "TCP"
-            -
-              containerPort: 7071
-              protocol: "TCP"
-            -
-              containerPort: 7444
-              protocol: "TCP"
-            -
-              containerPort: 7575
-              protocol: "TCP"
-            -
-              containerPort: 7576
-              protocol: "TCP"
-            -
-              containerPort: 7577
-              protocol: "TCP"
+          volumeMounts:
+          - name: apim-analytics-conf-dashboard
+            mountPath: /home/wso2carbon/wso2-config-volume/conf/dashboard
+      volumes:
+      - name: apim-analytics-conf-dashboard
+        configMap:
+          name: dash-conf
+      hostAliases:
+        - ip: "127.0.0.1"
+          hostnames:
+            - "wso2apim-analytics"

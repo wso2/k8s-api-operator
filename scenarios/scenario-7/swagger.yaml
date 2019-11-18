@@ -16,13 +16,12 @@
 
 openapi: 3.0.0
 info:
-  title: OnlineStore
-  version: pj-v1
+  title: Products-Pj
+  version: v1
   description: This API contains operations related to online shopping store.
 servers:
   - url: /store
-x-wso2-basePath: /store/v1.0.0
-x-wso2-production-endpoints: products-privatejet
+x-wso2-basePath: /storepj/v1.0.0
 x-wso2-mode: privateJet
 paths:
   /products:
@@ -30,6 +29,7 @@ paths:
       responses:
         "200":
           description: ""
+      x-wso2-production-endpoints: products-privatejet
 
   "/products/{productId}":
     get:
@@ -42,3 +42,4 @@ paths:
       responses:
         "200":
           description: ""
+      x-wso2-production-endpoints: products-privatejet

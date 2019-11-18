@@ -26,20 +26,28 @@ data:
   mgwRuntimeImg: wso2/wso2micro-gw:3.0.2
   #kaniko image for the kaniko pod which builds the mgw api runtime and pushes to the registry
   kanikoImg: gcr.io/kaniko-project/executor
-  #docker registry name the mgw image to be pushed.  eg->  dockerRegistry: sampleuser
-  dockerRegistry: <user-docker-registry>
+  #docker registry name which the mgw image to be pushed.  eg->  dockerRegistry: username
+  dockerRegistry: <username-docker-registry>
   #Maximum number of replicas for the Horizontal Pod Auto-scale. Default->  hpaMaxReplicas: "5"
   hpaMaxReplicas: "5"
   #Avg CPU utliazation(%) to spin up the next pod.  Default->  hpaTargetAverageUtilizationCPU: "50"
   hpaTargetAverageUtilizationCPU: "50"
-  #Required CPU usage for pods.   Default-> resourceRequestCPU: "50"
+  #Required CPU usage for pods.   Default-> resourceRequestCPU: "1000m"
   resourceRequestCPU: "1000m"
-  #Required Memory usage pods can use.   Default->  resourceRequestMemory: "256Mi"
-  resourceRequestMemory: "256Mi"
-  #Max CPU usage limit a pod can use.   Default->  resourceLimitCPU: "3000m"
+  #Required Memory usage pods can use.   Default->  resourceRequestMemory: "512Mi"
+  resourceRequestMemory: "512Mi"
+  #Max CPU usage limit a pod can use.   Default->  resourceLimitCPU: "2000m"
   resourceLimitCPU: "2000m"
   #Max Memory usage limit a pod can use.   Default->  resourceLimitMemory: "512Mi"
   resourceLimitMemory: "512Mi"
+  #Configure readiness probe initial delay for API pod
+  readinessProbeInitialDelaySeconds: "8"
+  #Configure readiness prob interval for API pod
+  readinessProbePeriodSeconds: "5"
+  #Configure liveness probe initial delay for API pod
+  livenessProbeInitialDelaySeconds: "10"
+  #Configure liveness probe interval for API pod
+  livenessProbePeriodSeconds: "30"
   #Stop at docker image creation or continue to deploy kubernetes artifact.
   #Default->  generatekubernbetesartifactsformgw: "true"
   generatekubernbetesartifactsformgw: "true"
@@ -53,3 +61,17 @@ metadata:
 data:
   #By default hostname verification is disabled. In a production scenario, this has to be enabled.
   verifyHostname: "false"
+  #Log level of the managed API (microgateway). Available levels: INFO, DEBUG, TRACE
+  logLevel: "DEBUG"
+  #Ports from which the managed API service is getting exposed
+  httpPort: "9090"
+  httpsPort: "9095"
+  #Enable distributed ratelimiting
+  enabledGlobalTMEventPublishing: "true"
+  #Message broker connection URL (related to distributed ratelimiting)
+  #Format: hostname_of_API_Portal:JMS_port
+  jmsConnectionProvider: "wso2apim.wso2:28230"
+  #The central traffic management solution URL (related to distributed ratelimiting)
+  #Format: hostname_of_API_Portal:Default_port
+  throttleEndpoint: "wso2apim.wso2:32001"
+

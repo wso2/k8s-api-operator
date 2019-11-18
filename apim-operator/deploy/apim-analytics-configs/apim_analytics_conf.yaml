@@ -25,6 +25,6 @@ data:
   uploadingTimeSpanInMillis: "60000"
   rotatingPeriod: "60000"
   uploadFiles: "true"
-  verifyHostname: "true"
-  hostname: wso2analytics260
+  verifyHostname: "false"
+  hostname: wso2apim-analytics-service.wso2
   port: "9444"
