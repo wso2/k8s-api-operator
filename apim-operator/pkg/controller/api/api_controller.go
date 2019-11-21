@@ -176,7 +176,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	owner := getOwnerDetails(instance)
 	operatorOwner, ownerErr := getOperatorOwner(r)
 	if ownerErr != nil {
-		return reconcile.Result{}, ownerErr
+		reqLogger.Info("Operator was not found in the "+wso2NameSpaceConst+" namespace. No owner will be set for the artifacts")
 	}
 	userNameSpace := instance.Namespace
 

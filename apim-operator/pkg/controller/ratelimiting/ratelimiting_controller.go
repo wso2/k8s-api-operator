@@ -125,7 +125,7 @@ func (r *ReconcileRateLimiting) Reconcile(request reconcile.Request) (reconcile.
 	//gets the details of the operator as the owner
 	operatorOwner, ownerErr := getOperatorOwner(r)
 	if ownerErr != nil {
-		return reconcile.Result{}, ownerErr
+		reqLogger.Info("Operator was not found in the "+wso2NameSpaceConst+" namespace. No owner will be set for the artifacts")
 	}
 
 	// GENERATE POLICY YAML USING CRD INSTANCE
@@ -239,7 +239,7 @@ func (r *ReconcileRateLimiting) Reconcile(request reconcile.Request) (reconcile.
 
 }
 
-// CreateConfigMap creates a config file with the generated code
+//CreatePolicyConfigMap creates a config file with the generated code
 func CreatePolicyConfigMap(output string, operatorOwner []metav1.OwnerReference, userNameSpace string) (*corev1.ConfigMap, error) {
 
 	return &corev1.ConfigMap{
@@ -254,7 +254,7 @@ func CreatePolicyConfigMap(output string, operatorOwner []metav1.OwnerReference,
 	}, nil
 }
 
-//Check if the policy already exists in the existing policy map
+//IsPolicyExist checks if the policy already exists in the existing policy map
 func IsPolicyExist(policyArrayMap []map[string]Policy, name string) bool {
 
 	oldPolicies := policyArrayMap[0]
