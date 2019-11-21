@@ -97,8 +97,8 @@ data:
     password="{{basicPassword}}"
 
     [validationConfig]
-    enableRequestValidation = false
-    enableResponseValidation = false
+    enableRequestValidation = {{enableRequestValidation}}
+    enableResponseValidation = {{enableResponseValidation}}
     absolutePathToSwagger = " "
 
 
@@ -113,10 +113,10 @@ data:
 
     [tokenRevocationConfig]
       [tokenRevocationConfig.realtime]
-        enableRealtimeMessageRetrieval = false
+        enableRealtimeMessageRetrieval = {{enableRealtimeMessageRetrieval}}
         jmsConnectionTopic = "tokenRevocation"
         jmsConnectioninitialContextFactory = "bmbInitialContextFactory"
-        jmsConnectionProviderUrl= "amqp://admin:admin@carbon/carbon?brokerlist='tcp://localhost:5672'"
+        jmsConnectionProviderUrl= "amqp://admin:admin@carbon/carbon?brokerlist='tcp://{{jmsConnectionProvider}}'"
         jmsConnectionUsername = ""
         jmsConnectionPassword = ""
       [tokenRevocationConfig.persistent]

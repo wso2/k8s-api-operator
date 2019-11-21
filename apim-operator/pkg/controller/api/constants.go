@@ -87,6 +87,9 @@ const (
 	logLevelConst                       = "logLevel"
 	httpPortConst                       = "httpPort"
 	httpsPortConst                      = "httpsPort"
+	enableRealtimeMessageRetrievalConst = "enableRealtimeMessageRetrieval"
+	enableRequestValidationConst        = "enableRequestValidation"
+	enableResponseValidationConst       = "enableResponseValidation"
 	basicUsernameConst                  = "basicUsername"
 	basicPasswordConst                  = "basicPassword"
 	analyticsEnabledConst               = "analyticsEnabled"
@@ -127,4 +130,7 @@ const (
 	resourceLimitCPU                   = "resourceLimitCPU"
 	resourceLimitMemory                = "resourceLimitMemory"
 	generatekubernbetesartifactsformgw = "generatekubernbetesartifactsformgw"
+
+	httpPortValConst  = 9090
+	httpsPortValConst = 9095
 )

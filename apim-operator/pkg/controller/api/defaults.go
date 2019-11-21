@@ -54,6 +54,13 @@ var (
 	jmsConnectionProvider          string = "wso2apim.wso2:28230"
 	throttleEndpoint               string = "wso2apim.wso2:32001"
 
+	//token revocation
+	enableRealtimeMessageRetrieval string = "false"
+
+	//validation
+	enableRequestValidation  string = "false"
+	enableResponseValidation string = "false"
+
 	//basic authentication
 	basicUsername string = "generalUser1"
 	basicPassword string = "5BAA61E4C9B93F3F0682250B6CF8331B7EE68FD8"

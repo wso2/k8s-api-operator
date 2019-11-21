@@ -62,16 +62,22 @@ data:
   #By default hostname verification is disabled. In a production scenario, this has to be enabled.
   verifyHostname: "false"
   #Log level of the managed API (microgateway). Available levels: INFO, DEBUG, TRACE
-  logLevel: "DEBUG"
+  logLevel: "INFO"
   #Ports from which the managed API service is getting exposed
   httpPort: "9090"
   httpsPort: "9095"
-  #Enable distributed ratelimiting
-  enabledGlobalTMEventPublishing: "true"
-  #Message broker connection URL (related to distributed ratelimiting)
-  #Format: hostname_of_API_Portal:JMS_port
-  jmsConnectionProvider: "wso2apim.wso2:28230"
+  #Enable distributed ratelimiting. Default value:false. If enabled please deploy API Portal
+  enabledGlobalTMEventPublishing: "false"
   #The central traffic management solution URL (related to distributed ratelimiting)
   #Format: hostname_of_API_Portal:Default_port
   throttleEndpoint: "wso2apim.wso2:32001"
+  #Message broker connection URL (related to distributed ratelimiting and token revocation)
+  #Format: hostname_of_API_Portal:JMS_port
+  jmsConnectionProvider: "wso2apim.wso2:28230"
+  #Token revocation
+  #Enable real time notifier for token revocation
+  enableRealtimeMessageRetrieval: "false"
+  #Request and response validation
+  enableRequestValidation: "false"
+  enableResponseValidation: "false"
 

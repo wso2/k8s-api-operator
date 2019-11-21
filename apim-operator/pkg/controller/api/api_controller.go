@@ -676,14 +676,29 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	//Get data from apim configmap
 	apimConfig, apimEr := getConfigmap(r, apimConfName, wso2NameSpaceConst)
+	httpPortVal := httpPortValConst
+	httpsPortVal := httpsPortValConst
 	if apimEr == nil {
 		verifyHostname = apimConfig.Data[verifyHostnameConst]
 		enabledGlobalTMEventPublishing = apimConfig.Data[enabledGlobalTMEventPublishingConst]
 		jmsConnectionProvider = apimConfig.Data[jmsConnectionProviderConst]
 		throttleEndpoint = apimConfig.Data[throttleEndpointConst]
+		enableRealtimeMessageRetrieval = apimConfig.Data[enableRealtimeMessageRetrievalConst]
+		enableRequestValidation = apimConfig.Data[enableRequestValidationConst]
+		enableResponseValidation = apimConfig.Data[enableResponseValidationConst]
 		logLevel = apimConfig.Data[logLevelConst]
 		httpPort = apimConfig.Data[httpPortConst]
 		httpsPort = apimConfig.Data[httpsPortConst]
+		httpPortVal, err = strconv.Atoi(httpPort)
+		if err != nil {
+			log.Error(err, "Valid http port was not provided. Default port will be used")
+			httpPortVal = httpPortValConst
+		}
+		httpsPortVal, err = strconv.Atoi(httpsPort)
+		if err != nil {
+			log.Error(err, "Valid https port was not provided. Default port will be used")
+			httpsPortVal = httpsPortValConst
+		}
 	} else {
 		verifyHostname = verifyHostNameVal
 	}
@@ -710,6 +725,9 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		enabledGlobalTMEventPublishingConst: enabledGlobalTMEventPublishing,
 		jmsConnectionProviderConst:          jmsConnectionProvider,
 		throttleEndpointConst:               throttleEndpoint,
+		enableRealtimeMessageRetrievalConst: enableRealtimeMessageRetrieval,
+		enableRequestValidationConst:        enableRequestValidation,
+		enableResponseValidationConst:       enableResponseValidation,
 		logLevelConst:                       logLevel,
 		httpPortConst:                       httpPort,
 		httpsPortConst:                      httpsPort,
@@ -748,11 +766,12 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	analyticsEnabledBool, _ := strconv.ParseBool(analyticsEnabled)
 	dep := createMgwDeployment(instance, imageName, controlConf, analyticsEnabledBool, r, userNameSpace, owner,
-		getResourceReqCPU, getResourceReqMemory, getResourceLimitCPU, getResourceLimitMemory, containerList)
+		getResourceReqCPU, getResourceReqMemory, getResourceLimitCPU, getResourceLimitMemory, containerList,
+		int32(httpPortVal), int32(httpsPortVal))
 	depFound := &appsv1.Deployment{}
 	deperr := r.client.Get(context.TODO(), types.NamespacedName{Name: dep.Name, Namespace: dep.Namespace}, depFound)
 
-	svc := createMgwLBService(instance, userNameSpace, owner)
+	svc := createMgwLBService(instance, userNameSpace, owner, int32(httpPortVal), int32(httpsPortVal))
 	svcFound := &corev1.Service{}
 	svcErr := r.client.Get(context.TODO(), types.NamespacedName{Name: svc.Name, Namespace: svc.Namespace}, svcFound)
 
@@ -842,7 +861,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			return reconcile.Result{Requeue: true}, nil
 		}
 
-	} else if imageExist &&  !instance.Spec.Override {
+	} else if imageExist && !instance.Spec.Override {
 		log.Info("Image already exist, hence skipping the kaniko job")
 		errDeleteJob := deleteCompletedJobs(instance.Namespace)
 		if errDeleteJob != nil {
@@ -1445,7 +1464,8 @@ func getCredentials(r *ReconcileAPI, name string, securityType string, userNameS
 // generate relevant MGW deployment/services for the given API definition
 func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.ConfigMap, analyticsEnabled bool,
 	r *ReconcileAPI, nameSpace string, owner []metav1.OwnerReference, resourceReqCPU string, resourceReqMemory string,
-	resourceLimitCPU string, resourceLimitMemory string, containerList []corev1.Container) *appsv1.Deployment {
+	resourceLimitCPU string, resourceLimitMemory string, containerList []corev1.Container, httpPortVal int32,
+	httpsPortVal int32) *appsv1.Deployment {
 	labels := map[string]string{
 		"app": cr.Name,
 	}
@@ -1485,12 +1505,12 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 		},
 		VolumeMounts: deployVolumeMount,
 		Ports: []corev1.ContainerPort{{
-			ContainerPort: 9095,
+			ContainerPort: httpsPortVal,
 		}},
 		ReadinessProbe: &corev1.Probe{
 			Handler: corev1.Handler{
 				TCPSocket: &corev1.TCPSocketAction{
-					Port: intstr.FromInt(9090),
+					Port: intstr.IntOrString{Type: intstr.Int, IntVal: httpPortVal},
 				},
 			},
 			InitialDelaySeconds: int32(readDelay),
@@ -1500,7 +1520,7 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 		LivenessProbe: &corev1.Probe{
 			Handler: corev1.Handler{
 				TCPSocket: &corev1.TCPSocketAction{
-					Port: intstr.FromInt(9090),
+					Port: intstr.IntOrString{Type: intstr.Int, IntVal: httpPortVal},
 				},
 			},
 			InitialDelaySeconds: int32(liveDelay),
@@ -1789,7 +1809,8 @@ func createMgwService(cr *wso2v1alpha1.API, nameSpace string) *corev1.Service {
 }
 
 //Creating a LB balancer service to expose mgw
-func createMgwLBService(cr *wso2v1alpha1.API, nameSpace string, owner []metav1.OwnerReference) *corev1.Service {
+func createMgwLBService(cr *wso2v1alpha1.API, nameSpace string, owner []metav1.OwnerReference, httpPortVal int32,
+	httpsPortVal int32) *corev1.Service {
 
 	labels := map[string]string{
 		"app": cr.Name,
@@ -1806,12 +1827,12 @@ func createMgwLBService(cr *wso2v1alpha1.API, nameSpace string, owner []metav1.O
 			Type: "LoadBalancer",
 			Ports: []corev1.ServicePort{{
 				Name:       "port-9095",
-				Port:       9095,
-				TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: 9095},
+				Port:       httpsPortVal,
+				TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: httpsPortVal},
 			}, {
 				Name:       "port-9090",
-				Port:       9090,
-				TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: 9090},
+				Port:       httpPortVal,
+				TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: httpPortVal},
 			}},
 			Selector: labels,
 		},
