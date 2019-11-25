@@ -8,7 +8,7 @@ This setup provides resources to deploy WSO2 API Manager 3.0.0 and WSO2 APIM Ana
 Few databases of WSO2 API Manager and Analytics need to be shared with each other and hence we have provided resources to deploy mysql in kubernetes and configure the necessary databases in mysql.
 
 
-To try out the scenario navigate to wso2am-k8s-crds-1.0.0 directory.
+To try out the scenario navigate to wso2am-k8s-crds-1.0.1 directory.
 
 #### Step 1: Deploy and configure API Portal and Analytics Dashbaord
 

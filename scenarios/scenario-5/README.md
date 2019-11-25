@@ -12,7 +12,7 @@
 
  ##### Deploying the artifacts
 
-- Navigate to api-k8s-crds-1.0.0/scenarios/scenario-5 directory.
+- Navigate to api-k8s-crds-1.0.1/scenarios/scenario-5 directory.
 
 - Deploy Kubernetes secret from the credentials of the key manager server.
     ```$xslt
@@ -77,7 +77,7 @@ In this swagger definition, the security schema of the "petstore" service has be
             ```
             - Output:
             ```$xslt
-                Initializing a new WSO2 API Manager project in /home/dinusha/wso2am-k8s-crds-1.0.0/scenarios/scenario-5/petstore-oauth
+                Initializing a new WSO2 API Manager project in /home/dinusha/wso2am-k8s-crds-1.0.1/scenarios/scenario-5/petstore-oauth
                 Project initialized
                 Open README file to learn more
             ```

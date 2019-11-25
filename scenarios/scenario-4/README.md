@@ -11,7 +11,7 @@
 
  ##### Deploying the artifacts
  
-- Navigate to api-k8s-crds-1.0.0/scenarios/scenario-4 directory.
+- Navigate to api-k8s-crds-1.0.1/scenarios/scenario-4 directory.
 
 - Deploy Kubernetes secret of the public cert of the JWT token issues and JWT Security custom resource.
     ```$xslt
