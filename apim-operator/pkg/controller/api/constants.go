@@ -40,7 +40,6 @@ const (
 	mgwToolkitImgConst    = "mgwToolkitImg"
 	mgwRuntimeImgConst    = "mgwRuntimeImg"
 	kanikoImgConst        = "kanikoImg"
-	dockerRegistryConst   = "dockerRegistry"
 	wso2NameSpaceConst    = "wso2-system"
 	policyConfigmap       = "policy-configmap"
 	mgwConfSecretConst    = "mgw-conf"

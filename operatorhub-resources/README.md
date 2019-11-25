@@ -1,8 +1,15 @@
 ## Instructions to test the operator bundle locally
 
-```
-minikube start
-```
+#### Prerequisites
+- [Kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
+
+- [Kubernetes v1.12 or above](https://Kubernetes.io/docs/setup/)   
+ - Minimum CPU and Memory for the K8s cluster: **2 vCPU, 8GB of Memory**
+
+- An account in DockerHub or private docker registry
+- [API controller](https://github.com/wso2/product-apim-tooling/releases/) 
+
+
 - Install OLM
 ```
 kubectl apply -f https://github.com/operator-framework/operator-lifecycle-manager/releases/download/0.10.0/crds.yaml

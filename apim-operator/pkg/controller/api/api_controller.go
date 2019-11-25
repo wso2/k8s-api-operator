@@ -197,12 +197,11 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	mgwToolkitImg := controlConfigData[mgwToolkitImgConst]
 	mgwRuntimeImg := controlConfigData[mgwRuntimeImgConst]
 	kanikoImg := controlConfigData[kanikoImgConst]
-	dockerRegistry := controlConfigData[dockerRegistryConst]
 	reqLogger.Info("Controller Configurations", "mgwToolkitImg", mgwToolkitImg, "mgwRuntimeImg", mgwRuntimeImg,
-		"kanikoImg", kanikoImg, "dockerRegistry", dockerRegistry, "userNameSpace", userNameSpace)
+		"kanikoImg", kanikoImg, "userNameSpace", userNameSpace)
 
-	//creates the docker configs in the required format
-	dockerSecretEr := dockerConfigCreator(r, operatorOwner, userNameSpace)
+	//creates the docker configs in the required format and obtain docker registry name
+	dockerSecretEr, dockerRegistry := dockerConfigCreator(r, operatorOwner, userNameSpace)
 	if dockerSecretEr != nil {
 		log.Error(dockerSecretEr, "Error in docker-config creation")
 	}
@@ -767,7 +766,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	analyticsEnabledBool, _ := strconv.ParseBool(analyticsEnabled)
 	dep := createMgwDeployment(instance, imageName, controlConf, analyticsEnabledBool, r, userNameSpace, owner,
 		getResourceReqCPU, getResourceReqMemory, getResourceLimitCPU, getResourceLimitMemory, containerList,
-		int32(httpPortVal), int32(httpsPortVal))
+		int32(httpPortVal), int32(httpsPortVal), dockerRegistry)
 	depFound := &appsv1.Deployment{}
 	deperr := r.client.Get(context.TODO(), types.NamespacedName{Name: dep.Name, Namespace: dep.Namespace}, depFound)
 
@@ -796,7 +795,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	if instance.Spec.UpdateTimeStamp != "" {
 		//Schedule Kaniko pod
 		reqLogger.Info("Updating the API", "API.Name", instance.Name, "API.Namespace", instance.Namespace)
-		job := scheduleKanikoJob(instance, imageName, controlConf, jobVolumeMount, jobVolume, instance.Spec.UpdateTimeStamp, owner)
+		job := scheduleKanikoJob(instance, imageName, controlConf, jobVolumeMount, jobVolume, instance.Spec.UpdateTimeStamp,
+			owner, dockerRegistry)
 		if err := controllerutil.SetControllerReference(instance, job, r.scheme); err != nil {
 			return reconcile.Result{}, err
 		}
@@ -902,7 +902,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		return reconcile.Result{}, nil
 	} else {
 		//Schedule Kaniko pod
-		job := scheduleKanikoJob(instance, imageName, controlConf, jobVolumeMount, jobVolume, instance.Spec.UpdateTimeStamp, owner)
+		job := scheduleKanikoJob(instance, imageName, controlConf, jobVolumeMount, jobVolume, instance.Spec.UpdateTimeStamp,
+			owner, dockerRegistry)
 		if err := controllerutil.SetControllerReference(instance, job, r.scheme); err != nil {
 			return reconcile.Result{}, err
 		}
@@ -1465,12 +1466,11 @@ func getCredentials(r *ReconcileAPI, name string, securityType string, userNameS
 func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.ConfigMap, analyticsEnabled bool,
 	r *ReconcileAPI, nameSpace string, owner []metav1.OwnerReference, resourceReqCPU string, resourceReqMemory string,
 	resourceLimitCPU string, resourceLimitMemory string, containerList []corev1.Container, httpPortVal int32,
-	httpsPortVal int32) *appsv1.Deployment {
+	httpsPortVal int32, dockerRegistry string) *appsv1.Deployment {
 	labels := map[string]string{
 		"app": cr.Name,
 	}
 	controlConfigData := conf.Data
-	dockerRegistry := controlConfigData[dockerRegistryConst]
 	liveDelay, _ := strconv.ParseInt(controlConfigData[livenessProbeInitialDelaySeconds], 10, 32)
 	livePeriod, _ := strconv.ParseInt(controlConfigData[livenessProbePeriodSeconds], 10, 32)
 	readDelay, _ := strconv.ParseInt(controlConfigData[readinessProbeInitialDelaySeconds], 10, 32)
@@ -1678,14 +1678,13 @@ func isImageExist(image string, tag string, r *ReconcileAPI) (bool, error) {
 
 //Schedule Kaniko Job to generate micro-gw image
 func scheduleKanikoJob(cr *wso2v1alpha1.API, imageName string, conf *corev1.ConfigMap, jobVolumeMount []corev1.VolumeMount,
-	jobVolume []corev1.Volume, timeStamp string, owner []metav1.OwnerReference) *batchv1.Job {
+	jobVolume []corev1.Volume, timeStamp string, owner []metav1.OwnerReference, dockerRegistry string) *batchv1.Job {
 	kanikoJobName := cr.Name + "-kaniko"
 	if timeStamp != "" {
 		kanikoJobName = kanikoJobName + "-" + timeStamp
 	}
 	controlConfigData := conf.Data
 	kanikoImg := controlConfigData[kanikoImgConst]
-	dockerRegistry := controlConfigData[dockerRegistryConst]
 
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1720,16 +1719,17 @@ func scheduleKanikoJob(cr *wso2v1alpha1.API, imageName string, conf *corev1.Conf
 	}
 }
 
-func dockerConfigCreator(r *ReconcileAPI, operatorOwner []metav1.OwnerReference, namespace string) error {
+func dockerConfigCreator(r *ReconcileAPI, operatorOwner []metav1.OwnerReference, namespace string) (error,string) {
+	var emptyString string
 	//checks if docker secret is available
 	dockerSecret := &corev1.Secret{}
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: dockerSecretNameConst, Namespace: wso2NameSpaceConst}, dockerSecret)
 	if err != nil && errors.IsNotFound(err) {
 		log.Info("Docker Secret is not found")
-		return err
+		return err, emptyString
 	} else if err != nil {
 		log.Error(err, "error ")
-		return err
+		return err, emptyString
 	}
 	dockerData := dockerSecret.Data
 	dockerUsername := string(dockerData[usernameConst])
@@ -1747,13 +1747,13 @@ func dockerConfigCreator(r *ReconcileAPI, operatorOwner []metav1.OwnerReference,
 		"credentials": credentials})
 	if err != nil {
 		log.Error(err, "error in rendering ")
-		return err
+		return err, dockerUsername
 	}
 
 	//Writes the created template to a secret
 	dockerConf := createSecret(dockerConfig, "config.json", output, namespace, operatorOwner)
 
-	// Check if this configmap already exists
+	// Check if this secret already exists
 	foundsecret := &corev1.Secret{}
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: dockerConf.Name, Namespace: dockerConf.Namespace}, foundsecret)
 
@@ -1762,22 +1762,22 @@ func dockerConfigCreator(r *ReconcileAPI, operatorOwner []metav1.OwnerReference,
 		err = r.client.Create(context.TODO(), dockerConf)
 		if err != nil {
 			log.Error(err, "error ")
-			return err
+			return err, dockerUsername
 		}
 		// secret created successfully
-		return nil
+		return nil, dockerUsername
 	} else if err != nil {
 		log.Error(err, "error ")
-		return err
+		return err, dockerUsername
 	}
 	log.Info("Docker config secret already exists", "secret.Namespace", foundsecret.Namespace, "secret.Name", foundsecret.Name)
 	log.Info("Updating Config map", "confmap.Namespace", dockerConf.Namespace, "confmap.Name", dockerConf.Name)
 	err = r.client.Update(context.TODO(), dockerConf)
 	if err != nil {
 		log.Error(err, "error ")
-		return err
+		return err, dockerUsername
 	}
-	return nil
+	return nil, dockerUsername
 }
 
 //Service of the API
