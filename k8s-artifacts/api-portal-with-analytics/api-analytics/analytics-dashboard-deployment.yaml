@@ -33,6 +33,13 @@ spec:
       labels:
         deployment: wso2apim-dashboard-analytics
     spec:
+      initContainers:
+        - name: init-wait-sql
+          image: alpine
+          command: ["sh", "-c", "for i in $(seq 1 300); do nc -zvw1 wso2apim-with-analytics-rdbms-service 3306 && exit 0 || sleep 3; done; exit 1"]
+        - name: init-wait-api-portal
+          image: alpine
+          command: ["sh", "-c", "for i in $(seq 1 300); do nc -zvw1 wso2apim 32001 && exit 0 || sleep 3; done; exit 1"]
       containers:
         - name: wso2apim-dashboard-analytics
           image: wso2/wso2am-analytics-dashboard:3.0.0
