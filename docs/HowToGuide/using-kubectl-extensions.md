@@ -10,7 +10,7 @@ You can use API project to create APIs if you use interceptors. For more details
 
 #### Install extensions
 
-- Navigate to ***api-k8s-crds-1.0.0/apim-operator/kubectl-extensions*** directory.
+- Navigate to ***api-k8s-crds-1.0.1/apim-operator/kubectl-extensions*** directory.
 - Make the extensions executable using the following command.
     ```$xslt
     chmod +x kubectl-*

@@ -11,7 +11,7 @@
  
  ##### Deploying the artifacts
 
-- Navigate to the api-k8s-crds-1.0.0/scenarios/scenario-3 directory and execute the following command
+- Navigate to the api-k8s-crds-1.0.1/scenarios/scenario-3 directory and execute the following command
 
 - Creating the opaque secret with basic credentials
     - In this scenario, we are using username "admin" and password "admin".

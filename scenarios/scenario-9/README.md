@@ -8,7 +8,7 @@
 
   ##### Deploying the artifacts
 
- - Navigate to api-k8s-crds-1.0.0/scenarios/scenario-9 directory
+ - Navigate to api-k8s-crds-1.0.1/scenarios/scenario-9 directory
  - Deploy the backend services for products, review & inventory
  -    
     ```

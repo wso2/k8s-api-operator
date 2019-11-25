@@ -27,16 +27,16 @@ Minimum CPU and Memory for the K8s cluster: **2 vCPU, 8GB of Memory**
 
 - An account in DockerHub or private docker registry
 
-- Download [api-k8s-crds-1.0.0.zip](https://github.com/wso2/k8s-apim-operator/releases/download/v1.0.0/api-k8s-crds-1.0.0.zip) and extract the zip
+- Download [api-k8s-crds-1.0.1.zip](https://github.com/wso2/k8s-apim-operator/releases/download/v1.0.1/api-k8s-crds-1.0.1.zip) and extract the zip
 
     1. This zip contains the artifacts that required to deploy in Kubernetes.
-    2. Extract api-k8s-crds-1.0.0.zip
+    2. Extract api-k8s-crds-1.0.1.zip
     
     ```
-    cd api-k8s-crds-1.0.0
+    cd api-k8s-crds-1.0.1
     ```
  
-**_Note:_** You need to run all commands from within the ***api-k8s-crds-1.0.0*** directory.
+**_Note:_** You need to run all commands from within the ***api-k8s-crds-1.0.1*** directory.
 
 <br />
 
@@ -387,7 +387,7 @@ The following commands will help you to push the API to the API portal in Kubern
     >> apictl init online-store --oas=./scenarios/scenario-1/products_swagger.yaml
     
     Output:
-    Initializing a new WSO2 API Manager project in /home/dinusha/wso2am-k8s-crds-1.0.0/scenarios/scenario-1/online-store
+    Initializing a new WSO2 API Manager project in /home/dinusha/wso2am-k8s-crds-1.0.1/scenarios/scenario-1/online-store
     Project initialized
     Open README file to learn more
     ```
