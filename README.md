@@ -373,7 +373,7 @@ To make the API discoverable for other users and get the access tokens, we need 
 The following commands will help you to push the API to the API portal in Kubernetes. Commands of the API Controller can be found [here](https://github.com/wso2/product-apim-tooling/blob/v3.0.0-rc/import-export-cli/docs/apictl.md) 
 
 
-- Add the API portal to the API controller using the following command.
+- Add the API portal as an envionment to the API controller using the following command.
 
     ```
     >> apictl add-env -e k8s --registration https://wso2apim:32001/client-registration/v0.15/register --apim https://wso2apim:32003 --token https://wso2apim:32003/token --admin https://wso2apim:32001/api/am/admin/v0.15 --api_list https://wso2apim:32001/api/am/publisher/v0.15/apis --app_list https://wso2apim:32001/api/am/store/v0.15/applications
