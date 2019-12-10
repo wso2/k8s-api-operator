@@ -19,7 +19,7 @@ kind: TargetEndpoint
 metadata:
   name: review-ep
   labels:
-    app: wso2
+    app: review
 spec:
   protocol: http
   port: 80

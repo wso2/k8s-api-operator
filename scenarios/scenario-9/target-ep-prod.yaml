@@ -19,7 +19,7 @@ kind: TargetEndpoint
 metadata:
   name: products-ep
   labels:
-    app: wso2
+    app: products
 spec:
   protocol: http
   port: 80

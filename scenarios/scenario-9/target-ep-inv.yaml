@@ -19,7 +19,7 @@ kind: TargetEndpoint
 metadata:
   name: inventory-ep
   labels:
-    app: wso2
+    app: inventory
 spec:
   protocol: http
   port: 80
