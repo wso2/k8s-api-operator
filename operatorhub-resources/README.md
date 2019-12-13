@@ -1,6 +1,6 @@
 ## OperatorHub Resources
 
-[OperatorHub.io](https://operatorhub.io)b is a place where K8s community share Operators. API Operator is available in OperatorHub and is compatible with Operator Lifecycle Manager.
+[OperatorHub.io](https://operatorhub.io) is a place where K8s community share Operators. API Operator is available in OperatorHub and is compatible with Operator Lifecycle Manager.
 
 For more information please visit [OperatorHub](https://operatorhub.io/operator/apim-operator) 
 
