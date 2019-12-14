@@ -1,70 +1,26 @@
-## Instructions to test the operator bundle locally
+## OperatorHub Resources
 
-```
-minikube start
-```
-- Install OLM
-```
-kubectl apply -f https://github.com/operator-framework/operator-lifecycle-manager/releases/download/0.10.0/crds.yaml
-kubectl apply -f https://github.com/operator-framework/operator-lifecycle-manager/releases/download/0.10.0/olm.yaml
-```
+[OperatorHub.io](https://operatorhub.io) is a place where K8s community share Operators. API Operator is available in OperatorHub and is compatible with Operator Lifecycle Manager.
 
-- Deploy operator-marketplace. (operator-marketplace operator is needed only for local testing)
-```
-git clone https://github.com/operator-framework/operator-marketplace.git
-kubectl apply -f operator-marketplace/deploy/upstream/
-```
-- Deploy other resources
-```
-kubectl apply -f install.yaml 
-```
+For more information please visit [OperatorHub](https://operatorhub.io/operator/apim-operator) 
 
-**API operator will be deployed in kubernetes after some time (in the marketplace namespace for this example)**
+The Operator Lifecycle Manager (OLM) helps users install, update, and manage the lifecycle of all Operators and their associated services running across their clusters. It is part of the Operator Framework, an open source toolkit designed to manage Kubernetes native applications (Operators) in an effective, automated, and scalable way.
 
-### Checking the resources deployed
+### Important concepts related to OLM
 
-```
-ramesha:workingdir ramesha$ kubectl get catalogsource -n marketplace
-NAME                           NAME                           TYPE   PUBLISHER   AGE
-rameshakaru-operators                                         grpc               18s
-upstream-community-operators   Upstream Community Operators   grpc   Red Hat     43s
-ramesha:workingdir ramesha$ 
-ramesha:workingdir ramesha$ 
-ramesha:workingdir ramesha$ 
-ramesha:workingdir ramesha$ kubectl get opsrc rameshakaru-operators -o=custom-columns=NAME:.metadata.name,PACKAGES:.status.packages -n marketplace
-NAME                    PACKAGES
-rameshakaru-operators   apim-operator
-ramesha:workingdir ramesha$ 
-ramesha:workingdir ramesha$ 
-ramesha:workingdir ramesha$ kubectl get clusterserviceversion -n marketplace
-NAME                   DISPLAY                       VERSION   REPLACES   PHASE
-apim-operator.v1.0.1   API Operator for Kubernetes   1.0.1                Succeeded
-ramesha:workingdir ramesha$ 
-ramesha:workingdir ramesha$ 
-ramesha:workingdir ramesha$ kubectl get deployment -n marketplace
-NAME                           READY   UP-TO-DATE   AVAILABLE   AGE
-apim-operator                  1/1     1            1           58s
-marketplace-operator           1/1     1            1           2m17s
-rameshakaru-operators          1/1     1            1           75s
-upstream-community-operators   1/1     1            1           100s
-ramesha:workingdir ramesha$ 
-ramesha:workingdir ramesha$ 
-ramesha:workingdir ramesha$ 
-ramesha:workingdir ramesha$ 
-ramesha:workingdir ramesha$ kubectl get pods -n marketplace
-NAME                                           READY   STATUS    RESTARTS   AGE
-apim-operator-5db6d6cd67-zkqz4                 1/1     Running   0          73s
-marketplace-operator-7cc57c5747-v2zgs          1/1     Running   0          2m32s
-rameshakaru-operators-66b65df899-fwbs2         1/1     Running   0          90s
-upstream-community-operators-5897c5d54-kqcwr   1/1     Running   0          115s
+#### CSV
+A ClusterServiceVersion (CSV) is a YAML manifest created from Operator metadata that assists the Operator Lifecycle Manager (OLM) in running the Operator in a cluster. It contains the metadata such as name, version, icon, required resources, installation, etc.
+#### Subscription
+A subscription keeps CSVs up to date by tracking a channel in a package.
+#### OperatorGroup
+An OperatorGroup selects a set of target namespaces in which to generate required RBAC access for its member operators
+#### CatalogSource
+A CatalogSource is a repository of CSVs, CRDs, and packages that define an application.
 
-```
-apim-operator is deployed
+For an operator to be managed successfully using OLM, the above 4 resources should be present in the cluster.
 
-## How to preview the operator
+### Documentation
 
-Go to  https://operatorhub.io/preview and upload [csv file](apim-operator/1.0.1/apim-operator.v1.0.1.clusterserviceversion.yaml)
-
-### Operator bundle
-
-https://quay.io/application/rameshakaru/apim-operator?tab=releases
+1. [Default install](default-install/README.md)
+2. [Install in a specific namespace](namespace-install/README.md)
+3. [Local testing](local-testing/README.md)
