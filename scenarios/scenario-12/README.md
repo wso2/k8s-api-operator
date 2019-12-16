@@ -129,7 +129,13 @@ In this swagger definition, the rate limiting policy has been mentioned as follo
     ```
         apictl add api -n petstore-dist-rate --from-file=swagger.yaml --replicas=2 --override=true
     ``` 
-    - Invoke the API as you did in the earlier case and observe that now only 4 requests were allowed, and the 5th request was throttled out
+    - Since the throttling is managed by the central traffic management system (i.e. API Portal), the same rate limiting policy should exist in the API Portal too.
+    - Go to https://wso2apim/admin Admin Portal and log in giving "admin" as username and password.
+    - Create an advanced policy with the same name and details as the policy you used earlier. Refer the below screenshot.
+    
+    ![Alt text](images/creating_policy.png?raw=true "Title")
+
+    - Invoke the API as you did in the earlier case and observe that now only 4 requests are allowed per minute, and the 5th request is throttled out
 
 - Delete the  API <br /> 
     - Following command will delete all the artifacts created with this API including pods, deployment and services.
