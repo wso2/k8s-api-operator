@@ -1,6 +1,6 @@
 ## Scenario 12 - Apply distributed rate-limiting to managed API in Kubernetes cluster
 - This scenario describes how to apply distributed rate-limiting to a managed API in Kubernetes cluster
-- Distributed rate limiting is required to handle throttling when there there is more than 1 gateway per API (i.e. when the number of replicas is greater than 1)
+- Distributed rate limiting is required to handle throttling when there is more than 1 microgateway per API (i.e. when the number of replicas is greater than 1)
 - First, we will deploy a rate-limiting custom resource which contains the policy ( 4 requests per minute)
 - Then the created rate-limiting policy/CR will be referred in the swagger definition of the API
 - Petstore service will be exposed as a managed API with ratelimiting in the Kubernetes cluster with 2 gateway replicas
@@ -69,7 +69,7 @@ In this swagger definition, the rate limiting policy has been mentioned as follo
     - Output:
     
     ```
-        NAME            TYPE           CLUSTER-IP   EXTERNAL-IP       PORT(S)                         AGE
+        NAME                TYPE           CLUSTER-IP   EXTERNAL-IP       PORT(S)                         AGE
         petstore-dist-rate   LoadBalancer   10.83.4.44   104.197.114.248   9095:30680/TCP,9090:30540/TCP   8m20s
     ```
     - You can see petstore service has been exposed as a managed API.
@@ -102,6 +102,8 @@ In this swagger definition, the rate limiting policy has been mentioned as follo
      ***Important:***
     > Deploy the API Portal if you have not already deployed it, using \<api-k8s-crds-home>/k8s-artifacts
 
+    - When distributed throttling is enabled, the API Microgateway upon recieving a request, checks against the local counter and if throttling limit  has not exceeded it publishes the events via a stream to a central traffic management solution. This is done over HTTP. The  central traffic management solution then  executes throttle policies against the events streams. When a particular request is throttled, the  central traffic management solution sends the details of the throttled out event to a JMS topic. Each API Microgateway node is subscribed to this JMS topic, and updates the local counter when the JMS topic is updated.  Hence the API Microgateway nodes gets notified of the throttle decisions through JMS messages.
+
     - Enable distributed rate limiting by modifying the apim-config in controller-configs/controller_conf.yaml as below. Set the "enabledGlobalTMEventPublishing" to "true". Default JMS port of the API Portal is used here.
 
     ```
@@ -117,7 +119,7 @@ In this swagger definition, the rate limiting policy has been mentioned as follo
     ```
     - Apply the changes
     ```
-    kubectl apply -f <api-k8s-crds-home>/apim-operator/controller-configs/controller_conf.yaml
+        kubectl apply -f <api-k8s-crds-home>/apim-operator/controller-configs/controller_conf.yaml
     ```
     - Delete the previous API if you had deployed it in earlier case
     ```
