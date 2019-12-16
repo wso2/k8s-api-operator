@@ -18,9 +18,9 @@
 
  - By default the distributed ratelimiting is disabled in controller-configs/controller_conf.yaml as below
 
- ```
- enabledGlobalTMEventPublishing: "false"
- ```
+    ```
+        enabledGlobalTMEventPublishing: "false"
+    ```
  
  - Navigate to api-k8s-crds-1.0.1/scenarios/scenario-12 directory.
   
@@ -132,7 +132,7 @@ In this swagger definition, the rate limiting policy has been mentioned as follo
     - Since the throttling is managed by the central traffic management system (i.e. API Portal), the same rate limiting policy should exist in the API Portal too.
     - Go to https://wso2apim/admin Admin Portal and log in giving "admin" as username and password.
     - Create an advanced policy with the same name and details as the policy you used earlier. Refer the below screenshot.
-    
+
     ![Alt text](images/creating_policy.png?raw=true "Title")
 
     - Invoke the API as you did in the earlier case and observe that now only 4 requests are allowed per minute, and the 5th request is throttled out
