@@ -23,4 +23,5 @@ For an operator to be managed successfully using OLM, the above 4 resources shou
 
 1. [Default install](default-install/README.md)
 2. [Install in a specific namespace](namespace-install/README.md)
-3. [Local testing](local-testing/README.md)
+3. [Creating new version in operatorhub](creating-new-version/README.md)
+4. [Local testing](local-testing/README.md)
