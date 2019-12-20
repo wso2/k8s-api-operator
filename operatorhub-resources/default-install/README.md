@@ -41,11 +41,8 @@ spec:
 ```
 - A subscription keeps CSVs up to date by tracking a channel in a package.
 The above "my-apim-operator" subscription is deployed in the "operators" namespace and we have provided the name and namespace of the catalog source coming with the operator lifecycle manager. We have also provided the operator name we want to deploy and the channel of the operator we want to subscribe.
-</br>
 - A CatalogSource is a repository of CSVs, CRDs, and packages that define an application. "operatorhubio-catalog" contains the CSVs, CRDs and packages of all the operators available in OperatorHub.io.
-</br>
 - A ClusterServiceVersion (CSV) is a YAML manifest created from Operator metadata that assists the Operator Lifecycle Manager (OLM) in running the Operator in a cluster. It contains the metadata such as name, version, icon, required resources, installation, etc.
-</br>
 - Once the above suscription is deployed, the required CRDs and CSV of the API Operator will be deployed in "operators" namespace, which will install the API Operator deployment with neccessary roles and bindings.
 
 - You can check if the CSV has been properly deployed in operators namespace by executing the below command.
