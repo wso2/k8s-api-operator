@@ -98,6 +98,15 @@ type scopeSet struct {
 	Scopes           map[string]string `json:"scopes,omitempty"`
 }
 
+// Auth represents list of docker registries with credentials
+type Auth struct {
+	Auths map[string]struct {
+		Auth     string `json:"auth"`
+		Username string `json:"username"`
+		Password string `json:"password"`
+	} `json:"auths"`
+}
+
 var portMap = map[string]string{
 	"http":  "80",
 	"https": "443",
@@ -176,7 +185,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	owner := getOwnerDetails(instance)
 	operatorOwner, ownerErr := getOperatorOwner(r)
 	if ownerErr != nil {
-		reqLogger.Info("Operator was not found in the "+wso2NameSpaceConst+" namespace. No owner will be set for the artifacts")
+		reqLogger.Info("Operator was not found in the " + wso2NameSpaceConst + " namespace. No owner will be set for the artifacts")
 	}
 	userNameSpace := instance.Namespace
 
@@ -200,12 +209,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	dockerRegistry := controlConfigData[dockerRegistryConst]
 	reqLogger.Info("Controller Configurations", "mgwToolkitImg", mgwToolkitImg, "mgwRuntimeImg", mgwRuntimeImg,
 		"kanikoImg", kanikoImg, "dockerRegistry", dockerRegistry, "userNameSpace", userNameSpace)
-
-	//creates the docker configs in the required format
-	dockerSecretEr := dockerConfigCreator(r, operatorOwner, userNameSpace)
-	if dockerSecretEr != nil {
-		log.Error(dockerSecretEr, "Error in docker-config creation")
-	}
 
 	//Handles policy.yaml.
 	//If there aren't any ratelimiting objects deployed, new policy.yaml configmap will be created with default policies
@@ -255,7 +258,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 	imageName := image + ":" + tag
 	// check if the image already exists
-	imageExist, errImage := isImageExist(dockerRegistry+"/"+image, tag, r)
+	imageExist, errImage := isImageExist(dockerRegistry+"/"+image, tag, r, dockerConfig, userNameSpace)
 	if errImage != nil {
 		log.Error(errImage, "Error in image finding")
 	}
@@ -470,9 +473,9 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	formattedSwagger := string(prettyJSON.Bytes())
 	//create configmap with modified swagger
-	swaggerConfMap := createConfigMap(instance.Name + "-swagger-mgw", swaggerDataFile, formattedSwagger, userNameSpace, owner)
+	swaggerConfMap := createConfigMap(instance.Name+"-swagger-mgw", swaggerDataFile, formattedSwagger, userNameSpace, owner)
 	log.Info("Creating swagger configmap for mgw")
-	foundConfMap, errgetConf := getConfigmap(r, instance.Name + "-swagger-mgw", userNameSpace)
+	foundConfMap, errgetConf := getConfigmap(r, instance.Name+"-swagger-mgw", userNameSpace)
 	if errgetConf != nil && errors.IsNotFound(errgetConf) {
 		log.Info("swagger-mgw is not found. Hence creating new configmap")
 		errConf := r.client.Create(context.TODO(), swaggerConfMap)
@@ -1592,9 +1595,9 @@ func dockerfileHandler(r *ReconcileAPI, certList map[string]string, existcert bo
 		return nil, err
 	}
 
-	dockerfileConfmap, err := getConfigmap(r, cr.Name + "-" + dockerFile, cr.Namespace)
+	dockerfileConfmap, err := getConfigmap(r, cr.Name+"-"+dockerFile, cr.Namespace)
 	if err != nil && errors.IsNotFound(err) {
-		dockerConf := createConfigMap(cr.Name + "-" + dockerFile, "Dockerfile", builder.String(), cr.Namespace, owner)
+		dockerConf := createConfigMap(cr.Name+"-"+dockerFile, "Dockerfile", builder.String(), cr.Namespace, owner)
 
 		errorMap := r.client.Create(context.TODO(), dockerConf)
 		if errorMap != nil {
@@ -1638,38 +1641,49 @@ func policyHandler(r *ReconcileAPI, operatorOwner []metav1.OwnerReference, userN
 	return nil
 }
 
-// checks if the image exist in dockerhub
-func isImageExist(image string, tag string, r *ReconcileAPI) (bool, error) {
-	url := dockerhubRegistryUrl
-	username := ""
-	password := ""
+// isImageExist checks if the image with the five tag exists in the registry using the secret in the user-namespace
+func isImageExist(image string, tag string, r *ReconcileAPI, secretName string, userNamespace string) (bool, error) {
+	var registryUrl string
+	var username string
+	var password string
 
-	//checks if docker secret is available
-	dockerSecret := &corev1.Secret{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: dockerSecretNameConst, Namespace: wso2NameSpaceConst}, dockerSecret)
+	// checks if the secret is available
+	dockerConfigSecret := &corev1.Secret{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: secretName, Namespace: userNamespace}, dockerConfigSecret)
 	if err != nil && errors.IsNotFound(err) {
-		log.Info("Docker Secret is not found")
+		log.Info("Docker credentials secret is not found", "secret-name", secretName, "namespace", userNamespace)
 	} else if err != nil {
-		log.Error(err, "error ")
+		log.Error(err, "Error while getting docker credentials secret", "secret-name", secretName, "namespace", userNamespace)
 	} else {
-		dockerData := dockerSecret.Data
-		username = string(dockerData[usernameConst])
-		password = string(dockerData[passwordConst])
+		authsJsonString := dockerConfigSecret.Data[dockerConfigKey]
+		auths := Auth{}
+		err := json.Unmarshal([]byte(authsJsonString), &auths)
+		if err != nil {
+			log.Info("Error unmarshal data of docker credential auth")
+		}
+
+		for regUrl, credential := range auths.Auths {
+			registryUrl = removeVersionTag(regUrl)
+			username = credential.Username
+			password = credential.Password
+
+			break
+		}
 	}
 
-	hub, err := registry.New(url, username, password)
+	hub, err := registry.New(registryUrl, username, password)
 	if err != nil {
-		log.Error(err, "error connecting to hub")
+		log.Error(err, "Error connecting to the docker registry", "registry-url", registryUrl)
 		return false, err
 	}
 	tags, err := hub.Tags(image)
 	if err != nil {
-		log.Error(err, "error getting tags")
+		log.Error(err, "Error getting tags from the image in the docker registry", "registry-url", registryUrl, "image", image)
 		return false, err
 	}
 	for _, foundTag := range tags {
 		if foundTag == tag {
-			log.Info("found the image tag")
+			log.Info("Found the image tag from the regsitry", "image", image, "tag", foundTag)
 			return true, nil
 		}
 	}
@@ -1718,66 +1732,6 @@ func scheduleKanikoJob(cr *wso2v1alpha1.API, imageName string, conf *corev1.Conf
 			},
 		},
 	}
-}
-
-func dockerConfigCreator(r *ReconcileAPI, operatorOwner []metav1.OwnerReference, namespace string) error {
-	//checks if docker secret is available
-	dockerSecret := &corev1.Secret{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: dockerSecretNameConst, Namespace: wso2NameSpaceConst}, dockerSecret)
-	if err != nil && errors.IsNotFound(err) {
-		log.Info("Docker Secret is not found")
-		return err
-	} else if err != nil {
-		log.Error(err, "error ")
-		return err
-	}
-	dockerData := dockerSecret.Data
-	dockerUsername := string(dockerData[usernameConst])
-	dockerPassword := string(dockerData[passwordConst])
-	rawCredentials := dockerUsername + ":" + dockerPassword
-	credentials := b64.StdEncoding.EncodeToString([]byte(rawCredentials))
-
-	//Retrieve docker secret mustache configmap
-	dockerSecretMustacheConfigMap, err := getConfigmap(r, dockerSecretMustache, wso2NameSpaceConst)
-	//Retrive docker secret template from the configmap
-	dockerSecretTemplate := dockerSecretMustacheConfigMap.Data[dockerSecretMustacheTemplate]
-	//Populate docker-secret configmap from provided values
-	output, err := mustache.Render(dockerSecretTemplate, map[string]string{
-		"docker_url":  "https://index.docker.io/v1/",
-		"credentials": credentials})
-	if err != nil {
-		log.Error(err, "error in rendering ")
-		return err
-	}
-
-	//Writes the created template to a secret
-	dockerConf := createSecret(dockerConfig, "config.json", output, namespace, operatorOwner)
-
-	// Check if this configmap already exists
-	foundsecret := &corev1.Secret{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: dockerConf.Name, Namespace: dockerConf.Namespace}, foundsecret)
-
-	if err != nil && errors.IsNotFound(err) {
-		log.Info("Creating a new docker-config secret", "Namespace", dockerConf.Namespace, "secret.Name", dockerConf.Name)
-		err = r.client.Create(context.TODO(), dockerConf)
-		if err != nil {
-			log.Error(err, "error ")
-			return err
-		}
-		// secret created successfully
-		return nil
-	} else if err != nil {
-		log.Error(err, "error ")
-		return err
-	}
-	log.Info("Docker config secret already exists", "secret.Namespace", foundsecret.Namespace, "secret.Name", foundsecret.Name)
-	log.Info("Updating Config map", "confmap.Namespace", dockerConf.Namespace, "confmap.Name", dockerConf.Name)
-	err = r.client.Update(context.TODO(), dockerConf)
-	if err != nil {
-		log.Error(err, "error ")
-		return err
-	}
-	return nil
 }
 
 //Service of the API
