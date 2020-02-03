@@ -258,7 +258,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 	imageName := image + ":" + tag
 	// check if the image already exists
-	imageExist, errImage := isImageExist(dockerRegistry+"/"+image, tag, r, dockerConfig, userNameSpace)
+	imageExist, errImage := isImageExist(getImageName(dockerRegistry, image), tag, r, dockerConfig, userNameSpace)
 	if errImage != nil {
 		log.Error(errImage, "Error in image finding")
 	}
@@ -1500,7 +1500,7 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 	}
 	apiContainer := corev1.Container{
 		Name:            "mgw" + cr.Name,
-		Image:           dockerRegistry + "/" + imageName,
+		Image:           getImageName(dockerRegistry, imageName),
 		ImagePullPolicy: "Always",
 		Resources: corev1.ResourceRequirements{
 			Requests: req,
@@ -1596,8 +1596,9 @@ func dockerfileHandler(r *ReconcileAPI, certList map[string]string, existcert bo
 	}
 
 	dockerfileConfmap, err := getConfigmap(r, cr.Name+"-"+dockerFile, cr.Namespace)
+	data := builder.String()
 	if err != nil && errors.IsNotFound(err) {
-		dockerConf := createConfigMap(cr.Name+"-"+dockerFile, "Dockerfile", builder.String(), cr.Namespace, owner)
+		dockerConf := createConfigMap(cr.Name+"-"+dockerFile, "Dockerfile", data, cr.Namespace, owner)
 
 		errorMap := r.client.Create(context.TODO(), dockerConf)
 		if errorMap != nil {
@@ -1722,7 +1723,7 @@ func scheduleKanikoJob(cr *wso2v1alpha1.API, imageName string, conf *corev1.Conf
 							Args: []string{
 								"--dockerfile=/usr/wso2/dockerfile/Dockerfile",
 								"--context=/usr/wso2/",
-								"--destination=" + dockerRegistry + "/" + imageName,
+								"--destination=" + getImageName(dockerRegistry, imageName),
 							},
 						},
 					},
@@ -2261,4 +2262,16 @@ func interceptorHandler(r *ReconcileAPI, instance *wso2v1alpha1.API, owner []met
 		}
 		return true, jobVolumeMount, jobVolume, nil
 	}
+}
+
+// getImageName returns concatenation of repository and image names
+func getImageName(repository string, image string) string {
+	repository = strings.TrimSpace(repository)
+	image = strings.TrimSpace(image)
+
+	if repository == "" {
+		return image
+	}
+
+	return repository + "/" + image
 }
