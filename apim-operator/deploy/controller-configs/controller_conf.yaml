@@ -28,8 +28,8 @@ data:
   kanikoImg: gcr.io/kaniko-project/executor
   #docker registry type which the mgw image to be pushed. supported types: DOCKER_HUB, AMAZON_ECR, GCR, PRIVATE.   Default->  registryType: DOCKER_HUB
   registryType: DOCKER_HUB
-  #docker registry name which the mgw image to be pushed.  eg->  dockerRegistry: username
-  dockerRegistry: REPOSITORY_NAME_OF_DOCKER_REGISTRY
+  #docker repository name which the mgw image to be pushed.  eg->  repositoryName: username of Docker Hub account
+  repositoryName: REPOSITORY_NAME_OF_DOCKER_REGISTRY
   #Maximum number of replicas for the Horizontal Pod Auto-scale. Default->  hpaMaxReplicas: "5"
   hpaMaxReplicas: "5"
   #Avg CPU utliazation(%) to spin up the next pod.  Default->  hpaTargetAverageUtilizationCPU: "50"

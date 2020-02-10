@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"github.com/golang/glog"
 	"github.com/sirupsen/logrus"
+	"github.com/wso2/k8s-apim-operator/apim-operator/pkg/registry"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -35,7 +36,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/cbroglie/mustache"
-	"github.com/heroku/docker-registry-client/registry"
+	registryclient "github.com/heroku/docker-registry-client/registry"
 
 	wso2v1alpha1 "github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -206,9 +207,18 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	mgwToolkitImg := controlConfigData[mgwToolkitImgConst]
 	mgwRuntimeImg := controlConfigData[mgwRuntimeImgConst]
 	kanikoImg := controlConfigData[kanikoImgConst]
-	dockerRegistry := controlConfigData[dockerRegistryConst]
+
+	if !registry.IsRegistryType(controlConfigData[registryTypeConst]) {
+		log.Error(err, "Invalid registry type", "registry-type", controlConfigData[registryTypeConst])
+		// Registry type is invalid.
+		// Return and don't requeue
+		return reconcile.Result{}, nil
+	}
+	registryType := registry.Type(controlConfigData[registryTypeConst])
+	repositoryName := controlConfigData[repositoryNameConst]
+
 	reqLogger.Info("Controller Configurations", "mgwToolkitImg", mgwToolkitImg, "mgwRuntimeImg", mgwRuntimeImg,
-		"kanikoImg", kanikoImg, "dockerRegistry", dockerRegistry, "userNameSpace", userNameSpace)
+		"kanikoImg", kanikoImg, "registryType", registryType, "repositoryName", repositoryName, "userNameSpace", userNameSpace)
 
 	//Handles policy.yaml.
 	//If there aren't any ratelimiting objects deployed, new policy.yaml configmap will be created with default policies
@@ -257,8 +267,10 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		tag = tag + "-" + instance.Spec.UpdateTimeStamp
 	}
 	imageName := image + ":" + tag
+	registry.SetRegistry(registryType, repositoryName, imageName)
+
 	// check if the image already exists
-	imageExist, errImage := isImageExist(getImageName(dockerRegistry, image), tag, r, dockerConfig, userNameSpace)
+	imageExist, errImage := isImageExist(getImageName(repositoryName, image), tag, r, dockerConfig, userNameSpace)
 	if errImage != nil {
 		log.Error(errImage, "Error in image finding")
 	}
@@ -300,9 +312,9 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	reqLogger.Info("getting security instance")
 
 	var alias string
-	//keep to track the existance of certificates
+	//keep to track the existence of certificates
 	var existcert bool
-	//keep to track the existance of interceptors
+	//keep to track the existence of interceptors
 	var existInterceptors bool
 	//to add multiple certs with alias
 	certList := make(map[string]string)
@@ -1469,25 +1481,25 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 	r *ReconcileAPI, nameSpace string, owner []metav1.OwnerReference, resourceReqCPU string, resourceReqMemory string,
 	resourceLimitCPU string, resourceLimitMemory string, containerList []corev1.Container, httpPortVal int32,
 	httpsPortVal int32) *appsv1.Deployment {
+	regConfig := registry.GetConfig()
 	labels := map[string]string{
 		"app": cr.Name,
 	}
 	controlConfigData := conf.Data
-	dockerRegistry := controlConfigData[dockerRegistryConst]
 	liveDelay, _ := strconv.ParseInt(controlConfigData[livenessProbeInitialDelaySeconds], 10, 32)
 	livePeriod, _ := strconv.ParseInt(controlConfigData[livenessProbePeriodSeconds], 10, 32)
 	readDelay, _ := strconv.ParseInt(controlConfigData[readinessProbeInitialDelaySeconds], 10, 32)
 	readPeriod, _ := strconv.ParseInt(controlConfigData[readinessProbePeriodSeconds], 10, 32)
 	reps := int32(cr.Spec.Replicas)
-	deployVolumeMount := []corev1.VolumeMount{}
-	deployVolume := []corev1.Volume{}
+	deployVolumeMount := regConfig.VolumeMounts
+	deployVolume := regConfig.Volumes
 	if analyticsEnabled {
 		deployVolumeMountTemp, deployVolumeTemp, err := getAnalyticsPVClaim(r, deployVolumeMount, deployVolume)
 		if err != nil {
 			log.Error(err, "Analytics volume mounting error")
 		} else {
-			deployVolumeMount = deployVolumeMountTemp
-			deployVolume = deployVolumeTemp
+			deployVolumeMount = append(deployVolumeMount, deployVolumeMountTemp...)
+			deployVolume = append(deployVolume, deployVolumeTemp...)
 		}
 	}
 	req := corev1.ResourceList{
@@ -1500,7 +1512,7 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 	}
 	apiContainer := corev1.Container{
 		Name:            "mgw" + cr.Name,
-		Image:           getImageName(dockerRegistry, imageName),
+		Image:           regConfig.ImagePath,
 		ImagePullPolicy: "Always",
 		Resources: corev1.ResourceRequirements{
 			Requests: req,
@@ -1642,7 +1654,7 @@ func policyHandler(r *ReconcileAPI, operatorOwner []metav1.OwnerReference, userN
 	return nil
 }
 
-// isImageExist checks if the image with the five tag exists in the registry using the secret in the user-namespace
+// isImageExist checks if the image with the given tag exists in the registry using the secret in the user-namespace
 func isImageExist(image string, tag string, r *ReconcileAPI, secretName string, userNamespace string) (bool, error) {
 	var registryUrl string
 	var username string
@@ -1656,7 +1668,7 @@ func isImageExist(image string, tag string, r *ReconcileAPI, secretName string, 
 	} else if err != nil {
 		log.Error(err, "Error while getting docker credentials secret", "secret-name", secretName, "namespace", userNamespace)
 	} else {
-		authsJsonString := dockerConfigSecret.Data[dockerConfigKey]
+		authsJsonString := dockerConfigSecret.Data[registry.DockerConfigKeyConst]
 		auths := Auth{}
 		err := json.Unmarshal([]byte(authsJsonString), &auths)
 		if err != nil {
@@ -1672,7 +1684,7 @@ func isImageExist(image string, tag string, r *ReconcileAPI, secretName string, 
 		}
 	}
 
-	hub, err := registry.New(registryUrl, username, password)
+	hub, err := registryclient.New(registryUrl, username, password)
 	if err != nil {
 		log.Error(err, "Error connecting to the docker registry", "registry-url", registryUrl)
 		return false, err
@@ -1684,7 +1696,7 @@ func isImageExist(image string, tag string, r *ReconcileAPI, secretName string, 
 	}
 	for _, foundTag := range tags {
 		if foundTag == tag {
-			log.Info("Found the image tag from the regsitry", "image", image, "tag", foundTag)
+			log.Info("Found the image tag from the registry", "image", image, "tag", foundTag)
 			return true, nil
 		}
 	}
@@ -1694,13 +1706,13 @@ func isImageExist(image string, tag string, r *ReconcileAPI, secretName string, 
 //Schedule Kaniko Job to generate micro-gw image
 func scheduleKanikoJob(cr *wso2v1alpha1.API, imageName string, conf *corev1.ConfigMap, jobVolumeMount []corev1.VolumeMount,
 	jobVolume []corev1.Volume, timeStamp string, owner []metav1.OwnerReference) *batchv1.Job {
+	regConfig := registry.GetConfig()
 	kanikoJobName := cr.Name + "-kaniko"
 	if timeStamp != "" {
 		kanikoJobName = kanikoJobName + "-" + timeStamp
 	}
 	controlConfigData := conf.Data
 	kanikoImg := controlConfigData[kanikoImgConst]
-	dockerRegistry := controlConfigData[dockerRegistryConst]
 
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1723,7 +1735,7 @@ func scheduleKanikoJob(cr *wso2v1alpha1.API, imageName string, conf *corev1.Conf
 							Args: []string{
 								"--dockerfile=/usr/wso2/dockerfile/Dockerfile",
 								"--context=/usr/wso2/",
-								"--destination=" + getImageName(dockerRegistry, imageName),
+								"--destination=" + regConfig.ImagePath,
 							},
 						},
 					},
@@ -1796,6 +1808,7 @@ func createMgwLBService(cr *wso2v1alpha1.API, nameSpace string, owner []metav1.O
 
 //default volume mounts for the kaniko job
 func getVolumes(cr *wso2v1alpha1.API) ([]corev1.VolumeMount, []corev1.Volume) {
+	regConfig := registry.GetConfig()
 
 	jobVolumeMount := []corev1.VolumeMount{
 		{
@@ -1808,11 +1821,6 @@ func getVolumes(cr *wso2v1alpha1.API) ([]corev1.VolumeMount, []corev1.Volume) {
 			MountPath: dockerFileLocation,
 		},
 		{
-			Name:      dockerConfig,
-			MountPath: dockerConfLocation,
-			ReadOnly:  true,
-		},
-		{
 			Name:      policyyamlFile,
 			MountPath: policyyamlLocation,
 			ReadOnly:  true,
@@ -1823,6 +1831,8 @@ func getVolumes(cr *wso2v1alpha1.API) ([]corev1.VolumeMount, []corev1.Volume) {
 			ReadOnly:  true,
 		},
 	}
+	// append secrets from regConfig
+	jobVolumeMount = append(jobVolumeMount, regConfig.VolumeMounts...)
 
 	jobVolume := []corev1.Volume{
 		{
@@ -1832,14 +1842,6 @@ func getVolumes(cr *wso2v1alpha1.API) ([]corev1.VolumeMount, []corev1.Volume) {
 					LocalObjectReference: corev1.LocalObjectReference{
 						Name: cr.Name + "-swagger-mgw",
 					},
-				},
-			},
-		},
-		{
-			Name: dockerConfig,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: dockerConfig,
 				},
 			},
 		},
@@ -1872,6 +1874,8 @@ func getVolumes(cr *wso2v1alpha1.API) ([]corev1.VolumeMount, []corev1.Volume) {
 			},
 		},
 	}
+	// append secrets from regConfig
+	jobVolume = append(jobVolume, regConfig.Volumes...)
 
 	return jobVolumeMount, jobVolume
 

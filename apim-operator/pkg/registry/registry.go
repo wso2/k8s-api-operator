@@ -11,7 +11,7 @@ type Type string
 
 type Config struct {
 	RegistryType Type
-	Args         []string
+	ImagePath    string
 	VolumeMounts []corev1.VolumeMount
 	Volumes      []corev1.Volume
 }
@@ -31,6 +31,11 @@ func SetRegistry(regType Type, repoName string, imgName string) {
 
 func GetConfig() *Config {
 	return registryConfigs[registryType](repositoryName, imageName)
+}
+
+func IsRegistryType(regType string) bool {
+	_, ok := registryConfigs[Type(regType)]
+	return ok
 }
 
 func addRegistryConfig(regType Type, configFunc func(repoName string, imgName string) *Config) {
