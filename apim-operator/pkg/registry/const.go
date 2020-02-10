@@ -1,4 +1,5 @@
 package registry
 
-const DockerConfig = "docker-config" //TODO: renuka: rename this and apictl const
+const ConfigJsonVolume = "config-json"
+const AwsCredentialsVolume = "aws-cred"
 const DockerConfigKeyConst = ".dockerconfigjson"

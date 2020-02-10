@@ -21,7 +21,7 @@ var dockerHub = &Config{
 			Name: "reg-secret-volume",
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: DockerConfig,
+					SecretName: ConfigJsonVolume,
 					Items: []corev1.KeyToPath{
 						{
 							Key:  DockerConfigKeyConst,
@@ -35,8 +35,7 @@ var dockerHub = &Config{
 }
 
 func dockerHubFunc(repoName string, imgName string) *Config {
-	//dockerHub.ImagePath = fmt.Sprintf("docker.io/%s/%s", repoName, imageName)
-	dockerHub.ImagePath = fmt.Sprintf("%s/%s", repoName, imageName)
+	dockerHub.ImagePath = fmt.Sprintf("docker.io/%s/%s", repoName, imgName)
 	return dockerHub
 }
 
