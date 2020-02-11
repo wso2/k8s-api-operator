@@ -23,7 +23,7 @@ import (
 	"reflect"
 
 	wso2v1alpha1 "github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1"
-
+	v1 "github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/serving/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -109,6 +109,7 @@ func (r *ReconcileTargetEndpoint) Reconcile(request reconcile.Request) (reconcil
 	// Fetch the Endpoint instance
 	instance := &wso2v1alpha1.TargetEndpoint{}
 	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
+	reqLogger.Info("Reconcile Loop test")
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
@@ -119,16 +120,19 @@ func (r *ReconcileTargetEndpoint) Reconcile(request reconcile.Request) (reconcil
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
 	}
-
-	if instance.Spec.Deploy.DockerImage != "" && instance.Spec.Mode != "sidecar" {
+	if instance.Spec.Deploy.DockerImage != "" && instance.Spec.Mode != "sidecar" && instance.Spec.Serverless != false {
+		reqLogger.Info("Reconcile Knative Endpoint")
+		if err := r.reconcileKnativeDeployment(instance); err != nil {
+			return reconcile.Result{}, err
+		}
+	} else {
+		reqLogger.Info("Reconcile K8s Endpoint")
 		if err := r.reconcileDeployment(instance); err != nil {
 			return reconcile.Result{}, err
 		}
-
 		if err := r.reconcileService(instance); err != nil {
 			return reconcile.Result{}, err
 		}
-
 	}
 	return reconcile.Result{Requeue: true}, nil
 }
@@ -195,6 +199,45 @@ func (r *ReconcileTargetEndpoint) newDeploymentForCR(m *wso2v1alpha1.TargetEndpo
 
 }
 
+// Create newKnativeDeploymentForCR method to create a deployment.
+func (r *ReconcileTargetEndpoint) newKnativeDeploymentForCR(m *wso2v1alpha1.TargetEndpoint) *v1.Service {
+	ser := &v1.Service{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "serving.knative.dev/v1alpha1",
+			Kind:       "Service",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      m.ObjectMeta.Name,
+			Namespace: m.ObjectMeta.Namespace,
+		},
+		Spec: v1.ServiceSpec{
+			ConfigurationSpec: v1.ConfigurationSpec{
+				Template: v1.RevisionTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+						Labels: m.ObjectMeta.Labels,
+					},
+					Spec: v1.RevisionSpec{
+						PodSpec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Image: m.Spec.Deploy.DockerImage,
+									Name:  m.Spec.Deploy.Name,
+									Ports: []corev1.ContainerPort{{
+										ContainerPort: m.Spec.Port,
+									}},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	// Set Examplekind instance as the owner and controller
+	controllerutil.SetControllerReference(m, ser, r.scheme)
+	return ser
+}
+
 func (r *ReconcileTargetEndpoint) reconcileService(m *wso2v1alpha1.TargetEndpoint) error {
 	newService := r.newServiceForCR(m)
 
@@ -238,6 +281,26 @@ func (r *ReconcileTargetEndpoint) reconcileDeployment(m *wso2v1alpha1.TargetEndp
 		// Deployment created successfully - return and requeue
 	} else if err != nil {
 		log.WithValues("Failed to get Deployment: %v\n", err)
+		return err
+	}
+	return nil
+}
+
+func (r *ReconcileTargetEndpoint) reconcileKnativeDeployment(m *wso2v1alpha1.TargetEndpoint) error {
+	found := &v1.Service{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: m.Name, Namespace: m.Namespace}, found)
+	if err != nil && errors.IsNotFound(err) {
+		//Define new Knative deployment
+		ser := r.newKnativeDeploymentForCR(m)
+		log.WithValues("Creating new Knative Service %s%s\n", ser.Namespace, ser.Name)
+		err = r.client.Create(context.TODO(), ser)
+		if err != nil {
+			log.WithValues("Failed to create new Knative Service: %v\n", err)
+			return err
+		}
+		// Knative Service created sucessfully - return and requee
+	} else if err != nil {
+		log.WithValues("Failed to get Knative Service: %\n", err)
 		return err
 	}
 	return nil
