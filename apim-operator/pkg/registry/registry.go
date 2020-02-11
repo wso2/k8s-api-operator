@@ -14,6 +14,7 @@ type Config struct {
 	ImagePath    string
 	VolumeMounts []corev1.VolumeMount
 	Volumes      []corev1.Volume
+	Env          []corev1.EnvVar
 }
 
 // registry details

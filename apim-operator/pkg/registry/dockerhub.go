@@ -35,7 +35,7 @@ var dockerHub = &Config{
 }
 
 func dockerHubFunc(repoName string, imgName string) *Config {
-	dockerHub.ImagePath = fmt.Sprintf("docker.io/%s/%s", repoName, imgName)
+	dockerHub.ImagePath = fmt.Sprintf("%s/%s", repoName, imgName)
 	return dockerHub
 }
 

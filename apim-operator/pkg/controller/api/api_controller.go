@@ -1519,6 +1519,7 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 			Limits:   lim,
 		},
 		VolumeMounts: deployVolumeMount,
+		Env:          regConfig.Env,
 		Ports: []corev1.ContainerPort{{
 			ContainerPort: httpsPortVal,
 		}},
@@ -1737,6 +1738,7 @@ func scheduleKanikoJob(cr *wso2v1alpha1.API, imageName string, conf *corev1.Conf
 								"--context=/usr/wso2/",
 								"--destination=" + regConfig.ImagePath,
 							},
+							Env: regConfig.Env,
 						},
 					},
 					RestartPolicy: "Never",
