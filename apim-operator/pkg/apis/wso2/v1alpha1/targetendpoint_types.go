@@ -38,6 +38,7 @@ type TargetEndpointSpec struct {
 	EndpointName     string           `json:"endpointName"`
 	EndpointSecurity EndpointSecurity `json:"endpointSecurity"`
 	Mode             Mode             `json:"mode"`
+	Serverless       bool             `json:"serverless"`
 }
 
 // TargetEndpointStatus defines the observed state of TargetEndpoint
