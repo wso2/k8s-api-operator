@@ -262,7 +262,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		log.Error(errImage, "Error in image finding")
 	}
 	log.Info("image exist? " + strconv.FormatBool(imageExist))
-	endpointNames, newSwagger := mgwSwaggerHandlerKnative(r, swagger, mode, userNameSpace)
+	endpointNames, newSwagger := mgwSwaggerHandler(r, swagger, mode, userNameSpace)
 	for endpointNameL, _ := range endpointNames {
 		log.Info("Endpoint name " + endpointNameL)
 	}
@@ -1155,26 +1155,47 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string, 
 			if err == nil {
 				log.Info("Parsing endpoints and not available root service endpoint")
 				//check if service & targetendpoint cr object are available
-				currentService := &corev1.Service{}
+				extractData := strings.Split(endPoint,".")
+				if len(extractData) == 2 {
+					userNameSpace = extractData[1]
+					endPoint = extractData[0]
+				}
+				log.Info("trigger point 1" + userNameSpace + " "+ endPoint)
 				targetEndpointCr := &wso2v1alpha1.TargetEndpoint{}
-				err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: userNameSpace,
-					Name: endPoint}, currentService)
 				erCr := r.client.Get(context.TODO(), types.NamespacedName{Namespace: userNameSpace, Name: endPoint}, targetEndpointCr)
-
-				if err != nil && errors.IsNotFound(err) && mode != sidecar {
-					log.Error(err, "Service is not found")
-				} else if erCr != nil && errors.IsNotFound(erCr) {
+				log.Info("trigger point 2")
+				if erCr != nil && errors.IsNotFound(erCr) {
 					log.Error(err, "targetEndpoint CRD object is not found")
-				} else if err != nil && mode != sidecar {
-					log.Error(err, "Error in getting service")
 				} else if erCr != nil {
 					log.Error(err, "Error in getting targetendpoint CRD object")
+				}
+				log.Info("trigger point 3" )
+				if targetEndpointCr.Spec.Serverless != false {
+					currentService := &v1.Service{}
+					err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: userNameSpace,
+						Name: endPoint}, currentService)
+				}else{
+					currentService := &corev1.Service{}
+					err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: userNameSpace,
+						Name: endPoint}, currentService)
+				}
+				log.Info("trigger point 4" )
+				if err != nil && errors.IsNotFound(err) && mode != sidecar {
+					log.Error(err,"service not found")
+				}  else if err != nil && mode != sidecar {
+					log.Error(err, "Error in getting service")
 				} else {
 					protocol := targetEndpointCr.Spec.Protocol
 					if mode == sidecar {
 						endPointSidecar := protocol + "://" + "localhost:" + strconv.Itoa(int(targetEndpointCr.Spec.Port))
 						endpointNames[targetEndpointCr.Name] = endPointSidecar
 						checkt = append(checkt, endPointSidecar)
+					}
+					log.Info("trigger point 5" + userNameSpace + " " + endPoint )
+					if targetEndpointCr.Spec.Serverless != false {
+						endPoint = protocol + "://" + endPoint + "." + userNameSpace + ".svc.cluster.local"
+						log.Info("trigger point 6" + " " + endPoint)
+						checkt = append(checkt, endPoint)
 					} else {
 						endPoint = protocol + "://" + endPoint
 						checkt = append(checkt, endPoint)
@@ -1267,7 +1288,7 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string, 
 
 //creating for knative
 //Get endpoint from swagger and replace it with targetendpoint kind service endpoint
-func mgwSwaggerHandlerKnative(r *ReconcileAPI, swagger *openapi3.Swagger, mode string, userNameSpace string) (map[string]string, *openapi3.Swagger) {
+/*func mgwSwaggerHandlerKnative(r *ReconcileAPI, swagger *openapi3.Swagger, mode string, userNameSpace string) (map[string]string, *openapi3.Swagger) {
 
 	var mgwSwagger *openapi3.Swagger
 
@@ -1395,7 +1416,7 @@ func mgwSwaggerHandlerKnative(r *ReconcileAPI, swagger *openapi3.Swagger, mode s
 		}
 	}
 	return endpointNames, mgwSwagger
-}
+}*/
 
 func assignGetEps(swagger *openapi3.Swagger, resLevelEp map[string]XMGWProductionEndpoints) {
 	for pathName, path := range swagger.Paths {
