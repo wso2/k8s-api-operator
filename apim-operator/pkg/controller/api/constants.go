@@ -16,7 +16,7 @@
 package api
 
 const (
-	dockerConfig       = "docker-config"
+	ConfigJsonVolume   = "config-json"
 	dockerConfigKey    = "config.json"
 	mgwDockerFile      = "dockerfile-conf"
 	swaggerVolume      = "swagger-volume"

@@ -33,6 +33,9 @@ var gcr = &Config{
 			Value: "/kaniko/.gcr/" + GcrSvcAccKeyFile,
 		},
 	},
+	ImagePullSecrets: []corev1.LocalObjectReference{
+		{Name: ConfigJsonVolume},
+	},
 }
 
 func gcrFunc(repoName string, imgName string) *Config {

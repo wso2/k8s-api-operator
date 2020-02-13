@@ -10,11 +10,12 @@ var log = logf.Log.WithName("registry")
 type Type string
 
 type Config struct {
-	RegistryType Type
-	ImagePath    string
-	VolumeMounts []corev1.VolumeMount
-	Volumes      []corev1.Volume
-	Env          []corev1.EnvVar
+	RegistryType     Type
+	ImagePath        string
+	VolumeMounts     []corev1.VolumeMount
+	Volumes          []corev1.Volume
+	Env              []corev1.EnvVar
+	ImagePullSecrets []corev1.LocalObjectReference
 }
 
 // registry details
@@ -25,6 +26,7 @@ var imageName string
 var registryConfigs = map[Type]func(repoName string, imgName string) *Config{}
 
 func SetRegistry(regType Type, repoName string, imgName string) {
+	log.Info("Setting registry type", "registry-type", regType, "repository", repoName, "image", imgName)
 	registryType = regType
 	repositoryName = repoName
 	imageName = imgName

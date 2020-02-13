@@ -99,15 +99,6 @@ type scopeSet struct {
 	Scopes           map[string]string `json:"scopes,omitempty"`
 }
 
-// Auth represents list of docker registries with credentials
-type Auth struct {
-	Auths map[string]struct {
-		Auth     string `json:"auth"`
-		Username string `json:"username"`
-		Password string `json:"password"`
-	} `json:"auths"`
-}
-
 var portMap = map[string]string{
 	"http":  "80",
 	"https": "443",
@@ -270,7 +261,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	registry.SetRegistry(registryType, repositoryName, imageName)
 
 	// check if the image already exists
-	imageExist, errImage := isImageExist(getImageName(repositoryName, image), tag, r, dockerConfig, userNameSpace)
+	imageExist, errImage := isImageExist(getImageName(repositoryName, image), tag, r, ConfigJsonVolume, userNameSpace)
 	if errImage != nil {
 		log.Error(errImage, "Error in image finding")
 	}
@@ -1491,15 +1482,15 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 	readDelay, _ := strconv.ParseInt(controlConfigData[readinessProbeInitialDelaySeconds], 10, 32)
 	readPeriod, _ := strconv.ParseInt(controlConfigData[readinessProbePeriodSeconds], 10, 32)
 	reps := int32(cr.Spec.Replicas)
-	deployVolumeMount := regConfig.VolumeMounts
-	deployVolume := regConfig.Volumes
+	var deployVolumeMount []corev1.VolumeMount
+	var deployVolume []corev1.Volume
 	if analyticsEnabled {
 		deployVolumeMountTemp, deployVolumeTemp, err := getAnalyticsPVClaim(r, deployVolumeMount, deployVolume)
 		if err != nil {
 			log.Error(err, "Analytics volume mounting error")
 		} else {
-			deployVolumeMount = append(deployVolumeMount, deployVolumeMountTemp...)
-			deployVolume = append(deployVolume, deployVolumeTemp...)
+			deployVolumeMount = deployVolumeMountTemp
+			deployVolume = deployVolumeTemp
 		}
 	}
 	req := corev1.ResourceList{
@@ -1563,8 +1554,9 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 					Labels: labels,
 				},
 				Spec: corev1.PodSpec{
-					Containers: containerList,
-					Volumes:    deployVolume,
+					Containers:       containerList,
+					Volumes:          deployVolume,
+					ImagePullSecrets: regConfig.ImagePullSecrets,
 				},
 			},
 		},
@@ -1661,6 +1653,14 @@ func isImageExist(image string, tag string, r *ReconcileAPI, secretName string, 
 	var username string
 	var password string
 
+	type Auth struct {
+		Auths map[string]struct {
+			Auth     string `json:"auth"`
+			Username string `json:"username"`
+			Password string `json:"password"`
+		} `json:"auths"`
+	}
+
 	// checks if the secret is available
 	dockerConfigSecret := &corev1.Secret{}
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: secretName, Namespace: userNamespace}, dockerConfigSecret)
@@ -1678,6 +1678,9 @@ func isImageExist(image string, tag string, r *ReconcileAPI, secretName string, 
 
 		for regUrl, credential := range auths.Auths {
 			registryUrl = removeVersionTag(regUrl)
+			if !strings.HasPrefix(registryUrl, "https://") {
+				registryUrl = "https://" + registryUrl
+			}
 			username = credential.Username
 			password = credential.Password
 
@@ -1690,7 +1693,15 @@ func isImageExist(image string, tag string, r *ReconcileAPI, secretName string, 
 		log.Error(err, "Error connecting to the docker registry", "registry-url", registryUrl)
 		return false, err
 	}
-	tags, err := hub.Tags(image)
+
+	// remove registry name if exists in the image name
+	imageWithoutReg := image
+	splits := strings.Split(image, "/")
+	if len(splits) == 3 {
+		imageWithoutReg = fmt.Sprintf("%s/%s", splits[1], splits[2])
+	}
+
+	tags, err := hub.Tags(imageWithoutReg)
 	if err != nil {
 		log.Error(err, "Error getting tags from the image in the docker registry", "registry-url", registryUrl, "image", image)
 		return false, err

@@ -32,6 +32,9 @@ var dockerHub = &Config{
 			},
 		},
 	},
+	ImagePullSecrets: []corev1.LocalObjectReference{
+		{Name: ConfigJsonVolume},
+	},
 }
 
 func dockerHubFunc(repoName string, imgName string) *Config {
