@@ -109,7 +109,6 @@ func (r *ReconcileTargetEndpoint) Reconcile(request reconcile.Request) (reconcil
 	// Fetch the Endpoint instance
 	instance := &wso2v1alpha1.TargetEndpoint{}
 	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
-	reqLogger.Info("Reconcile Loop test")
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
@@ -121,7 +120,6 @@ func (r *ReconcileTargetEndpoint) Reconcile(request reconcile.Request) (reconcil
 		return reconcile.Result{}, err
 	}
 	if instance.Spec.Deploy.DockerImage != "" && instance.Spec.Mode != "sidecar" && instance.Spec.Serverless != false {
-		reqLogger.Info("Reconcile Knative Endpoint")
 		if err := r.reconcileKnativeDeployment(instance); err != nil {
 			return reconcile.Result{}, err
 		}

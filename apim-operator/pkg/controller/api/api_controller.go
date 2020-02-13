@@ -1190,7 +1190,6 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string, 
 					}
 					if targetEndpointCr.Spec.Serverless != false {
 						endPoint = protocol + "://" + endPoint + "." + userNameSpace + ".svc.cluster.local"
-						log.Info("trigger point 6" + " " + endPoint)
 						checkt = append(checkt, endPoint)
 					} else {
 						endPoint = protocol + "://" + endPoint
