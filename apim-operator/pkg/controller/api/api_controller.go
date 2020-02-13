@@ -1160,16 +1160,14 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string, 
 					userNameSpace = extractData[1]
 					endPoint = extractData[0]
 				}
-				log.Info("trigger point 1" + userNameSpace + " "+ endPoint)
 				targetEndpointCr := &wso2v1alpha1.TargetEndpoint{}
 				erCr := r.client.Get(context.TODO(), types.NamespacedName{Namespace: userNameSpace, Name: endPoint}, targetEndpointCr)
-				log.Info("trigger point 2")
+
 				if erCr != nil && errors.IsNotFound(erCr) {
 					log.Error(err, "targetEndpoint CRD object is not found")
 				} else if erCr != nil {
 					log.Error(err, "Error in getting targetendpoint CRD object")
 				}
-				log.Info("trigger point 3" )
 				if targetEndpointCr.Spec.Serverless != false {
 					currentService := &v1.Service{}
 					err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: userNameSpace,
@@ -1179,7 +1177,6 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string, 
 					err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: userNameSpace,
 						Name: endPoint}, currentService)
 				}
-				log.Info("trigger point 4" )
 				if err != nil && errors.IsNotFound(err) && mode != sidecar {
 					log.Error(err,"service not found")
 				}  else if err != nil && mode != sidecar {
@@ -1191,7 +1188,6 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string, 
 						endpointNames[targetEndpointCr.Name] = endPointSidecar
 						checkt = append(checkt, endPointSidecar)
 					}
-					log.Info("trigger point 5" + userNameSpace + " " + endPoint )
 					if targetEndpointCr.Spec.Serverless != false {
 						endPoint = protocol + "://" + endPoint + "." + userNameSpace + ".svc.cluster.local"
 						log.Info("trigger point 6" + " " + endPoint)
@@ -1285,138 +1281,6 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string, 
 	}
 	return endpointNames, mgwSwagger
 }
-
-//creating for knative
-//Get endpoint from swagger and replace it with targetendpoint kind service endpoint
-/*func mgwSwaggerHandlerKnative(r *ReconcileAPI, swagger *openapi3.Swagger, mode string, userNameSpace string) (map[string]string, *openapi3.Swagger) {
-
-	var mgwSwagger *openapi3.Swagger
-
-	mgwSwagger = swagger
-	endpointNames := make(map[string]string)
-	var checkt []string
-	//api level endpoint
-	endpointData, checkEndpoint := swagger.Extensions[endpointExtension]
-	if checkEndpoint {
-		prodEp := XMGWProductionEndpoints{}
-		var endPoint string
-		endpointJson, checkJsonRaw := endpointData.(json.RawMessage)
-		if checkJsonRaw {
-			err := json.Unmarshal(endpointJson, &endPoint)
-			log.WithValues(err)
-			if err == nil {
-				log.Info("Parsing endpoints and not available root service endpoint")
-				//check if service & targetendpoint cr object are available
-				currentService := &v1.Service{}
-				targetEndpointCr := &wso2v1alpha1.TargetEndpoint{}
-				extractData := strings.Split(endPoint,".")
-				if len(extractData) > 2 {
-					log.Error(err,"endpoint name not supported")
-				}
-				userNameSpace = extractData[1]
-				endPoint := extractData[0]
-				err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: userNameSpace,
-					Name: endPoint}, currentService)
-				erCr := r.client.Get(context.TODO(), types.NamespacedName{Namespace: userNameSpace, Name: endPoint}, targetEndpointCr)
-				if err != nil && errors.IsNotFound(err) && mode != sidecar {
-					log.Error(err, "Service is not found")
-				} else if erCr != nil && errors.IsNotFound(erCr) {
-					log.Error(err, "targetEndpoint CRD object is not found")
-				} else if err != nil && mode != sidecar {
-					log.Error(err, "Error in getting service")
-				} else if erCr != nil {
-					log.Error(err, "Error in getting targetendpoint CRD object")
-				} else {
-					protocol := targetEndpointCr.Spec.Protocol
-					endPoint = protocol + "://" + endPoint + "." + userNameSpace + ".svc.cluster.local"
-					checkt = append(checkt, endPoint)
-					prodEp.Urls = checkt
-					mgwSwagger.Extensions[endpointExtension] = prodEp
-				}
-			} else {
-				err := json.Unmarshal(endpointJson, &prodEp)
-				if err == nil {
-					lengthOfUrls := len(prodEp.Urls)
-					endpointList := make([]string, lengthOfUrls)
-					isServiceDef := false
-					for index, urlVal := range prodEp.Urls {
-						endpointUrl, err := url.Parse(urlVal)
-						if err != nil {
-							currentService := &corev1.Service{}
-							targetEndpointCr := &wso2v1alpha1.TargetEndpoint{}
-							err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: userNameSpace,
-								Name: urlVal}, currentService)
-							erCr := r.client.Get(context.TODO(), types.NamespacedName{Namespace: userNameSpace, Name: urlVal}, targetEndpointCr)
-							if err == nil && erCr == nil {
-								protocol := targetEndpointCr.Spec.Protocol
-								urlVal = protocol + "://" + urlVal
-								if mode == sidecar {
-									urlValSidecar := protocol + "://" + "localhost:" + strconv.Itoa(int(targetEndpointCr.Spec.Port))
-									endpointNames[urlVal] = urlValSidecar
-									endpointList[index] = urlValSidecar
-
-								} else {
-									endpointList[index] = urlVal
-								}
-								isServiceDef = true
-							}
-						} else {
-							endpointNames[endpointUrl.Hostname()] = endpointUrl.Hostname()
-						}
-					}
-
-					if isServiceDef {
-						prodEp.Urls = endpointList
-						mgwSwagger.Extensions[endpointExtension] = prodEp
-					}
-				} else {
-					log.Info("error unmarshal endpoint")
-				}
-			}
-		}
-	}
-
-	//resource level endpoint
-	for pathName, path := range swagger.Paths {
-
-		if path.Get != nil {
-			getEp, gcep := path.Get.Extensions[endpointExtension]
-			eps := resolveEps(r, pathName, getEp, endpointNames, gcep, userNameSpace, mode)
-			assignGetEps(mgwSwagger, eps)
-		}
-		if path.Post != nil {
-			postEp, pocep := path.Post.Extensions[endpointExtension]
-			eps := resolveEps(r, pathName, postEp, endpointNames, pocep, userNameSpace, mode)
-			assignPostEps(mgwSwagger, eps)
-		}
-		if path.Put != nil {
-			putEp, pucep := path.Put.Extensions[endpointExtension]
-			eps := resolveEps(r, pathName, putEp, endpointNames, pucep, userNameSpace, mode)
-			assignPutEps(mgwSwagger, eps)
-		}
-		if path.Delete != nil {
-			deleteEp, dcep := path.Delete.Extensions[endpointExtension]
-			eps := resolveEps(r, pathName, deleteEp, endpointNames, dcep, userNameSpace, mode)
-			assignDeleteEps(mgwSwagger, eps)
-		}
-		if path.Patch != nil {
-			pEp, pAvl := path.Patch.Extensions[endpointExtension]
-			eps := resolveEps(r, pathName, pEp, endpointNames, pAvl, userNameSpace, mode)
-			assignPatchEps(mgwSwagger, eps)
-		}
-		if path.Head != nil {
-			pEp, pAvl := path.Head.Extensions[endpointExtension]
-			eps := resolveEps(r, pathName, pEp, endpointNames, pAvl, userNameSpace, mode)
-			assignHeadEps(mgwSwagger, eps)
-		}
-		if path.Options != nil {
-			pEp, pAvl := path.Options.Extensions[endpointExtension]
-			eps := resolveEps(r, pathName, pEp, endpointNames, pAvl, userNameSpace, mode)
-			assignOptionsEps(mgwSwagger, eps)
-		}
-	}
-	return endpointNames, mgwSwagger
-}*/
 
 func assignGetEps(swagger *openapi3.Swagger, resLevelEp map[string]XMGWProductionEndpoints) {
 	for pathName, path := range swagger.Paths {
