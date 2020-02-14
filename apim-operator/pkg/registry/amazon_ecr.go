@@ -17,7 +17,7 @@ var amazonEcr = &Config{
 		},
 		{
 			Name:      "aws-credentials",
-			MountPath: "/kaniko/.docker/",
+			MountPath: "/kaniko/.aws/",
 			ReadOnly:  true,
 		},
 	},
@@ -43,10 +43,10 @@ var amazonEcr = &Config{
 	},
 }
 
-func amazonEcrFunc(repoName string, imgName string) *Config {
+func amazonEcrFunc(repoName string, imgName string, tag string) *Config {
 	// repository = <aws_account_id.dkr.ecr.region.amazonaws.com>/repository"
-	// image path = <aws_account_id.dkr.ecr.region.amazonaws.com>/repository/image:v1"
-	amazonEcr.ImagePath = fmt.Sprintf("%s/%s", repoName, imgName)
+	// image path = <aws_account_id.dkr.ecr.region.amazonaws.com>/repository:imageName-v1"
+	amazonEcr.ImagePath = fmt.Sprintf("gcr.io/%s:%s-%s", repoName, imgName, tag)
 	return amazonEcr
 }
 

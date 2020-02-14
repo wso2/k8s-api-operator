@@ -37,8 +37,8 @@ var dockerHub = &Config{
 	},
 }
 
-func dockerHubFunc(repoName string, imgName string) *Config {
-	dockerHub.ImagePath = fmt.Sprintf("%s/%s", repoName, imgName)
+func dockerHubFunc(repoName string, imgName string, tag string) *Config {
+	dockerHub.ImagePath = fmt.Sprintf("%s/%s", repoName, imgName, tag)
 	return dockerHub
 }
 

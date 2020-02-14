@@ -22,18 +22,20 @@ type Config struct {
 var registryType Type
 var repositoryName string
 var imageName string
+var imageTag string
 
-var registryConfigs = map[Type]func(repoName string, imgName string) *Config{}
+var registryConfigs = map[Type]func(repoName string, imgName string, tag string) *Config{}
 
-func SetRegistry(regType Type, repoName string, imgName string) {
-	log.Info("Setting registry type", "registry-type", regType, "repository", repoName, "image", imgName)
+func SetRegistry(regType Type, repoName string, imgName string, tag string) {
+	log.Info("Setting registry type", "registry-type", regType, "repository", repoName, "image", imgName, "tag", tag)
 	registryType = regType
 	repositoryName = repoName
 	imageName = imgName
+	imageTag = tag
 }
 
 func GetConfig() *Config {
-	return registryConfigs[registryType](repositoryName, imageName)
+	return registryConfigs[registryType](repositoryName, imageName, imageTag)
 }
 
 func IsRegistryType(regType string) bool {
@@ -41,7 +43,7 @@ func IsRegistryType(regType string) bool {
 	return ok
 }
 
-func addRegistryConfig(regType Type, configFunc func(repoName string, imgName string) *Config) {
+func addRegistryConfig(regType Type, configFunc func(repoName string, imgName string, tag string) *Config) {
 	if registryConfigs[regType] != nil {
 		log.Error(nil, "Duplicate registry types", "type", regType)
 	} else {

@@ -38,8 +38,8 @@ var gcr = &Config{
 	},
 }
 
-func gcrFunc(repoName string, imgName string) *Config {
-	gcr.ImagePath = fmt.Sprintf("gcr.io/%s/%s", repoName, imgName)
+func gcrFunc(repoName string, imgName string, tag string) *Config {
+	gcr.ImagePath = fmt.Sprintf("gcr.io/%s/%s:%s", repoName, imgName, tag)
 	return gcr
 }
 
