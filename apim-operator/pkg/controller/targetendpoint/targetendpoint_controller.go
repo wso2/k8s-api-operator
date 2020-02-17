@@ -133,29 +133,6 @@ func (r *ReconcileTargetEndpoint) Reconcile(request reconcile.Request) (reconcil
 	return reconcile.Result{Requeue: true}, nil
 }
 
-// newPodForCR returns a busybox pod with the same name/namespace as the cr
-func newPodForCR(cr *wso2v1alpha1.TargetEndpoint) *corev1.Pod {
-	labels := map[string]string{
-		"app": cr.Name,
-	}
-	return &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      cr.Name + "-pod",
-			Namespace: cr.Namespace,
-			Labels:    labels,
-		},
-		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					Name:    "busybox",
-					Image:   "busybox",
-					Command: []string{"sleep", "3600"},
-				},
-			},
-		},
-	}
-}
-
 // Create newDeploymentForCR method to create a deployment.
 func (r *ReconcileTargetEndpoint) newDeploymentForCR(m *wso2v1alpha1.TargetEndpoint) *appsv1.Deployment {
 	replicas := m.Spec.Deploy.Count

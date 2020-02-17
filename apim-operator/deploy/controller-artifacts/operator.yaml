@@ -33,7 +33,7 @@ spec:
       containers:
         - name: apim-operator
           # Replace this with the built image name
-          image: wso2/k8s-api-operator:1.0.1
+          image: harsha89/k8s-api-operator:1.0.2
           command:
           - apim-operator
           imagePullPolicy: Always

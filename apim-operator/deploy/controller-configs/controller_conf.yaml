@@ -27,7 +27,7 @@ data:
   #kaniko image for the kaniko pod which builds the mgw api runtime and pushes to the registry
   kanikoImg: gcr.io/kaniko-project/executor
   #docker registry name which the mgw image to be pushed.  eg->  dockerRegistry: username
-  dockerRegistry: <username-docker-registry>
+  dockerRegistry: harsha89
   #Maximum number of replicas for the Horizontal Pod Auto-scale. Default->  hpaMaxReplicas: "5"
   hpaMaxReplicas: "5"
   #Avg CPU utliazation(%) to spin up the next pod.  Default->  hpaTargetAverageUtilizationCPU: "50"
@@ -51,6 +51,12 @@ data:
   #Stop at docker image creation or continue to deploy kubernetes artifact.
   #Default->  generatekubernbetesartifactsformgw: "true"
   generatekubernbetesartifactsformgw: "true"
+  #Set the mode whether we need to use ingress or default mode
+  mode: "ingress"
+  #Ingress resource name
+  ingressResourceName: "api-operator-ingress"
+  #Define whether ingress to use http or https endpoint of operator deployment
+  ingressTransportMode: "https"
 
 ---
 apiVersion: v1

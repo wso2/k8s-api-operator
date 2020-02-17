@@ -20,14 +20,13 @@ import (
 	"context"
 	"crypto/sha1"
 	"encoding/hex"
-	"fmt"
 	"github.com/golang/glog"
 	"github.com/sirupsen/logrus"
+	"k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"net/url"
-	"reflect"
 	"strconv"
 	"strings"
 	"text/template"
@@ -198,8 +197,9 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	mgwRuntimeImg := controlConfigData[mgwRuntimeImgConst]
 	kanikoImg := controlConfigData[kanikoImgConst]
 	dockerRegistry := controlConfigData[dockerRegistryConst]
+	operatorMode := controlConfigData[mode]
 	reqLogger.Info("Controller Configurations", "mgwToolkitImg", mgwToolkitImg, "mgwRuntimeImg", mgwRuntimeImg,
-		"kanikoImg", kanikoImg, "dockerRegistry", dockerRegistry, "userNameSpace", userNameSpace)
+		"kanikoImg", kanikoImg, "dockerRegistry", dockerRegistry, "userNameSpace", userNameSpace, "operatorMode", operatorMode)
 
 	//creates the docker configs in the required format
 	dockerSecretEr := dockerConfigCreator(r, operatorOwner, userNameSpace)
@@ -260,7 +260,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		log.Error(errImage, "Error in image finding")
 	}
 	log.Info("image exist? " + strconv.FormatBool(imageExist))
-	endpointNames, newSwagger := mgwSwaggerHandler(r, swagger, mode, userNameSpace)
+	endpointNames, newSwagger, apiBasePath := mgwSwaggerHandler(r, swagger, mode, userNameSpace)
 	for endpointNameL, _ := range endpointNames {
 		log.Info("Endpoint name " + endpointNameL)
 	}
@@ -282,9 +282,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 							}},
 						}
 						containerList = append(containerList, sidecarContainer)
-						if err := r.reconcileSidecarEndpointService(targetEndpointCr, userNameSpace, instance); err != nil {
-							return reconcile.Result{}, err
-						}
 					}
 				} else {
 					log.Info("Failed to deploy the sidecar endpoint " + endpointName)
@@ -771,7 +768,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	depFound := &appsv1.Deployment{}
 	deperr := r.client.Get(context.TODO(), types.NamespacedName{Name: dep.Name, Namespace: dep.Namespace}, depFound)
 
-	svc := createMgwLBService(instance, userNameSpace, owner, int32(httpPortVal), int32(httpsPortVal))
+	svc := createMgwLBService(instance, userNameSpace, owner, int32(httpPortVal), int32(httpsPortVal), operatorMode)
 	svcFound := &corev1.Service{}
 	svcErr := r.client.Get(context.TODO(), types.NamespacedName{Name: svc.Name, Namespace: svc.Namespace}, svcFound)
 
@@ -843,6 +840,15 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 					if svcErr != nil {
 						return reconcile.Result{}, svcErr
 					}
+
+					reqLogger.Info("Operator mode is set to " + operatorMode)
+					if (operatorMode == ingressMode) {
+						ingErr := createorUpdateMgwIngressResource(r, instance, userNameSpace, int32(httpPortVal),
+							int32(httpsPortVal), apiBasePath, controlConf)
+						if ingErr != nil {
+							return reconcile.Result{}, ingErr
+						}
+					}
 					//Service created successfully - don't requeue
 					return reconcile.Result{}, nil
 				} else if svcErr != nil {
@@ -886,6 +892,15 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 				svcErr = r.client.Create(context.TODO(), svc)
 				if svcErr != nil {
 					return reconcile.Result{}, svcErr
+				}
+
+				reqLogger.Info("Operator mode is set to " + operatorMode)
+				if (operatorMode == ingressMode) {
+					ingErr := createorUpdateMgwIngressResource(r, instance, userNameSpace, int32(httpPortVal),
+						int32(httpsPortVal), apiBasePath, controlConf)
+					if ingErr != nil {
+						return reconcile.Result{}, ingErr
+					}
 				}
 				//Service created successfully - don't requeue
 				return reconcile.Result{}, nil
@@ -937,6 +952,15 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 					svcErr = r.client.Create(context.TODO(), svc)
 					if svcErr != nil {
 						return reconcile.Result{}, svcErr
+					}
+
+					reqLogger.Info("Operator mode is set to " + operatorMode)
+					if (operatorMode == ingressMode) {
+						ingErr := createorUpdateMgwIngressResource(r, instance, userNameSpace, int32(httpPortVal),
+																			int32(httpsPortVal), apiBasePath, controlConf)
+						if ingErr != nil {
+							return reconcile.Result{}, ingErr
+						}
 					}
 					//Service created successfully - don't requeue
 					return reconcile.Result{}, nil
@@ -1135,13 +1159,14 @@ func mgwSwaggerLoader(swaggerDataMap map[string]string) (*openapi3.Swagger, stri
 }
 
 //Get endpoint from swagger and replace it with targetendpoint kind service endpoint
-func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string, userNameSpace string) (map[string]string, *openapi3.Swagger) {
+func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string, userNameSpace string) (map[string]string, *openapi3.Swagger, string) {
 
 	var mgwSwagger *openapi3.Swagger
 
 	mgwSwagger = swagger
 	endpointNames := make(map[string]string)
 	var checkt []string
+	var apiBasePath string
 	//api level endpoint
 	endpointData, checkEndpoint := swagger.Extensions[endpointExtension]
 	if checkEndpoint {
@@ -1223,6 +1248,18 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string, 
 		}
 	}
 
+	//extract base path
+	basePathData, checkBasePath := swagger.Extensions[apiBasePathExtention]
+	if checkBasePath {
+		basePathJson, checkJsonRaw := basePathData.(json.RawMessage)
+		if checkJsonRaw {
+			err := json.Unmarshal(basePathJson, &apiBasePath)
+			if err != nil {
+				log.Info("Error unmarshal base path")
+			}
+		}
+	}
+
 	//resource level endpoint
 	for pathName, path := range swagger.Paths {
 
@@ -1262,7 +1299,7 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string, 
 			assignOptionsEps(mgwSwagger, eps)
 		}
 	}
-	return endpointNames, mgwSwagger
+	return endpointNames, mgwSwagger, apiBasePath
 }
 
 func assignGetEps(swagger *openapi3.Swagger, resLevelEp map[string]XMGWProductionEndpoints) {
@@ -1780,37 +1817,16 @@ func dockerConfigCreator(r *ReconcileAPI, operatorOwner []metav1.OwnerReference,
 	return nil
 }
 
-//Service of the API
-//todo: This has to be changed to LB type
-func createMgwService(cr *wso2v1alpha1.API, nameSpace string) *corev1.Service {
-
-	labels := map[string]string{
-		"app": cr.Name,
-	}
-
-	return &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      cr.Name,
-			Namespace: nameSpace,
-			Labels:    labels,
-		},
-		Spec: corev1.ServiceSpec{
-			Type: "NodePort",
-			Ports: []corev1.ServicePort{{
-				Name:       "https",
-				Protocol:   corev1.ProtocolTCP,
-				Port:       9095,
-				TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: 9095},
-				NodePort:   30010,
-			}},
-			Selector: labels,
-		},
-	}
-}
-
 //Creating a LB balancer service to expose mgw
 func createMgwLBService(cr *wso2v1alpha1.API, nameSpace string, owner []metav1.OwnerReference, httpPortVal int32,
-	httpsPortVal int32) *corev1.Service {
+	httpsPortVal int32, deploymentType string) *corev1.Service {
+
+	var serviceType corev1.ServiceType;
+	serviceType = corev1.ServiceTypeLoadBalancer;
+
+	if deploymentType == ingressMode {
+		serviceType = corev1.ServiceTypeNodePort;
+	}
 
 	labels := map[string]string{
 		"app": cr.Name,
@@ -1824,7 +1840,7 @@ func createMgwLBService(cr *wso2v1alpha1.API, nameSpace string, owner []metav1.O
 			OwnerReferences: owner,
 		},
 		Spec: corev1.ServiceSpec{
-			Type: "LoadBalancer",
+			Type: serviceType,
 			Ports: []corev1.ServicePort{{
 				Name:       "port-9095",
 				Port:       httpsPortVal,
@@ -1837,6 +1853,98 @@ func createMgwLBService(cr *wso2v1alpha1.API, nameSpace string, owner []metav1.O
 			Selector: labels,
 		},
 	}
+}
+
+//Creating a LB balancer service to expose mgw
+func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, nameSpace string, httpPortVal int32,
+					httpsPortVal int32, apiBasePath string, controllerConfig *corev1.ConfigMap) error{
+	controlConfigData := controllerConfig.Data
+	transportMode := controlConfigData[ingressTransportMode]
+	ingressName := controlConfigData[ingressResourceName]
+	apiBasePath += "/*";
+	log.Info("Creating ingress resource with apiBasePath=" + apiBasePath);
+
+	var port int32;
+	var annotations map[string]string;
+	annotations =  make(map[string]string);
+
+	annotations["kubernetes.io/ingress.class"] = "nginx";
+
+	if (httpConst == transportMode) {
+		port = httpPortVal
+	} else {
+		port = httpsPortVal;
+		annotations["nginx.ingress.kubernetes.io/backend-protocol"] = "HTTPS";
+	}
+	apiServiceName := cr.Name;
+	ingress := &v1beta1.Ingress{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: ingressName, Namespace: nameSpace}, ingress)
+
+	if err != nil && errors.IsNotFound(err) {
+		log.Info("Ingress resouce not found with name" + ingressName + ".Hence creating a new ingress resource")
+		ingress := &v1beta1.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: nameSpace, // goes into backend full name
+				Name: ingressName,
+				Annotations: annotations,
+			},
+			Spec: v1beta1.IngressSpec{
+				Rules: []v1beta1.IngressRule{
+					{
+						IngressRuleValue: v1beta1.IngressRuleValue{
+							HTTP: &v1beta1.HTTPIngressRuleValue{
+								Paths: []v1beta1.HTTPIngressPath{
+									{
+										Path: apiBasePath,
+										Backend: v1beta1.IngressBackend{
+											ServiceName: apiServiceName,
+											ServicePort: intstr.IntOrString{IntVal: port},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+		err = r.client.Create(context.TODO(), ingress)
+		return err;
+	} else {
+		rules := ingress.Spec.Rules;
+
+		for _, element := range rules {
+			for _, path := range element.IngressRuleValue.HTTP.Paths {
+				if path.Path == apiBasePath {
+					path.Backend.ServiceName = apiServiceName
+					path.Backend.ServicePort = intstr.IntOrString{IntVal: port}
+					err = r.client.Update(context.TODO(), ingress)
+					return err;
+				}
+			}
+		}
+
+		rule := v1beta1.IngressRule{
+			IngressRuleValue: v1beta1.IngressRuleValue{
+				HTTP: &v1beta1.HTTPIngressRuleValue{
+					Paths: []v1beta1.HTTPIngressPath{
+						{
+							Path: apiBasePath,
+							Backend: v1beta1.IngressBackend{
+								ServiceName: apiServiceName,
+								ServicePort: intstr.IntOrString{IntVal: port},
+							},
+						},
+					},
+				},
+			},
+		}
+		rules = append(rules, rule);
+		ingress.Spec.Rules = rules;
+		err = r.client.Create(context.TODO(), ingress)
+		return err;
+	}
+	return err;
 }
 
 //default volume mounts for the kaniko job
@@ -2141,81 +2249,6 @@ func (r *ReconcileAPI) createDeploymentForSidecarBackend(m *wso2v1alpha1.TargetE
 	controllerutil.SetControllerReference(instance, dep, r.scheme)
 	return dep
 
-}
-
-func (r *ReconcileAPI) reconcileSidecarEndpointService(m *wso2v1alpha1.TargetEndpoint, namespace string,
-	instance *wso2v1alpha1.API) error {
-	newService := r.createServiceForSidecarEndpoint(m, namespace, instance)
-
-	err := r.client.Create(context.TODO(), newService)
-	if err != nil && !errors.IsAlreadyExists(err) {
-		return fmt.Errorf("failed to create Service resource: %v", err)
-	}
-
-	if err == nil {
-		return nil
-	}
-
-	currentService := &corev1.Service{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: namespace,
-		Name: newService.Name}, currentService)
-
-	if err != nil {
-		return fmt.Errorf("failed to retrieve Service resource: %v", err)
-	}
-
-	if reflect.DeepEqual(currentService.Spec.Ports, newService.Spec.Ports) {
-		return nil
-	}
-
-	currentService.Spec.Ports = newService.Spec.Ports
-	return r.client.Update(context.TODO(), currentService)
-}
-
-// NewService assembles the ClusterIP service for the Nginx
-func (r *ReconcileAPI) createServiceForSidecarEndpoint(m *wso2v1alpha1.TargetEndpoint,
-	namespace string, instance *wso2v1alpha1.API) *corev1.Service {
-	var port int
-	port = int(m.Spec.Port)
-	service := corev1.Service{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Service",
-			APIVersion: "apps/v1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      m.ObjectMeta.Name,
-			Namespace: namespace,
-		},
-		Spec: corev1.ServiceSpec{
-			Selector: m.ObjectMeta.Labels,
-			Ports: []corev1.ServicePort{
-				corev1.ServicePort{Port: m.Spec.Port, TargetPort: intstr.FromInt(port)},
-			},
-		},
-	}
-	controllerutil.SetControllerReference(instance, &service, r.scheme)
-	return &service
-}
-
-func (r *ReconcileAPI) reconcileDeploymentForSidecarEndpoint(m *wso2v1alpha1.TargetEndpoint, namespace string,
-	instance *wso2v1alpha1.API) error {
-	found := &appsv1.Deployment{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: m.Name, Namespace: m.Namespace}, found)
-	if err != nil && errors.IsNotFound(err) {
-		// Define a new deployment
-		dep := r.createDeploymentForSidecarBackend(m, namespace, instance)
-		log.WithValues("Creating a new Deployment %s/%s\n", namespace, dep.Name)
-		err = r.client.Create(context.TODO(), dep)
-		if err != nil {
-			log.WithValues("Failed to create new Deployment: %v\n", err)
-			return err
-		}
-		// Deployment created successfully - return and requeue
-	} else if err != nil {
-		log.WithValues("Failed to get Deployment: %v\n", err)
-		return err
-	}
-	return nil
 }
 
 func deleteCompletedJobs(namespace string) error {
