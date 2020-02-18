@@ -2,6 +2,7 @@ package registry
 
 import (
 	"fmt"
+	"github.com/wso2/k8s-apim-operator/apim-operator/pkg/registry/utils"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -21,10 +22,10 @@ var dockerHub = &Config{
 			Name: "reg-secret-volume",
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: ConfigJsonVolume,
+					SecretName: utils.ConfigJsonVolume,
 					Items: []corev1.KeyToPath{
 						{
-							Key:  DockerConfigKeyConst,
+							Key:  utils.DockerConfigKeyConst,
 							Path: "config.json",
 						},
 					},
@@ -33,12 +34,12 @@ var dockerHub = &Config{
 		},
 	},
 	ImagePullSecrets: []corev1.LocalObjectReference{
-		{Name: ConfigJsonVolume},
+		{Name: utils.ConfigJsonVolume},
 	},
 }
 
 func dockerHubFunc(repoName string, imgName string, tag string) *Config {
-	dockerHub.ImagePath = fmt.Sprintf("%s/%s", repoName, imgName, tag)
+	dockerHub.ImagePath = fmt.Sprintf("%s/%s:%s", repoName, imgName, tag)
 	return dockerHub
 }
 

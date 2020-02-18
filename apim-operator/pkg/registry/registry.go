@@ -1,6 +1,9 @@
 package registry
 
 import (
+	"fmt"
+	"github.com/go-logr/logr"
+	"github.com/wso2/k8s-apim-operator/apim-operator/pkg/registry/utils"
 	corev1 "k8s.io/api/core/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
@@ -16,6 +19,7 @@ type Config struct {
 	Volumes          []corev1.Volume
 	Env              []corev1.EnvVar
 	ImagePullSecrets []corev1.LocalObjectReference
+	IsImageExist     func(config *Config, auth utils.RegAuth, image string, tag string, logger logr.Logger) (bool, error)
 }
 
 // registry details
@@ -41,6 +45,18 @@ func GetConfig() *Config {
 func IsRegistryType(regType string) bool {
 	_, ok := registryConfigs[Type(regType)]
 	return ok
+}
+
+func IsImageExists(auth utils.RegAuth, logger logr.Logger) (bool, error) {
+	config := GetConfig()
+	imageCheckFunc := config.IsImageExist
+	image := fmt.Sprintf("%s/%s", repositoryName, imageName)
+
+	if imageCheckFunc == nil {
+		return utils.IsImageExists(auth, image, imageTag, logger)
+	}
+
+	return imageCheckFunc(config, auth, image, imageTag, logger)
 }
 
 func addRegistryConfig(regType Type, configFunc func(repoName string, imgName string, tag string) *Config) {

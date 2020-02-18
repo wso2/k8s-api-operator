@@ -24,6 +24,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/sirupsen/logrus"
 	"github.com/wso2/k8s-apim-operator/apim-operator/pkg/registry"
+	"github.com/wso2/k8s-apim-operator/apim-operator/pkg/registry/utils"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -36,8 +37,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/cbroglie/mustache"
-	registryclient "github.com/heroku/docker-registry-client/registry"
-
 	wso2v1alpha1 "github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/api/autoscaling/v2beta1"
@@ -1668,7 +1667,7 @@ func isImageExist(image string, tag string, r *ReconcileAPI, secretName string, 
 	} else if err != nil {
 		log.Error(err, "Error while getting docker credentials secret", "secret-name", secretName, "namespace", userNamespace)
 	} else {
-		authsJsonString := dockerConfigSecret.Data[registry.DockerConfigKeyConst]
+		authsJsonString := dockerConfigSecret.Data[utils.DockerConfigKeyConst]
 		auths := Auth{}
 		err := json.Unmarshal([]byte(authsJsonString), &auths)
 		if err != nil {
@@ -1687,31 +1686,7 @@ func isImageExist(image string, tag string, r *ReconcileAPI, secretName string, 
 		}
 	}
 
-	hub, err := registryclient.New(registryUrl, username, password)
-	if err != nil {
-		log.Error(err, "Error connecting to the docker registry", "registry-url", registryUrl)
-		return false, err
-	}
-
-	// remove registry name if exists in the image name
-	imageWithoutReg := image
-	splits := strings.Split(image, "/")
-	if len(splits) == 3 {
-		imageWithoutReg = fmt.Sprintf("%s/%s", splits[1], splits[2])
-	}
-
-	tags, err := hub.Tags(imageWithoutReg)
-	if err != nil {
-		log.Error(err, "Error getting tags from the image in the docker registry", "registry-url", registryUrl, "image", image)
-		return false, err
-	}
-	for _, foundTag := range tags {
-		if foundTag == tag {
-			log.Info("Found the image tag from the registry", "image", image, "tag", foundTag)
-			return true, nil
-		}
-	}
-	return false, nil
+	return registry.IsImageExists(utils.RegAuth{RegistryUrl: registryUrl, Username: username, Password: password}, log)
 }
 
 //Schedule Kaniko Job to generate micro-gw image

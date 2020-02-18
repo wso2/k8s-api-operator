@@ -1,4 +1,4 @@
-package registry
+package utils
 
 const ConfigJsonVolume = "config-json"
 const AwsCredentialsVolume = "aws-cred"

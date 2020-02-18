@@ -2,6 +2,7 @@ package registry
 
 import (
 	"fmt"
+	"github.com/wso2/k8s-apim-operator/apim-operator/pkg/registry/utils"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -22,7 +23,7 @@ var gcr = &Config{
 			Name: "svc-acc-key-volume",
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: GcrSvcAccKeyVolume,
+					SecretName: utils.GcrSvcAccKeyVolume,
 				},
 			},
 		},
@@ -30,11 +31,11 @@ var gcr = &Config{
 	Env: []corev1.EnvVar{
 		{
 			Name:  GoogleSecretEnvVariable,
-			Value: "/kaniko/.gcr/" + GcrSvcAccKeyFile,
+			Value: "/kaniko/.gcr/" + utils.GcrSvcAccKeyFile,
 		},
 	},
 	ImagePullSecrets: []corev1.LocalObjectReference{
-		{Name: ConfigJsonVolume},
+		{Name: utils.ConfigJsonVolume},
 	},
 }
 
