@@ -1698,6 +1698,9 @@ func scheduleKanikoJob(cr *wso2v1alpha1.API, imageName string, conf *corev1.Conf
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      cr.Name + "-job",
 					Namespace: cr.Namespace,
+					Annotations: map[string]string{
+						"sidecar.istio.io/inject": "false",
+					},
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
