@@ -109,9 +109,8 @@ Username  : jennifer
 Confirm configurations: Y: Y
 ```
 
-```sh
 Output:
-
+```sh
 [Installing OLM]
 customresourcedefinition.apiextensions.k8s.io/clusterserviceversions.operators.coreos.com created
 ...

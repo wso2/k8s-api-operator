@@ -6,7 +6,8 @@ You can find the content you need to be working with the API operator in this do
 
 1. [Getting started](GettingStarted)
     - [Overview](GettingStarted/overview.md)
-    - [Quick Start Guide](GettingStarted/quick-start-guide.md)  
+    - [Quick Start Guide](GettingStarted/quick-start-guide.md)
+    - [Working with Amazon Web Services](GettingStarted/working-with-aws.md)
 2. [How To Guide](HowToGuide)
     - [Configuration Overview](HowToGuide/configurations-overview.md)
     - [Apply security to API](HowToGuide/apply-security-to-api.md)
