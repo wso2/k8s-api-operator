@@ -47,9 +47,11 @@ const (
 	mgwConfConst          = "micro-gw.conf"
 	dockerSecretNameConst = "docker-secret"
 	controllerConfName    = "controller-config"
+	ingressAnnotationMap  = "ingress-annotations"
 	policyFileConst       = "policies.yaml"
 	ingressResourceName   = "ingressResourceName"
-	ingressTransportMode   = "ingressTransportMode"
+	ingressTransportMode  = "ingressTransportMode"
+	ingressHostName		  = "ingressHostName"
 
 	usernameConst  = "username"
 	passwordConst  = "password"

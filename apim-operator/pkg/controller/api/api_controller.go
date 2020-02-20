@@ -1861,24 +1861,23 @@ func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, nam
 	controlConfigData := controllerConfig.Data
 	transportMode := controlConfigData[ingressTransportMode]
 	ingressName := controlConfigData[ingressResourceName]
+	ingressHostName := controlConfigData[ingressHostName]
+
 	apiBasePath += "/*";
 	log.Info("Creating ingress resource with apiBasePath=" + apiBasePath);
 
+	annotationMap, err := getConfigmap(r, ingressAnnotationMap, wso2NameSpaceConst)
 	var port int32;
-	var annotations map[string]string;
-	annotations =  make(map[string]string);
-
-	annotations["kubernetes.io/ingress.class"] = "nginx";
 
 	if (httpConst == transportMode) {
 		port = httpPortVal
 	} else {
-		port = httpsPortVal;
-		annotations["nginx.ingress.kubernetes.io/backend-protocol"] = "HTTPS";
+		port = httpsPortVal
 	}
+
 	apiServiceName := cr.Name;
 	ingress := &v1beta1.Ingress{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: ingressName, Namespace: nameSpace}, ingress)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: ingressName, Namespace: nameSpace}, ingress)
 
 	if err != nil && errors.IsNotFound(err) {
 		log.Info("Ingress resouce not found with name" + ingressName + ".Hence creating a new ingress resource")
@@ -1886,11 +1885,12 @@ func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, nam
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: nameSpace, // goes into backend full name
 				Name: ingressName,
-				Annotations: annotations,
+				Annotations: annotationMap.Data,
 			},
 			Spec: v1beta1.IngressSpec{
 				Rules: []v1beta1.IngressRule{
 					{
+						Host: ingressHostName,
 						IngressRuleValue: v1beta1.IngressRuleValue{
 							HTTP: &v1beta1.HTTPIngressRuleValue{
 								Paths: []v1beta1.HTTPIngressPath{
@@ -1924,25 +1924,19 @@ func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, nam
 			}
 		}
 
-		rule := v1beta1.IngressRule{
-			IngressRuleValue: v1beta1.IngressRuleValue{
-				HTTP: &v1beta1.HTTPIngressRuleValue{
-					Paths: []v1beta1.HTTPIngressPath{
-						{
-							Path: apiBasePath,
-							Backend: v1beta1.IngressBackend{
-								ServiceName: apiServiceName,
-								ServicePort: intstr.IntOrString{IntVal: port},
-							},
-						},
-					},
+		for _, element := range rules {
+			paths := element.IngressRuleValue.HTTP.Paths;
+			path := v1beta1.HTTPIngressPath{
+				Path: apiBasePath,
+				Backend: v1beta1.IngressBackend{
+					ServiceName: apiServiceName,
+					ServicePort: intstr.IntOrString{IntVal: port},
 				},
-			},
+			}
+			paths = append(paths, path)
+			err = r.client.Update(context.TODO(), ingress)
+			return err;
 		}
-		rules = append(rules, rule);
-		ingress.Spec.Rules = rules;
-		err = r.client.Create(context.TODO(), ingress)
-		return err;
 	}
 	return err;
 }

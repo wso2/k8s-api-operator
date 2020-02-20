@@ -57,6 +57,8 @@ data:
   ingressResourceName: "api-operator-ingress"
   #Define whether ingress to use http or https endpoint of operator deployment
   ingressTransportMode: "https"
+  #Define the hostname of the ingress
+  ingressHostName : "mgw.ingess.wso2.com"
 
 ---
 apiVersion: v1
@@ -86,4 +88,15 @@ data:
   #Request and response validation
   enableRequestValidation: "false"
   enableResponseValidation: "false"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ingress-annotations
+  namespace: wso2-system
+data:
+  nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+  kubernetes.io/ingress.class: "nginx"
+
 
