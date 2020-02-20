@@ -1700,6 +1700,12 @@ func scheduleKanikoJob(cr *wso2v1alpha1.API, conf *corev1.ConfigMap, jobVolumeMo
 	controlConfigData := conf.Data
 	kanikoImg := controlConfigData[kanikoImgConst]
 
+	args := append([]string{
+		"--dockerfile=/usr/wso2/dockerfile/Dockerfile",
+		"--context=/usr/wso2/",
+		"--destination=" + regConfig.ImagePath,
+	}, regConfig.Args...)
+
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            kanikoJobName,
@@ -1718,12 +1724,8 @@ func scheduleKanikoJob(cr *wso2v1alpha1.API, conf *corev1.ConfigMap, jobVolumeMo
 							Name:         cr.Name + "gen-container",
 							Image:        kanikoImg,
 							VolumeMounts: jobVolumeMount,
-							Args: []string{
-								"--dockerfile=/usr/wso2/dockerfile/Dockerfile",
-								"--context=/usr/wso2/",
-								"--destination=" + regConfig.ImagePath,
-							},
-							Env: regConfig.Env,
+							Args:         args,
+							Env:          regConfig.Env,
 						},
 					},
 					RestartPolicy: "Never",

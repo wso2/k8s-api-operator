@@ -14,15 +14,23 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package api
+package registry
 
 import (
-	"regexp"
+	"fmt"
 )
 
-// removeVersionTag removes version number in a url provided
-func removeVersionTag(url string) string {
-	regExpString := `\/v[\d.-]*\/?$`
-	regExp := regexp.MustCompile(regExpString)
-	return regExp.ReplaceAllString(url, "")
+const HTTP Type = "HTTP"
+
+var httpReg = *dockerHub
+
+func httpRegFunc(repoName string, imgName string, tag string) *Config {
+	httpReg.ImagePath = fmt.Sprintf("%s/%s:%s", repoName, imgName, tag)
+	httpReg.Args = []string{"--insecure"}
+
+	return &httpReg
+}
+
+func init() {
+	addRegistryConfig(HTTP, httpRegFunc)
 }
