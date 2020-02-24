@@ -96,7 +96,9 @@ metadata:
   name: ingress-annotations
   namespace: wso2-system
 data:
-  nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
-  kubernetes.io/ingress.class: "nginx"
+  ingress.properties: |
+    "nginx.ingress.kubernetes.io/backend-protocol": "HTTPS",
+    "kubernetes.io/ingress.class": "nginx",
+    "nginx.ingress.kubernetes.io/ssl-redirect": "false"
 
 

@@ -768,9 +768,11 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	depFound := &appsv1.Deployment{}
 	deperr := r.client.Get(context.TODO(), types.NamespacedName{Name: dep.Name, Namespace: dep.Namespace}, depFound)
 
-	svc := createMgwLBService(instance, userNameSpace, owner, int32(httpPortVal), int32(httpsPortVal), operatorMode)
+	svc := createMgwLBService(r, instance, userNameSpace, owner, int32(httpPortVal), int32(httpsPortVal), operatorMode)
 	svcFound := &corev1.Service{}
 	svcErr := r.client.Get(context.TODO(), types.NamespacedName{Name: svc.Name, Namespace: svc.Namespace}, svcFound)
+
+	log.Info("LOOOOOOOOOOOOOOOOOGGING error service", svcErr)
 
 	getMaxRep := controlConfigData[hpaMaxReplicas]
 	intValueRep, err := strconv.ParseInt(getMaxRep, 10, 32)
@@ -868,6 +870,9 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		}
 
 	} else if imageExist && !instance.Spec.Override {
+		log.Info("Service error just before deployment creation", svcErr)
+		log.Info("deployment error error just before deployment creation", deperr)
+
 		log.Info("Image already exist, hence skipping the kaniko job")
 		errDeleteJob := deleteCompletedJobs(instance.Namespace)
 		if errDeleteJob != nil {
@@ -886,6 +891,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			} else if deperr != nil {
 				return reconcile.Result{}, deperr
 			}
+
+			log.Info("Log up to service existance with error", svcErr)
 
 			if svcErr != nil && errors.IsNotFound(svcErr) {
 				reqLogger.Info("Creating a new Service", "SVC.Namespace", svc.Namespace, "SVC.Name", svc.Name)
@@ -1818,7 +1825,7 @@ func dockerConfigCreator(r *ReconcileAPI, operatorOwner []metav1.OwnerReference,
 }
 
 //Creating a LB balancer service to expose mgw
-func createMgwLBService(cr *wso2v1alpha1.API, nameSpace string, owner []metav1.OwnerReference, httpPortVal int32,
+func createMgwLBService(r *ReconcileAPI, cr *wso2v1alpha1.API, nameSpace string, owner []metav1.OwnerReference, httpPortVal int32,
 	httpsPortVal int32, deploymentType string) *corev1.Service {
 
 	var serviceType corev1.ServiceType;
@@ -1832,7 +1839,7 @@ func createMgwLBService(cr *wso2v1alpha1.API, nameSpace string, owner []metav1.O
 		"app": cr.Name,
 	}
 
-	return &corev1.Service{
+	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            cr.Name,
 			Namespace:       nameSpace,
@@ -1853,6 +1860,9 @@ func createMgwLBService(cr *wso2v1alpha1.API, nameSpace string, owner []metav1.O
 			Selector: labels,
 		},
 	}
+
+	controllerutil.SetControllerReference(cr, svc, r.scheme)
+	return svc;
 }
 
 //Creating a LB balancer service to expose mgw
@@ -1878,6 +1888,17 @@ func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, nam
 	apiServiceName := cr.Name;
 	ingress := &v1beta1.Ingress{}
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: ingressName, Namespace: nameSpace}, ingress)
+	annotationConfigData := annotationMap.Data
+	annotationsList := annotationConfigData[ingressProperties]
+	var ingressAnnotationMap map[string]string
+	ingressAnnotationMap = make(map[string]string)
+
+	for _, element := range strings.Split(annotationsList, ",") {
+		splitValues := strings.Split(element, ",")
+		ingressAnnotationMap[splitValues[0]] = splitValues[1]
+	}
+
+	log.Info("MAAAAAAAAAAAAAAAAAAAAAAAAP:", ingressAnnotationMap)
 
 	if err != nil && errors.IsNotFound(err) {
 		log.Info("Ingress resouce not found with name" + ingressName + ".Hence creating a new ingress resource")
@@ -1885,7 +1906,7 @@ func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, nam
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: nameSpace, // goes into backend full name
 				Name: ingressName,
-				Annotations: annotationMap.Data,
+				Annotations: ingressAnnotationMap,
 			},
 			Spec: v1beta1.IngressSpec{
 				Rules: []v1beta1.IngressRule{
@@ -1908,6 +1929,7 @@ func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, nam
 				},
 			},
 		}
+		controllerutil.SetControllerReference(cr, ingress, r.scheme)
 		err = r.client.Create(context.TODO(), ingress)
 		return err;
 	} else {

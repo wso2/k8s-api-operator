@@ -48,6 +48,7 @@ const (
 	dockerSecretNameConst = "docker-secret"
 	controllerConfName    = "controller-config"
 	ingressAnnotationMap  = "ingress-annotations"
+	ingressProperties     = "ingress.properties"
 	policyFileConst       = "policies.yaml"
 	ingressResourceName   = "ingressResourceName"
 	ingressTransportMode  = "ingressTransportMode"
