@@ -28,15 +28,17 @@ var log = logf.Log.WithName("registry")
 
 type Type string
 
+// Config defines the registry specific configurations
 type Config struct {
-	RegistryType     Type
-	ImagePath        string
-	VolumeMounts     []corev1.VolumeMount
-	Volumes          []corev1.Volume
-	ImagePullSecrets []corev1.LocalObjectReference
-	Env              []corev1.EnvVar
-	Args             []string
-	IsImageExist     func(config *Config, auth utils.RegAuth, image string, tag string, logger logr.Logger) (bool, error)
+	RegistryType     Type                          // Type of the registry
+	ImagePath        string                        // Full image path to be pushed by the Kaniko Job
+	VolumeMounts     []corev1.VolumeMount          // VolumeMounts for the pod that runs Kaniko Job
+	Volumes          []corev1.Volume               // Volumes to be mounted for the pod that runs Kaniko Job
+	Env              []corev1.EnvVar               // Environment variables to be set in the pod that runs Kaniko Job
+	Args             []string                      // Args to be passed to the Kaniko Job
+	ImagePullSecrets []corev1.LocalObjectReference // Secrets for the pod which runs the final micro-gateway setup
+	IsImageExist     func(config *Config, auth utils.RegAuth, image string,
+		tag string, logger logr.Logger) (bool, error) // Function to check the already existence of the image
 }
 
 // registry details
@@ -47,6 +49,7 @@ var imageTag string
 
 var registryConfigs = map[Type]func(repoName string, imgName string, tag string) *Config{}
 
+// SetRegistry sets the registry type, repository and image
 func SetRegistry(regType Type, repoName string, imgName string, tag string) {
 	log.Info("Setting registry type", "registry-type", regType, "repository", repoName, "image", imgName, "tag", tag)
 	registryType = regType
@@ -55,15 +58,18 @@ func SetRegistry(regType Type, repoName string, imgName string, tag string) {
 	imageTag = tag
 }
 
+// GetConfig returns the registry config
 func GetConfig() *Config {
 	return registryConfigs[registryType](repositoryName, imageName, imageTag)
 }
 
+// IsRegistryType validates the given regType is a valid registry type
 func IsRegistryType(regType string) bool {
 	_, ok := registryConfigs[Type(regType)]
 	return ok
 }
 
+// IsImageExists check repository for image and returns true if it exists
 func IsImageExists(auth utils.RegAuth, logger logr.Logger) (bool, error) {
 	config := GetConfig()
 	imageCheckFunc := config.IsImageExist
@@ -76,10 +82,10 @@ func IsImageExists(auth utils.RegAuth, logger logr.Logger) (bool, error) {
 	return imageCheckFunc(config, auth, image, imageTag, logger)
 }
 
-func addRegistryConfig(regType Type, configFunc func(repoName string, imgName string, tag string) *Config) {
+func addRegistryConfig(regType Type, getConfigFunc func(repoName string, imgName string, tag string) *Config) {
 	if registryConfigs[regType] != nil {
 		log.Error(nil, "Duplicate registry types", "type", regType)
 	} else {
-		registryConfigs[regType] = configFunc
+		registryConfigs[regType] = getConfigFunc
 	}
 }

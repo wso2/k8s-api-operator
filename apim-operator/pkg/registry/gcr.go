@@ -24,19 +24,22 @@ import (
 
 const Gcr Type = "GCR"
 const GoogleSecretEnvVariable = "GOOGLE_APPLICATION_CREDENTIALS"
+const SvcAccKeyMountPath = "/kaniko/.gcr/"
+const svcAccKeyVolume = "svc-acc-key-volume"
 
+// Google Container Registry Configs
 var gcr = &Config{
 	RegistryType: Gcr,
 	VolumeMounts: []corev1.VolumeMount{
 		{
-			Name:      "svc-acc-key-volume",
-			MountPath: "/kaniko/.gcr/",
+			Name:      svcAccKeyVolume,
+			MountPath: SvcAccKeyMountPath,
 			ReadOnly:  true,
 		},
 	},
 	Volumes: []corev1.Volume{
 		{
-			Name: "svc-acc-key-volume",
+			Name: svcAccKeyVolume,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: utils.GcrSvcAccKeyVolume,
@@ -47,7 +50,7 @@ var gcr = &Config{
 	Env: []corev1.EnvVar{
 		{
 			Name:  GoogleSecretEnvVariable,
-			Value: "/kaniko/.gcr/" + utils.GcrSvcAccKeyFile,
+			Value: SvcAccKeyMountPath + utils.GcrSvcAccKeyFile,
 		},
 	},
 	ImagePullSecrets: []corev1.LocalObjectReference{
@@ -55,11 +58,11 @@ var gcr = &Config{
 	},
 }
 
-func gcrFunc(repoName string, imgName string, tag string) *Config {
+func getGcrConfigFunc(repoName string, imgName string, tag string) *Config {
 	gcr.ImagePath = fmt.Sprintf("gcr.io/%s/%s:%s", repoName, imgName, tag)
 	return gcr
 }
 
 func init() {
-	addRegistryConfig(Gcr, gcrFunc)
+	addRegistryConfig(Gcr, getGcrConfigFunc)
 }

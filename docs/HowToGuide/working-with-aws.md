@@ -51,9 +51,10 @@ You can use Amazon ECR as the registry or other registry type. Following [Instal
 ```sh
 >> apictl install api-operator
 Choose repository type:
-1: Docker Hub (Or others, quay.io)
+1: Docker Hub (Or others, quay.io, HTTPS registry)
 2: Amazon ECR
 3: GCR
+4: HTTP Private Registry
 Choose a number: 1: 2
 Enter repository name (<aws_account_id.dkr.ecr.region.amazonaws.com>/repository): 610968236798.dkr.ecr.us-east-2.amazonaws.com/my-ecr-repo
 Amazon credential file: /Users/renuka/.aws/credentials:
@@ -78,40 +79,10 @@ namespace/wso2-system created
 [Setting to K8s Mode]
 ```
 
-## Using a Docker Hub registry
-
-Instead of using an AWS ECR you can use other registry types. The following illustrates using a Docker Hub registry for this purpose. 
-
-```sh
->> apictl change registry
-Choose repository type:
-1: Docker Hub (Or others, quay.io)
-2: Amazon ECR
-3: GCR
-Choose a number: 1: 1
-Enter repository name (john or quay.io/mark): : jennifer
-Enter username: : jennifer
-Enter password:
-
-Repository: jennifer
-Username  : jennifer
-Confirm configurations: Y: Y
-```
-
-Output:
-```sh
-configmap/controller-config configured
-secret/config-json configured
-```
-
 ## Try out
-Try out [sample scenarios](quick-start-guide.md#sample-scenarios) in the quick start guide.
+Try out [sample scenarios](../GettingStarted/quick-start-guide.md#sample-scenarios) in the quick start guide.
 
 ## Clean up
 
-- Delete the AWS ECR repository (Or the Docker Hub image)
-- Execute the following command to uninstall the API Operator and all related resources. Please do not use this command in the production. This will remove all the microgateway deployment.
-    ```sh
-    apictl clean api-operator
-    ```
-- Or delete the AWS EKS cluster.
+- Delete the AWS ECR repository.
+- Delete the AWS EKS cluster.

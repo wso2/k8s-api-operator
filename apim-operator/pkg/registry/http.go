@@ -22,15 +22,19 @@ import (
 
 const HTTP Type = "HTTP"
 
+// Copy of Docker Hub configs as HTTP private registry configs
 var httpReg = *dockerHub
 
-func httpRegFunc(repoName string, imgName string, tag string) *Config {
+func getHttpRegConfigFunc(repoName string, imgName string, tag string) *Config {
 	httpReg.ImagePath = fmt.Sprintf("%s/%s:%s", repoName, imgName, tag)
+
+	// Add --insecure arg
+	// This will not effect Docker Hub configs since this is a copy of it
 	httpReg.Args = []string{"--insecure"}
 
 	return &httpReg
 }
 
 func init() {
-	addRegistryConfig(HTTP, httpRegFunc)
+	addRegistryConfig(HTTP, getHttpRegConfigFunc)
 }

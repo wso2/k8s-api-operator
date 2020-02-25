@@ -24,6 +24,7 @@ import (
 
 const DockerHub Type = "DOCKER_HUB"
 
+// Docker Hub configs
 var dockerHub = &Config{
 	RegistryType: DockerHub,
 	VolumeMounts: []corev1.VolumeMount{
@@ -54,11 +55,11 @@ var dockerHub = &Config{
 	},
 }
 
-func dockerHubFunc(repoName string, imgName string, tag string) *Config {
+func getDockerHubConfigFunc(repoName string, imgName string, tag string) *Config {
 	dockerHub.ImagePath = fmt.Sprintf("%s/%s:%s", repoName, imgName, tag)
 	return dockerHub
 }
 
 func init() {
-	addRegistryConfig(DockerHub, dockerHubFunc)
+	addRegistryConfig(DockerHub, getDockerHubConfigFunc)
 }

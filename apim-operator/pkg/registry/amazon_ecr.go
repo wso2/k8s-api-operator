@@ -28,24 +28,29 @@ import (
 )
 
 const AmazonECR Type = "AMAZON_ECR"
+const AmazonCredHelperVolume = "amazon-cred-helper"
+const AmazonCredHelperMountPath = "/kaniko/.docker/"
+const AwsCredFileVolume = "aws-credentials"
+const AwsCredFileMountPath = "/root/.aws/"
 
+// Amazon ECR Configs
 var amazonEcr = &Config{
 	RegistryType: AmazonECR,
 	VolumeMounts: []corev1.VolumeMount{
 		{
-			Name:      "amazon-cred-helper",
-			MountPath: "/kaniko/.docker/",
+			Name:      AmazonCredHelperVolume,
+			MountPath: AmazonCredHelperMountPath,
 			ReadOnly:  true,
 		},
 		{
-			Name:      "aws-credentials",
-			MountPath: "/root/.aws/",
+			Name:      AwsCredFileVolume,
+			MountPath: AwsCredFileMountPath,
 			ReadOnly:  true,
 		},
 	},
 	Volumes: []corev1.Volume{
 		{
-			Name: "amazon-cred-helper",
+			Name: AmazonCredHelperVolume,
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{
@@ -55,7 +60,7 @@ var amazonEcr = &Config{
 			},
 		},
 		{
-			Name: "aws-credentials",
+			Name: AwsCredFileVolume,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: utils.AwsCredentialsVolume,
@@ -100,7 +105,7 @@ var amazonEcr = &Config{
 	},
 }
 
-func amazonEcrFunc(repoName string, imgName string, tag string) *Config {
+func getAmazonEcrConfigFunc(repoName string, imgName string, tag string) *Config {
 	// repository = <aws_account_id.dkr.ecr.region.amazonaws.com>/repository"
 	// image path = <aws_account_id.dkr.ecr.region.amazonaws.com>/repository:imageName-v1"
 	amazonEcr.ImagePath = fmt.Sprintf("%s:%s-%s", repoName, imgName, tag)
@@ -108,5 +113,5 @@ func amazonEcrFunc(repoName string, imgName string, tag string) *Config {
 }
 
 func init() {
-	addRegistryConfig(AmazonECR, amazonEcrFunc)
+	addRegistryConfig(AmazonECR, getAmazonEcrConfigFunc)
 }
