@@ -84,7 +84,6 @@ rules:
   - "extensions"
   resources:
   - ingresses
+  - ingress
   verbs:
-  - get
-  - create
-  - list
+  - '*'

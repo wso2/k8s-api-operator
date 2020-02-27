@@ -772,8 +772,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	svcFound := &corev1.Service{}
 	svcErr := r.client.Get(context.TODO(), types.NamespacedName{Name: svc.Name, Namespace: svc.Namespace}, svcFound)
 
-	log.Info("LOOOOOOOOOOOOOOOOOGGING error service", svcErr)
-
 	getMaxRep := controlConfigData[hpaMaxReplicas]
 	intValueRep, err := strconv.ParseInt(getMaxRep, 10, 32)
 	if err != nil {
@@ -870,8 +868,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		}
 
 	} else if imageExist && !instance.Spec.Override {
-		log.Info("Service error just before deployment creation", svcErr)
-		log.Info("deployment error error just before deployment creation", deperr)
 
 		log.Info("Image already exist, hence skipping the kaniko job")
 		errDeleteJob := deleteCompletedJobs(instance.Namespace)
@@ -882,7 +878,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		if genArtifacts {
 			log.Info("generating kubernetes artifacts")
 			if deperr != nil && errors.IsNotFound(deperr) {
-				reqLogger.Info("Creating a new Dep", "Dep.Namespace", dep.Namespace, "Dep.Name", dep.Name)
+				log.Info("Creating a new Dep", "Dep.Namespace", dep.Namespace, "Dep.Name", dep.Name)
 				deperr = r.client.Create(context.TODO(), dep)
 				if deperr != nil {
 					return reconcile.Result{}, deperr
@@ -892,10 +888,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 				return reconcile.Result{}, deperr
 			}
 
-			log.Info("Log up to service existance with error", svcErr)
-
 			if svcErr != nil && errors.IsNotFound(svcErr) {
-				reqLogger.Info("Creating a new Service", "SVC.Namespace", svc.Namespace, "SVC.Name", svc.Name)
+				log.Info("Creating a new Service", "SVC.Namespace", svc.Namespace, "SVC.Name", svc.Name)
 				svcErr = r.client.Create(context.TODO(), svc)
 				if svcErr != nil {
 					return reconcile.Result{}, svcErr
@@ -1873,7 +1867,6 @@ func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, nam
 	ingressName := controlConfigData[ingressResourceName]
 	ingressHostName := controlConfigData[ingressHostName]
 
-	apiBasePath += "/*";
 	log.Info("Creating ingress resource with apiBasePath=" + apiBasePath);
 
 	annotationMap, err := getConfigmap(r, ingressAnnotationMap, wso2NameSpaceConst)
@@ -1889,19 +1882,21 @@ func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, nam
 	ingress := &v1beta1.Ingress{}
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: ingressName, Namespace: nameSpace}, ingress)
 	annotationConfigData := annotationMap.Data
+
 	annotationsList := annotationConfigData[ingressProperties]
 	var ingressAnnotationMap map[string]string
 	ingressAnnotationMap = make(map[string]string)
 
-	for _, element := range strings.Split(annotationsList, ",") {
-		splitValues := strings.Split(element, ",")
-		ingressAnnotationMap[splitValues[0]] = splitValues[1]
+	splitArray := strings.Split(annotationsList, "\n")
+	for _, element := range splitArray {
+		if element != "" && strings.ContainsAny(element, ":") {
+			splitValues := strings.Split(element, ":")
+			ingressAnnotationMap[strings.TrimSpace(splitValues[0])] = strings.TrimSpace(splitValues[1])
+		}
 	}
 
-	log.Info("MAAAAAAAAAAAAAAAAAAAAAAAAP:", ingressAnnotationMap)
-
 	if err != nil && errors.IsNotFound(err) {
-		log.Info("Ingress resouce not found with name" + ingressName + ".Hence creating a new ingress resource")
+		log.Info("Ingress resource not found with name" + ingressName + ".Hence creating a new ingress resource")
 		ingress := &v1beta1.Ingress{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: nameSpace, // goes into backend full name
@@ -1929,23 +1924,33 @@ func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, nam
 				},
 			},
 		}
-		controllerutil.SetControllerReference(cr, ingress, r.scheme)
 		err = r.client.Create(context.TODO(), ingress)
 		return err;
 	} else {
 		rules := ingress.Spec.Rules;
-
+		var rulesArray []v1beta1.IngressRule
+		var update bool = false
 		for _, element := range rules {
+			var pathArray []v1beta1.HTTPIngressPath;
 			for _, path := range element.IngressRuleValue.HTTP.Paths {
 				if path.Path == apiBasePath {
 					path.Backend.ServiceName = apiServiceName
 					path.Backend.ServicePort = intstr.IntOrString{IntVal: port}
-					err = r.client.Update(context.TODO(), ingress)
-					return err;
+					update = true;
 				}
+				pathArray = append(pathArray, path)
+				element.IngressRuleValue.HTTP.Paths = pathArray
 			}
+			rulesArray = append(rulesArray, element)
 		}
 
+		if update {
+			ingress.Spec.Rules = rulesArray
+			err = r.client.Update(context.TODO(), ingress)
+			return err;
+		}
+
+		rulesArray = make([]v1beta1.IngressRule, 0)
 		for _, element := range rules {
 			paths := element.IngressRuleValue.HTTP.Paths;
 			path := v1beta1.HTTPIngressPath{
@@ -1956,6 +1961,9 @@ func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, nam
 				},
 			}
 			paths = append(paths, path)
+			element.IngressRuleValue.HTTP.Paths = paths
+			rulesArray = append(rulesArray, element)
+			ingress.Spec.Rules = rulesArray
 			err = r.client.Update(context.TODO(), ingress)
 			return err;
 		}
@@ -2261,7 +2269,6 @@ func (r *ReconcileAPI) createDeploymentForSidecarBackend(m *wso2v1alpha1.TargetE
 			},
 		},
 	}
-	// Set Examplekind instance as the owner and controller
 	controllerutil.SetControllerReference(instance, dep, r.scheme)
 	return dep
 
