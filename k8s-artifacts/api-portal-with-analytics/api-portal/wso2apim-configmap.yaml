@@ -32,7 +32,7 @@ data:
     password = "admin"
     create_admin_account = true
     [user_store]
-    type = "database"
+    type = "database_unique_id"
     # [database.apim_db]
     # type = "h2"
     # url = "jdbc:h2:./repository/database/WSO2AM_DB;AUTO_SERVER=TRUE;DB_CLOSE_ON_EXIT=FALSE"
@@ -176,9 +176,9 @@ data:
     #service_url = "https://localhost:9445/bpmn"
     #username = "$ref{super_admin.username}"
     #password = "$ref{super_admin.password}"
-    #callback_endpoint = "https://localhost:${mgt.transport.https.port}/api/am/admin/v0.15/workflows/update-workflow-status"
+    #callback_endpoint = "https://localhost:${mgt.transport.https.port}/api/am/admin/v0.16/workflows/update-workflow-status"
     #token_endpoint = "https://localhost:${https.nio.port}/token"
-    #client_registration_endpoint = "https://localhost:${mgt.transport.https.port}/client-registration/v0.15/register"
+    #client_registration_endpoint = "https://localhost:${mgt.transport.https.port}/client-registration/v0.16/register"
     #client_registration_username = "$ref{super_admin.username}"
     #client_registration_password = "$ref{super_admin.password}"
     #data bridge config

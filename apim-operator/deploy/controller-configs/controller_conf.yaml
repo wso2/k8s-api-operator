@@ -21,9 +21,9 @@ metadata:
   namespace: wso2-system
 data:
   #mgw toolkit image to initialize/setup the micro gw project
-  mgwToolkitImg: wso2am/wso2micro-gw-toolkit:3.0.2
+  mgwToolkitImg: renukafernando/wso2am-micro-gw-toolkit:3.1.0-alpha
   #mgw runtime image to use in the mgw executable
-  mgwRuntimeImg: wso2/wso2micro-gw:3.0.2
+  mgwRuntimeImg: wso2/wso2micro-gw:3.1.0-alpha
   #kaniko image for the kaniko pod which builds the mgw api runtime and pushes to the registry
   kanikoImg: gcr.io/kaniko-project/executor
   #docker registry name which the mgw image to be pushed.  eg->  dockerRegistry: username

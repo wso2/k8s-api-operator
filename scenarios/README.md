@@ -11,3 +11,4 @@
 1. [Sample 9: Expose an API with multiple service endpoints](scenario-9)
 1. [Sample 10: Apply interceptors to an API](scenario-10)
 1. [Sample 11: Enabling Analytics for managed API](scenario-11)
+1. [Scenario 12: Apply distributed rate-limiting to managed API in Kubernetes cluster](scenario-12)

@@ -97,63 +97,66 @@ Minimum CPU and Memory for the K8s cluster: **2 vCPU, 8GB of Memory**
     ```
 <br />
 
-#### Step 2: Install API Operator
+#### Step 2: Configure API Controller
 
-* Deploy the Controller artifacts
+- Download API controller v3.0.0 for your operating system from the [website](https://wso2.com/api-management/tooling/)
 
-- This will deploy the artifacts related to the API Operator
-    ```
-    kubectl apply -f apim-operator/controller-artifacts/
-    
-    Output:
-    
-    namespace/wso2-system created
-    deployment.apps/apim-operator created
-    clusterrole.rbac.authorization.k8s.io/apim-operator created
-    clusterrolebinding.rbac.authorization.k8s.io/apim-operator created
-    serviceaccount/apim-operator created
-    customresourcedefinition.apiextensions.k8s.io/apis.wso2.com created
-    customresourcedefinition.apiextensions.k8s.io/ratelimitings.wso2.com created
-    customresourcedefinition.apiextensions.k8s.io/securities.wso2.com created
-    customresourcedefinition.apiextensions.k8s.io/targetendpoints.wso2.com created
-    ```
+- Extract the API controller distribution and navigate inside the extracted folder using the command-line tool
 
-* Deploy the controller level configurations **[IMPORTANT]**
+- Add the location of the extracted folder to your system's $PATH variable to be able to access the executable from anywhere.
 
-    When you deploy an API, this will create a docker image for the API and be pushed to Docker-Hub. For this, your Docker-Hub credentials are required.
-    
-    1. Open **apim-operator/controller-configs/controller_conf.yaml** and navigate to docker registry section(mentioned below), and  update ***user's docker registry***.
-            
-        ```
-        #docker registry name which the mgw image to be pushed.  eg->  dockerRegistry: username
-        dockerRegistry: <username-docker-registry>
-        ```
-        
-    2. Open **apim-operator/controller-configs/docker_secret_template.yaml** and navigate to data section. <br>
-        Enter the base 64 encoded username and password of the Docker-Hub account 
-        
-        ```
-        data:
-         username: ENTER YOUR BASE64 ENCODED USERNAME
-         password: ENTER YOUR BASE64 ENCODED PASSWORD
-        ```
-        Once you done with the above configurations, execute the following command to deploy controller configurations.
+You can find available operations using the below command.
+```
+>> apictl --help
+```
+By default API controller does not support kubectl command. 
+Set the API Controller’s mode to Kubernetes to be compatible with kubectl commands
 
-        ```
-        >> kubectl apply -f apim-operator/controller-configs/
-        
-        configmap/controller-config created
-        configmap/apim-config created
-        security.wso2.com/default-security-jwt created
-        secret/wso2am300-secret created
-        configmap/docker-secret-mustache created
-        secret/docker-secret created
-        configmap/dockerfile-template created
-        configmap/mgw-conf-mustache created
-        ```
+```
+>> apictl set --mode k8s 
+```
 <br />
+
+#### Step 3: Install API Operator
+
+- Execute the following command to install API Operator interactively and configure repository to push the microgateway image.
+- Select "Docker Hub" as the repository type.
+- Enter repository name of your Docker Hub account (usually it is the username as well).
+- Enter username and the password
+- Confirm configuration are correct with entering "Y"
+
+```sh
+>> apictl install api-operator
+Choose repository type:
+1: Docker Hub (Or others, quay.io)
+2: Amazon ECR
+3: GCR
+Choose a number: 1: 1
+Enter repository name (john or quay.io/mark): : jennifer
+Enter username: : jennifer
+Enter password:
+
+Repository: jennifer
+Username  : jennifer
+Confirm configurations: Y: Y
+```
+
+Output:
+```sh
+[Installing OLM]
+customresourcedefinition.apiextensions.k8s.io/clusterserviceversions.operators.coreos.com created
+...
+
+[Installing API Operator]
+subscription.operators.coreos.com/my-api-operator created
+[Setting configs]
+namespace/wso2-system created
+...
+
+[Setting to K8s Mode]
+```
         
-#### Step 3: Install the API portal and security token service
+#### Step 4: Install the API portal and security token service
 
 Kubernetes installation artifacts for API portal and security token service are available in the k8s-artifacts directory.
 
@@ -196,26 +199,6 @@ wso2apim   NodePort   10.97.8.86   <none>        30838:32004/TCP,30801:32003/TCP
 
 <br />
 
-#### Step 4: Configure API Controller
-
-- Download API controller v3.0.0 for your operating system from the [website](https://wso2.com/api-management/tooling/)
-
-- Extract the API controller distribution and navigate inside the extracted folder using the command-line tool
-
-- Add the location of the extracted folder to your system's $PATH variable to be able to access the executable from anywhere.
-
-You can find available operations using the below command.
-```
->> apictl --help
-```
-By default API controller does not support kubectl command. 
-Set the API Controller’s mode to Kubernetes to be compatible with kubectl commands
-
-```
->> apictl set --mode k8s 
-```
-<br />
-
 #### Step 5: Expose the sample microservice as a managed API
 
 Let’s deploy an API for our microservice.
@@ -241,7 +224,7 @@ The endpoint of our microservice is referred in the API definition.
     ```
     --replicas=3          Number of replicas
     --namespace=wso2      Namespace to deploy the API
-    --overwrite=true	  Overwrite the docker image creation for already created docker image
+    --override            Overwrite the docker image creation for already created docker image
     
     >> apictl add api -n "api_name" --from-file="location to the api swagger definition" --replicas="number of replicas" --namespace="desired namespace"
     ```
@@ -338,7 +321,7 @@ You now have a microgateway deployed in Kubernetes that runs your API for the mi
     You can find a sample token below.
     
     ```
-   TOKEN=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6IlpqUm1ZVE13TlRKak9XVTVNbUl6TWpnek5ESTNZMkl5TW1JeVkyRXpNamRoWmpWaU1qYzBaZz09In0.eyJhdWQiOiJodHRwOlwvXC9vcmcud3NvMi5hcGltZ3RcL2dhdGV3YXkiLCJzdWIiOiJhZG1pbkBjYXJib24uc3VwZXIiLCJhcHBsaWNhdGlvbiI6eyJvd25lciI6ImFkbWluIiwidGllciI6IlVubGltaXRlZCIsIm5hbWUiOiJzYW1wbGUtY3JkLWFwcGxpY2F0aW9uIiwiaWQiOjMsInV1aWQiOm51bGx9LCJzY29wZSI6ImFtX2FwcGxpY2F0aW9uX3Njb3BlIGRlZmF1bHQiLCJpc3MiOiJodHRwczpcL1wvd3NvMmFwaW06MzIwMDFcL29hdXRoMlwvdG9rZW4iLCJ0aWVySW5mbyI6e30sImtleXR5cGUiOiJQUk9EVUNUSU9OIiwic3Vic2NyaWJlZEFQSXMiOltdLCJjb25zdW1lcktleSI6IjNGSWlUM1R3MWZvTGFqUTVsZjVVdHVTTWpsUWEiLCJleHAiOjM3MTk3Mzk4MjYsImlhdCI6MTU3MjI1NjE3OSwianRpIjoiZDI3N2VhZmUtNTZlOS00MTU2LTk3NzUtNDQwNzA3YzFlZWFhIn0.W0N9wmCuW3dxz5nTHAhKQ-CyjysR-fZSEvoS26N9XQ9IOIlacB4R5x9NgXNLLE-EjzR5Si8ou83mbt0NuTwoOdOQVkGqrkdenO11qscpBGCZ-Br4Gnawsn3Yw4a7FHNrfzYnS7BZ_zWHPCLO_JqPNRizkWGIkCxvAg8foP7L1T4AGQofGLodBMtA9-ckuRHjx3T_sFOVGAHXcMVwpdqS_90DeAoT4jLQ3darDqSoE773mAyDIRz6CAvNzzsWQug-i5lH5xVty2kmZKPobSIziAYes-LPuR-sp61EIjwiKxnUlSsxtDCttKYHGZcvKF12y7VF4AqlTYmtwYSGLkXXXw
+   TOKEN=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6Ik5UQXhabU14TkRNeVpEZzNNVFUxWkdNME16RXpPREpoWldJNE5ETmxaRFUxT0dGa05qRmlNUSJ9.eyJhdWQiOiJodHRwOlwvXC9vcmcud3NvMi5hcGltZ3RcL2dhdGV3YXkiLCJzdWIiOiJhZG1pbiIsImFwcGxpY2F0aW9uIjp7ImlkIjoyLCJuYW1lIjoiSldUX0FQUCIsInRpZXIiOiJVbmxpbWl0ZWQiLCJvd25lciI6ImFkbWluIn0sInNjb3BlIjoiYW1fYXBwbGljYXRpb25fc2NvcGUgZGVmYXVsdCIsImlzcyI6Imh0dHBzOlwvXC9sb2NhbGhvc3Q6OTQ0M1wvb2F1dGgyXC90b2tlbiIsImtleXR5cGUiOiJQUk9EVUNUSU9OIiwic3Vic2NyaWJlZEFQSXMiOltdLCJjb25zdW1lcktleSI6Ilg5TGJ1bm9oODNLcDhLUFAxbFNfcXF5QnRjY2EiLCJleHAiOjM3MDMzOTIzNTMsImlhdCI6MTU1NTkwODcwNjk2MSwianRpIjoiMjI0MTMxYzQtM2Q2MS00MjZkLTgyNzktOWYyYzg5MWI4MmEzIn0=.b_0E0ohoWpmX5C-M1fSYTkT9X4FN--_n7-bEdhC3YoEEk6v8So6gVsTe3gxC0VjdkwVyNPSFX6FFvJavsUvzTkq528mserS3ch-TFLYiquuzeaKAPrnsFMh0Hop6CFMOOiYGInWKSKPgI-VOBtKb1pJLEa3HvIxT-69X9CyAkwajJVssmo0rvn95IJLoiNiqzH8r7PRRgV_iu305WAT3cymtejVWH9dhaXqENwu879EVNFF9udMRlG4l57qa2AaeyrEguAyVtibAsO0Hd-DFy5MW14S6XSkZsis8aHHYBlcBhpy2RqcP51xRog12zOb-WcROy6uvhuCsv-hje_41WQ==
     ```
     Copy and paste the above token in the command line. Now you can invoke the API using the cURL command as below.
     
@@ -373,10 +356,10 @@ To make the API discoverable for other users and get the access tokens, we need 
 The following commands will help you to push the API to the API portal in Kubernetes. Commands of the API Controller can be found [here](https://github.com/wso2/product-apim-tooling/blob/v3.0.0-rc/import-export-cli/docs/apictl.md) 
 
 
-- Add the API portal as an envionment to the API controller using the following command.
+- Add the API portal as an environment to the API controller using the following command.
 
     ```
-    >> apictl add-env -e k8s --registration https://wso2apim:32001/client-registration/v0.15/register --apim https://wso2apim:32003 --token https://wso2apim:32003/token --admin https://wso2apim:32001/api/am/admin/v0.15 --api_list https://wso2apim:32001/api/am/publisher/v0.15/apis --app_list https://wso2apim:32001/api/am/store/v0.15/applications
+    >> apictl add-env -e k8s --registration https://wso2apim:32001/client-registration/v0.16/register --apim https://wso2apim:32003 --token https://wso2apim:32003/token --admin https://wso2apim:32001/api/am/admin/v0.16 --api_list https://wso2apim:32001/api/am/publisher/v1/apis --app_list https://wso2apim:32001/api/am/store/v1/applications
     
     Output:
     Successfully added environment 'k8s'
@@ -439,11 +422,13 @@ You can find the documentation [here](docs/Readme.md).
 Execute the following commands if you wish to clean up the Kubernetes cluster by removing all the applied artifacts and configurations related to API operator and API portal.
 
 ```
->> kubectl delete api online-store
->> kubectl delete -f k8s-artifacts/api-portal
->> kubectl delete -f apim-operator/controller-configs/
->> kubectl delete -f apim-operator/controller-artifacts/
+>> apictl delete api online-store
+>> apictl delete -f k8s-artifacts/api-portal
+>> apictl remove-env -e k8s
+>> apictl uninstall api-operator
 ```
+
+When prompted type `Y` when uninstalling API Operator.
   
 #### Sample Scenarios
 

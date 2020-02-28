@@ -64,7 +64,7 @@
 - Invoking the API
     - Prepare the basic credentials
         - Use base64 encode on "username:password" of the secret created at the beginning
-            - Base64 encoded value of admin:admin -> YWRtaW46YWRtaW4=
+            - Base64 encoded value of `admin:admin` -> `YWRtaW46YWRtaW4=`
                 ```
                  BASIC=YWRtaW46YWRtaW4=
                 ```

@@ -63,9 +63,9 @@ data:
     #copy the executable to the home/exec location
     RUN mkdir -p /home/exec
 
-    RUN cp ./project/target/*.balx /home/exec/
+    RUN cp ./project/target/*.jar /home/exec/
 
-    #Stage 2: Generate balx will be passed to the micro-gw runtime
+    #Stage 2: Generated jar will be passed to the micro-gw runtime
     FROM {{$.RuntimeImage}}
 
     #change permission to create and copy the executable
