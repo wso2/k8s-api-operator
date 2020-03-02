@@ -52,7 +52,7 @@ const (
 	policyFileConst       = "policies.yaml"
 	ingressResourceName   = "ingressResourceName"
 	ingressTransportMode  = "ingressTransportMode"
-	ingressHostName		  = "ingressHostName"
+	ingressHostName       = "ingressHostName"
 
 	usernameConst  = "username"
 	passwordConst  = "password"
@@ -110,8 +110,8 @@ const (
 	hostnameConst                       = "hostname"
 	portConst                           = "port"
 	analyticsSecretConst                = "analyticsSecret"
-	mode 								= "mode"
-	ingressMode							= "ingress"
+	mode        						= "mode"
+	ingressMode 						= "ingress"
 
 	authorizationUrl        = "https://example.com/oauth/authorize"
 	tokenUrl                = "https://example.com/oauth/token"

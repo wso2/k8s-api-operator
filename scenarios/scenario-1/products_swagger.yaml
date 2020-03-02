@@ -20,7 +20,6 @@ info:
   version: v1.0.0
   description: This API contains operations related to online shopping store.
 x-wso2-basePath: /store/v1.0.0
-x-wso2-disable-security: true
 paths:
   /products:
     get:
