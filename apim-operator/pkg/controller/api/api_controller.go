@@ -1867,8 +1867,9 @@ func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, nam
 	ingressName := controlConfigData[ingressResourceName]
 	ingressHostName := controlConfigData[ingressHostName]
 
-	log.Info("Creating ingress resource with apiBasePath=" + apiBasePath);
-
+	log.Info("Creating ingress resource with API Base Path" + apiBasePath)
+	log.WithValues("Ingress metadata. Transport mode", transportMode, "Ingress name", ingressName,
+									"Ingress hostname " + ingressHostName)
 	annotationMap, err := getConfigmap(r, ingressAnnotationMap, wso2NameSpaceConst)
 	var port int32;
 
@@ -1927,6 +1928,7 @@ func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, nam
 		err = r.client.Create(context.TODO(), ingress)
 		return err;
 	} else {
+		log.Info("Ingress resource found with name" + ingressName + ".Hence updating the existing ingress resource")
 		rules := ingress.Spec.Rules;
 		var rulesArray []v1beta1.IngressRule
 		var update bool = false
@@ -1945,6 +1947,7 @@ func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, nam
 		}
 
 		if update {
+			log.Info("Ingress API Base path found with name " + apiBasePath + ".Hence updating the rule")
 			ingress.Spec.Rules = rulesArray
 			err = r.client.Update(context.TODO(), ingress)
 			return err;
