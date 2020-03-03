@@ -21,10 +21,11 @@ public function validateResponse (http:Caller outboundEp, http:Response res) {
 //Client only supports json. Therefore we need to make sure only json responses are returned
     var payload = res.getJsonPayload();
     if (payload is json) {
+        int length = payload.toJsonString().length();
         json resJson = {
             "pets": payload,
-            "length": payload.length()
+            "length": length
         };
-        res.setJsonPayload(untaint resJson);
+        res.setJsonPayload(<@untainted> resJson);
     }
 }
