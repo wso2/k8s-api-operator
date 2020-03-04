@@ -26,6 +26,7 @@ spec:
     # ports that this service should serve on
     -
       name: 'rest-api-port'
+      #for 9643
       port: 32201
       targetPort: 32201
       nodePort: 32201

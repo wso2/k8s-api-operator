@@ -33,6 +33,16 @@ spec:
       labels:
         deployment: wso2apim
     spec:
+      initContainers:
+        - name: init-wait-mysql
+          image: alpine
+          command: ["sh", "-c", "for i in $(seq 1 300); do nc -zvw1 wso2apim-with-analytics-rdbms-service 3306 && exit 0 || sleep 3; done; exit 1"]
+        - name: init-wait-analytics-worker
+          image: alpine
+          command: ["sh", "-c", "for i in $(seq 1 300); do nc -zvw1 wso2apim-analytics-service 7712 && exit 0 || sleep 3; done; exit 1"]
+        - name: init-wait-analytics-dashboard
+          image: alpine
+          command: ["sh", "-c", "for i in $(seq 1 300); do nc -zvw1 wso2apim-dashboard-analytics-service 32201 && exit 0 || sleep 3; done; exit 1"]
       containers:
         - name: wso2apim
           image: renukafernando/wso2-apim:3.1.0-beta
@@ -55,8 +65,8 @@ spec:
                 - /bin/bash
                 - -c
                 - nc -z localhost 32001
-            initialDelaySeconds: 180
-            periodSeconds: 10
+            initialDelaySeconds: 120
+            periodSeconds: 5
           imagePullPolicy: IfNotPresent
           ports:
             - #8280 with port off set 22558
