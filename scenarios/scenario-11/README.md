@@ -104,7 +104,7 @@ wso2apim-with-analytics-rdbms-service   ClusterIP   10.0.23.125   <none>        
 - By deploying the analytics configmaps, you can enable analytics as follows.
 
 ```
->> apictl apply -f apim-operator/apim-analytics-configs/
+>> apictl apply -f apim-operator/deploy/apim-analytics-configs
 
 ---
 configmap/analytics-config created

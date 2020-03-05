@@ -346,7 +346,7 @@ data:
       deployment_configs:
         -
          # <IP>:<HTTPS Port> of the Worker node
-         localhost:9444:
+         wso2apim-analytics-service:9444:
            # UUIDs of rule templates that are needed to be deployed on the node
            - stock-data-analysis
            - stock-exchange-input
@@ -418,7 +418,7 @@ data:
         grantType: authorization_code
         publisherUrl: https://wso2apim:32001
         #storeUrl: https://localhost:9443
-        externalLogoutUrl: https://localhost:9443/oidc/logout
+        externalLogoutUrl: https://wso2apim:32001/oidc/logout
 
     wso2.dashboard:
       roles:

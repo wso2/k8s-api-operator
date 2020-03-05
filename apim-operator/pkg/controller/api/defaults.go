@@ -18,14 +18,12 @@ package api
 
 var (
 
-	//Microgateway ports
-	httpPort  string = "9090"
-	httpsPort string = "9095"
-
-	//listenerConfig
-	keystorePath       string = "${ballerina.home}/bre/security/ballerinaKeystore.p12"
+	// Transport listener Configurations
+	httpPort           string = "9090"
+	httpsPort          string = "9095"
+	keystorePath       string = "${mgw-runtime.home}/runtime/bre/security/ballerinaKeystore.p12"
 	keystorePassword   string = "ballerina"
-	truststorePath     string = "${ballerina.home}/bre/security/ballerinaTruststore.p12"
+	truststorePath     string = "${mgw-runtime.home}/runtime/bre/security/ballerinaTruststore.p12"
 	truststorePassword string = "ballerina"
 
 	//keymanager
@@ -36,7 +34,7 @@ var (
 	//jwtTokenConfig
 	issuer           string = "https://wso2apim.wso2:32001/oauth2/token"
 	audience         string = "http://org.wso2.apimgt/gateway"
-	certificateAlias string = "wso2apim"
+	certificateAlias string = "wso2apim310"
 
 	//analytics
 	analyticsEnabled          string = "false"
@@ -45,7 +43,6 @@ var (
 	uploadingTimeSpanInMillis string = "600000"
 	rotatingPeriod            string = "600000"
 	uploadFiles               string = "true"
-	verifyHostname            string = "true"
 	hostname                  string = "wso2apim.wso2"
 	port                      string = "32001"
 
@@ -62,9 +59,13 @@ var (
 	enableResponseValidation string = "false"
 
 	//basic authentication
-	basicUsername string = "generalUser1"
-	basicPassword string = "5BAA61E4C9B93F3F0682250B6CF8331B7EE68FD8"
+	basicUsername string = "admin"
+	basicPassword string = "d033e22ae348aeb5660fc2140aec35850c4da997"
+
+	// HTTP client hostname verification
+	verifyHostname string = "true"
 
 	//log level
+	// TODO delete this, removed in micro-gateway 3.1.0
 	logLevel string = "INFO"
 )
