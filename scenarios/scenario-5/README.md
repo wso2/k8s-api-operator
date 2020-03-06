@@ -71,9 +71,9 @@ In this swagger definition, the security schema of the "petstore" service has be
             ```$xslt
                 apictl add-env -e k8s --registration https://wso2apim:32001/client-registration/v0.16/register --apim https://wso2apim:32001 --token https://wso2apim:32003/token --admin https://wso2apim:32001/api/am/admin/v0.16 --api_list https://wso2apim:32001/api/am/publisher/v1/apis --app_list https://wso2apim:32001/api/am/store/v1/applications
             ```
-        - Create the API project using swagger file
+        - Create the API project using swagger file with setting the initial state to `PUBLISHED`.
             ```$xslt
-                apictl init petstore-oauth --oas=swagger.yaml
+                apictl init petstore-oauth --oas=swagger.yaml --initial-state=PUBLISHED
             ```
             - Output:
             ```$xslt
@@ -82,13 +82,6 @@ In this swagger definition, the security schema of the "petstore" service has be
                 Open README file to learn more
             ```
         - First line of the output shows the location of the API project.
-        - Open that project and navigate to `Meta-Information/api.yaml`.
-            - Change API's status to ***"PUBLISHED"*** in `Meta-Information/api.yaml` file.
-        (By default it is in created status)     
-            - Assign the value of `"x-wso2-basePath"` in `Meta-Information/swagger.yaml`, to `"context"` and `"contextTemplate"` in `Meta-Information/api.yaml` file.
-            ```$xslt
-            context: /petstoreoauth/v1
-            contextTemplate: /petstoreoauth/v1
             ```
         - Import the API to API Manager deployment
             ```$xslt

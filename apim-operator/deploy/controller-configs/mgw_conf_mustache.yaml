@@ -241,3 +241,7 @@ data:
       throttleEndpointUrl = "https://{{throttleEndpoint}}/endpoints"
       # username:password to create the connection to the central traffic manager
       throttleEndpointbase64Header = "admin:admin"
+
+    # ballerina logs
+    [b7a.log]
+      level="{{logLevel}}"
