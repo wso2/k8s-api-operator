@@ -1168,11 +1168,11 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string, 
 				} else if erCr != nil {
 					log.Error(err, "Error in getting targetendpoint CRD object")
 				}
-				if targetEndpointCr.Spec.Serverless != false {
+				if targetEndpointCr.Spec.Mode == "Serverless" {
 					currentService := &v1.Service{}
 					err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: userNameSpace,
 						Name: endPoint}, currentService)
-				}else{
+				} else{
 					currentService := &corev1.Service{}
 					err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: userNameSpace,
 						Name: endPoint}, currentService)
@@ -1188,7 +1188,7 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string, 
 						endpointNames[targetEndpointCr.Name] = endPointSidecar
 						checkt = append(checkt, endPointSidecar)
 					}
-					if targetEndpointCr.Spec.Serverless != false {
+					if targetEndpointCr.Spec.Mode == "Serverless" {
 						endPoint = protocol + "://" + endPoint + "." + userNameSpace + ".svc.cluster.local"
 						checkt = append(checkt, endPoint)
 					} else {
@@ -2122,7 +2122,7 @@ func copyDefaultSecurity(securityDefault *wso2v1alpha1.Security, userNameSpace s
 // Create newDeploymentForCR method to create a deployment.
 func (r *ReconcileAPI) createDeploymentForSidecarBackend(m *wso2v1alpha1.TargetEndpoint,
 	namespace string, instance *wso2v1alpha1.API) *appsv1.Deployment {
-	replicas := m.Spec.Deploy.Count
+	replicas := m.Spec.Deploy.MinReplicas
 	dep := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",

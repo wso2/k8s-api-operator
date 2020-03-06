@@ -115,6 +115,7 @@ const (
 	pathsExtension          = "paths"
 	sidecar                 = "sidecar"
 	privateJet              = "privateJet"
+	serverless              = "serverless"
 	shared                  = "shared"
 	verifyHostNameVal       = "false"
 
@@ -129,6 +130,10 @@ const (
 	resourceRequestMemory              = "resourceRequestMemory"
 	resourceLimitCPU                   = "resourceLimitCPU"
 	resourceLimitMemory                = "resourceLimitMemory"
+	resourceRequestCPUTarget           = "resourceRequestCPUTarget"
+	resourceRequestMemoryTarget        = "resourceRequestMemoryTarget"
+	resourceLimitCPUTarget             = "resourceLimitCPUTarget"
+	resourceLimitMemoryTarget          = "resourceLimitMemoryTarget"
 	generatekubernbetesartifactsformgw = "generatekubernbetesartifactsformgw"
 
 	httpPortValConst  = 9090
