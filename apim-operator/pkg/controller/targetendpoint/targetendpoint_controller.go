@@ -306,7 +306,7 @@ func (r *ReconcileTargetEndpoint) newKnativeDeploymentForCR(m *wso2v1alpha1.Targ
 						Labels: m.ObjectMeta.Labels,
 						Annotations:map[string]string{
 							"autoscaling.knative.dev/minScale": strconv.Itoa(int(m.Spec.Deploy.MinReplicas)),
-							"autoscaling.knative.dev/maxScale": strconv.Itoa(int(m.Spec.Deploy.MinReplicas)),
+							"autoscaling.knative.dev/maxScale": strconv.Itoa(int(m.Spec.Deploy.MaxReplicas)),
 						},
 					},
 					Spec: v1.RevisionSpec{
