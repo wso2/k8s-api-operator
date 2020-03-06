@@ -1,4 +1,4 @@
-## Scenario 13 - API Management in Serverless (Knative)
+## Scenario 14 - API Management in Serverless (Knative)
 - This scenario describes how to expose a service as a managed API in serverless mode.
 - In serverless mode, backend will be deployed in serverless mode as a Knative service.
 - First we will deploy a target endpoint resource containing the information of the backend service
