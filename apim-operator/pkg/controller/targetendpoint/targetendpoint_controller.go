@@ -144,10 +144,10 @@ func (r *ReconcileTargetEndpoint) Reconcile(request reconcile.Request) (reconcil
 
 	controlConfigData := controlConf.Data
 	var getResourceReqCPU string
-	getResourceReqCPU = controlConfigData["resourceRequestCPU"]
-	getResourceReqMemory := controlConfigData["resourceRequestMemory"]
-	getResourceLimitCPU := controlConfigData["resourceLimitCPU"]
-	getResourceLimitMemory := controlConfigData["resourceLimitMemory"]
+	getResourceReqCPU = controlConfigData["resourceRequestCPUTarget"]
+	getResourceReqMemory := controlConfigData["resourceRequestMemoryTarget"]
+	getResourceLimitCPU := controlConfigData["resourceLimitCPUTarget"]
+	getResourceLimitMemory := controlConfigData["resourceLimitMemoryTarget"]
 
 	var reqCpu string
 	if instance.Spec.Deploy.ReqCpu != "" {
