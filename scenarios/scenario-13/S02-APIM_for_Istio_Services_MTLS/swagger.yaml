@@ -1,0 +1,70 @@
+openapi: 3.0.0
+info:
+  title: Online-Store-Api
+  version: v1.0.0
+  description: This API contains operations related to online shopping store.
+servers:
+  - url: /store
+x-wso2-basePath: /storemep/v1.0.0
+x-wso2-production-endpoints:
+  urls:
+    - http://istio-ingressgateway.istio-system/storemep/v1.0.0
+paths:
+  /products:
+    get:
+      responses:
+        "200":
+          description: ""
+
+  "/products/{productId}":
+    get:
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+  "/review/{productId}":
+    get:
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+  "/inventory/{productId}":
+    get:
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+    post:
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                payload:
+                  type: string
+        description: Request Body
+      responses:
+        "200":
+          description: ""

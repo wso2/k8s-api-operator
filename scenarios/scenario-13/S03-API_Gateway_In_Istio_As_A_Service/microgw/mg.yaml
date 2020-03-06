@@ -1,0 +1,68 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: online-store-api
+  name: online-store-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: online-store-api
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: online-store-api
+    spec:
+      containers:
+      - image: pubudu/online-store-api:v1.0.0
+        imagePullPolicy: Always
+        livenessProbe:
+          failureThreshold: 3
+          initialDelaySeconds: 10
+          periodSeconds: 30
+          successThreshold: 1
+          tcpSocket:
+            port: 9090
+          timeoutSeconds: 1
+        name: mgwonline-store-api
+        ports:
+        - containerPort: 9095
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          initialDelaySeconds: 8
+          periodSeconds: 5
+          successThreshold: 1
+          tcpSocket:
+            port: 9090
+          timeoutSeconds: 1
+        resources:
+          limits:
+            cpu: "2"
+            memory: 512Mi
+          requests:
+            cpu: "1"
+            memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: online-store-api
+  name: wso2-mg
+spec:
+  ports:
+  - name: port-9095
+    port: 9095
+    protocol: TCP
+    targetPort: 9095
+  - name: port-9090
+    port: 9090
+    protocol: TCP
+    targetPort: 9090
+  selector:
+    app: online-store-api
+  type: ClusterIP
