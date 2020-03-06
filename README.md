@@ -115,7 +115,13 @@ Set the API Controller’s mode to Kubernetes to be compatible with kubectl comm
 ```
 >> apictl set --mode k8s 
 ```
-<br />
+
+Set the environment variable `WSO2_API_OPERATOR_VERSION` with the latest API Operator version.
+
+```sh
+>> export WSO2_API_OPERATOR_VERSION=v1.1.0
+```
+
 
 #### Step 3: Install API Operator
 
