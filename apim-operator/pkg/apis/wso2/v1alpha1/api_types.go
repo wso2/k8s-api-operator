@@ -78,6 +78,7 @@ const (
 	PrivateJet Mode = "privateJet"
 	Sidecar    Mode = "sidecar"
 	Shared     Mode = "shared"
+	Serverless Mode = "serverless"
 )
 
 func (c Mode) String() string {
