@@ -1,0 +1,49 @@
+
+apiVersion: "v1"
+kind: "Service"
+metadata:
+  labels:
+    app: "products"
+    version: "1.0.0"
+  name: "products"
+spec:
+  ports:
+    - name: http
+      port: 80
+      targetPort: 9090
+  selector:
+    app: "products"
+    version: "1.0.0"
+---
+apiVersion: "apps/v1"
+kind: "Deployment"
+metadata:
+  labels:
+    version: "1.0.0"
+    app: "products"
+  name: "products-deployment"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      version: "1.0.0"
+      app: "products"
+  template:
+    metadata:
+      annotations: {}
+      labels:
+        version: "1.0.0"
+        app: "products"
+    spec:
+      containers:
+        - image: "pubudu/products:1.0.0"
+          imagePullPolicy: "Always"
+          livenessProbe:
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            tcpSocket:
+              port: 9090
+          name: "products-deployment"
+          ports:
+            - containerPort: 9090
+              protocol: "TCP"

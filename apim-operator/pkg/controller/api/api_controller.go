@@ -23,6 +23,9 @@ import (
 	"github.com/golang/glog"
 	"github.com/sirupsen/logrus"
 	"k8s.io/api/extensions/v1beta1"
+	v1 "github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/serving/v1alpha1"
+	"github.com/wso2/k8s-apim-operator/apim-operator/pkg/registry"
+	"github.com/wso2/k8s-apim-operator/apim-operator/pkg/registry/utils"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -34,8 +37,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	"github.com/cbroglie/mustache"
-	"github.com/heroku/docker-registry-client/registry"
-
 	wso2v1alpha1 "github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/api/autoscaling/v2beta1"
@@ -160,6 +161,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	// Fetch the API instance
 	instance := &wso2v1alpha1.API{}
+
 	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -175,7 +177,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	owner := getOwnerDetails(instance)
 	operatorOwner, ownerErr := getOperatorOwner(r)
 	if ownerErr != nil {
-		reqLogger.Info("Operator was not found in the "+wso2NameSpaceConst+" namespace. No owner will be set for the artifacts")
+		reqLogger.Info("Operator was not found in the " + wso2NameSpaceConst + " namespace. No owner will be set for the artifacts")
 	}
 	userNameSpace := instance.Namespace
 
@@ -196,16 +198,23 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	mgwToolkitImg := controlConfigData[mgwToolkitImgConst]
 	mgwRuntimeImg := controlConfigData[mgwRuntimeImgConst]
 	kanikoImg := controlConfigData[kanikoImgConst]
+
 	dockerRegistry := controlConfigData[dockerRegistryConst]
 	operatorMode := controlConfigData[mode]
 	reqLogger.Info("Controller Configurations", "mgwToolkitImg", mgwToolkitImg, "mgwRuntimeImg", mgwRuntimeImg,
 		"kanikoImg", kanikoImg, "dockerRegistry", dockerRegistry, "userNameSpace", userNameSpace, "operatorMode", operatorMode)
 
-	//creates the docker configs in the required format
-	dockerSecretEr := dockerConfigCreator(r, operatorOwner, userNameSpace)
-	if dockerSecretEr != nil {
-		log.Error(dockerSecretEr, "Error in docker-config creation")
+	if !registry.IsRegistryType(controlConfigData[registryTypeConst]) {
+		log.Error(err, "Invalid registry type", "registry-type", controlConfigData[registryTypeConst])
+		// Registry type is invalid.
+		// Return and don't requeue
+		return reconcile.Result{}, nil
 	}
+	registryType := registry.Type(controlConfigData[registryTypeConst])
+	repositoryName := controlConfigData[repositoryNameConst]
+
+	reqLogger.Info("Controller Configurations", "mgwToolkitImg", mgwToolkitImg, "mgwRuntimeImg", mgwRuntimeImg,
+		"kanikoImg", kanikoImg, "registryType", registryType, "repositoryName", repositoryName, "userNameSpace", userNameSpace)
 
 	//Handles policy.yaml.
 	//If there aren't any ratelimiting objects deployed, new policy.yaml configmap will be created with default policies
@@ -253,9 +262,10 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	if instance.Spec.UpdateTimeStamp != "" {
 		tag = tag + "-" + instance.Spec.UpdateTimeStamp
 	}
-	imageName := image + ":" + tag
+	registry.SetRegistry(registryType, repositoryName, image, tag)
+
 	// check if the image already exists
-	imageExist, errImage := isImageExist(dockerRegistry+"/"+image, tag, r)
+	imageExist, errImage := isImageExist(getImageName(repositoryName, image), tag, r, ConfigJsonVolume, userNameSpace)
 	if errImage != nil {
 		log.Error(errImage, "Error in image finding")
 	}
@@ -294,9 +304,9 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	reqLogger.Info("getting security instance")
 
 	var alias string
-	//keep to track the existance of certificates
+	//keep to track the existence of certificates
 	var existcert bool
-	//keep to track the existance of interceptors
+	//keep to track the existence of interceptors
 	var existInterceptors bool
 	//to add multiple certs with alias
 	certList := make(map[string]string)
@@ -467,9 +477,9 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	formattedSwagger := string(prettyJSON.Bytes())
 	//create configmap with modified swagger
-	swaggerConfMap := createConfigMap(instance.Name + "-swagger-mgw", swaggerDataFile, formattedSwagger, userNameSpace, owner)
+	swaggerConfMap := createConfigMap(instance.Name+"-swagger-mgw", swaggerDataFile, formattedSwagger, userNameSpace, owner)
 	log.Info("Creating swagger configmap for mgw")
-	foundConfMap, errgetConf := getConfigmap(r, instance.Name + "-swagger-mgw", userNameSpace)
+	foundConfMap, errgetConf := getConfigmap(r, instance.Name+"-swagger-mgw", userNameSpace)
 	if errgetConf != nil && errors.IsNotFound(errgetConf) {
 		log.Info("swagger-mgw is not found. Hence creating new configmap")
 		errConf := r.client.Create(context.TODO(), swaggerConfMap)
@@ -762,7 +772,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	getResourceLimitMemory := controlConfigData[resourceLimitMemory]
 
 	analyticsEnabledBool, _ := strconv.ParseBool(analyticsEnabled)
-	dep := createMgwDeployment(instance, imageName, controlConf, analyticsEnabledBool, r, userNameSpace, owner,
+	dep := createMgwDeployment(instance, controlConf, analyticsEnabledBool, r, userNameSpace, owner,
 		getResourceReqCPU, getResourceReqMemory, getResourceLimitCPU, getResourceLimitMemory, containerList,
 		int32(httpPortVal), int32(httpsPortVal))
 	depFound := &appsv1.Deployment{}
@@ -793,7 +803,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	if instance.Spec.UpdateTimeStamp != "" {
 		//Schedule Kaniko pod
 		reqLogger.Info("Updating the API", "API.Name", instance.Name, "API.Namespace", instance.Namespace)
-		job := scheduleKanikoJob(instance, imageName, controlConf, jobVolumeMount, jobVolume, instance.Spec.UpdateTimeStamp, owner)
+		job := scheduleKanikoJob(instance, controlConf, jobVolumeMount, jobVolume, instance.Spec.UpdateTimeStamp, owner)
 		if err := controllerutil.SetControllerReference(instance, job, r.scheme); err != nil {
 			return reconcile.Result{}, err
 		}
@@ -918,7 +928,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		return reconcile.Result{}, nil
 	} else {
 		//Schedule Kaniko pod
-		job := scheduleKanikoJob(instance, imageName, controlConf, jobVolumeMount, jobVolume, instance.Spec.UpdateTimeStamp, owner)
+		job := scheduleKanikoJob(instance, controlConf, jobVolumeMount, jobVolume, instance.Spec.UpdateTimeStamp, owner)
 		if err := controllerutil.SetControllerReference(instance, job, r.scheme); err != nil {
 			return reconcile.Result{}, err
 		}
@@ -1179,26 +1189,42 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string, 
 			if err == nil {
 				log.Info("Parsing endpoints and not available root service endpoint")
 				//check if service & targetendpoint cr object are available
-				currentService := &corev1.Service{}
+				extractData := strings.Split(endPoint,".")
+				if len(extractData) == 2 {
+					userNameSpace = extractData[1]
+					endPoint = extractData[0]
+				}
 				targetEndpointCr := &wso2v1alpha1.TargetEndpoint{}
-				err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: userNameSpace,
-					Name: endPoint}, currentService)
 				erCr := r.client.Get(context.TODO(), types.NamespacedName{Namespace: userNameSpace, Name: endPoint}, targetEndpointCr)
 
-				if err != nil && errors.IsNotFound(err) && mode != sidecar {
-					log.Error(err, "Service is not found")
-				} else if erCr != nil && errors.IsNotFound(erCr) {
+				if erCr != nil && errors.IsNotFound(erCr) {
 					log.Error(err, "targetEndpoint CRD object is not found")
-				} else if err != nil && mode != sidecar {
-					log.Error(err, "Error in getting service")
 				} else if erCr != nil {
 					log.Error(err, "Error in getting targetendpoint CRD object")
+				}
+				if targetEndpointCr.Spec.Mode == "Serverless" {
+					currentService := &v1.Service{}
+					err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: userNameSpace,
+						Name: endPoint}, currentService)
+				} else{
+					currentService := &corev1.Service{}
+					err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: userNameSpace,
+						Name: endPoint}, currentService)
+				}
+				if err != nil && errors.IsNotFound(err) && mode != sidecar {
+					log.Error(err,"service not found")
+				}  else if err != nil && mode != sidecar {
+					log.Error(err, "Error in getting service")
 				} else {
 					protocol := targetEndpointCr.Spec.Protocol
 					if mode == sidecar {
 						endPointSidecar := protocol + "://" + "localhost:" + strconv.Itoa(int(targetEndpointCr.Spec.Port))
 						endpointNames[targetEndpointCr.Name] = endPointSidecar
 						checkt = append(checkt, endPointSidecar)
+					}
+					if targetEndpointCr.Spec.Mode == "Serverless" {
+						endPoint = protocol + "://" + endPoint + "." + userNameSpace + ".svc.cluster.local"
+						checkt = append(checkt, endPoint)
 					} else {
 						endPoint = protocol + "://" + endPoint
 						checkt = append(checkt, endPoint)
@@ -1227,7 +1253,6 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string, 
 									urlValSidecar := protocol + "://" + "localhost:" + strconv.Itoa(int(targetEndpointCr.Spec.Port))
 									endpointNames[urlVal] = urlValSidecar
 									endpointList[index] = urlValSidecar
-
 								} else {
 									endpointList[index] = urlVal
 								}
@@ -1500,22 +1525,22 @@ func getCredentials(r *ReconcileAPI, name string, securityType string, userNameS
 }
 
 // generate relevant MGW deployment/services for the given API definition
-func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.ConfigMap, analyticsEnabled bool,
+func createMgwDeployment(cr *wso2v1alpha1.API, conf *corev1.ConfigMap, analyticsEnabled bool,
 	r *ReconcileAPI, nameSpace string, owner []metav1.OwnerReference, resourceReqCPU string, resourceReqMemory string,
 	resourceLimitCPU string, resourceLimitMemory string, containerList []corev1.Container, httpPortVal int32,
 	httpsPortVal int32) *appsv1.Deployment {
+	regConfig := registry.GetConfig()
 	labels := map[string]string{
 		"app": cr.Name,
 	}
 	controlConfigData := conf.Data
-	dockerRegistry := controlConfigData[dockerRegistryConst]
 	liveDelay, _ := strconv.ParseInt(controlConfigData[livenessProbeInitialDelaySeconds], 10, 32)
 	livePeriod, _ := strconv.ParseInt(controlConfigData[livenessProbePeriodSeconds], 10, 32)
 	readDelay, _ := strconv.ParseInt(controlConfigData[readinessProbeInitialDelaySeconds], 10, 32)
 	readPeriod, _ := strconv.ParseInt(controlConfigData[readinessProbePeriodSeconds], 10, 32)
 	reps := int32(cr.Spec.Replicas)
-	deployVolumeMount := []corev1.VolumeMount{}
-	deployVolume := []corev1.Volume{}
+	var deployVolumeMount []corev1.VolumeMount
+	var deployVolume []corev1.Volume
 	if analyticsEnabled {
 		deployVolumeMountTemp, deployVolumeTemp, err := getAnalyticsPVClaim(r, deployVolumeMount, deployVolume)
 		if err != nil {
@@ -1535,13 +1560,14 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 	}
 	apiContainer := corev1.Container{
 		Name:            "mgw" + cr.Name,
-		Image:           dockerRegistry + "/" + imageName,
+		Image:           regConfig.ImagePath,
 		ImagePullPolicy: "Always",
 		Resources: corev1.ResourceRequirements{
 			Requests: req,
 			Limits:   lim,
 		},
 		VolumeMounts: deployVolumeMount,
+		Env:          regConfig.Env,
 		Ports: []corev1.ContainerPort{{
 			ContainerPort: httpsPortVal,
 		}},
@@ -1585,8 +1611,9 @@ func createMgwDeployment(cr *wso2v1alpha1.API, imageName string, conf *corev1.Co
 					Labels: labels,
 				},
 				Spec: corev1.PodSpec{
-					Containers: containerList,
-					Volumes:    deployVolume,
+					Containers:       containerList,
+					Volumes:          deployVolume,
+					ImagePullSecrets: regConfig.ImagePullSecrets,
 				},
 			},
 		},
@@ -1630,9 +1657,10 @@ func dockerfileHandler(r *ReconcileAPI, certList map[string]string, existcert bo
 		return nil, err
 	}
 
-	dockerfileConfmap, err := getConfigmap(r, cr.Name + "-" + dockerFile, cr.Namespace)
+	dockerfileConfmap, err := getConfigmap(r, cr.Name+"-"+dockerFile, cr.Namespace)
+	data := builder.String()
 	if err != nil && errors.IsNotFound(err) {
-		dockerConf := createConfigMap(cr.Name + "-" + dockerFile, "Dockerfile", builder.String(), cr.Namespace, owner)
+		dockerConf := createConfigMap(cr.Name+"-"+dockerFile, "Dockerfile", data, cr.Namespace, owner)
 
 		errorMap := r.client.Create(context.TODO(), dockerConf)
 		if errorMap != nil {
@@ -1676,54 +1704,66 @@ func policyHandler(r *ReconcileAPI, operatorOwner []metav1.OwnerReference, userN
 	return nil
 }
 
-// checks if the image exist in dockerhub
-func isImageExist(image string, tag string, r *ReconcileAPI) (bool, error) {
-	url := dockerhubRegistryUrl
-	username := ""
-	password := ""
+// isImageExist checks if the image with the given tag exists in the registry using the secret in the user-namespace
+func isImageExist(image string, tag string, r *ReconcileAPI, secretName string, userNamespace string) (bool, error) {
+	var registryUrl string
+	var username string
+	var password string
 
-	//checks if docker secret is available
-	dockerSecret := &corev1.Secret{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: dockerSecretNameConst, Namespace: wso2NameSpaceConst}, dockerSecret)
+	type Auth struct {
+		Auths map[string]struct {
+			Auth     string `json:"auth"`
+			Username string `json:"username"`
+			Password string `json:"password"`
+		} `json:"auths"`
+	}
+
+	// checks if the secret is available
+	dockerConfigSecret := &corev1.Secret{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: secretName, Namespace: userNamespace}, dockerConfigSecret)
 	if err != nil && errors.IsNotFound(err) {
-		log.Info("Docker Secret is not found")
+		log.Info("Docker credentials secret is not found", "secret-name", secretName, "namespace", userNamespace)
 	} else if err != nil {
-		log.Error(err, "error ")
+		log.Error(err, "Error while getting docker credentials secret", "secret-name", secretName, "namespace", userNamespace)
 	} else {
-		dockerData := dockerSecret.Data
-		username = string(dockerData[usernameConst])
-		password = string(dockerData[passwordConst])
-	}
+		authsJsonString := dockerConfigSecret.Data[utils.DockerConfigKeyConst]
+		auths := Auth{}
+		err := json.Unmarshal([]byte(authsJsonString), &auths)
+		if err != nil {
+			log.Info("Error unmarshal data of docker credential auth")
+		}
 
-	hub, err := registry.New(url, username, password)
-	if err != nil {
-		log.Error(err, "error connecting to hub")
-		return false, err
-	}
-	tags, err := hub.Tags(image)
-	if err != nil {
-		log.Error(err, "error getting tags")
-		return false, err
-	}
-	for _, foundTag := range tags {
-		if foundTag == tag {
-			log.Info("found the image tag")
-			return true, nil
+		for regUrl, credential := range auths.Auths {
+			registryUrl = removeVersionTag(regUrl)
+			if !strings.HasPrefix(registryUrl, "https://") {
+				registryUrl = "https://" + registryUrl
+			}
+			username = credential.Username
+			password = credential.Password
+
+			break
 		}
 	}
-	return false, nil
+
+	return registry.IsImageExists(utils.RegAuth{RegistryUrl: registryUrl, Username: username, Password: password}, log)
 }
 
 //Schedule Kaniko Job to generate micro-gw image
-func scheduleKanikoJob(cr *wso2v1alpha1.API, imageName string, conf *corev1.ConfigMap, jobVolumeMount []corev1.VolumeMount,
+func scheduleKanikoJob(cr *wso2v1alpha1.API, conf *corev1.ConfigMap, jobVolumeMount []corev1.VolumeMount,
 	jobVolume []corev1.Volume, timeStamp string, owner []metav1.OwnerReference) *batchv1.Job {
+	regConfig := registry.GetConfig()
 	kanikoJobName := cr.Name + "-kaniko"
 	if timeStamp != "" {
 		kanikoJobName = kanikoJobName + "-" + timeStamp
 	}
 	controlConfigData := conf.Data
 	kanikoImg := controlConfigData[kanikoImgConst]
-	dockerRegistry := controlConfigData[dockerRegistryConst]
+
+	args := append([]string{
+		"--dockerfile=/usr/wso2/dockerfile/Dockerfile",
+		"--context=/usr/wso2/",
+		"--destination=" + regConfig.ImagePath,
+	}, regConfig.Args...)
 
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
@@ -1736,6 +1776,9 @@ func scheduleKanikoJob(cr *wso2v1alpha1.API, imageName string, conf *corev1.Conf
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      cr.Name + "-job",
 					Namespace: cr.Namespace,
+					Annotations: map[string]string{
+						"sidecar.istio.io/inject": "false",
+					},
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -1743,11 +1786,8 @@ func scheduleKanikoJob(cr *wso2v1alpha1.API, imageName string, conf *corev1.Conf
 							Name:         cr.Name + "gen-container",
 							Image:        kanikoImg,
 							VolumeMounts: jobVolumeMount,
-							Args: []string{
-								"--dockerfile=/usr/wso2/dockerfile/Dockerfile",
-								"--context=/usr/wso2/",
-								"--destination=" + dockerRegistry + "/" + imageName,
-							},
+							Args:         args,
+							Env:          regConfig.Env,
 						},
 					},
 					RestartPolicy: "Never",
@@ -1821,6 +1861,11 @@ func dockerConfigCreator(r *ReconcileAPI, operatorOwner []metav1.OwnerReference,
 //Creating a LB balancer service to expose mgw
 func createMgwLBService(r *ReconcileAPI, cr *wso2v1alpha1.API, nameSpace string, owner []metav1.OwnerReference, httpPortVal int32,
 	httpsPortVal int32, deploymentType string) *corev1.Service {
+
+//Service of the API
+//todo: This has to be changed to LB type
+func createMgwService(cr *wso2v1alpha1.API, nameSpace string) *corev1.Service {
+
 
 	var serviceType corev1.ServiceType;
 	serviceType = corev1.ServiceTypeLoadBalancer;
@@ -1976,6 +2021,7 @@ func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, nam
 
 //default volume mounts for the kaniko job
 func getVolumes(cr *wso2v1alpha1.API) ([]corev1.VolumeMount, []corev1.Volume) {
+	regConfig := registry.GetConfig()
 
 	jobVolumeMount := []corev1.VolumeMount{
 		{
@@ -1988,11 +2034,6 @@ func getVolumes(cr *wso2v1alpha1.API) ([]corev1.VolumeMount, []corev1.Volume) {
 			MountPath: dockerFileLocation,
 		},
 		{
-			Name:      dockerConfig,
-			MountPath: dockerConfLocation,
-			ReadOnly:  true,
-		},
-		{
 			Name:      policyyamlFile,
 			MountPath: policyyamlLocation,
 			ReadOnly:  true,
@@ -2003,6 +2044,8 @@ func getVolumes(cr *wso2v1alpha1.API) ([]corev1.VolumeMount, []corev1.Volume) {
 			ReadOnly:  true,
 		},
 	}
+	// append secrets from regConfig
+	jobVolumeMount = append(jobVolumeMount, regConfig.VolumeMounts...)
 
 	jobVolume := []corev1.Volume{
 		{
@@ -2012,14 +2055,6 @@ func getVolumes(cr *wso2v1alpha1.API) ([]corev1.VolumeMount, []corev1.Volume) {
 					LocalObjectReference: corev1.LocalObjectReference{
 						Name: cr.Name + "-swagger-mgw",
 					},
-				},
-			},
-		},
-		{
-			Name: dockerConfig,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: dockerConfig,
 				},
 			},
 		},
@@ -2052,6 +2087,8 @@ func getVolumes(cr *wso2v1alpha1.API) ([]corev1.VolumeMount, []corev1.Volume) {
 			},
 		},
 	}
+	// append secrets from regConfig
+	jobVolume = append(jobVolume, regConfig.Volumes...)
 
 	return jobVolumeMount, jobVolume
 
@@ -2241,7 +2278,7 @@ func copyDefaultSecurity(securityDefault *wso2v1alpha1.Security, userNameSpace s
 // Create newDeploymentForCR method to create a deployment.
 func (r *ReconcileAPI) createDeploymentForSidecarBackend(m *wso2v1alpha1.TargetEndpoint,
 	namespace string, instance *wso2v1alpha1.API) *appsv1.Deployment {
-	replicas := m.Spec.Deploy.Count
+	replicas := m.Spec.Deploy.MinReplicas
 	dep := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
@@ -2366,4 +2403,16 @@ func interceptorHandler(r *ReconcileAPI, instance *wso2v1alpha1.API, owner []met
 		}
 		return true, jobVolumeMount, jobVolume, nil
 	}
+}
+
+// getImageName returns concatenation of repository and image names
+func getImageName(repository string, image string) string {
+	repository = strings.TrimSpace(repository)
+	image = strings.TrimSpace(image)
+
+	if repository == "" {
+		return image
+	}
+
+	return repository + "/" + image
 }

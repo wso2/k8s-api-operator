@@ -19,11 +19,15 @@ package targetendpoint
 import (
 	"context"
 	"fmt"
+	"github.com/sirupsen/logrus"
+	"k8s.io/api/autoscaling/v2beta1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"reflect"
+	"strconv"
 
 	wso2v1alpha1 "github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1"
-
+	v1 "github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/serving/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -38,6 +42,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+
 )
 
 var log = logf.Log.WithName("controller_targetendpoint")
@@ -119,23 +124,107 @@ func (r *ReconcileTargetEndpoint) Reconcile(request reconcile.Request) (reconcil
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
 	}
-
-	if instance.Spec.Deploy.DockerImage != "" && instance.Spec.Mode != "sidecar" {
-		if err := r.reconcileDeployment(instance); err != nil {
+	//getting owner reference to create HPA for TargetEndPoint
+	owner := getOwnerDetails(instance)
+	if owner == nil {
+		reqLogger.Info("Operator was not found in the "+instance.Namespace+" namespace. No owner will be set for the artifacts")
+	}
+	//get configurations file for the controller
+	controlConf, err := getConfigmap(r, "controller-config", "wso2-system")
+	if err != nil {
+		if errors.IsNotFound(err) {
+			// Controller configmap is not found, could have been deleted after reconcile request.
+			// Return and requeue
+			log.Error(err, "Controller configuration file is not found")
 			return reconcile.Result{}, err
 		}
+		// Error reading the object - requeue the request.
+		return reconcile.Result{}, err
+	}
 
+	controlConfigData := controlConf.Data
+	var getResourceReqCPU string
+	getResourceReqCPU = controlConfigData["resourceRequestCPUTarget"]
+	getResourceReqMemory := controlConfigData["resourceRequestMemoryTarget"]
+	getResourceLimitCPU := controlConfigData["resourceLimitCPUTarget"]
+	getResourceLimitMemory := controlConfigData["resourceLimitMemoryTarget"]
+
+	var reqCpu string
+	if instance.Spec.Deploy.ReqCpu != "" {
+		reqCpu =  instance.Spec.Deploy.ReqCpu
+	} else {
+		reqCpu = getResourceReqCPU
+	}
+	var reqMemory string
+	if instance.Spec.Deploy.ReqMemory != "" {
+		reqMemory =  instance.Spec.Deploy.ReqMemory
+	} else {
+		reqMemory = getResourceReqMemory
+	}
+	var limitCpu string
+	if instance.Spec.Deploy.LimitCpu != "" {
+		limitCpu = instance.Spec.Deploy.LimitCpu
+	} else {
+		limitCpu = getResourceLimitCPU
+	}
+	var limitMemory string
+	if instance.Spec.Deploy.MemoryLimit != "" {
+		limitMemory =  instance.Spec.Deploy.MemoryLimit
+	} else {
+		limitMemory = getResourceLimitMemory
+	}
+
+	if instance.Spec.Deploy.DockerImage != "" && instance.Spec.Mode == "Serverless" {
+		if err := r.reconcileKnativeDeployment(instance); err != nil {
+			return reconcile.Result{}, err
+		}
+	} else if instance.Spec.Deploy.DockerImage != "" && instance.Spec.Mode == "privateJet" {
+		reqLogger.Info("Reconcile K8s Endpoint")
+		if err := r.reconcileDeployment(instance,reqCpu,reqMemory,limitCpu,limitMemory);
+		err != nil {
+			return reconcile.Result{}, err
+		}
 		if err := r.reconcileService(instance); err != nil {
 			return reconcile.Result{}, err
 		}
+	}
 
+	dep := r.newDeploymentForCR(instance,reqCpu,reqMemory,limitCpu,limitMemory)
+
+	getMaxRep := controlConfigData["hpaMaxReplicas"]
+	intValueRep, err := strconv.ParseInt(getMaxRep, 10, 32)
+	if err != nil {
+		log.Error(err, "error getting max replicas")
+	}
+	maxReplicas := int32(intValueRep)
+	GetAvgUtilCPU := controlConfigData["hpaTargetAverageUtilizationCPU"]
+	intValueUtilCPU, err := strconv.ParseInt(GetAvgUtilCPU, 10, 32)
+	if err != nil {
+		log.Error(err, "error getting hpa target average utilization for CPU")
+	}
+	targetAvgUtilizationCPU := int32(intValueUtilCPU)
+	minReplicas := int32(instance.Spec.Deploy.MinReplicas)
+	if instance.Spec.Mode != "Serverless" {
+		errGettingHpa := createTargetEndPointHPA(dep,r,owner, minReplicas, maxReplicas, targetAvgUtilizationCPU)
+		if errGettingHpa != nil {
+			log.Error(errGettingHpa, "Error getting HPA")
+		}
 	}
 	return reconcile.Result{Requeue: true}, nil
 }
 
 // Create newDeploymentForCR method to create a deployment.
-func (r *ReconcileTargetEndpoint) newDeploymentForCR(m *wso2v1alpha1.TargetEndpoint) *appsv1.Deployment {
-	replicas := m.Spec.Deploy.Count
+func (r *ReconcileTargetEndpoint) newDeploymentForCR(m *wso2v1alpha1.TargetEndpoint, resourceReqCPU string, resourceReqMemory string,
+	resourceLimitCPU string, resourceLimitMemory string) *appsv1.Deployment {
+	replicas := m.Spec.Deploy.MinReplicas
+	req := corev1.ResourceList{
+		corev1.ResourceCPU:    resource.MustParse(resourceReqCPU),
+		corev1.ResourceMemory: resource.MustParse(resourceReqMemory),
+	}
+	lim := corev1.ResourceList{
+		corev1.ResourceCPU:    resource.MustParse(resourceLimitCPU),
+		corev1.ResourceMemory: resource.MustParse(resourceLimitMemory),
+	}
 	dep := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
@@ -161,6 +250,10 @@ func (r *ReconcileTargetEndpoint) newDeploymentForCR(m *wso2v1alpha1.TargetEndpo
 						Ports: []corev1.ContainerPort{{
 							ContainerPort: m.Spec.Port,
 						}},
+						Resources:corev1.ResourceRequirements{
+							Limits:   lim,
+							Requests: req,
+						},
 					}},
 				},
 			},
@@ -170,6 +263,49 @@ func (r *ReconcileTargetEndpoint) newDeploymentForCR(m *wso2v1alpha1.TargetEndpo
 	controllerutil.SetControllerReference(m, dep, r.scheme)
 	return dep
 
+}
+
+// Create newKnativeDeploymentForCR method to create a deployment.
+func (r *ReconcileTargetEndpoint) newKnativeDeploymentForCR(m *wso2v1alpha1.TargetEndpoint) *v1.Service {
+	ser := &v1.Service{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "serving.knative.dev/v1alpha1",
+			Kind:       "Service",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      m.ObjectMeta.Name,
+			Namespace: m.ObjectMeta.Namespace,
+		},
+		Spec: v1.ServiceSpec{
+			ConfigurationSpec: v1.ConfigurationSpec{
+				Template: v1.RevisionTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+						Labels: m.ObjectMeta.Labels,
+						Annotations:map[string]string{
+							"autoscaling.knative.dev/minScale": strconv.Itoa(int(m.Spec.Deploy.MinReplicas)),
+							"autoscaling.knative.dev/maxScale": strconv.Itoa(int(m.Spec.Deploy.MaxReplicas)),
+						},
+					},
+					Spec: v1.RevisionSpec{
+						PodSpec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Image: m.Spec.Deploy.DockerImage,
+									Name:  m.Spec.Deploy.Name,
+									Ports: []corev1.ContainerPort{{
+										ContainerPort: m.Spec.Port,
+									}},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	// Set Examplekind instance as the owner and controller
+	controllerutil.SetControllerReference(m, ser, r.scheme)
+	return ser
 }
 
 func (r *ReconcileTargetEndpoint) reconcileService(m *wso2v1alpha1.TargetEndpoint) error {
@@ -200,12 +336,13 @@ func (r *ReconcileTargetEndpoint) reconcileService(m *wso2v1alpha1.TargetEndpoin
 	return r.client.Update(context.TODO(), currentService)
 }
 
-func (r *ReconcileTargetEndpoint) reconcileDeployment(m *wso2v1alpha1.TargetEndpoint) error {
+func (r *ReconcileTargetEndpoint) reconcileDeployment(m *wso2v1alpha1.TargetEndpoint,resourceReqCPU string, resourceReqMemory string,
+	resourceLimitCPU string, resourceLimitMemory string) error {
 	found := &appsv1.Deployment{}
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: m.Name, Namespace: m.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new deployment
-		dep := r.newDeploymentForCR(m)
+		dep := r.newDeploymentForCR(m,resourceReqCPU,resourceReqMemory,resourceLimitCPU,resourceLimitMemory)
 		log.WithValues("Creating a new Deployment %s/%s\n", dep.Namespace, dep.Name)
 		err = r.client.Create(context.TODO(), dep)
 		if err != nil {
@@ -215,6 +352,26 @@ func (r *ReconcileTargetEndpoint) reconcileDeployment(m *wso2v1alpha1.TargetEndp
 		// Deployment created successfully - return and requeue
 	} else if err != nil {
 		log.WithValues("Failed to get Deployment: %v\n", err)
+		return err
+	}
+	return nil
+}
+
+func (r *ReconcileTargetEndpoint) reconcileKnativeDeployment(m *wso2v1alpha1.TargetEndpoint) error {
+	found := &v1.Service{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: m.Name, Namespace: m.Namespace}, found)
+	if err != nil && errors.IsNotFound(err) {
+		//Define new Knative deployment
+		ser := r.newKnativeDeploymentForCR(m)
+		log.WithValues("Creating new Knative Service %s%s\n", ser.Namespace, ser.Name)
+		err = r.client.Create(context.TODO(), ser)
+		if err != nil {
+			log.WithValues("Failed to create new Knative Service: %v\n", err)
+			return err
+		}
+		// Knative Service created sucessfully - return and requee
+	} else if err != nil {
+		log.WithValues("Failed to get Knative Service: %\n", err)
 		return err
 	}
 	return nil
@@ -262,4 +419,99 @@ func (r *ReconcileTargetEndpoint) newServiceForCR(m *wso2v1alpha1.TargetEndpoint
 	}
 	controllerutil.SetControllerReference(m, &service, r.scheme)
 	return &service
+}
+
+
+func createTargetEndPointHPA(dep *appsv1.Deployment ,r *ReconcileTargetEndpoint, owner []metav1.OwnerReference,
+	minReplicas int32, maxReplicas int32, targetAverageUtilizationCPU int32) error {
+
+	instance := &wso2v1alpha1.TargetEndpoint{}
+
+
+	targetResource := v2beta1.CrossVersionObjectReference{
+		Kind:       "Deployment",
+		Name:       dep.Name,
+		APIVersion: "extensions/v1beta1",
+	}
+	//CPU utilization
+	resourceMetricsForCPU := &v2beta1.ResourceMetricSource{
+		Name:                     corev1.ResourceCPU,
+		TargetAverageUtilization: &targetAverageUtilizationCPU,
+	}
+	metricsResCPU := v2beta1.MetricSpec{
+		Type:     "Resource",
+		Resource: resourceMetricsForCPU,
+	}
+	metricsSet := []v2beta1.MetricSpec{metricsResCPU}
+	hpa := &v2beta1.HorizontalPodAutoscaler{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            dep.Name + "-hpa",
+			Namespace:       dep.Namespace,
+			OwnerReferences: owner,
+		},
+		Spec: v2beta1.HorizontalPodAutoscalerSpec{
+			MinReplicas:    &minReplicas,
+			MaxReplicas:    maxReplicas,
+			ScaleTargetRef: targetResource,
+			Metrics:        metricsSet,
+		},
+	}
+	//check hpa already exists
+	checkHpa := &v2beta1.HorizontalPodAutoscaler{}
+	hpaErr := r.client.Get(context.TODO(), types.NamespacedName{Name: hpa.Name, Namespace: hpa.Namespace}, checkHpa)
+	if hpaErr != nil && errors.IsNotFound(hpaErr) {
+		//creating new hpa
+		log.Info("Creating HPA for targetEndPoint " + instance.Name)
+		errHpaCreating := r.client.Create(context.TODO(), hpa)
+		if errHpaCreating != nil {
+			return errHpaCreating
+		}
+		return nil
+	} else if hpaErr != nil {
+		return hpaErr
+	} else {
+		log.Info("HPA for targetEndPoint " + instance.Name + " is already exist")
+	}
+	return nil
+}
+
+//get configmap
+func getConfigmap(r *ReconcileTargetEndpoint, mapName string, ns string) (*corev1.ConfigMap, error) {
+	apiConfigMap := &corev1.ConfigMap{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: mapName, Namespace: ns}, apiConfigMap)
+
+	if mapName == "apim-config" {
+		if err != nil && errors.IsNotFound(err) {
+			logrus.Warnf("missing APIM configurations ", err)
+			return nil, err
+
+		} else if err != nil {
+			log.Error(err, "error ")
+			return apiConfigMap, err
+		}
+	} else {
+		if err != nil && errors.IsNotFound(err) {
+			log.Error(err, "Specified configmap is not found: %s", mapName)
+			return apiConfigMap, err
+		} else if err != nil {
+			log.Error(err, "error ")
+			return apiConfigMap, err
+		}
+	}
+	return apiConfigMap, nil
+}
+
+//gets the details of the targetEndPoint crd object for owner reference
+func getOwnerDetails(cr *wso2v1alpha1.TargetEndpoint) []metav1.OwnerReference {
+	setOwner := true
+	return []metav1.OwnerReference{
+		{
+			APIVersion:         cr.APIVersion,
+			Kind:               cr.Kind,
+			Name:               cr.Name,
+			UID:                cr.UID,
+			Controller:         &setOwner,
+			BlockOwnerDeletion: &setOwner,
+		},
+	}
 }

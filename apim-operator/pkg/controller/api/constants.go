@@ -16,7 +16,8 @@
 package api
 
 const (
-	dockerConfig       = "docker-config"
+	ConfigJsonVolume   = "config-json"
+	dockerConfigKey    = "config.json"
 	mgwDockerFile      = "dockerfile-conf"
 	swaggerVolume      = "swagger-volume"
 	interceptorsVolume = "interceptors-volume"
@@ -59,7 +60,6 @@ const (
 	certConst      = "cert_security"
 	analyticsAlias = "wso2analytics260"
 
-	dockerhubRegistryUrl                = "https://registry-1.docker.io/"
 	defaultSecurity                     = "default-security-jwt"
 	endpointExtension                   = "x-wso2-production-endpoints"
 	apiBasePathExtention                = "x-wso2-basePath"
@@ -70,8 +70,6 @@ const (
 	dockertemplatepath                  = "/usr/local/bin/dockerFile.gotmpl"
 	mgwConfMustache                     = "mgw-conf-mustache"
 	mgwConfGoTmpl                       = "mgwConf.gotmpl"
-	dockerSecretMustache                = "docker-secret-mustache"
-	dockerSecretMustacheTemplate        = "docketMustache.gotmpl"
 	certConfig                          = "apim-certs"
 	encodedTrustsorePassword            = "YmFsbGVyaW5h"
 	truststoreSecretName                = "truststorepass"
@@ -125,6 +123,7 @@ const (
 	pathsExtension          = "paths"
 	sidecar                 = "sidecar"
 	privateJet              = "privateJet"
+	serverless              = "serverless"
 	shared                  = "shared"
 	verifyHostNameVal       = "false"
 
@@ -139,6 +138,10 @@ const (
 	resourceRequestMemory              = "resourceRequestMemory"
 	resourceLimitCPU                   = "resourceLimitCPU"
 	resourceLimitMemory                = "resourceLimitMemory"
+	resourceRequestCPUTarget           = "resourceRequestCPUTarget"
+	resourceRequestMemoryTarget        = "resourceRequestMemoryTarget"
+	resourceLimitCPUTarget             = "resourceLimitCPUTarget"
+	resourceLimitMemoryTarget          = "resourceLimitMemoryTarget"
 	generatekubernbetesartifactsformgw = "generatekubernbetesartifactsformgw"
 
 	httpPortValConst  = 9090
