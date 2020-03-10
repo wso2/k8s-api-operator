@@ -90,12 +90,12 @@ Follow the documentation https://docs.docker.com/registry/deploying for more inf
 
 ## Install API Operator
 
-- Execute the following command to install API Operator interactively and configure repository to push the microgateway image.
-- Select registry type.
+- Execute the following command to install API Operator interactively and configure the repository to push the microgateway image.
+- Select the registry type.
   - Select "HTTP Private Registry" as the repository type for HTTP registry.
   - Select "Docker Hub" as the repository type for HTTPS registry.
 - Enter the file path of the downloaded service account key JSON File.
-- Confirm configuration are correct with entering "Y"
+- Confirm that the configurations are correct by entering "Y"
 
 ### HTTP registry example
 ```sh
