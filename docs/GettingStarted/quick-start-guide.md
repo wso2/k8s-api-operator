@@ -25,20 +25,9 @@ In this document, we will walk through on the following.
 - [Kubernetes v1.12 or above](https://Kubernetes.io/docs/setup/) <br>
 Minimum CPU and Memory for the K8s cluster: **2 vCPU, 8GB of Memory**
 
+- [API Controller](https://wso2.com/api-management/tooling/) tool
+
 - An account in DockerHub or private docker registry
-
-- Download [api-k8s-crds-1.0.1.zip](https://github.com/wso2/k8s-apim-operator/releases/download/v1.0.1/api-k8s-crds-1.0.1.zip) and extract the zip
-
-    1. This zip contains the artifacts that required to deploy in Kubernetes.
-    2. Extract api-k8s-crds-1.0.1.zip
-    
-    ```
-    cd api-k8s-crds-1.0.1
-    ```
- 
-**_Note:_** You need to run all commands from within the ***api-k8s-crds-1.0.1*** directory.
-
-<br />
 
 #### Step 1: Deploy a sample microservice in Kubernetes
 
@@ -98,60 +87,43 @@ Minimum CPU and Memory for the K8s cluster: **2 vCPU, 8GB of Memory**
 
 #### Step 2: Install API Operator
 
-* Deploy the Controller artifacts
+- Execute the following command to install API Operator interactively and configure repository to push the microgateway image.
+- Select "Docker Hub" as the repository type.
+- Enter repository name of your Docker Hub account (usually it is the username as well).
+- Enter username and the password
+- Confirm configuration are correct with entering "Y"
 
-- This will deploy the artifacts related to the API Operator
-    ```
-    kubectl apply -f apim-operator/controller-artifacts/
-    
-    Output:
-    
-    namespace/wso2-system created
-    deployment.apps/apim-operator created
-    clusterrole.rbac.authorization.k8s.io/apim-operator created
-    clusterrolebinding.rbac.authorization.k8s.io/apim-operator created
-    serviceaccount/apim-operator created
-    customresourcedefinition.apiextensions.k8s.io/apis.wso2.com created
-    customresourcedefinition.apiextensions.k8s.io/ratelimitings.wso2.com created
-    customresourcedefinition.apiextensions.k8s.io/securities.wso2.com created
-    customresourcedefinition.apiextensions.k8s.io/targetendpoints.wso2.com created
-    ```
+```sh
+>> apictl install api-operator
+Choose repository type:
+1: Docker Hub (Or others, quay.io)
+2: Amazon ECR
+3: GCR
+Choose a number: 1: 1
+Enter repository name (john or quay.io/mark): : jennifer
+Enter username: : jennifer
+Enter password:
 
-* Deploy the controller level configurations **[IMPORTANT]**
+Repository: jennifer
+Username  : jennifer
+Confirm configurations: Y: Y
+```
 
-    When you deploy an API, this will create a docker image for the API and be pushed to Docker-Hub. For this, your Docker-Hub credentials are required.
-    
-    1. Open **apim-operator/controller-configs/controller_conf.yaml** and navigate to docker registry section(mentioned below), and  update ***user's docker registry***.
-            
-        ```
-        #docker registry name which the mgw image to be pushed.  eg->  dockerRegistry: username
-        dockerRegistry: <username-docker-registry>
-        ```
-        
-    2. Open **apim-operator/controller-configs/docker_secret_template.yaml** and navigate to data section. <br>
-        Enter the base 64 encoded username and password of the Docker-Hub account 
-        
-        ```
-        data:
-         username: ENTER YOUR BASE64 ENCODED USERNAME
-         password: ENTER YOUR BASE64 ENCODED PASSWORD
-        ```
-        Once you done with the above configurations, execute the following command to deploy controller configurations.
+Output:
+```sh
+[Installing OLM]
+customresourcedefinition.apiextensions.k8s.io/clusterserviceversions.operators.coreos.com created
+...
 
-        ```
-        >> kubectl apply -f apim-operator/controller-configs/
-        
-        configmap/controller-config created
-        configmap/apim-config created
-        security.wso2.com/default-security-jwt created
-        secret/wso2am300-secret created
-        configmap/docker-secret-mustache created
-        secret/docker-secret created
-        configmap/dockerfile-template created
-        configmap/mgw-conf-mustache created
-        ```
-<br />
-        
+[Installing API Operator]
+subscription.operators.coreos.com/my-api-operator created
+[Setting configs]
+namespace/wso2-system created
+...
+
+[Setting to K8s Mode]
+```
+
 #### Step 3: Install the API portal and security token service
 
 Kubernetes installation artifacts for API portal and security token service are available in the k8s-artifacts directory.
@@ -431,7 +403,7 @@ Access Token:  eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6IlpqUm1ZVE13TlRKak9XV
 
 #### Documentation
 
-You can find the documentation [here](docs/Readme.md).
+You can find the documentation [here](../Readme.md).
 
 #### Cleanup
 
@@ -452,7 +424,7 @@ Execute the following commands if you wish to clean up the Kubernetes cluster by
 1. [Sample 4: Deploy pet store service as a managed API secured with JWT](../../scenarios/scenario-4)
 1. [Sample 5: Deploy pet store service as a managed API secured with OAuth2](../../scenarios/scenario-5)
 1. [Sample 6: Apply rate-limiting to managed API in Kubernetes cluster](../../scenarios/scenario-6)
-1. [Sample 7: Deploy APIs in k8s in private jet mode](scenarios/scenario-7)
+1. [Sample 7: Deploy APIs in k8s in private jet mode](../../scenarios/scenario-7)
 1. [Sample 8: Deploy APIs in k8s in sidecar mode](../../scenarios/scenario-8)
 1. [Sample 9: Expose an API with multiple service endpoints](../../scenarios/scenario-9)
 1. [Sample 10: Apply interceptors to an API](../../scenarios/scenario-10)
