@@ -57,8 +57,7 @@ To enble the serverless feature you need to set true in the serverless property.
 In this swagger definition, the backend service of the "products" service and the managed API mode have been mentioned as follows.
     ```
         x-wso2-production-endpoints: hello-world-serverless.default
-        x-wso2-mode: privateJet
-        x-wso2-serverless: true
+        x-wso2-mode: Serverless
     ```
   
 - Create a new namespace for deploy the API
