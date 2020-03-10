@@ -38,6 +38,7 @@ type TargetEndpointSpec struct {
 	EndpointName     string           `json:"endpointName"`
 	EndpointSecurity EndpointSecurity `json:"endpointSecurity"`
 	Mode             Mode             `json:"mode"`
+	Serverless       bool             `json:"serverless"`
 }
 
 // TargetEndpointStatus defines the observed state of TargetEndpoint
@@ -54,10 +55,17 @@ type EndpointSecurity struct {
 	Type     string `json:"type"`
 }
 
+//Replica count for create HPA for targetEndPoint
 type Deploy struct {
 	Name        string `json:"name"`
 	DockerImage string `json:"dockerImage"`
-	Count       int32  `json:"count"`
+	MinReplicas int32  `json:"minReplicas"`
+	MaxReplicas int32  `json:"maxReplicas"`
+	ReqCpu      string  `json:"requestCPU,"`
+	ReqMemory   string  `json:"reqMemory"`
+	LimitCpu    string  `json:"cpuLimit"`
+	MemoryLimit string  `json:"memoryLimit"`
+
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
