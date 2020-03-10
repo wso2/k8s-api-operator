@@ -78,3 +78,15 @@ rules:
   - '*'
   verbs:
   - '*'
+- apiGroups:
+  - serving.knative.dev
+  resources:
+  - '*'
+  verbs:
+  - get
+  - list
+  - create
+  - update
+  - delete
+  - patch
+  - watch

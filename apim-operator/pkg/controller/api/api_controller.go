@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"github.com/golang/glog"
 	"github.com/sirupsen/logrus"
+	v1 "github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/serving/v1alpha1"
 	"github.com/wso2/k8s-apim-operator/apim-operator/pkg/registry"
 	"github.com/wso2/k8s-apim-operator/apim-operator/pkg/registry/utils"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -161,6 +162,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	// Fetch the API instance
 	instance := &wso2v1alpha1.API{}
+
 	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -1157,26 +1159,42 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string, 
 			if err == nil {
 				log.Info("Parsing endpoints and not available root service endpoint")
 				//check if service & targetendpoint cr object are available
-				currentService := &corev1.Service{}
+				extractData := strings.Split(endPoint,".")
+				if len(extractData) == 2 {
+					userNameSpace = extractData[1]
+					endPoint = extractData[0]
+				}
 				targetEndpointCr := &wso2v1alpha1.TargetEndpoint{}
-				err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: userNameSpace,
-					Name: endPoint}, currentService)
 				erCr := r.client.Get(context.TODO(), types.NamespacedName{Namespace: userNameSpace, Name: endPoint}, targetEndpointCr)
 
-				if err != nil && errors.IsNotFound(err) && mode != sidecar {
-					log.Error(err, "Service is not found")
-				} else if erCr != nil && errors.IsNotFound(erCr) {
+				if erCr != nil && errors.IsNotFound(erCr) {
 					log.Error(err, "targetEndpoint CRD object is not found")
-				} else if err != nil && mode != sidecar {
-					log.Error(err, "Error in getting service")
 				} else if erCr != nil {
 					log.Error(err, "Error in getting targetendpoint CRD object")
+				}
+				if targetEndpointCr.Spec.Mode == "Serverless" {
+					currentService := &v1.Service{}
+					err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: userNameSpace,
+						Name: endPoint}, currentService)
+				} else{
+					currentService := &corev1.Service{}
+					err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: userNameSpace,
+						Name: endPoint}, currentService)
+				}
+				if err != nil && errors.IsNotFound(err) && mode != sidecar {
+					log.Error(err,"service not found")
+				}  else if err != nil && mode != sidecar {
+					log.Error(err, "Error in getting service")
 				} else {
 					protocol := targetEndpointCr.Spec.Protocol
 					if mode == sidecar {
 						endPointSidecar := protocol + "://" + "localhost:" + strconv.Itoa(int(targetEndpointCr.Spec.Port))
 						endpointNames[targetEndpointCr.Name] = endPointSidecar
 						checkt = append(checkt, endPointSidecar)
+					}
+					if targetEndpointCr.Spec.Mode == "Serverless" {
+						endPoint = protocol + "://" + endPoint + "." + userNameSpace + ".svc.cluster.local"
+						checkt = append(checkt, endPoint)
 					} else {
 						endPoint = protocol + "://" + endPoint
 						checkt = append(checkt, endPoint)
@@ -1205,7 +1223,6 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string, 
 									urlValSidecar := protocol + "://" + "localhost:" + strconv.Itoa(int(targetEndpointCr.Spec.Port))
 									endpointNames[urlVal] = urlValSidecar
 									endpointList[index] = urlValSidecar
-
 								} else {
 									endpointList[index] = urlVal
 								}
@@ -1226,7 +1243,6 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string, 
 			}
 		}
 	}
-
 	//resource level endpoint
 	for pathName, path := range swagger.Paths {
 
@@ -2057,7 +2073,7 @@ func copyDefaultSecurity(securityDefault *wso2v1alpha1.Security, userNameSpace s
 // Create newDeploymentForCR method to create a deployment.
 func (r *ReconcileAPI) createDeploymentForSidecarBackend(m *wso2v1alpha1.TargetEndpoint,
 	namespace string, instance *wso2v1alpha1.API) *appsv1.Deployment {
-	replicas := m.Spec.Deploy.Count
+	replicas := m.Spec.Deploy.MinReplicas
 	dep := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
