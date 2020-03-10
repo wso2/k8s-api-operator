@@ -1159,7 +1159,7 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string, 
 			if err == nil {
 				log.Info("Parsing endpoints and not available root service endpoint")
 				//check if service & targetendpoint cr object are available
-				extractData := strings.Split(endPoint,".")
+				extractData := strings.Split(endPoint, ".")
 				if len(extractData) == 2 {
 					userNameSpace = extractData[1]
 					endPoint = extractData[0]
@@ -1176,14 +1176,14 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string, 
 					currentService := &v1.Service{}
 					err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: userNameSpace,
 						Name: endPoint}, currentService)
-				} else{
+				} else {
 					currentService := &corev1.Service{}
 					err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: userNameSpace,
 						Name: endPoint}, currentService)
 				}
 				if err != nil && errors.IsNotFound(err) && mode != sidecar {
-					log.Error(err,"service not found")
-				}  else if err != nil && mode != sidecar {
+					log.Error(err, "service not found")
+				} else if err != nil && mode != sidecar {
 					log.Error(err, "Error in getting service")
 				} else {
 					protocol := targetEndpointCr.Spec.Protocol
@@ -1472,7 +1472,7 @@ func getCredentials(r *ReconcileAPI, name string, securityType string, userNameS
 			return err
 		}
 		//convert encoded password to a uppercase hex string
-		basicPassword = strings.ToUpper(hex.EncodeToString(hasher.Sum(nil)))
+		basicPassword = hex.EncodeToString(hasher.Sum(nil))
 	}
 	if securityType == "Oauth" {
 		keymanagerUsername = usrname

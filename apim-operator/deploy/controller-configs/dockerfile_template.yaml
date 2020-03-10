@@ -88,7 +88,3 @@ data:
     USER ballerina
     #project name has to be passed to the ballerina image as a env variable
     ENV project="project"
-
-
-
-
