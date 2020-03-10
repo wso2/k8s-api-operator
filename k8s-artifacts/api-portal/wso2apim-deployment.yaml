@@ -35,7 +35,7 @@ spec:
     spec:
       containers:
         - name: wso2apim
-          image: renukafernando/wso2-apim:3.1.0-beta
+          image: wso2am/wso2am:3.1.0-beta
           resources:
             limits:
               memory: "2Gi"

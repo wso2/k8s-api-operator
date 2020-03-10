@@ -21,7 +21,7 @@ metadata:
   namespace: wso2-system
 data:
   #mgw toolkit image to initialize/setup the micro gw project
-  mgwToolkitImg: renukafernando/wso2am-micro-gw-toolkit:3.1.0-beta
+  mgwToolkitImg: wso2am/wso2micro-gw-toolkit:3.1.0-beta
   #mgw runtime image to use in the mgw executable
   mgwRuntimeImg: wso2/wso2micro-gw:3.1.0-beta
   #kaniko image for the kaniko pod which builds the mgw api runtime and pushes to the registry
@@ -32,7 +32,7 @@ data:
   repositoryName: REPOSITORY_NAME_OF_DOCKER_REGISTRY
   #Maximum number of replicas for the Horizontal Pod Auto-scale. Default->  hpaMaxReplicas: "5"
   hpaMaxReplicas: "5"
-  #Avg CPU utliazation(%) to spin up the next pod.  Default->  hpaTargetAverageUtilizationCPU: "50"
+  #Avg CPU utilization(%) to spin up the next pod.  Default->  hpaTargetAverageUtilizationCPU: "50"
   hpaTargetAverageUtilizationCPU: "50"
   #Required CPU usage for pods.   Default-> resourceRequestCPU: "1000m"
   resourceRequestCPU: "1000m"
