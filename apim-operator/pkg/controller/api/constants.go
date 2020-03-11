@@ -21,6 +21,7 @@ const (
 	mgwDockerFile      = "dockerfile-conf"
 	swaggerVolume      = "swagger-volume"
 	interceptorsVolume = "interceptors-volume"
+	javaInterceptorsVolume = "java-interceptors-volume"
 
 	swaggerLocation            = "/usr/wso2/swagger/"
 	dockerFileLocation         = "/usr/wso2/dockerfile/"
@@ -37,6 +38,7 @@ const (
 	analyticsVolumeLocation    = "/home/ballerina/api-usage-data/"
 	analyticsConfName          = "analytics-config"
 	interceptorsVolumeLocation = "usr/wso2/interceptors/"
+	javaInterceptorsVolumeLocation = "usr/wso2/libs/"
 
 	mgwToolkitImgConst   = "mgwToolkitImg"
 	mgwRuntimeImgConst   = "mgwRuntimeImg"

@@ -35,6 +35,8 @@ type APISpec struct {
 	Definition          Definition `json:"definition"`
 	InterceptorConfName string     `json:"interceptorConfName"`
 	Override            bool       `json:"override"`
+	JavaInterceptors	[]string	`json:"javaInterceptors"`
+	Interceptors	Interceptors 	`json:"interceptors"`
 }
 
 // APIStatus defines the observed state of API
@@ -70,6 +72,11 @@ type APIList struct {
 type Definition struct {
 	ConfigmapName string `json:"configmapName"`
 	Type          string `json:"type"`
+}
+
+type Interceptors struct {
+	Ballerina	string	`json:"ballerina"`
+	Java	[]string `json:"java"`
 }
 
 type Mode string

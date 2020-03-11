@@ -57,6 +57,11 @@ data:
     RUN cp usr/wso2/interceptors/* ./project/interceptors/
     {{ end }}
 
+    #copy java interceptors to the project
+    {{ if .JavaInterceptorsFound }}
+    RUN cp usr/wso2/libs/* ./project/libs/
+    {{ end }}
+
     #generate the executable
     RUN micro-gw build project
 
