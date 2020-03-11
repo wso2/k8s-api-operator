@@ -22,10 +22,10 @@ import (
 	"encoding/hex"
 	"github.com/golang/glog"
 	"github.com/sirupsen/logrus"
-	"k8s.io/api/extensions/v1beta1"
 	v1 "github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/serving/v1alpha1"
 	"github.com/wso2/k8s-apim-operator/apim-operator/pkg/registry"
 	"github.com/wso2/k8s-apim-operator/apim-operator/pkg/registry/utils"
+	"k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -199,11 +199,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	mgwRuntimeImg := controlConfigData[mgwRuntimeImgConst]
 	kanikoImg := controlConfigData[kanikoImgConst]
 
-	dockerRegistry := controlConfigData[dockerRegistryConst]
-	operatorMode := controlConfigData[mode]
-	reqLogger.Info("Controller Configurations", "mgwToolkitImg", mgwToolkitImg, "mgwRuntimeImg", mgwRuntimeImg,
-		"kanikoImg", kanikoImg, "dockerRegistry", dockerRegistry, "userNameSpace", userNameSpace, "operatorMode", operatorMode)
-
 	if !registry.IsRegistryType(controlConfigData[registryTypeConst]) {
 		log.Error(err, "Invalid registry type", "registry-type", controlConfigData[registryTypeConst])
 		// Registry type is invalid.
@@ -212,9 +207,11 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 	registryType := registry.Type(controlConfigData[registryTypeConst])
 	repositoryName := controlConfigData[repositoryNameConst]
+	operatorMode := controlConfigData[mode]
 
 	reqLogger.Info("Controller Configurations", "mgwToolkitImg", mgwToolkitImg, "mgwRuntimeImg", mgwRuntimeImg,
-		"kanikoImg", kanikoImg, "registryType", registryType, "repositoryName", repositoryName, "userNameSpace", userNameSpace)
+		"kanikoImg", kanikoImg, "registryType", registryType, "repositoryName", repositoryName,
+		"userNameSpace", userNameSpace, "operatorMode", operatorMode)
 
 	//Handles policy.yaml.
 	//If there aren't any ratelimiting objects deployed, new policy.yaml configmap will be created with default policies
@@ -852,7 +849,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 					}
 
 					reqLogger.Info("Operator mode is set to " + operatorMode)
-					if (operatorMode == ingressMode) {
+					if operatorMode == ingressMode {
 						ingErr := createorUpdateMgwIngressResource(r, instance, userNameSpace, int32(httpPortVal),
 							int32(httpsPortVal), apiBasePath, controlConf)
 						if ingErr != nil {
@@ -906,7 +903,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 				}
 
 				reqLogger.Info("Operator mode is set to " + operatorMode)
-				if (operatorMode == ingressMode) {
+				if operatorMode == ingressMode {
 					ingErr := createorUpdateMgwIngressResource(r, instance, userNameSpace, int32(httpPortVal),
 						int32(httpsPortVal), apiBasePath, controlConf)
 					if ingErr != nil {
@@ -966,9 +963,9 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 					}
 
 					reqLogger.Info("Operator mode is set to " + operatorMode)
-					if (operatorMode == ingressMode) {
+					if operatorMode == ingressMode {
 						ingErr := createorUpdateMgwIngressResource(r, instance, userNameSpace, int32(httpPortVal),
-																			int32(httpsPortVal), apiBasePath, controlConf)
+							int32(httpsPortVal), apiBasePath, controlConf)
 						if ingErr != nil {
 							return reconcile.Result{}, ingErr
 						}
@@ -1189,7 +1186,7 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string, 
 			if err == nil {
 				log.Info("Parsing endpoints and not available root service endpoint")
 				//check if service & targetendpoint cr object are available
-				extractData := strings.Split(endPoint,".")
+				extractData := strings.Split(endPoint, ".")
 				if len(extractData) == 2 {
 					userNameSpace = extractData[1]
 					endPoint = extractData[0]
@@ -1206,14 +1203,14 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string, 
 					currentService := &v1.Service{}
 					err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: userNameSpace,
 						Name: endPoint}, currentService)
-				} else{
+				} else {
 					currentService := &corev1.Service{}
 					err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: userNameSpace,
 						Name: endPoint}, currentService)
 				}
 				if err != nil && errors.IsNotFound(err) && mode != sidecar {
-					log.Error(err,"service not found")
-				}  else if err != nil && mode != sidecar {
+					log.Error(err, "service not found")
+				} else if err != nil && mode != sidecar {
 					log.Error(err, "Error in getting service")
 				} else {
 					protocol := targetEndpointCr.Spec.Protocol
@@ -1798,80 +1795,14 @@ func scheduleKanikoJob(cr *wso2v1alpha1.API, conf *corev1.ConfigMap, jobVolumeMo
 	}
 }
 
-func dockerConfigCreator(r *ReconcileAPI, operatorOwner []metav1.OwnerReference, namespace string) error {
-	//checks if docker secret is available
-	dockerSecret := &corev1.Secret{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: dockerSecretNameConst, Namespace: wso2NameSpaceConst}, dockerSecret)
-	if err != nil && errors.IsNotFound(err) {
-		log.Info("Docker Secret is not found")
-		return err
-	} else if err != nil {
-		log.Error(err, "error ")
-		return err
-	}
-	dockerData := dockerSecret.Data
-	dockerUsername := string(dockerData[usernameConst])
-	dockerPassword := string(dockerData[passwordConst])
-	rawCredentials := dockerUsername + ":" + dockerPassword
-	credentials := b64.StdEncoding.EncodeToString([]byte(rawCredentials))
-
-	//Retrieve docker secret mustache configmap
-	dockerSecretMustacheConfigMap, err := getConfigmap(r, dockerSecretMustache, wso2NameSpaceConst)
-	//Retrive docker secret template from the configmap
-	dockerSecretTemplate := dockerSecretMustacheConfigMap.Data[dockerSecretMustacheTemplate]
-	//Populate docker-secret configmap from provided values
-	output, err := mustache.Render(dockerSecretTemplate, map[string]string{
-		"docker_url":  "https://index.docker.io/v1/",
-		"credentials": credentials})
-	if err != nil {
-		log.Error(err, "error in rendering ")
-		return err
-	}
-
-	//Writes the created template to a secret
-	dockerConf := createSecret(dockerConfig, "config.json", output, namespace, operatorOwner)
-
-	// Check if this configmap already exists
-	foundsecret := &corev1.Secret{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: dockerConf.Name, Namespace: dockerConf.Namespace}, foundsecret)
-
-	if err != nil && errors.IsNotFound(err) {
-		log.Info("Creating a new docker-config secret", "Namespace", dockerConf.Namespace, "secret.Name", dockerConf.Name)
-		err = r.client.Create(context.TODO(), dockerConf)
-		if err != nil {
-			log.Error(err, "error ")
-			return err
-		}
-		// secret created successfully
-		return nil
-	} else if err != nil {
-		log.Error(err, "error ")
-		return err
-	}
-	log.Info("Docker config secret already exists", "secret.Namespace", foundsecret.Namespace, "secret.Name", foundsecret.Name)
-	log.Info("Updating Config map", "confmap.Namespace", dockerConf.Namespace, "confmap.Name", dockerConf.Name)
-	err = r.client.Update(context.TODO(), dockerConf)
-	if err != nil {
-		log.Error(err, "error ")
-		return err
-	}
-	return nil
-}
-
 //Creating a LB balancer service to expose mgw
 func createMgwLBService(r *ReconcileAPI, cr *wso2v1alpha1.API, nameSpace string, owner []metav1.OwnerReference, httpPortVal int32,
 	httpsPortVal int32, deploymentType string) *corev1.Service {
-
-//Service of the API
-//todo: This has to be changed to LB type
-func createMgwService(cr *wso2v1alpha1.API, nameSpace string) *corev1.Service {
-
-
-	var serviceType corev1.ServiceType;
-	serviceType = corev1.ServiceTypeLoadBalancer;
+	var serviceType corev1.ServiceType
+	serviceType = corev1.ServiceTypeLoadBalancer
 
 	if deploymentType == ingressMode {
-		serviceType = corev1.ServiceTypeNodePort;
+		serviceType = corev1.ServiceTypeNodePort
 	}
 
 	labels := map[string]string{
@@ -1901,12 +1832,12 @@ func createMgwService(cr *wso2v1alpha1.API, nameSpace string) *corev1.Service {
 	}
 
 	controllerutil.SetControllerReference(cr, svc, r.scheme)
-	return svc;
+	return svc
 }
 
 //Creating a LB balancer service to expose mgw
 func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, nameSpace string, httpPortVal int32,
-					httpsPortVal int32, apiBasePath string, controllerConfig *corev1.ConfigMap) error{
+	httpsPortVal int32, apiBasePath string, controllerConfig *corev1.ConfigMap) error {
 	controlConfigData := controllerConfig.Data
 	transportMode := controlConfigData[ingressTransportMode]
 	ingressName := controlConfigData[ingressResourceName]
@@ -1914,17 +1845,17 @@ func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, nam
 
 	log.Info("Creating ingress resource with API Base Path" + apiBasePath)
 	log.WithValues("Ingress metadata. Transport mode", transportMode, "Ingress name", ingressName,
-									"Ingress hostname " + ingressHostName)
+		"Ingress hostname "+ingressHostName)
 	annotationMap, err := getConfigmap(r, ingressAnnotationMap, wso2NameSpaceConst)
-	var port int32;
+	var port int32
 
-	if (httpConst == transportMode) {
+	if httpConst == transportMode {
 		port = httpPortVal
 	} else {
 		port = httpsPortVal
 	}
 
-	apiServiceName := cr.Name;
+	apiServiceName := cr.Name
 	ingress := &v1beta1.Ingress{}
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: ingressName, Namespace: nameSpace}, ingress)
 	annotationConfigData := annotationMap.Data
@@ -1945,8 +1876,8 @@ func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, nam
 		log.Info("Ingress resource not found with name" + ingressName + ".Hence creating a new ingress resource")
 		ingress := &v1beta1.Ingress{
 			ObjectMeta: metav1.ObjectMeta{
-				Namespace: nameSpace, // goes into backend full name
-				Name: ingressName,
+				Namespace:   nameSpace, // goes into backend full name
+				Name:        ingressName,
 				Annotations: ingressAnnotationMap,
 			},
 			Spec: v1beta1.IngressSpec{
@@ -1971,19 +1902,19 @@ func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, nam
 			},
 		}
 		err = r.client.Create(context.TODO(), ingress)
-		return err;
+		return err
 	} else {
 		log.Info("Ingress resource found with name" + ingressName + ".Hence updating the existing ingress resource")
-		rules := ingress.Spec.Rules;
+		rules := ingress.Spec.Rules
 		var rulesArray []v1beta1.IngressRule
 		var update bool = false
 		for _, element := range rules {
-			var pathArray []v1beta1.HTTPIngressPath;
+			var pathArray []v1beta1.HTTPIngressPath
 			for _, path := range element.IngressRuleValue.HTTP.Paths {
 				if path.Path == apiBasePath {
 					path.Backend.ServiceName = apiServiceName
 					path.Backend.ServicePort = intstr.IntOrString{IntVal: port}
-					update = true;
+					update = true
 				}
 				pathArray = append(pathArray, path)
 				element.IngressRuleValue.HTTP.Paths = pathArray
@@ -1995,12 +1926,12 @@ func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, nam
 			log.Info("Ingress API Base path found with name " + apiBasePath + ".Hence updating the rule")
 			ingress.Spec.Rules = rulesArray
 			err = r.client.Update(context.TODO(), ingress)
-			return err;
+			return err
 		}
 
 		rulesArray = make([]v1beta1.IngressRule, 0)
 		for _, element := range rules {
-			paths := element.IngressRuleValue.HTTP.Paths;
+			paths := element.IngressRuleValue.HTTP.Paths
 			path := v1beta1.HTTPIngressPath{
 				Path: apiBasePath,
 				Backend: v1beta1.IngressBackend{
@@ -2013,10 +1944,10 @@ func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, nam
 			rulesArray = append(rulesArray, element)
 			ingress.Spec.Rules = rulesArray
 			err = r.client.Update(context.TODO(), ingress)
-			return err;
+			return err
 		}
 	}
-	return err;
+	return err
 }
 
 //default volume mounts for the kaniko job
