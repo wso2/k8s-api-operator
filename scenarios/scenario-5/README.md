@@ -69,26 +69,19 @@ In this swagger definition, the security schema of the "petstore" service has be
     - Publish the API in WSO2 API Manager deployment.
         - Add the APIM deployment as an environment to the apictl
             ```$xslt
-                apictl add-env -e k8s --registration https://wso2apim:32001/client-registration/v0.15/register --apim https://wso2apim:32001 --token https://wso2apim:32003/token --admin https://wso2apim:32001/api/am/admin/v0.15 --api_list https://wso2apim:32001/api/am/publisher/v0.15/apis --app_list https://wso2apim:32001/api/am/store/v0.15/applications
+                apictl add-env -e k8s --registration https://wso2apim:32001/client-registration/v0.16/register --apim https://wso2apim:32001 --token https://wso2apim:32003/token --admin https://wso2apim:32001/api/am/admin/v0.16 --api_list https://wso2apim:32001/api/am/publisher/v1/apis --app_list https://wso2apim:32001/api/am/store/v1/applications
             ```
-        - Create the API project using swagger file
+        - Create the API project using swagger file with setting the initial state to `PUBLISHED`.
             ```$xslt
-                apictl init petstore-oauth --oas=swagger.yaml
+                apictl init petstore-oauth --oas=swagger.yaml --initial-state=PUBLISHED
             ```
             - Output:
             ```$xslt
-                Initializing a new WSO2 API Manager project in /home/dinusha/wso2am-k8s-crds-1.0.1/scenarios/scenario-5/petstore-oauth
+                Initializing a new WSO2 API Manager project in /home/dinusha/k8s-apim-operator/scenarios/scenario-5/petstore-oauth
                 Project initialized
                 Open README file to learn more
             ```
         - First line of the output shows the location of the API project.
-        - Open that project and navigate to Meta-Information/api.yaml.
-            - Change API's status to ***"PUBLISHED"*** in Meta-Information/api.yaml file.
-        (By default it is in created status)     
-            - Assign the value of "x-wso2-basePath" in Meta-Information/swagger.yaml, to "context" and "contextTemplate" in Meta-Information/api.yaml file.
-            ```$xslt
-            context: /petstoreoauth/v1
-            contextTemplate: /petstoreoauth/v1
             ```
         - Import the API to API Manager deployment
             ```$xslt

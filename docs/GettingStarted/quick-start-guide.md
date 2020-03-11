@@ -212,7 +212,7 @@ The endpoint of our microservice is referred in the API definition.
     ```
     --replicas=3          Number of replicas
     --namespace=wso2      Namespace to deploy the API
-    --overwrite=true	  Overwrite the docker image creation for already created docker image
+    --override      	  Overwrite the docker image creation for already created docker image
     
     >> apictl add api -n "api_name" --from-file="location to the api swagger definition" --replicas="number of replicas" --namespace="desired namespace"
     ```
@@ -347,7 +347,7 @@ The following commands will help you to push the API to the API portal in Kubern
 - Add the API portal to the API controller using the following command.
 
     ```
-    >> apictl add-env -e k8s --registration https://wso2apim:32001/client-registration/v0.15/register --apim https://wso2apim:32003 --token https://wso2apim:32003/token --admin https://wso2apim:32001/api/am/admin/v0.15 --api_list https://wso2apim:32001/api/am/publisher/v0.15/apis --app_list https://wso2apim:32001/api/am/store/v0.15/applications
+    >> apictl add-env -e k8s --registration https://wso2apim:32001/client-registration/v0.16/register --apim https://wso2apim:32003 --token https://wso2apim:32003/token --admin https://wso2apim:32001/api/am/admin/v0.16 --api_list https://wso2apim:32001/api/am/publisher/v1/apis --app_list https://wso2apim:32001/api/am/store/v1/applications
     
     Output:
     Successfully added environment 'k8s'
@@ -359,7 +359,7 @@ The following commands will help you to push the API to the API portal in Kubern
     >> apictl init online-store --oas=./scenarios/scenario-1/products_swagger.yaml
     
     Output:
-    Initializing a new WSO2 API Manager project in /home/dinusha/wso2am-k8s-crds-1.0.1/scenarios/scenario-1/online-store
+    Initializing a new WSO2 API Manager project in /home/dinusha/k8s-apim-operator/scenarios/scenario-1/online-store
     Project initialized
     Open README file to learn more
     ```

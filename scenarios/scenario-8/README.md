@@ -2,7 +2,7 @@
 - This scenario describes how to expose a service as a managed API in sidecar mode.
 - In sidecar mode, backend and the managed API will be deployed in the same pod.
 - First we will deploy a target endpoint resource containing the information of the backend service
-- Then we would refer the backend in the swagger file and set the private jet mode in the swagger file.
+- Then we would refer the backend in the swagger file and set the `sidecar` mode in the swagger file.
 - Later we will deploy the API using the swagger definition 
 
  ***Important:***
@@ -98,11 +98,13 @@ In this swagger definition, the backend service of the "products" service and th
     - Here 
         - inventory-sc-service is the backend service
         - mgwinventory-sc is the managed inventory API
-- Delete the  API <br /> 
+- Delete the  API and the Target Endpoint resource
     ```
         apictl delete api inventory-sc
+        apictl delete targetendpoints inventory-sidecar
     ```
     -  Output:
     ```
         api.wso2.com "inventory-sc" deleted
+        targetendpoint.wso2.com "inventory-sidecar" deleted
     ```

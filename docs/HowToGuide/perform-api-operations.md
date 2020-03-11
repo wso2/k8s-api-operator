@@ -25,7 +25,7 @@ Optional Parameters
 ```
 --replicas=3          Number of replicas
 --namespace=wso2      Namespace to deploy the API
---overwrite=true	  Overwrite the docker image creation for already created docker image
+--override      	  Overwrite the docker image creation for already created docker image
 
 >> apictl add api -n "api_name" --from-file="location to the api swagger definition" --replicas="number of replicas" --namespace="desired namespace"
 ```

@@ -97,63 +97,72 @@ Minimum CPU and Memory for the K8s cluster: **2 vCPU, 8GB of Memory**
     ```
 <br />
 
-#### Step 2: Install API Operator
+#### Step 2: Configure API Controller
 
-* Deploy the Controller artifacts
+- Download API controller v3.0.0 for your operating system from the [website](https://wso2.com/api-management/tooling/)
 
-- This will deploy the artifacts related to the API Operator
-    ```
-    kubectl apply -f apim-operator/controller-artifacts/
-    
-    Output:
-    
-    namespace/wso2-system created
-    deployment.apps/apim-operator created
-    clusterrole.rbac.authorization.k8s.io/apim-operator created
-    clusterrolebinding.rbac.authorization.k8s.io/apim-operator created
-    serviceaccount/apim-operator created
-    customresourcedefinition.apiextensions.k8s.io/apis.wso2.com created
-    customresourcedefinition.apiextensions.k8s.io/ratelimitings.wso2.com created
-    customresourcedefinition.apiextensions.k8s.io/securities.wso2.com created
-    customresourcedefinition.apiextensions.k8s.io/targetendpoints.wso2.com created
-    ```
+- Extract the API controller distribution and navigate inside the extracted folder using the command-line tool
 
-* Deploy the controller level configurations **[IMPORTANT]**
+- Add the location of the extracted folder to your system's $PATH variable to be able to access the executable from anywhere.
 
-    When you deploy an API, this will create a docker image for the API and be pushed to Docker-Hub. For this, your Docker-Hub credentials are required.
-    
-    1. Open **apim-operator/controller-configs/controller_conf.yaml** and navigate to docker registry section(mentioned below), and  update ***user's docker registry***.
-            
-        ```
-        #docker registry name which the mgw image to be pushed.  eg->  dockerRegistry: username
-        dockerRegistry: <username-docker-registry>
-        ```
+You can find available operations using the below command.
+```
+>> apictl --help
+```
+By default API controller does not support kubectl command. 
+Set the API Controller’s mode to Kubernetes to be compatible with kubectl commands
+
+```
+>> apictl set --mode k8s 
+```
+
+Set the environment variable `WSO2_API_OPERATOR_VERSION` with the latest API Operator version.
+
+```sh
+>> export WSO2_API_OPERATOR_VERSION=v1.1.0
+```
+
+
+#### Step 3: Install API Operator
+
+- Execute the following command to install API Operator interactively and configure repository to push the microgateway image.
+- Select "Docker Hub" as the repository type.
+- Enter repository name of your Docker Hub account (usually it is the username as well).
+- Enter username and the password
+- Confirm configuration are correct with entering "Y"
+
+```sh
+>> apictl install api-operator
+Choose repository type:
+1: Docker Hub (Or others, quay.io)
+2: Amazon ECR
+3: GCR
+Choose a number: 1: 1
+Enter repository name (john or quay.io/mark): : jennifer
+Enter username: : jennifer
+Enter password:
+
+Repository: jennifer
+Username  : jennifer
+Confirm configurations: Y: Y
+```
+
+Output:
+```sh
+[Installing OLM]
+customresourcedefinition.apiextensions.k8s.io/clusterserviceversions.operators.coreos.com created
+...
+
+[Installing API Operator]
+subscription.operators.coreos.com/my-api-operator created
+[Setting configs]
+namespace/wso2-system created
+...
+
+[Setting to K8s Mode]
+```
         
-    2. Open **apim-operator/controller-configs/docker_secret_template.yaml** and navigate to data section. <br>
-        Enter the base 64 encoded username and password of the Docker-Hub account 
-        
-        ```
-        data:
-         username: ENTER YOUR BASE64 ENCODED USERNAME
-         password: ENTER YOUR BASE64 ENCODED PASSWORD
-        ```
-        Once you done with the above configurations, execute the following command to deploy controller configurations.
-
-        ```
-        >> kubectl apply -f apim-operator/controller-configs/
-        
-        configmap/controller-config created
-        configmap/apim-config created
-        security.wso2.com/default-security-jwt created
-        secret/wso2am300-secret created
-        configmap/docker-secret-mustache created
-        secret/docker-secret created
-        configmap/dockerfile-template created
-        configmap/mgw-conf-mustache created
-        ```
-<br />
-        
-#### Step 3: Install the API portal and security token service
+#### Step 4: Install the API portal and security token service
 
 Kubernetes installation artifacts for API portal and security token service are available in the k8s-artifacts directory.
 
@@ -196,26 +205,6 @@ wso2apim   NodePort   10.97.8.86   <none>        30838:32004/TCP,30801:32003/TCP
 
 <br />
 
-#### Step 4: Configure API Controller
-
-- Download API controller v3.0.0 for your operating system from the [website](https://wso2.com/api-management/tooling/)
-
-- Extract the API controller distribution and navigate inside the extracted folder using the command-line tool
-
-- Add the location of the extracted folder to your system's $PATH variable to be able to access the executable from anywhere.
-
-You can find available operations using the below command.
-```
->> apictl --help
-```
-By default API controller does not support kubectl command. 
-Set the API Controller’s mode to Kubernetes to be compatible with kubectl commands
-
-```
->> apictl set --mode k8s 
-```
-<br />
-
 #### Step 5: Expose the sample microservice as a managed API
 
 Let’s deploy an API for our microservice.
@@ -241,7 +230,7 @@ The endpoint of our microservice is referred in the API definition.
     ```
     --replicas=3          Number of replicas
     --namespace=wso2      Namespace to deploy the API
-    --overwrite=true	  Overwrite the docker image creation for already created docker image
+    --override            Overwrite the docker image creation for already created docker image
     
     >> apictl add api -n "api_name" --from-file="location to the api swagger definition" --replicas="number of replicas" --namespace="desired namespace"
     ```
@@ -373,10 +362,10 @@ To make the API discoverable for other users and get the access tokens, we need 
 The following commands will help you to push the API to the API portal in Kubernetes. Commands of the API Controller can be found [here](https://github.com/wso2/product-apim-tooling/blob/v3.0.0-rc/import-export-cli/docs/apictl.md) 
 
 
-- Add the API portal as an envionment to the API controller using the following command.
+- Add the API portal as an environment to the API controller using the following command.
 
     ```
-    >> apictl add-env -e k8s --registration https://wso2apim:32001/client-registration/v0.15/register --apim https://wso2apim:32003 --token https://wso2apim:32003/token --admin https://wso2apim:32001/api/am/admin/v0.15 --api_list https://wso2apim:32001/api/am/publisher/v0.15/apis --app_list https://wso2apim:32001/api/am/store/v0.15/applications
+    >> apictl add-env -e k8s --registration https://wso2apim:32001/client-registration/v0.16/register --apim https://wso2apim:32003 --token https://wso2apim:32003/token --admin https://wso2apim:32001/api/am/admin/v0.16 --api_list https://wso2apim:32001/api/am/publisher/v1/apis --app_list https://wso2apim:32001/api/am/store/v1/applications
     
     Output:
     Successfully added environment 'k8s'
@@ -388,7 +377,7 @@ The following commands will help you to push the API to the API portal in Kubern
     >> apictl init online-store --oas=./scenarios/scenario-1/products_swagger.yaml
     
     Output:
-    Initializing a new WSO2 API Manager project in /home/dinusha/wso2am-k8s-crds-1.0.1/scenarios/scenario-1/online-store
+    Initializing a new WSO2 API Manager project in /home/dinusha/k8s-apim-operator/scenarios/scenario-1/online-store
     Project initialized
     Open README file to learn more
     ```
@@ -439,11 +428,13 @@ You can find the documentation [here](docs/Readme.md).
 Execute the following commands if you wish to clean up the Kubernetes cluster by removing all the applied artifacts and configurations related to API operator and API portal.
 
 ```
->> kubectl delete api online-store
->> kubectl delete -f k8s-artifacts/api-portal
->> kubectl delete -f apim-operator/controller-configs/
->> kubectl delete -f apim-operator/controller-artifacts/
+>> apictl delete api online-store
+>> apictl delete -f k8s-artifacts/api-portal
+>> apictl remove-env -e k8s
+>> apictl uninstall api-operator
 ```
+
+When prompted type `Y` when uninstalling API Operator.
   
 #### Sample Scenarios
 

@@ -13,5 +13,3 @@
 1. [Sample 11: Enabling Analytics for managed API](scenario-11)
 1. [Sample 12: Apply distributed rate-limiting to managed API in Kubernetes cluster](scenario-12)
 1. [Sample 13: K8s API Operator for Istio](scenario-13)
-
-

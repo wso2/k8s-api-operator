@@ -33,9 +33,13 @@ spec:
       labels:
         deployment: wso2apim-analytics
     spec:
+      initContainers:
+        - name: init-wait-mysql
+          image: alpine
+          command: ["sh", "-c", "for i in $(seq 1 300); do nc -zvw1 wso2apim-with-analytics-rdbms-service 3306 && exit 0 || sleep 3; done; exit 1"]
       containers:
         - name: wso2apim-analytics
-          image: wso2/wso2am-analytics-worker:3.0.0
+          image: wso2am/wso2am-analytics-worker:3.1.0-beta-updated
           resources:
             limits:
               memory: "2Gi"
@@ -47,16 +51,16 @@ spec:
                 - /bin/sh
                 - -c
                 - nc -z localhost 7712
-            initialDelaySeconds: 30
-            periodSeconds: 10
+            initialDelaySeconds: 10
+            periodSeconds: 30
           readinessProbe:
             exec:
               command:
                 - /bin/sh
                 - -c
                 - nc -z localhost 7712
-            initialDelaySeconds: 30
-            periodSeconds: 10
+            initialDelaySeconds: 3
+            periodSeconds: 20
           lifecycle:
             preStop:
               exec:

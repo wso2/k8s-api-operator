@@ -20,7 +20,7 @@ info:
   version: v1.0.0
   description: This API contains operations related to online shopping store.
 servers:
-  - url: /store
+  - url: http://store
 x-wso2-basePath: /storemep/v1.0.0
 paths:
   /products:

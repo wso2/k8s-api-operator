@@ -2,7 +2,7 @@
 - This scenario describes how to expose a service as a managed API in private jet mode.
 - In private jet mode, backend and the managed API will be deployed in two different pods.
 - First we will deploy a target endpoint resource containing the information of the backend service
-- Then we would refer the backend in the swagger file and set the private jet mode in the swagger file.
+- Then we would refer the backend in the swagger file and set the `private jet` mode in the swagger file.
 - Later we will deploy the API using the swagger definition 
 
  ***Important:***
@@ -87,11 +87,13 @@ In this swagger definition, the backend service of the "products" service and th
         products-privatejet-6777d6f5bc-gqfg4   1/1     Running   0          25m
         products-privatejet-6777d6f5bc-k88sl   1/1     Running   0          25m
     ```
-- Delete the  API <br /> 
+- Delete the API and the sample backend service (Target Endpoint resource)
     ```
         apictl delete api products-pj
+        apictl delete targetendpoints products-privatejet
     ```
     -  Output:
     ```
         api.wso2.com "products-pj" deleted
+        targetendpoint.wso2.com "products-privatejet" deleted
     ```
