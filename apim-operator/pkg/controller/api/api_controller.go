@@ -207,7 +207,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 	registryType := registry.Type(controlConfigData[registryTypeConst])
 	repositoryName := controlConfigData[repositoryNameConst]
-	operatorMode := controlConfigData[mode]
+	operatorMode := controlConfigData[operatorModeConst]
 
 	reqLogger.Info("Controller Configurations", "mgwToolkitImg", mgwToolkitImg, "mgwRuntimeImg", mgwRuntimeImg,
 		"kanikoImg", kanikoImg, "registryType", registryType, "repositoryName", repositoryName,
@@ -1797,12 +1797,12 @@ func scheduleKanikoJob(cr *wso2v1alpha1.API, conf *corev1.ConfigMap, jobVolumeMo
 
 //Creating a LB balancer service to expose mgw
 func createMgwLBService(r *ReconcileAPI, cr *wso2v1alpha1.API, nameSpace string, owner []metav1.OwnerReference, httpPortVal int32,
-	httpsPortVal int32, deploymentType string) *corev1.Service {
+	httpsPortVal int32, operatorMode string) *corev1.Service {
 	var serviceType corev1.ServiceType
 	serviceType = corev1.ServiceTypeLoadBalancer
 
-	if deploymentType == ingressMode {
-		serviceType = corev1.ServiceTypeNodePort
+	if operatorMode == ingressMode {
+		serviceType = corev1.ServiceTypeClusterIP
 	}
 
 	labels := map[string]string{

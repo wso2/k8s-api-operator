@@ -62,7 +62,7 @@ data:
   #Default->  generatekubernbetesartifactsformgw: "true"
   generatekubernbetesartifactsformgw: "true"
   #Set the mode whether we need to use ingress or default mode
-  mode: "ingress"
+  operatorMode: "default"
   #Ingress resource name
   ingressResourceName: "api-operator-ingress"
   #Define whether ingress to use http or https endpoint of operator deployment

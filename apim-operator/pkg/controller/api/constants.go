@@ -108,7 +108,7 @@ const (
 	hostnameConst                       = "hostname"
 	portConst                           = "port"
 	analyticsSecretConst                = "analyticsSecret"
-	mode                                = "mode"
+	operatorModeConst                   = "operatorMode"
 	ingressMode                         = "ingress"
 
 	authorizationUrl        = "https://example.com/oauth/authorize"
