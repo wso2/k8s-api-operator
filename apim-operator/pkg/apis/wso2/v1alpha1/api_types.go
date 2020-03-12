@@ -67,7 +67,7 @@ type APIList struct {
 
 //Definition contains api definition related values
 type Definition struct {
-	ConfigmapName string       `json:"configmapName"`
+	SwaggerConfigmapName string       `json:"swaggerconfigmapName"`
 	Type          string       `json:"type"`
 	Interceptors  Interceptors `json:"interceptors"`
 }

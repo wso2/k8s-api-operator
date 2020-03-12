@@ -32,8 +32,6 @@ spec:
             definition:
               description: Definition contains api definition related values
               properties:
-                configmapName:
-                  type: string
                 interceptors:
                   properties:
                     ballerina:
@@ -46,11 +44,13 @@ spec:
                   - ballerina
                   - java
                   type: object
+                swaggerconfigmapName:
+                  type: string
                 type:
                   type: string
               required:
-              - configmapName
               - interceptors
+              - swaggerconfigmapName
               - type
               type: object
             mode:

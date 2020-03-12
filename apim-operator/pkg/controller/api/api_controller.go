@@ -224,7 +224,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	//Check if the configmap mentioned in crd object exist
-	apiConfigMapRef := instance.Spec.Definition.ConfigmapName
+	apiConfigMapRef := instance.Spec.Definition.SwaggerConfigmapName
 	apiConfigMap, err := getConfigmap(r, apiConfigMapRef, userNameSpace)
 	if err != nil {
 		if errors.IsNotFound(err) {
