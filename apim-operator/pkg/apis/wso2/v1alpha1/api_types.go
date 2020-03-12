@@ -29,12 +29,12 @@ type APISpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
-	Mode                Mode       `json:"mode"`
-	UpdateTimeStamp     string     `json:"updateTimeStamp"`
-	Replicas            int        `json:"replicas"`
-	Definition          Definition `json:"definition"`
-	Override            bool       `json:"override"`
-	Interceptors	Interceptors 	`json:"interceptors"`
+	Mode            Mode         `json:"mode"`
+	UpdateTimeStamp string       `json:"updateTimeStamp"`
+	Replicas        int          `json:"replicas"`
+	Definition      Definition   `json:"definition"`
+	Override        bool         `json:"override"`
+	Interceptors    Interceptors `json:"interceptors"`
 }
 
 // APIStatus defines the observed state of API
@@ -73,8 +73,8 @@ type Definition struct {
 }
 
 type Interceptors struct {
-	Ballerina	string	`json:"ballerina"`
-	Java	[]string `json:"java"`
+	Ballerina string   `json:"ballerina"`
+	Java      []string `json:"java"`
 }
 
 type Mode string
