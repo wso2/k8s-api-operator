@@ -33,9 +33,7 @@ type APISpec struct {
 	UpdateTimeStamp     string     `json:"updateTimeStamp"`
 	Replicas            int        `json:"replicas"`
 	Definition          Definition `json:"definition"`
-	InterceptorConfName string     `json:"interceptorConfName"`
 	Override            bool       `json:"override"`
-	JavaInterceptors	[]string	`json:"javaInterceptors"`
 	Interceptors	Interceptors 	`json:"interceptors"`
 }
 

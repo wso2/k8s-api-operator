@@ -307,7 +307,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	//keep to track the existence of certificates
 	var existcert bool
 	//keep to track the existence of interceptors
-	var existInterceptors bool
+	var existBalInterceptors bool
 	//keep to track the existence of java interceptors
 	var existJavaInterceptors bool
 	//to add multiple certs with alias
@@ -667,15 +667,15 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		}
 	}
 	//Handle interceptors if available
-	existInterceptors, existJavaInterceptors,jobVolumeMountTemp, jobVolumeTemp, errInterceptor, errJavaInterceptor := interceptorHandler(r, instance, owner, jobVolumeMount, jobVolume, userNameSpace)
+	existBalInterceptors, existJavaInterceptors,jobVolumeMountTemp, jobVolumeTemp, errBalInterceptor, errJavaInterceptor := interceptorHandler(r, instance, owner, jobVolumeMount, jobVolume, userNameSpace)
 	jobVolumeMount = jobVolumeMountTemp
 	jobVolume = jobVolumeTemp
-	if errInterceptor != nil || errJavaInterceptor != nil{
-		return reconcile.Result{}, errInterceptor
+	if errBalInterceptor != nil || errJavaInterceptor != nil{
+		return reconcile.Result{}, errBalInterceptor
 	}
 
 	//Handles the creation of dockerfile configmap
-	dockerfileConfmap, errDocker := dockerfileHandler(r, certList, existcert, controlConfigData, owner, instance, existInterceptors, existJavaInterceptors)
+	dockerfileConfmap, errDocker := dockerfileHandler(r, certList, existcert, controlConfigData, owner, instance, existBalInterceptors, existJavaInterceptors)
 	if errDocker != nil {
 		log.Error(errDocker, "error in docker configmap handling")
 		return reconcile.Result{}, errDocker
@@ -2365,18 +2365,15 @@ func interceptorHandler(r *ReconcileAPI, instance *wso2v1alpha1.API, owner []met
 	}
 
 	//handle java interceptors
-	log.Info("========================================handling java interceptors")
-	//var confNames = instance.Spec.JavaInterceptors
 	var confNames = instance.Spec.Interceptors.Java
 	if len(confNames) > 0 {
-		log.Info("========================================java interceptor conf specified in API spec")
+		log.Info("java interceptor configmaps specified in API spec")
 		for _,configmapName := range confNames {
-			log.Info("========================================java interceptor conf" + configmapName)
 			javaConfigmap, err := getConfigmap(r, configmapName, userNameSpace)
 			if err != nil {
 				if errors.IsNotFound(err) {
-					// Interceptors are not defined
-					log.Info("interceptor" + configmapName + " are not defined")
+					// Interceptor is not defined
+					log.Info("interceptor" + configmapName + " is not defined")
 					return exsistBalInterceptors,false, jobVolumeMount, jobVolume, errBalInterceptor,nil
 				} else {
 					// Error getting interceptors configmap.
@@ -2384,8 +2381,6 @@ func interceptorHandler(r *ReconcileAPI, instance *wso2v1alpha1.API, owner []met
 					return exsistBalInterceptors,false, jobVolumeMount, jobVolume, errBalInterceptor, err
 				}
 			} else if err == nil {
-				//mount java interceptors configmap to the volume
-				log.Info("Mounting interceptors configmap " + configmapName + " to volume.")
 				jobVolume = append(jobVolume, corev1.Volume{
 					Name: javaInterceptorsVolume,
 					VolumeSource: corev1.VolumeSource{
@@ -2406,7 +2401,7 @@ func interceptorHandler(r *ReconcileAPI, instance *wso2v1alpha1.API, owner []met
 			log.Info("updating java interceptor configmap" + configmapName + " with owner reference")
 			errorUpdateinterceptConf := updateConfMapWithOwner(r, owner, javaConfigmap)
 			if errorUpdateinterceptConf != nil {
-				log.Error(errorUpdateinterceptConf, "error in updating java-interceptors config map" + configmapName + " with owner reference")
+				log.Error(errorUpdateinterceptConf, "error in updating java-interceptor configmap" + configmapName + " with owner reference")
 			}
 		}
 		return exsistBalInterceptors,true, jobVolumeMount, jobVolume,errBalInterceptor, nil

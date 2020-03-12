@@ -40,8 +40,6 @@ spec:
               - configmapName
               - type
               type: object
-            interceptorConfName:
-              type: string
             interceptors:
               properties:
                 ballerina:
@@ -54,10 +52,6 @@ spec:
               - ballerina
               - java
               type: object
-            javaInterceptors:
-              items:
-                type: string
-              type: array
             mode:
               description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
                 Important: Run "operator-sdk generate k8s" to regenerate code after
@@ -72,9 +66,7 @@ spec:
               type: string
           required:
           - definition
-          - interceptorConfName
           - interceptors
-          - javaInterceptors
           - mode
           - override
           - replicas
