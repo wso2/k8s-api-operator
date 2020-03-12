@@ -2320,7 +2320,7 @@ func interceptorHandler(r *ReconcileAPI, instance *wso2v1alpha1.API, owner []met
 	var errBalInterceptor error
 
 	//handle bal interceptors
-	interceptorConfigmap, err := getConfigmap(r, instance.Spec.Interceptors.Ballerina, userNameSpace)
+	interceptorConfigmap, err := getConfigmap(r, instance.Spec.Definition.Interceptors.Ballerina, userNameSpace)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Interceptors are not defined
@@ -2346,7 +2346,7 @@ func interceptorHandler(r *ReconcileAPI, instance *wso2v1alpha1.API, owner []met
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: instance.Spec.Interceptors.Ballerina,
+						Name: instance.Spec.Definition.Interceptors.Ballerina,
 					},
 				},
 			},
@@ -2362,7 +2362,7 @@ func interceptorHandler(r *ReconcileAPI, instance *wso2v1alpha1.API, owner []met
 	}
 
 	//handle java interceptors
-	var confNames = instance.Spec.Interceptors.Java
+	var confNames = instance.Spec.Definition.Interceptors.Java
 	if len(confNames) > 0 {
 		log.Info("java interceptor configmaps specified in API spec")
 		for _, configmapName := range confNames {

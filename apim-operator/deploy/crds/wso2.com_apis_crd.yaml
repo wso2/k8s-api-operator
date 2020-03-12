@@ -34,23 +34,24 @@ spec:
               properties:
                 configmapName:
                   type: string
+                interceptors:
+                  properties:
+                    ballerina:
+                      type: string
+                    java:
+                      items:
+                        type: string
+                      type: array
+                  required:
+                  - ballerina
+                  - java
+                  type: object
                 type:
                   type: string
               required:
               - configmapName
+              - interceptors
               - type
-              type: object
-            interceptors:
-              properties:
-                ballerina:
-                  type: string
-                java:
-                  items:
-                    type: string
-                  type: array
-              required:
-              - ballerina
-              - java
               type: object
             mode:
               description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
@@ -66,7 +67,6 @@ spec:
               type: string
           required:
           - definition
-          - interceptors
           - mode
           - override
           - replicas
