@@ -42,10 +42,16 @@
             <useDefaultExcludes>true</useDefaultExcludes>
             <excludes>
                 <exclude>crds/**</exclude>
+                <exclude>controller-configs/**</exclude>
             </excludes>
         </fileSet>
         <fileSet>
             <directory>../apim-operator/deploy/crds</directory>
+            <outputDirectory>/apim-operator/controller-artifacts/</outputDirectory>
+            <useDefaultExcludes>true</useDefaultExcludes>
+        </fileSet>
+        <fileSet>
+            <directory>../apim-operator/deploy/controller-configs</directory>
             <outputDirectory>/apim-operator/controller-artifacts/</outputDirectory>
             <useDefaultExcludes>true</useDefaultExcludes>
         </fileSet>

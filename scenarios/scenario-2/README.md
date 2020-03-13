@@ -7,7 +7,7 @@
 
 ##### Deploying the artifacts
 
-- Navigate to api-k8s-crds-1.0.1/scenarios/scenario-2 directory.
+- Navigate to api-k8s-crds-1.1.0-alpha/scenarios/scenario-2 directory.
 - Prepared petstore basic swagger definition can be found within this directory.
 - Base path of the API should be mentioned in the swagger file with the  "x-wso2-basePath".
     ```

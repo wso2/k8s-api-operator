@@ -11,7 +11,7 @@
 
  ##### Deploying the artifacts
  
- - Navigate to api-k8s-crds-1.0.1/scenarios/scenario-6 directory.
+ - Navigate to api-k8s-crds-1.1.0-alpha/scenarios/scenario-6 directory.
   
  - Deploy the sample rate-limiting CR using the following command.
     ```

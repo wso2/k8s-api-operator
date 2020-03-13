@@ -12,7 +12,7 @@
 
  ##### Deploying the artifacts
 
-- Navigate to api-k8s-crds-1.0.1/scenarios/scenario-5 directory.
+- Navigate to api-k8s-crds-1.1.0-alpha/scenarios/scenario-5 directory.
 
 - Deploy Kubernetes secret from the credentials of the key manager server.
     ```$xslt

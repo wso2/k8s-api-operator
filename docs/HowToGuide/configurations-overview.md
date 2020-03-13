@@ -105,7 +105,7 @@
 
 - But if you have not specified the security in the API definition, the API operator will apply the default security for the API.
 
-- Default security configurations are in the ***api-k8s-crds-1.0.1/apim-operator/controller-configs/default_security_cr.yaml*** file.
+- Default security configurations are in the ***api-k8s-crds-1.1.0-alpha/apim-operator/controller-configs/default_security_cr.yaml*** file.
 
 - Default configurations are shown below.
     ```$xslt
