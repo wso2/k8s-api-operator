@@ -11,9 +11,9 @@ As microservices are increasingly being deployed on Kubernetes, the need to expo
 
 In this document, we will walk through on the following.
 - Deploy a sample microservice in Kubernetes
+- Configure the API controller
 - Install API Operator in Kubernetes
 - Install the API portal and security token service
-- Configure the API controller
 - Expose the sample microservice as a managed API
 - Invoke the API
 - Push the deployed API to the API portal 
@@ -28,16 +28,16 @@ Minimum CPU and Memory for the K8s cluster: **2 vCPU, 8GB of Memory**
 
 - An account in DockerHub or private docker registry
 
-- Download [api-k8s-crds-1.0.1.zip](https://github.com/wso2/k8s-apim-operator/releases/download/v1.0.1/api-k8s-crds-1.0.1.zip) and extract the zip
+- Download [api-k8s-crds-1.1.0-alpha.zip](https://github.com/wso2/k8s-apim-operator/releases/download/v1.1.0-alpha/api-k8s-crds-1.1.0-alpha.zip) and extract the zip
 
     1. This zip contains the artifacts that required to deploy in Kubernetes.
-    2. Extract api-k8s-crds-1.0.1.zip
+    2. Extract api-k8s-crds-1.1.0-alpha.zip
     
     ```
-    cd api-k8s-crds-1.0.1
+    cd api-k8s-crds-1.1.0-alpha
     ```
  
-**_Note:_** You need to run all commands from within the ***api-k8s-crds-1.0.1*** directory.
+**_Note:_** You need to run all commands from within the ***api-k8s-crds-1.1.0-alpha*** directory.
 
 <br />
 
@@ -99,7 +99,7 @@ Minimum CPU and Memory for the K8s cluster: **2 vCPU, 8GB of Memory**
 
 #### Step 2: Configure API Controller
 
-- Download API controller v3.0.0 for your operating system from the [website](https://wso2.com/api-management/tooling/)
+- Download API controller v3.0.0 for your operating system from the [github](https://github.com/wso2/product-apim-tooling/releases/tag/v3.1.0-alpha)
 
 - Extract the API controller distribution and navigate inside the extracted folder using the command-line tool
 
@@ -109,21 +109,14 @@ You can find available operations using the below command.
 ```
 >> apictl --help
 ```
-By default API controller does not support kubectl command. 
-Set the API Controller’s mode to Kubernetes to be compatible with kubectl commands
 
-```
->> apictl set --mode k8s 
-```
+#### Step 3: Install API Operator
 
 Set the environment variable `WSO2_API_OPERATOR_VERSION` with the latest API Operator version.
 
 ```sh
->> export WSO2_API_OPERATOR_VERSION=v1.1.0
+>> export WSO2_API_OPERATOR_VERSION=v1.1.0-alpha
 ```
-
-
-#### Step 3: Install API Operator
 
 - Execute the following command to install API Operator interactively and configure repository to push the microgateway image.
 - Select "Docker Hub" as the repository type.
@@ -327,14 +320,14 @@ You now have a microgateway deployed in Kubernetes that runs your API for the mi
     You can find a sample token below.
     
     ```
-   TOKEN=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6IlpqUm1ZVE13TlRKak9XVTVNbUl6TWpnek5ESTNZMkl5TW1JeVkyRXpNamRoWmpWaU1qYzBaZz09In0.eyJhdWQiOiJodHRwOlwvXC9vcmcud3NvMi5hcGltZ3RcL2dhdGV3YXkiLCJzdWIiOiJhZG1pbkBjYXJib24uc3VwZXIiLCJhcHBsaWNhdGlvbiI6eyJvd25lciI6ImFkbWluIiwidGllciI6IlVubGltaXRlZCIsIm5hbWUiOiJzYW1wbGUtY3JkLWFwcGxpY2F0aW9uIiwiaWQiOjMsInV1aWQiOm51bGx9LCJzY29wZSI6ImFtX2FwcGxpY2F0aW9uX3Njb3BlIGRlZmF1bHQiLCJpc3MiOiJodHRwczpcL1wvd3NvMmFwaW06MzIwMDFcL29hdXRoMlwvdG9rZW4iLCJ0aWVySW5mbyI6e30sImtleXR5cGUiOiJQUk9EVUNUSU9OIiwic3Vic2NyaWJlZEFQSXMiOltdLCJjb25zdW1lcktleSI6IjNGSWlUM1R3MWZvTGFqUTVsZjVVdHVTTWpsUWEiLCJleHAiOjM3MTk3Mzk4MjYsImlhdCI6MTU3MjI1NjE3OSwianRpIjoiZDI3N2VhZmUtNTZlOS00MTU2LTk3NzUtNDQwNzA3YzFlZWFhIn0.W0N9wmCuW3dxz5nTHAhKQ-CyjysR-fZSEvoS26N9XQ9IOIlacB4R5x9NgXNLLE-EjzR5Si8ou83mbt0NuTwoOdOQVkGqrkdenO11qscpBGCZ-Br4Gnawsn3Yw4a7FHNrfzYnS7BZ_zWHPCLO_JqPNRizkWGIkCxvAg8foP7L1T4AGQofGLodBMtA9-ckuRHjx3T_sFOVGAHXcMVwpdqS_90DeAoT4jLQ3darDqSoE773mAyDIRz6CAvNzzsWQug-i5lH5xVty2kmZKPobSIziAYes-LPuR-sp61EIjwiKxnUlSsxtDCttKYHGZcvKF12y7VF4AqlTYmtwYSGLkXXXw
+   TOKEN=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6Ik5UZG1aak00WkRrM05qWTBZemM1TW1abU9EZ3dNVEUzTVdZd05ERTVNV1JsWkRnNE56YzRaQT09In0.eyJhdWQiOiJodHRwOlwvXC9vcmcud3NvMi5hcGltZ3RcL2dhdGV3YXkiLCJzdWIiOiJhZG1pbkBjYXJib24uc3VwZXIiLCJhcHBsaWNhdGlvbiI6eyJvd25lciI6ImFkbWluIiwidGllciI6IjEwUGVyTWluIiwibmFtZSI6InNhbXBsZS1jcmQtYXBwbGljYXRpb24iLCJpZCI6NCwidXVpZCI6bnVsbH0sInNjb3BlIjoiYW1fYXBwbGljYXRpb25fc2NvcGUgZGVmYXVsdCIsImlzcyI6Imh0dHBzOlwvXC93c28yYXBpbTozMjAwMVwvb2F1dGgyXC90b2tlbiIsInRpZXJJbmZvIjp7fSwia2V5dHlwZSI6IlBST0RVQ1RJT04iLCJzdWJzY3JpYmVkQVBJcyI6W10sImNvbnN1bWVyS2V5IjoieF8xal83MW11dXZCb01SRjFLZnVLdThNOVVRYSIsImV4cCI6MzczMTQ5Mjg2MSwiaWF0IjoxNTg0MDA5MjE0LCJqdGkiOiJkYTA5Mjg2Yy03OGEzLTQ4YjgtYmFiNy1hYWZiYzhiMTUxNTQifQ.MKmGDwh855NrZ2wOvXO7TwFbCtsgsOFuoZW4DBVIbJ1KQ2F6TgTgBbtzBUvrYGPslEExMemhepfvvlYv8Gd6MMo3GVH4aO8AKyc8gHmeIQ8MQtXGn7u9N00ZW3_9JWaQkU-OYEDsLHvKKHzO0t2umaskSyCS2UkAS4wIT_szZ5sm-O-ez4nKGeJmESiV-1EchFjOhLpEH4p9wIj3MlKnZrIcJByRKK9ZGaHBqxwwYuJtMCDNa2wFAPMOh-45eabIUdo1KUO3gZLVcME93aza1t1jzL9mFsx0LGaXIxB7klrDuBCAdG9Yi3O7-3WUF74QaS2tmCxW36JhhOJ5DdacfQ
     ```
     Copy and paste the above token in the command line. Now you can invoke the API using the cURL command as below.
     
     ```
     Format: 
     
-    >> curl -X GET "https://<EXTERNAL-IP>:9095/<API-context>/<API-resource>" -H "accept: application/json" -H "Authorization:Bearer $TOKEN" -k
+    >> curl -X GET "https://<EXTERNAL-IP>:9095/<API-context>/<API-resource>"  -H "Authorization:Bearer $TOKEN" -k
     ```
 
     Example commands:
@@ -374,7 +367,7 @@ The following commands will help you to push the API to the API portal in Kubern
 - Initialize the API project using API Controller
 
     ```
-    >> apictl init online-store --oas=./scenarios/scenario-1/products_swagger.yaml
+    >> apictl init online-store --oas=./scenarios/scenario-1/products_swagger.yaml --initial-state=PUBLISHED
     
     Output:
     Initializing a new WSO2 API Manager project in /home/dinusha/k8s-apim-operator/scenarios/scenario-1/online-store
@@ -384,7 +377,6 @@ The following commands will help you to push the API to the API portal in Kubern
 
 - Import the API to the API portal. **[IMPORTANT]**
 
-    You need to change the API life cycle status to **PUBLISHED** before importing the API. You can edit the api.yaml file located in online-store/Meta-information/ location.
     For testing purpose use ***admin*** as username and password when prompted.
     </br>
     
