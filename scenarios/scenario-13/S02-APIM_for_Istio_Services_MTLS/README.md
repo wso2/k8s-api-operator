@@ -70,7 +70,7 @@ This will deploy the artifacts related to the API Operator
         configmap/controller-config created
         configmap/apim-config created
         security.wso2.com/default-security-jwt created
-        secret/wso2am300-secret created
+        secret/wso2am310-secret created
         configmap/docker-secret-mustache created
         secret/docker-secret created
         configmap/dockerfile-template created
