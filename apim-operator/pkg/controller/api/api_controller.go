@@ -60,6 +60,8 @@ import (
 	"encoding/json"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/getkin/kin-openapi/openapi2"
+	"github.com/getkin/kin-openapi/openapi2conv"
 	"github.com/wso2/k8s-apim-operator/apim-operator/pkg/controller/ratelimiting"
 )
 
@@ -1163,7 +1165,19 @@ func mgwSwaggerLoader(swaggerDataMap map[string]string) (*openapi3.Swagger, stri
 	}
 
 	swagger, err := openapi3.NewSwaggerLoader().LoadSwaggerFromData([]byte(swaggerData))
-	return swagger, swaggerDataFile, err
+
+	swaggerV3Version := swagger.OpenAPI
+	log.Info("Swagger version", swaggerV3Version)
+
+	if swaggerV3Version != "" {
+		return swagger, swaggerDataFile, err
+	} else {
+		log.Info("OpenAPI v3 not found. Hence converting Swagger 2 to Swagger 3")
+		var swagger2 openapi2.Swagger
+		err2 := json.Unmarshal([]byte(swaggerData), &swagger2)
+		swaggerV3, err2 := openapi2conv.ToV3Swagger(&swagger2)
+		return swaggerV3, swaggerDataFile, err2
+	}
 }
 
 //Get endpoint from swagger and replace it with targetendpoint kind service endpoint
