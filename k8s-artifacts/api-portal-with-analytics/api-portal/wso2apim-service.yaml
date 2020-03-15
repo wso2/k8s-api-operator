@@ -25,27 +25,18 @@ spec:
   ports:
     # ports that this service should serve on
     - name: pass-through-http
-      #for 8280 with port offset 22558
-      port: 30838
-      targetPort: 30838
+      port: 8280
+      targetPort: 8280
       nodePort: 32004
     - name: pass-through-https
-      #for 8243 with port offset 22558
-      port: 30801
-      targetPort: 30801
+      port: 8243
+      targetPort: 8243
       nodePort: 32003
     - name: servlet-http
-      #for 9763 with port offset 22558
-      port: 32321
-      targetPort: 32321
+      port: 9763
+      targetPort: 9763
       nodePort: 32002
     - name: servlet-https
-      #for 9443 with port offset 22558
-      port: 32001
-      targetPort: 32001
+      port: 9443
+      targetPort: 9443
       nodePort: 32001
-    - name: jms-provider
-      #for 5672 with port offset 22558
-      port: 28230
-      targetPort: 28230
-      nodePort: 32005

@@ -35,7 +35,7 @@ spec:
     spec:
       containers:
         - name: wso2apim
-          image: wso2am/wso2am:3.1.0-beta
+          image: pubudu/wso2am:3.1.0-rc1
           resources:
             limits:
               memory: "2Gi"
@@ -46,7 +46,7 @@ spec:
               command:
                 - /bin/bash
                 - -c
-                - nc -z localhost 32001
+                - nc -z localhost 9443
             initialDelaySeconds: 300
             periodSeconds: 10
           readinessProbe:
@@ -54,54 +54,22 @@ spec:
               command:
                 - /bin/bash
                 - -c
-                - nc -z localhost 32001
+                - nc -z localhost 9443
             initialDelaySeconds: 300
             periodSeconds: 10
           imagePullPolicy: IfNotPresent
           ports:
-            -
-              #8280 with port off set 22558
-              containerPort: 30838
+            - containerPort: 8280
               protocol: "TCP"
-            -
-              #8243 with port off set 22558
-              containerPort: 30801
+            - containerPort: 8243
               protocol: "TCP"
-            -
-              #9763 with port off set 22558
-              containerPort: 32321
+            - containerPort: 9763
               protocol: "TCP"
-            -
-              #9443 with port off set 22558
-              containerPort: 32001
-              protocol: "TCP"
-            -
-              #5672 with port off set 22558
-              containerPort: 28230
-              protocol: "TCP"
-            -
-              #9711 with port off set 22558
-              containerPort: 32269
-              protocol: "TCP"
-            -
-              #9611 with port off set 22558
-              containerPort: 32169
-              protocol: "TCP"
-            -
-              #7711 with port off set 22558
-              containerPort: 30269
-              protocol: "TCP"
-            -
-              #7611 with port off set 22558
-              containerPort: 30169
+            - containerPort: 9443
               protocol: "TCP"
           volumeMounts:
             - name: apim-conf
               mountPath: /home/wso2carbon/wso2-config-volume/repository/conf
-      hostAliases:
-        - ip: "127.0.0.1"
-          hostnames:
-            - "wso2apim"
       volumes:
         - name: apim-conf
           configMap:
