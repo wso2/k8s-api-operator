@@ -126,16 +126,17 @@ Set the environment variable `WSO2_API_OPERATOR_VERSION` with the latest API Ope
 
 ```sh
 >> apictl install api-operator -f apim-operator/controller-artifacts
-Choose repository type:
-1: Docker Hub (Or others, quay.io)
+Choose registry type:
+1: Docker Hub (Or others, quay.io, HTTPS registry)
 2: Amazon ECR
 3: GCR
+4: HTTP Private Registry
 Choose a number: 1: 1
-Enter repository name (john or quay.io/mark): : jennifer
-Enter username: : jennifer
-Enter password:
+Enter repository name (docker.io/john | quay.io/mark | 10.100.5.225:5000/jennifer): docker.io/jennifer
+Enter username: jennifer
+Enter password: *******
 
-Repository: jennifer
+Repository: docker.io/jennifer
 Username  : jennifer
 Confirm configurations: Y: Y
 ```
