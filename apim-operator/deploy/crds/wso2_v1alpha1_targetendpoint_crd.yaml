@@ -26,6 +26,8 @@ spec:
     plural: targetendpoints
     singular: targetendpoint
   scope: Namespaced
+  subresources:
+    status: {}
   validation:
     openAPIV3Schema:
       properties:
