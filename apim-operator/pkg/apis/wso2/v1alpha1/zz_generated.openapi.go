@@ -33,6 +33,7 @@ func schema_pkg_apis_wso2_v1alpha1_API(ref common.ReferenceCallback) common.Open
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "API is the Schema for the apis API",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -76,6 +77,7 @@ func schema_pkg_apis_wso2_v1alpha1_APISpec(ref common.ReferenceCallback) common.
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "APISpec defines the desired state of API",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"mode": {
 						SchemaProps: spec.SchemaProps{
@@ -101,12 +103,6 @@ func schema_pkg_apis_wso2_v1alpha1_APISpec(ref common.ReferenceCallback) common.
 							Ref: ref("github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.Definition"),
 						},
 					},
-					"interceptorConfName": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
 					"override": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"boolean"},
@@ -114,7 +110,7 @@ func schema_pkg_apis_wso2_v1alpha1_APISpec(ref common.ReferenceCallback) common.
 						},
 					},
 				},
-				Required: []string{"mode", "replicas", "definition"},
+				Required: []string{"mode", "updateTimeStamp", "replicas", "definition", "override"},
 			},
 		},
 		Dependencies: []string{
@@ -127,10 +123,9 @@ func schema_pkg_apis_wso2_v1alpha1_APIStatus(ref common.ReferenceCallback) commo
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "APIStatus defines the observed state of API",
-				Properties:  map[string]spec.Schema{},
+				Type:        []string{"object"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -139,6 +134,7 @@ func schema_pkg_apis_wso2_v1alpha1_RateLimiting(ref common.ReferenceCallback) co
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "RateLimiting is the Schema for the ratelimitings API",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -177,6 +173,7 @@ func schema_pkg_apis_wso2_v1alpha1_RateLimitingSpec(ref common.ReferenceCallback
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "RateLimitingSpec defines the desired state of RateLimiting",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"type": {
 						SchemaProps: spec.SchemaProps{
@@ -224,7 +221,7 @@ func schema_pkg_apis_wso2_v1alpha1_RateLimitingSpec(ref common.ReferenceCallback
 						},
 					},
 				},
-				Required: []string{"type", "timeUnit", "unitTime", "requestCount"},
+				Required: []string{"type", "timeUnit", "unitTime", "requestCount", "stopOnQuotaReach", "description", "bandwidth", "conditions"},
 			},
 		},
 		Dependencies: []string{
@@ -237,10 +234,9 @@ func schema_pkg_apis_wso2_v1alpha1_RateLimitingStatus(ref common.ReferenceCallba
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "RateLimitingStatus defines the observed state of RateLimiting",
-				Properties:  map[string]spec.Schema{},
+				Type:        []string{"object"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -249,6 +245,7 @@ func schema_pkg_apis_wso2_v1alpha1_Security(ref common.ReferenceCallback) common
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Security is the Schema for the securities API",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -292,6 +289,7 @@ func schema_pkg_apis_wso2_v1alpha1_SecuritySpec(ref common.ReferenceCallback) co
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "SecuritySpec defines the desired state of Security",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"type": {
 						SchemaProps: spec.SchemaProps{
@@ -337,10 +335,9 @@ func schema_pkg_apis_wso2_v1alpha1_SecuritySpec(ref common.ReferenceCallback) co
 						},
 					},
 				},
-				Required: []string{"type"},
+				Required: []string{"type", "certificate", "alias", "endpoint", "credentials", "issuer", "audience"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -349,10 +346,9 @@ func schema_pkg_apis_wso2_v1alpha1_SecurityStatus(ref common.ReferenceCallback) 
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "SecurityStatus defines the observed state of Security",
-				Properties:  map[string]spec.Schema{},
+				Type:        []string{"object"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -361,6 +357,7 @@ func schema_pkg_apis_wso2_v1alpha1_TargetEndpoint(ref common.ReferenceCallback) 
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "TargetEndpoint is the Schema for the targetendpoints API",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -404,6 +401,7 @@ func schema_pkg_apis_wso2_v1alpha1_TargetEndpointSpec(ref common.ReferenceCallba
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "TargetEndpointSpec defines the desired state of TargetEndpoint",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"type": {
 						SchemaProps: spec.SchemaProps{
@@ -425,6 +423,12 @@ func schema_pkg_apis_wso2_v1alpha1_TargetEndpointSpec(ref common.ReferenceCallba
 						},
 					},
 					"port": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"integer"},
+							Format: "int32",
+						},
+					},
+					"targetPort": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"integer"},
 							Format: "int32",
@@ -452,8 +456,14 @@ func schema_pkg_apis_wso2_v1alpha1_TargetEndpointSpec(ref common.ReferenceCallba
 							Format: "",
 						},
 					},
+					"serverless": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
 				},
-				Required: []string{"type", "protocol", "hostname", "port", "deploy", "endpointName", "endpointSecurity"},
+				Required: []string{"type", "protocol", "hostname", "port", "targetPort", "deploy", "endpointName", "endpointSecurity", "mode", "serverless"},
 			},
 		},
 		Dependencies: []string{
@@ -466,9 +476,8 @@ func schema_pkg_apis_wso2_v1alpha1_TargetEndpointStatus(ref common.ReferenceCall
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "TargetEndpointStatus defines the observed state of TargetEndpoint",
-				Properties:  map[string]spec.Schema{},
+				Type:        []string{"object"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
