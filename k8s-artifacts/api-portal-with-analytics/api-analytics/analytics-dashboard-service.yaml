@@ -27,6 +27,6 @@ spec:
     -
       name: 'rest-api-port'
       #for 9643
-      port: 32201
-      targetPort: 32201
+      port: 9643
+      targetPort: 9643
       nodePort: 32201

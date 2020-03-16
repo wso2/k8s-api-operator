@@ -22,7 +22,7 @@ data:
     [server]
     hostname = "wso2apim"
     node_ip = "127.0.0.1"
-    offset=22558
+    #offset=0
     mode = "single" #single or ha
     base_path = "${carbon.protocol}://${carbon.host}:${carbon.management.port}"
     #discard_empty_caches = false
@@ -54,6 +54,20 @@ data:
     password =  "wso2carbon"
     alias =  "wso2carbon"
     key_password =  "wso2carbon"
+
+    #[keystore.primary]
+    #file_name =  "wso2carbon.jks"
+    #type =  "JKS"
+    #password =  "wso2carbon"
+    #alias =  "wso2carbon"
+    #key_password =  "wso2carbon"
+
+    #[keystore.internal]
+    #file_name =  "wso2carbon.jks"
+    #type =  "JKS"
+    #password =  "wso2carbon"
+    #alias =  "wso2carbon"
+    #key_password =  "wso2carbon"
 
     [[apim.gateway.environment]]
     name = "Production and Sandbox"
@@ -126,6 +140,10 @@ data:
     #key_validation_handler_type = "custom"
     #key_validation_handler_impl = "org.wso2.carbon.apimgt.keymgt.handlers.DefaultKeyValidationHandler"
 
+    #[apim.idp]
+    #authorize_endpoint = "https://localhost:${mgt.transport.https.port}/oauth2/authorize"
+    #oidc_logout_endpoint = "https://localhost:${mgt.transport.https.port}/oidc/logout"
+
     #[apim.jwt]
     #enable = true
     #encoding = "base64" # base64,base64url
@@ -158,7 +176,7 @@ data:
     [apim.cors]
     allow_origins = "*"
     allow_methods = ["GET","PUT","POST","DELETE","PATCH","OPTIONS"]
-    allow_headers = ["authorization","Access-Control-Allow-Origin","Content-Type","SOAPAction"]
+    allow_headers = ["authorization","Access-Control-Allow-Origin","Content-Type","SOAPAction","apikey"]
     allow_credentials = false
 
     #[apim.throttling]
@@ -243,3 +261,12 @@ data:
 
     [service_provider]
     sp_name_regex = "^[\\sa-zA-Z0-9._-]*$"
+
+    [database.local]
+    url = "jdbc:h2:./repository/database/WSO2CARBON_DB;DB_CLOSE_ON_EXIT=FALSE"
+
+    [transport.https.properties]
+    proxyPort = 32001
+
+    [transport.http.properties]
+    proxyPort = 32002
