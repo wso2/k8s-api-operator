@@ -59,9 +59,9 @@ import (
 	b64 "encoding/base64"
 	"encoding/json"
 
-	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/openapi2"
 	"github.com/getkin/kin-openapi/openapi2conv"
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/wso2/k8s-apim-operator/apim-operator/pkg/controller/ratelimiting"
 )
 
@@ -257,19 +257,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		log.Info("Deployment mode is not set in the swagger. Hence default to privateJet mode")
 	}
 
-	image := strings.ToLower(strings.ReplaceAll(instance.Name, " ", ""))
-	tag := swagger.Info.Version
-	if instance.Spec.UpdateTimeStamp != "" {
-		tag = tag + "-" + instance.Spec.UpdateTimeStamp
-	}
-	registry.SetRegistry(registryType, repositoryName, image, tag)
-
-	// check if the image already exists
-	imageExist, errImage := isImageExist(getImageName(repositoryName, image), tag, r, ConfigJsonVolume, userNameSpace)
-	if errImage != nil {
-		log.Error(errImage, "Error in image finding")
-	}
-	log.Info("image exist? " + strconv.FormatBool(imageExist))
 	endpointNames, newSwagger, apiBasePath := mgwSwaggerHandler(r, swagger, mode, userNameSpace)
 	for endpointNameL, _ := range endpointNames {
 		log.Info("Endpoint name " + endpointNameL)
@@ -801,6 +788,21 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	if errGettingHpa != nil {
 		log.Error(errGettingHpa, "Error getting HPA")
 	}
+
+	// micro-gateway image to be build
+	builtImage := strings.ToLower(strings.ReplaceAll(instance.Name, " ", ""))
+	builtImageTag := swagger.Info.Version
+	if instance.Spec.UpdateTimeStamp != "" {
+		builtImageTag = builtImageTag + "-" + instance.Spec.UpdateTimeStamp
+	}
+	registry.SetRegistry(registryType, repositoryName, builtImage, builtImageTag)
+
+	// check if the image already exists
+	imageExist, errImage := isImageExist(r, ConfigJsonVolume, userNameSpace)
+	if errImage != nil {
+		log.Error(errImage, "Error in image finding")
+	}
+	log.Info("image exist? " + strconv.FormatBool(imageExist))
 
 	if instance.Spec.UpdateTimeStamp != "" {
 		//Schedule Kaniko pod
@@ -1719,8 +1721,8 @@ func policyHandler(r *ReconcileAPI, operatorOwner []metav1.OwnerReference, userN
 	return nil
 }
 
-// isImageExist checks if the image with the given tag exists in the registry using the secret in the user-namespace
-func isImageExist(image string, tag string, r *ReconcileAPI, secretName string, userNamespace string) (bool, error) {
+// isImageExist checks if the image exists in the given registry using the secret in the user-namespace
+func isImageExist(r *ReconcileAPI, secretName string, userNamespace string) (bool, error) {
 	var registryUrl string
 	var username string
 	var password string
@@ -2329,7 +2331,7 @@ func interceptorHandler(r *ReconcileAPI, instance *wso2v1alpha1.API, owner []met
 			errBalInterceptor = nil
 		} else {
 			// Error getting interceptors configmap.
-			log.Error(err, "error retrieving ballerina interceptors configmap " + instance.Name + "-interceptors")
+			log.Error(err, "error retrieving ballerina interceptors configmap "+instance.Name+"-interceptors")
 			exsistBalInterceptors = false
 			errBalInterceptor = err
 		}
@@ -2374,7 +2376,7 @@ func interceptorHandler(r *ReconcileAPI, instance *wso2v1alpha1.API, owner []met
 					return exsistBalInterceptors, false, jobVolumeMount, jobVolume, errBalInterceptor, nil
 				} else {
 					// Error getting interceptors configmap.
-					log.Error(err, "error retrieving configmap " + configmapName)
+					log.Error(err, "error retrieving configmap "+configmapName)
 					return exsistBalInterceptors, false, jobVolumeMount, jobVolume, errBalInterceptor, err
 				}
 			} else if err == nil {
@@ -2398,22 +2400,10 @@ func interceptorHandler(r *ReconcileAPI, instance *wso2v1alpha1.API, owner []met
 			log.Info("updating java interceptor configmap" + configmapName + " with owner reference")
 			errorUpdateinterceptConf := updateConfMapWithOwner(r, owner, javaConfigmap)
 			if errorUpdateinterceptConf != nil {
-				log.Error(errorUpdateinterceptConf, "error in updating java-interceptor configmap" + configmapName + " with owner reference")
+				log.Error(errorUpdateinterceptConf, "error in updating java-interceptor configmap"+configmapName+" with owner reference")
 			}
 		}
 		return exsistBalInterceptors, true, jobVolumeMount, jobVolume, errBalInterceptor, nil
 	}
 	return exsistBalInterceptors, false, jobVolumeMount, jobVolume, errBalInterceptor, nil
-}
-
-// getImageName returns concatenation of repository and image names
-func getImageName(repository string, image string) string {
-	repository = strings.TrimSpace(repository)
-	image = strings.TrimSpace(image)
-
-	if repository == "" {
-		return image
-	}
-
-	return repository + "/" + image
 }
