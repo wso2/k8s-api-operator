@@ -110,3 +110,13 @@ data:
     nginx.ingress.kubernetes.io/backend-protocol: HTTPS
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/ssl-redirect: false
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kaniko-arguments
+  namespace: wso2-system
+data:
+  kanikoArguments: |
+  #kaniko additional flags should go here: Please refer https://github.com/GoogleContainerTools/kaniko#additional-flags
