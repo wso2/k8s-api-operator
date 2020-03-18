@@ -146,6 +146,8 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 
 var _ reconcile.Reconciler = &ReconcileAPI{}
 
+var kanikoArgs = &corev1.ConfigMap{}
+
 // ReconcileAPI reconciles a API object
 type ReconcileAPI struct {
 	// This client, initialized using mgr.Client() above, is a split client
@@ -801,7 +803,10 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	if errGettingHpa != nil {
 		log.Error(errGettingHpa, "Error getting HPA")
 	}
-
+	kanikoArgs,err = getConfigmap(r, "kaniko-arguments","wso2-system")
+	if err != nil && errors.IsNotFound(err) {
+		log.Info("No kaniko-arguments config map is available in wso2-system namespace")
+	}
 	if instance.Spec.UpdateTimeStamp != "" {
 		//Schedule Kaniko pod
 		reqLogger.Info("Updating the API", "API.Name", instance.Name, "API.Namespace", instance.Namespace)
@@ -1773,12 +1778,17 @@ func scheduleKanikoJob(cr *wso2v1alpha1.API, conf *corev1.ConfigMap, jobVolumeMo
 	}
 	controlConfigData := conf.Data
 	kanikoImg := controlConfigData[kanikoImgConst]
-
+	//read kaniko arguments and split them as they are read as a single string
+	kanikoArguments := strings.Split(kanikoArgs.Data[kanikoArguments], "\n")
 	args := append([]string{
 		"--dockerfile=/usr/wso2/dockerfile/Dockerfile",
 		"--context=/usr/wso2/",
 		"--destination=" + regConfig.ImagePath,
 	}, regConfig.Args...)
+	//if kanikoarguments are provided
+	if kanikoArguments != nil {
+		args = append(args, kanikoArguments...)
+	}
 
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
