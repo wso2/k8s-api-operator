@@ -73,6 +73,7 @@ var deployedSidecarEndpointNames []string // container already added sidecar end
 var jobVolume []corev1.Volume             // Volumes for Kaniko Job
 var jobVolumeMount []corev1.VolumeMount   // Volume mounts for Kaniko Job
 var apiBasePaths []string                 // API base paths
+var apiVersion string                     // API version - for the tag of final MGW docker image
 
 var alias string
 var existcert bool                     //keep to track the existence of certificates
@@ -265,6 +266,12 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		swaggerDataMap := apiConfigMap.Data
 		swagger, swaggerDataFile, err := mgwSwaggerLoader(swaggerDataMap)
 		modeExt, isModeDefined := swagger.Extensions[deploymentMode]
+
+		// Set the apiVersion for the first swagger file if there are many swaggers
+		if apiVersion == "" {
+			apiVersion = swagger.Info.Version
+		}
+
 		mode := privateJet
 		if isModeDefined {
 			modeRawStr, _ := modeExt.(json.RawMessage)
@@ -802,7 +809,11 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	// micro-gateway image to be build
 	builtImage := strings.ToLower(strings.ReplaceAll(instance.Name, " ", ""))
-	builtImageTag := swagger.Info.Version
+	builtImageTag := apiVersion
+	if instance.Spec.Version != "" {
+		// override if instance.Spec.Version is given
+		builtImageTag = instance.Spec.Version
+	}
 	if instance.Spec.UpdateTimeStamp != "" {
 		builtImageTag = builtImageTag + "-" + instance.Spec.UpdateTimeStamp
 	}
