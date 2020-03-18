@@ -116,7 +116,7 @@ func schema_pkg_apis_wso2_v1alpha1_APISpec(ref common.ReferenceCallback) common.
 						},
 					},
 				},
-				Required: []string{"mode", "updateTimeStamp", "replicas", "definition", "override", "version"},
+				Required: []string{"replicas", "definition"},
 			},
 		},
 		Dependencies: []string{

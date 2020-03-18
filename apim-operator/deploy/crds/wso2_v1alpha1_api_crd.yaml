@@ -81,7 +81,6 @@ spec:
             version:
               type: string
           required:
-          - mode
           - replicas
           - definition
           type: object
