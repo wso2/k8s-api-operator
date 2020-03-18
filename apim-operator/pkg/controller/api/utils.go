@@ -26,3 +26,13 @@ func removeVersionTag(url string) string {
 	regExp := regexp.MustCompile(regExpString)
 	return regExp.ReplaceAllString(url, "")
 }
+
+// isStringArrayContains checks the given text contains in the given arr
+func isStringArrayContains(arr []string, text string) bool {
+	for _, s := range arr {
+		if s == text {
+			return true
+		}
+	}
+	return false
+}
