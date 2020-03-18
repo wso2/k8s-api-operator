@@ -43,6 +43,7 @@ const (
 	mgwToolkitImgConst   = "mgwToolkitImg"
 	mgwRuntimeImgConst   = "mgwRuntimeImg"
 	kanikoImgConst       = "kanikoImg"
+	kanikoArguments      = "kanikoArguments"
 	registryTypeConst    = "registryType"
 	repositoryNameConst  = "repositoryName"
 	wso2NameSpaceConst   = "wso2-system"
