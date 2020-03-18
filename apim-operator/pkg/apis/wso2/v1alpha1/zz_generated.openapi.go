@@ -109,8 +109,14 @@ func schema_pkg_apis_wso2_v1alpha1_APISpec(ref common.ReferenceCallback) common.
 							Format: "",
 						},
 					},
+					"version": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
 				},
-				Required: []string{"mode", "updateTimeStamp", "replicas", "definition", "override"},
+				Required: []string{"mode", "updateTimeStamp", "replicas", "definition", "override", "version"},
 			},
 		},
 		Dependencies: []string{

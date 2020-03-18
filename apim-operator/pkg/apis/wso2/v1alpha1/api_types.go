@@ -34,6 +34,7 @@ type APISpec struct {
 	Replicas        int        `json:"replicas"`
 	Definition      Definition `json:"definition"`
 	Override        bool       `json:"override"`
+	Version         string     `json:"version"`
 }
 
 // APIStatus defines the observed state of API
@@ -67,9 +68,9 @@ type APIList struct {
 
 //Definition contains api definition related values
 type Definition struct {
-	SwaggerConfigmapName string       `json:"swaggerconfigmapName"`
-	Type                 string       `json:"type"`
-	Interceptors         Interceptors `json:"interceptors"`
+	SwaggerConfigmapNames []string     `json:"swaggerConfigmapNames"`
+	Type                  string       `json:"type"`
+	Interceptors          Interceptors `json:"interceptors"`
 }
 
 type Interceptors struct {

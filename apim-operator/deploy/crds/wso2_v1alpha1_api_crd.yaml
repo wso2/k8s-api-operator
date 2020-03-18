@@ -56,12 +56,14 @@ spec:
                         type: string
                       type: array
                   type: object
-                swaggerconfigmapName:
-                  type: string
+                swaggerConfigmapNames:
+                  items:
+                    type: string
+                  type: array
                 type:
                   type: string
               required:
-              - swaggerconfigmapName
+              - swaggerConfigmapNames
               type: object
             mode:
               description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
@@ -75,6 +77,8 @@ spec:
               format: int64
               type: integer
             updateTimeStamp:
+              type: string
+            version:
               type: string
           required:
           - mode
