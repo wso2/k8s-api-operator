@@ -240,8 +240,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		log.Error(policyEr, "Error in default policy map creation")
 	}
 
-	//get the volume mounts
-	jobVolumeMount, jobVolume = getVolumes(instance)
+	// make volumes empty
+	jobVolumeMount, jobVolume = []corev1.VolumeMount{}, []corev1.Volume{}
 
 	// Check if the configmaps mentioned in the crd object exist
 	swaggerCmNames := instance.Spec.Definition.SwaggerConfigmapNames
@@ -267,22 +267,32 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		//Fetch swagger data from configmap, reads and modifies swagger
 		swaggerDataMap := apiConfigMap.Data
 		swagger, swaggerDataFile, err := mgwSwaggerLoader(swaggerDataMap)
-		modeExt, isModeDefined := swagger.Extensions[deploymentMode]
 
-		// Set the apiVersion for the first swagger file if there are many swaggers
-		if apiVersion == "" {
-			apiVersion = swagger.Info.Version
-		}
-
-		mode := privateJet
-		if isModeDefined {
-			modeRawStr, _ := modeExt.(json.RawMessage)
-			err = json.Unmarshal(modeRawStr, &mode)
-			if err != nil {
-				log.Info("Error unmarshal data of mode")
+		// Set deployment mode: sidecar/private-jet
+		var mode string
+		if len(swaggerCmNames) == 1 && instance.Spec.Mode != "" {
+			modeExt, isModeDefined := swagger.Extensions[deploymentMode]
+			if isModeDefined {
+				modeRawStr, _ := modeExt.(json.RawMessage)
+				err = json.Unmarshal(modeRawStr, &mode)
+				if err != nil {
+					log.Info("Error unmarshal data of mode")
+				}
+			} else {
+				log.Info("Deployment mode is not set in the swagger.")
 			}
 		} else {
-			log.Info("Deployment mode is not set in the swagger. Hence default to privateJet mode")
+			if instance.Spec.Mode != "" {
+				mode = instance.Spec.Mode.String()
+			} else {
+				// if no defined in swagger or CRD mode set default
+				mode = privateJet
+			}
+		}
+
+		// Set the apiVersion of the swagger if there is only one swagger
+		if len(swaggerCmNames) == 1 {
+			apiVersion = swagger.Info.Version
 		}
 
 		endpointNames, newSwagger, apiBasePath := mgwSwaggerHandler(r, swagger, mode, userNameSpace)
@@ -635,6 +645,30 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		}
 	}
 
+	// micro-gateway image to be build
+	builtImage := strings.ToLower(strings.ReplaceAll(instance.Name, " ", ""))
+	builtImageTag := apiVersion
+	// if multi swagger mode override image tag
+	if len(swaggerCmNames) > 1 {
+		if instance.Spec.Version != "" {
+			builtImageTag = instance.Spec.Version
+		} else {
+			// if not defined in the API Crd set default
+			builtImageTag = apiCrdDefaultVersion
+		}
+	}
+	if instance.Spec.UpdateTimeStamp != "" {
+		builtImageTag = builtImageTag + "-" + instance.Spec.UpdateTimeStamp
+	}
+	registry.SetRegistry(registryType, repositoryName, builtImage, builtImageTag)
+
+	// check if the image already exists
+	imageExist, errImage := isImageExist(r, ConfigJsonVolume, userNameSpace)
+	if errImage != nil {
+		log.Error(errImage, "Error in image finding")
+	}
+	log.Info("image exist? " + strconv.FormatBool(imageExist))
+
 	// gets analytics configuration
 	analyticsConf, analyticsEr := getConfigmap(r, analyticsConfName, wso2NameSpaceConst)
 	if analyticsEr != nil {
@@ -808,29 +842,15 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	if errGettingHpa != nil {
 		log.Error(errGettingHpa, "Error getting HPA")
 	}
-	kanikoArgs,err = getConfigmap(r, "kaniko-arguments","wso2-system")
+	kanikoArgs, err = getConfigmap(r, "kaniko-arguments", "wso2-system")
 	if err != nil && errors.IsNotFound(err) {
 		log.Info("No kaniko-arguments config map is available in wso2-system namespace")
 	}
 
-	// micro-gateway image to be build
-	builtImage := strings.ToLower(strings.ReplaceAll(instance.Name, " ", ""))
-	builtImageTag := apiVersion
-	if instance.Spec.Version != "" {
-		// override if instance.Spec.Version is given
-		builtImageTag = instance.Spec.Version
-	}
-	if instance.Spec.UpdateTimeStamp != "" {
-		builtImageTag = builtImageTag + "-" + instance.Spec.UpdateTimeStamp
-	}
-	registry.SetRegistry(registryType, repositoryName, builtImage, builtImageTag)
-
-	// check if the image already exists
-	imageExist, errImage := isImageExist(r, ConfigJsonVolume, userNameSpace)
-	if errImage != nil {
-		log.Error(errImage, "Error in image finding")
-	}
-	log.Info("image exist? " + strconv.FormatBool(imageExist))
+	// append kaniko specific volumes
+	tmpVolMounts, tmpVols := getVolumes(instance)
+	jobVolumeMount = append(jobVolumeMount, tmpVolMounts...)
+	jobVolume = append(jobVolume, tmpVols...)
 
 	if instance.Spec.UpdateTimeStamp != "" {
 		//Schedule Kaniko pod
@@ -2073,7 +2093,6 @@ func getVolumes(cr *wso2v1alpha1.API) ([]corev1.VolumeMount, []corev1.Volume) {
 	jobVolume = append(jobVolume, regConfig.Volumes...)
 
 	return jobVolumeMount, jobVolume
-
 }
 
 // Handles the mounting of analytics certificate
