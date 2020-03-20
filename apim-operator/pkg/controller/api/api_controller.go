@@ -1870,6 +1870,10 @@ func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, nam
 	transportMode := controlConfigData[ingressTransportMode]
 	ingressName := controlConfigData[ingressResourceName]
 	ingressHostName := controlConfigData[ingressHostName]
+	tlsSecretName   := controlConfigData[tlsSecretName]
+
+	var hostArray []string
+	hostArray = append(hostArray,ingressHostName)
 
 	log.Info("Creating ingress resource with API Base Path" + apiBasePath)
 	log.WithValues("Ingress metadata. Transport mode", transportMode, "Ingress name", ingressName,
@@ -1925,6 +1929,12 @@ func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, nam
 								},
 							},
 						},
+					},
+				},
+				TLS:[]v1beta1.IngressTLS {
+					{
+						Hosts: hostArray,
+						SecretName: tlsSecretName,
 					},
 				},
 			},
