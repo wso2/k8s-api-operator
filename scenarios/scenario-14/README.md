@@ -109,9 +109,8 @@
 - Basic swagger definition belongs to the "hello-world-serverless" service is available in swagger.yaml.
 Backend endpoint of the API should be mentioned in the swagger file with the "x-wso2-production-endpoints" extension.
 You must mention the TargetEndpoint namespace with the endpoint name as follows  <endpoint-name>.<namespace>
-The mode of managed API which is private jet also has to be mentioned in the swagger with the "x-wso2-mode" extension.
-To enble the serverless feature you need to set true in the serverless property.
-In this swagger definition, the backend service of the "products" service and the managed API mode have been mentioned as follows.
+The mode of managed API which is Serverless also has to be mentioned in the swagger with the "x-wso2-mode" extension.
+In this swagger definition, the backend service of the "hello-world-serverless" service and the managed API mode have been mentioned as follows.
     ```
         x-wso2-production-endpoints: hello-world-serverless.default
         x-wso2-mode: Serverless
