@@ -269,7 +269,7 @@ func (r *ReconcileTargetEndpoint) newDeploymentForCR(m *wso2v1alpha1.TargetEndpo
 func (r *ReconcileTargetEndpoint) newKnativeDeploymentForCR(m *wso2v1alpha1.TargetEndpoint) *v1.Service {
 	ser := &v1.Service{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "serving.knative.dev/v1alpha1",
+			APIVersion: "serving.knative.dev/v1",
 			Kind:       "Service",
 		},
 		ObjectMeta: metav1.ObjectMeta{
