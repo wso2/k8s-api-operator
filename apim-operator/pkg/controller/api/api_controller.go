@@ -267,6 +267,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		//Fetch swagger data from configmap, reads and modifies swagger
 		swaggerDataMap := apiConfigMap.Data
 		swagger, swaggerDataFile, err := mgwSwaggerLoader(swaggerDataMap)
+		// randomize file name to make it unique
 		swaggerDataFile = getRandFileName(swaggerDataFile)
 
 		// Set deployment mode: sidecar/private-jet
@@ -2086,7 +2087,7 @@ func getVolumes(apiName string, swaggerCmNames []string) ([]corev1.VolumeMount, 
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: swaggerCmName,
+						Name: swaggerCmName + "-mgw",
 					},
 				},
 			},
@@ -2379,45 +2380,49 @@ func interceptorHandler(r *ReconcileAPI, instance *wso2v1alpha1.API, owner []met
 	var errBalInterceptor error
 
 	//handle bal interceptors
-	interceptorConfigmap, err := getConfigmap(r, instance.Spec.Definition.Interceptors.Ballerina, userNameSpace)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			// Interceptors are not defined
-			log.Info("ballerina interceptors are not defined")
-			exsistBalInterceptors = false
-			errBalInterceptor = nil
+	balConfigs := instance.Spec.Definition.Interceptors.Ballerina
+	for i, balConfig := range balConfigs {
+		interceptorConfigmap, err := getConfigmap(r, balConfig, userNameSpace)
+		if err != nil {
+			if errors.IsNotFound(err) {
+				// Interceptors are not defined
+				log.Info("ballerina interceptors are not defined")
+				exsistBalInterceptors = false
+				errBalInterceptor = nil
+			} else {
+				// Error getting interceptors configmap.
+				log.Error(err, "error retrieving ballerina interceptors configmap "+instance.Name+"-interceptors")
+				exsistBalInterceptors = false
+				errBalInterceptor = err
+			}
 		} else {
-			// Error getting interceptors configmap.
-			log.Error(err, "error retrieving ballerina interceptors configmap "+instance.Name+"-interceptors")
-			exsistBalInterceptors = false
-			errBalInterceptor = err
-		}
-	} else if err == nil {
-		//mount interceptors configmap to the volume
-		log.Info("Mounting interceptors configmap to volume.")
-		jobVolumeMount = append(jobVolumeMount, corev1.VolumeMount{
-			Name:      interceptorsVolume,
-			MountPath: interceptorsVolumeLocation,
-			ReadOnly:  true,
-		})
-		jobVolume = append(jobVolume, corev1.Volume{
-			Name: interceptorsVolume,
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: instance.Spec.Definition.Interceptors.Ballerina,
+			//mount interceptors configmap to the volume
+			log.Info("Mounting interceptors configmap to volume.")
+			name := fmt.Sprintf("%s-%s", balConfig, interceptorsVolume)
+			jobVolumeMount = append(jobVolumeMount, corev1.VolumeMount{
+				Name:      name,
+				MountPath: fmt.Sprintf(interceptorsVolumeLocation, i),
+				ReadOnly:  true,
+			})
+			jobVolume = append(jobVolume, corev1.Volume{
+				Name: name,
+				VolumeSource: corev1.VolumeSource{
+					ConfigMap: &corev1.ConfigMapVolumeSource{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: balConfig,
+						},
 					},
 				},
-			},
-		})
-		//update configmap with owner reference
-		log.Info("updating interceptors configmap with owner reference")
-		errorUpdateinterceptConf := updateConfMapWithOwner(r, owner, interceptorConfigmap)
-		if errorUpdateinterceptConf != nil {
-			log.Error(errorUpdateinterceptConf, "error in updating interceptors config map with owner reference")
+			})
+			//update configmap with owner reference
+			log.Info("updating interceptors configmap with owner reference")
+			errorUpdateinterceptConf := updateConfMapWithOwner(r, owner, interceptorConfigmap)
+			if errorUpdateinterceptConf != nil {
+				log.Error(errorUpdateinterceptConf, "error in updating interceptors config map with owner reference")
+			}
+			exsistBalInterceptors = true
+			errBalInterceptor = nil
 		}
-		exsistBalInterceptors = true
-		errBalInterceptor = nil
 	}
 
 	//handle java interceptors

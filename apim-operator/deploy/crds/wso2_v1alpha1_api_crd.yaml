@@ -50,7 +50,9 @@ spec:
                 interceptors:
                   properties:
                     ballerina:
-                      type: string
+                      items:
+                        type: string
+                      type: array
                     java:
                       items:
                         type: string

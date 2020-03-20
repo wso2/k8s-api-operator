@@ -54,7 +54,7 @@ data:
 
     #copy interceptors to the project
     {{ if .InterceptorsFound }}
-    RUN cp usr/wso2/interceptors/* ./project/interceptors/
+    RUN cp usr/wso2/interceptors/project-*/* ./project/interceptors/
     {{ end }}
 
     #copy java interceptors to the project

@@ -74,7 +74,7 @@ type Definition struct {
 }
 
 type Interceptors struct {
-	Ballerina string   `json:"ballerina,omitempty"`
+	Ballerina []string `json:"ballerina,omitempty"`
 	Java      []string `json:"java,omitempty"`
 }
 

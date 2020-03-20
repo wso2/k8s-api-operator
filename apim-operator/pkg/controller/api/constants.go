@@ -37,7 +37,7 @@ const (
 	analyticsVolumeName            = "analytics-volume-storage"
 	analyticsVolumeLocation        = "/home/ballerina/api-usage-data/"
 	analyticsConfName              = "analytics-config"
-	interceptorsVolumeLocation     = "usr/wso2/interceptors/"
+	interceptorsVolumeLocation     = "usr/wso2/interceptors/project-%v/"
 	javaInterceptorsVolumeLocation = "usr/wso2/libs/"
 
 	mgwToolkitImgConst   = "mgwToolkitImg"
