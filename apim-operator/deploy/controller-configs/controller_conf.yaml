@@ -70,7 +70,7 @@ data:
   #Define the hostname of the ingress
   ingressHostName : "mgw.ingress.wso2.com"
   #Define the secret name for TLS certificate
-  tlsSecretName: ""
+  #tlsSecretName: ""
 
 ---
 apiVersion: v1
