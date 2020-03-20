@@ -8,40 +8,97 @@
  ***Important:***
 > Follow the main README and deploy the apim-operator and configuration files. Make sure to set the analyticsEnabled to "true" and deploy analytics secret with credentials to analytics server and certificate, if you want to check analytics.
 
+ ##### Installing Istio for Knative
+  
+  - before installing Knative you need to install Istio for your cluster
+  - Using following command you can install Istio for Knative
+  - First downlaod and unpack Istio
+    ```
+    export ISTIO_VERSION=1.3.6
+    curl -L https://git.io/getLatestIstio | sh -
+    cd istio-${ISTIO_VERSION}
+    ```
+  - Enter the following command to install the Istio CRDs first
+    ```
+    for i in install/kubernetes/helm/istio-init/files/crd*yaml; do kubectl apply -f $i; done
+    ```
+  - Create istio-system namespace
+    ```
+    cat <<EOF | kubectl apply -f -
+    apiVersion: v1
+    kind: Namespace
+    metadata:
+      name: istio-system
+      labels:
+        istio-injection: disabled
+    EOF
+    ```
+  - Finish Installing Istio with sidecar injection
+    ```
+    helm template --namespace=istio-system \
+      --set sidecarInjectorWebhook.enabled=true \
+      --set sidecarInjectorWebhook.enableNamespacesByDefault=true \
+      --set global.proxy.autoInject=disabled \
+      --set global.disablePolicyChecks=true \
+      --set prometheus.enabled=false \
+      `# Disable mixer prometheus adapter to remove istio default metrics.` \
+      --set mixer.adapters.prometheus.enabled=false \
+      `# Disable mixer policy check, since in our template we set no policy.` \
+      --set global.disablePolicyChecks=true \
+      --set gateways.istio-ingressgateway.autoscaleMin=1 \
+      --set gateways.istio-ingressgateway.autoscaleMax=2 \
+      --set gateways.istio-ingressgateway.resources.requests.cpu=500m \
+      --set gateways.istio-ingressgateway.resources.requests.memory=256Mi \
+      `# More pilot replicas for better scale` \
+      --set pilot.autoscaleMin=2 \
+      `# Set pilot trace sampling to 100%` \
+      --set pilot.traceSampling=100 \
+      install/kubernetes/helm/istio \
+      > ./istio.yaml
+    
+    kubectl apply -f istio.yaml
+    ```
+  - Use following command to install cluster-local-gateway for Istio
+    ```
+    helm template --namespace=istio-system \
+      --set gateways.custom-gateway.autoscaleMin=1 \
+      --set gateways.custom-gateway.autoscaleMax=2 \
+      --set gateways.custom-gateway.cpu.targetAverageUtilization=60 \
+      --set gateways.custom-gateway.labels.app='cluster-local-gateway' \
+      --set gateways.custom-gateway.labels.istio='cluster-local-gateway' \
+      --set gateways.custom-gateway.type='ClusterIP' \
+      --set gateways.istio-ingressgateway.enabled=false \
+      --set gateways.istio-egressgateway.enabled=false \
+      --set gateways.istio-ilbgateway.enabled=false \
+      --set global.mtls.auto=false \
+      install/kubernetes/helm/istio \
+      -f install/kubernetes/helm/istio/example-values/values-istio-gateways.yaml \
+      | sed -e "s/custom-gateway/cluster-local-gateway/g" -e "s/customgateway/clusterlocalgateway/g" \
+      > ./istio-local-gateway.yaml
+    
+    kubectl apply -f istio-local-gateway.yaml
+    ```
+   
  ##### Installing Knative
  
  - We need to install Knative for deploy our backend service in serverless mode.
  - Using following commands you can install Knative into your cluster.
     ```
-   kubectl apply --selector knative.dev/crd-install=true \
-   --filename https://github.com/knative/serving/releases/download/v0.8.0/serving.yaml \
-   --filename https://github.com/knative/eventing/releases/download/v0.8.0/release.yaml \
-   --filename https://github.com/knative/serving/releases/download/v0.8.0/monitoring.yaml
+     kubectl apply --filename https://github.com/knative/serving/releases/download/v0.13.0/serving-crds.yaml
     ```
- - “knative.dev/crd-install=true” flag will prevent race conditions during the install, which
-    causes intermittent errors.
  - Enter following commands to finish the installation.
- 
-    ````
-   kubectl apply --filename https://github.com/knative/serving/releases/download/v0.8.0/serving.yaml \
-   --filename https://github.com/knative/eventing/releases/download/v0.8.0/release.yaml \
-   --filename https://github.com/knative/serving/releases/download/v0.8.0/monitoring.yaml
+    ```
+     kubectl apply --filename https://github.com/knative/serving/releases/download/v0.13.0/serving-core.yaml
+    ```
    
- - Check all your Knative components are up and running using following command.
- 
+ - Check all your Knative component is up and running using following command.
     ```` 
    kubectl get pods --namespace knative-serving
-   kubectl get pods --namespace knative-eventing
-   kubectl get pods --namespace knative-monitoring
     ````
- - We have to inject Istio components to our namespace. Knative is using istio to route traffic to your application. use the
-   following command to inject Istio to your default namespace.
-   ```
-   kubectl label namespace default istio-injectio=enabled
-    ```   
+
  ##### Deploying the artifacts
  
- - Navigate to api-k8s-crds-1.0.1/scenarios/scenario-13 directory and deploy the sample backend service using the following command.
+ - Navigate to api-k8s-crds-1.1.0/scenarios/scenario-13 directory and deploy the sample backend service using the following command.
     ```
         apictl apply -f hello-world-serverless.yaml
     ```
@@ -101,7 +158,7 @@ In this swagger definition, the backend service of the "products" service and th
  
 - Invoking the API <br />
     ```
-        curl -X GET "https://<external IP of LB service>:9090/node/1.0.0/hello/node"
+        curl -X GET "http://<external IP of LB service>:9090/node/1.0.0/hello/node"
     ```
     - Once you execute the above command, it will call to the managed API (hello-world), which then call its endpoint("hello-world-serverless" service) available in the cluster. If the request is success, you would be able to see the response as below.
     ```
@@ -117,7 +174,7 @@ In this swagger definition, the backend service of the "products" service and th
     ```
     - Output:
     ```$xslt
-        hello-world-serverless-cbjfs-deployment-76447c984c-7wfbd   3/3     Running   0          9s
+        hello-world-serverless-cbjfs-deployment-76447c984c-7wfbd   2/2     Running   0          9s
     ```
 - Delete the  API <br /> 
     ```

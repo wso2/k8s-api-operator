@@ -1,0 +1,16 @@
+apiVersion: wso2.com/v1alpha1
+kind: TargetEndpoint
+metadata:
+  name: hello-world-serverless
+  labels:
+    app: wso2
+spec:
+  protocol: http
+  port: 80
+  targetPort: 8080
+  deploy:
+    name: helloworld-service
+    dockerImage: gcr.io/knative-samples/helloworld-go
+    maxReplicas: 5
+    minReplicas: 0
+  mode: Serverless

@@ -1,0 +1,14 @@
+swagger: "2.0"
+paths:
+  /hello/node:
+    get:
+      responses:
+        "200":
+          description: ""
+      x-auth-type: None
+      x-throttling-tier: Unlimited
+info:
+  title: hello-world
+  version: 1.0.0
+x-wso2-basePath: /node/1.0.0
+x-wso2-production-endpoints: hello-world-serverless.default
