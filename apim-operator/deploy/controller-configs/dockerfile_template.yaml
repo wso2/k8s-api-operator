@@ -46,8 +46,8 @@ data:
     #init the micro-gw project
     RUN micro-gw init project
 
-    #copy swagger definitions to the project location
-    RUN cp /usr/wso2/swagger/* ./project/api_definitions/
+    #copy swagger definitions (seperated in projects directories) to the project location
+    RUN cp /usr/wso2/swagger/project-*/* ./project/api_definitions/
 
     #copy policy yaml to the project
     RUN cp /usr/wso2/policy/* ./project/

@@ -23,7 +23,7 @@ const (
 	interceptorsVolume     = "interceptors-volume"
 	javaInterceptorsVolume = "java-interceptors-volume"
 
-	swaggerLocation                = "/usr/wso2/swagger/"
+	swaggerLocation                = "/usr/wso2/swagger/project-%v/"
 	dockerFileLocation             = "/usr/wso2/dockerfile/"
 	dockerConfLocation             = "/kaniko/.docker"
 	dockerFile                     = "dockerfile"

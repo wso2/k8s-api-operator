@@ -267,6 +267,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		//Fetch swagger data from configmap, reads and modifies swagger
 		swaggerDataMap := apiConfigMap.Data
 		swagger, swaggerDataFile, err := mgwSwaggerLoader(swaggerDataMap)
+		swaggerDataFile = getRandFileName(swaggerDataFile)
 
 		// Set deployment mode: sidecar/private-jet
 		var mode string
@@ -492,10 +493,11 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		}
 
 		formattedSwagger := string(prettyJSON.Bytes())
+		formattedSwaggerCmName := swaggerCmName + "-mgw"
 		//create configmap with modified swagger
-		swaggerConfMap := createConfigMap(instance.Name+"-swagger-mgw", swaggerDataFile, formattedSwagger, userNameSpace, owner)
+		swaggerConfMap := createConfigMap(formattedSwaggerCmName, swaggerDataFile, formattedSwagger, userNameSpace, owner)
 		log.Info("Creating swagger configmap for mgw")
-		foundConfMap, errgetConf := getConfigmap(r, instance.Name+"-swagger-mgw", userNameSpace)
+		foundConfMap, errgetConf := getConfigmap(r, formattedSwaggerCmName, userNameSpace)
 		if errgetConf != nil && errors.IsNotFound(errgetConf) {
 			log.Info("swagger-mgw is not found. Hence creating new configmap")
 			errConf := r.client.Create(context.TODO(), swaggerConfMap)
@@ -848,7 +850,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	// append kaniko specific volumes
-	tmpVolMounts, tmpVols := getVolumes(instance)
+	tmpVolMounts, tmpVols := getVolumes(instance.Name, swaggerCmNames)
 	jobVolumeMount = append(jobVolumeMount, tmpVolMounts...)
 	jobVolume = append(jobVolume, tmpVols...)
 
@@ -2022,15 +2024,10 @@ func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, nam
 }
 
 //default volume mounts for the kaniko job
-func getVolumes(cr *wso2v1alpha1.API) ([]corev1.VolumeMount, []corev1.Volume) {
+func getVolumes(apiName string, swaggerCmNames []string) ([]corev1.VolumeMount, []corev1.Volume) {
 	regConfig := registry.GetConfig()
 
 	jobVolumeMount := []corev1.VolumeMount{
-		{
-			Name:      swaggerVolume,
-			MountPath: swaggerLocation,
-			ReadOnly:  true,
-		},
 		{
 			Name:      mgwDockerFile,
 			MountPath: dockerFileLocation,
@@ -2051,21 +2048,11 @@ func getVolumes(cr *wso2v1alpha1.API) ([]corev1.VolumeMount, []corev1.Volume) {
 
 	jobVolume := []corev1.Volume{
 		{
-			Name: swaggerVolume,
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: cr.Name + "-swagger-mgw",
-					},
-				},
-			},
-		},
-		{
 			Name: mgwDockerFile,
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: cr.Name + "-" + dockerFile,
+						Name: apiName + "-" + dockerFile,
 					},
 				},
 			},
@@ -2084,13 +2071,33 @@ func getVolumes(cr *wso2v1alpha1.API) ([]corev1.VolumeMount, []corev1.Volume) {
 			Name: mgwConfFile,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: cr.Name + "-" + mgwConfSecretConst,
+					SecretName: apiName + "-" + mgwConfSecretConst,
 				},
 			},
 		},
 	}
 	// append secrets from regConfig
 	jobVolume = append(jobVolume, regConfig.Volumes...)
+
+	// append swagger file config maps
+	for i, swaggerCmName := range swaggerCmNames {
+		jobVolume = append(jobVolume, corev1.Volume{
+			Name: swaggerCmName,
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: swaggerCmName,
+					},
+				},
+			},
+		})
+
+		jobVolumeMount = append(jobVolumeMount, corev1.VolumeMount{
+			Name:      swaggerCmName,
+			ReadOnly:  true,
+			MountPath: fmt.Sprintf(swaggerLocation, i+1),
+		})
+	}
 
 	return jobVolumeMount, jobVolume
 }
