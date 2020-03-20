@@ -1858,7 +1858,6 @@ func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, nam
 	ingressHostName := controlConfigData[ingressHostName]
 	tlsSecretName   := controlConfigData[tlsSecretName]
 
-
 	var hostArray []string
 	hostArray = append(hostArray,ingressHostName)
 
