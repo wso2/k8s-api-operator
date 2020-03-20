@@ -54,6 +54,7 @@ const (
 	ingressResourceName  = "ingressResourceName"
 	ingressTransportMode = "ingressTransportMode"
 	ingressHostName      = "ingressHostName"
+	tlsSecretName	     = "tlsSecretName"
 
 	usernameConst  = "username"
 	passwordConst  = "password"

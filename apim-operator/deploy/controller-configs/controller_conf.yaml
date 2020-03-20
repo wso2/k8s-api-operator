@@ -69,6 +69,8 @@ data:
   ingressTransportMode: "https"
   #Define the hostname of the ingress
   ingressHostName : "mgw.ingress.wso2.com"
+  #Define the secret name for TLS certificate
+  tlsSecretName: ""
 
 ---
 apiVersion: v1
