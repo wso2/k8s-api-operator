@@ -76,10 +76,10 @@ var apiBasePaths []string                 // API base paths
 var apiVersion string                     // API version - for the tag of final MGW docker image
 
 var alias string
-var existcert bool                     //keep to track the existence of certificates
-var existBalInterceptors bool          //keep to track the existence of interceptors
-var existJavaInterceptors bool         //keep to track the existence of java interceptors
-var certList = make(map[string]string) //to add multiple certs with alias
+var existCert = false                  // keep to track the existence of certificates
+var existBalInterceptors = false       // keep to track the existence of interceptors
+var existJavaInterceptors = false      // keep to track the existence of java interceptors
+var certList = make(map[string]string) // to add multiple certs with alias
 var certName string
 
 //XMGWProductionEndpoints represents the structure of endpoint
@@ -411,7 +411,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 				jobVolumeMount = volumemountTemp
 				jobVolume = volumeTemp
 				alias = certificateSecret.Name + certAlias
-				existcert = true
+				existCert = true
 				for k := range certificateSecret.Data {
 					certName = k
 				}
@@ -459,7 +459,9 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 				}
 			}
 			if strings.EqualFold(securityInstance.Spec.Type, basicSecurityAndScheme) {
-				existcert = false
+				// "existCert = false" for this scenario and do not change the global "existCert" value
+				// i.e. if global "existCert" is true, even though the scenario for this swagger is false keep that value as true
+
 				//fetch credentials from the secret created
 				errGetCredentials := getCredentials(r, securityInstance.Spec.Credentials, "Basic", userNameSpace)
 				if errGetCredentials != nil {
@@ -569,7 +571,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 						jobVolumeMount = volumemountTemp
 						jobVolume = volumeTemp
 						alias = newDefaultSecret.Name + certAlias
-						existcert = true
+						existCert = true
 						for k := range newDefaultSecret.Data {
 							certName = k
 						}
@@ -586,7 +588,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 					jobVolumeMount = volumemountTemp
 					jobVolume = volumeTemp
 					alias = defaultCert.Name + certAlias
-					existcert = true
+					existCert = true
 					for k := range defaultCert.Data {
 						certName = k
 					}
@@ -629,7 +631,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 					jobVolumeMount = volumemountTemp
 					jobVolume = volumeTemp
 					alias = defaultCertUsrNs.Name + certAlias
-					existcert = true
+					existCert = true
 					for k := range defaultCertUsrNs.Data {
 						certName = k
 					}
@@ -702,7 +704,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 				if errCert == nil {
 					jobVolumeMount = jobVolumeMountTemp
 					jobVolume = jobVolumeTemp
-					existcert = true
+					existCert = true
 					analyticsEnabled = "true"
 					certList[analyticsAlias] = analyticsCertLocation + fileName
 				}
@@ -711,7 +713,9 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	//Handle interceptors if available
-	existBalInterceptors, existJavaInterceptors, jobVolumeMountTemp, jobVolumeTemp, errBalInterceptor, errJavaInterceptor := interceptorHandler(r, instance, owner, jobVolumeMount, jobVolume, userNameSpace)
+	tmpExistBalInterceptors, tmpExistJavaInterceptors, jobVolumeMountTemp, jobVolumeTemp, errBalInterceptor, errJavaInterceptor := interceptorHandler(r, instance, owner, jobVolumeMount, jobVolume, userNameSpace)
+	existBalInterceptors = existBalInterceptors || tmpExistBalInterceptors
+	existJavaInterceptors = existJavaInterceptors || tmpExistJavaInterceptors
 	jobVolumeMount = jobVolumeMountTemp
 	jobVolume = jobVolumeTemp
 	if errBalInterceptor != nil || errJavaInterceptor != nil {
@@ -719,7 +723,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	//Handles the creation of dockerfile configmap
-	dockerfileConfmap, errDocker := dockerfileHandler(r, certList, existcert, controlConfigData, owner, instance, existBalInterceptors, existJavaInterceptors)
+	dockerfileConfmap, errDocker := dockerfileHandler(r, certList, existCert, controlConfigData, owner, instance, existBalInterceptors, existJavaInterceptors)
 	if errDocker != nil {
 		log.Error(errDocker, "error in docker configmap handling")
 		return reconcile.Result{}, errDocker
