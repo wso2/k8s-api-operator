@@ -18,6 +18,9 @@ package registry
 
 import (
 	"fmt"
+	"github.com/go-logr/logr"
+	"github.com/wso2/k8s-apim-operator/apim-operator/pkg/registry/utils"
+	"strings"
 )
 
 const HTTP Type = "HTTP"
@@ -27,10 +30,15 @@ var httpReg = *dockerHub
 
 func getHttpRegConfigFunc(repoName string, imgName string, tag string) *Config {
 	httpReg.ImagePath = fmt.Sprintf("%s/%s:%s", repoName, imgName, tag)
-
 	// Add --insecure arg
 	// This will not effect Docker Hub configs since this is a copy of it
 	httpReg.Args = []string{"--insecure"}
+	// replace https with http and use default function
+	httpReg.IsImageExist = func(config *Config, auth utils.RegAuth, image string, tag string, logger logr.Logger) (b bool, err error) {
+		auth.RegistryUrl = strings.Replace(auth.RegistryUrl, "https://", "http://", 1)
+		logger.Info("Checking for image in HTTP registry", "Registry URL", auth.RegistryUrl)
+		return utils.IsImageExists(auth, image, imageTag, logger)
+	}
 
 	return &httpReg
 }

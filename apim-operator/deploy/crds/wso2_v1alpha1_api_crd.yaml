@@ -50,18 +50,22 @@ spec:
                 interceptors:
                   properties:
                     ballerina:
-                      type: string
+                      items:
+                        type: string
+                      type: array
                     java:
                       items:
                         type: string
                       type: array
                   type: object
-                swaggerconfigmapName:
-                  type: string
+                swaggerConfigmapNames:
+                  items:
+                    type: string
+                  type: array
                 type:
                   type: string
               required:
-              - swaggerconfigmapName
+              - swaggerConfigmapNames
               type: object
             mode:
               description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
@@ -76,8 +80,9 @@ spec:
               type: integer
             updateTimeStamp:
               type: string
+            version:
+              type: string
           required:
-          - mode
           - replicas
           - definition
           type: object

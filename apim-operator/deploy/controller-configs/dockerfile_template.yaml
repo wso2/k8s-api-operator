@@ -46,15 +46,15 @@ data:
     #init the micro-gw project
     RUN micro-gw init project
 
-    #copy swagger definitions to the project location
-    RUN cp /usr/wso2/swagger/* ./project/api_definitions/
+    #copy swagger definitions (seperated in projects directories) to the project location
+    RUN cp /usr/wso2/swagger/project-*/* ./project/api_definitions/
 
     #copy policy yaml to the project
     RUN cp /usr/wso2/policy/* ./project/
 
     #copy interceptors to the project
     {{ if .InterceptorsFound }}
-    RUN cp usr/wso2/interceptors/* ./project/interceptors/
+    RUN cp usr/wso2/interceptors/project-*/* ./project/interceptors/
     {{ end }}
 
     #copy java interceptors to the project

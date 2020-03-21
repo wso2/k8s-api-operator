@@ -17,7 +17,10 @@
 package api
 
 import (
+	"fmt"
+	"math/rand"
 	"regexp"
+	"strings"
 )
 
 // removeVersionTag removes version number in a url provided
@@ -25,4 +28,20 @@ func removeVersionTag(url string) string {
 	regExpString := `\/v[\d.-]*\/?$`
 	regExp := regexp.MustCompile(regExpString)
 	return regExp.ReplaceAllString(url, "")
+}
+
+// isStringArrayContains checks the given text contains in the given arr
+func isStringArrayContains(arr []string, text string) bool {
+	for _, s := range arr {
+		if s == text {
+			return true
+		}
+	}
+	return false
+}
+
+// getRandFileName returns a file name with suffixing a random number
+func getRandFileName(filename string) string {
+	fileSplits := strings.SplitN(filename, ".", 2)
+	return fmt.Sprintf("%v-%v.%v", fileSplits[0], rand.Intn(10000), fileSplits[1])
 }

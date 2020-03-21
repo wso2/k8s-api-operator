@@ -77,37 +77,6 @@ func schema_pkg_apis_serving_v1alpha1_ServiceSpec(ref common.ReferenceCallback) 
 							Format:      "int64",
 						},
 					},
-					"runLatest": {
-						SchemaProps: spec.SchemaProps{
-							Description: "DeprecatedRunLatest defines a simple Service. It will automatically configure a route that keeps the latest ready revision from the supplied configuration running.",
-							Ref:         ref("github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/serving/v1alpha1.RunLatestType"),
-						},
-					},
-					"pinned": {
-						SchemaProps: spec.SchemaProps{
-							Description: "DeprecatedPinned is DEPRECATED in favor of ReleaseType",
-							Ref:         ref("github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/serving/v1alpha1.PinnedType"),
-						},
-					},
-					"manual": {
-						SchemaProps: spec.SchemaProps{
-							Description: "DeprecatedManual mode enables users to start managing the underlying Route and Configuration resources directly.  This advanced usage is intended as a path for users to graduate from the limited capabilities of Service to the full power of Route.",
-							Ref:         ref("github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/serving/v1alpha1.ManualType"),
-						},
-					},
-					"release": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Release enables gradual promotion of new revisions by allowing traffic to be split between two revisions. This type replaces the deprecated Pinned type.",
-							Ref:         ref("github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/serving/v1alpha1.ReleaseType"),
-						},
-					},
-					//"generation": {
-					//	SchemaProps: spec.SchemaProps{
-					//		Description: "DeprecatedGeneration was used prior in Kubernetes versions <1.11 when metadata.generation was not being incremented by the api server\n\nThis property will be dropped in future Knative releases and should not be used - use metadata.generation\n\nTracking issue: https://github.com/knative/serving/issues/643",
-					//		Type:        []string{"integer"},
-					//		Format:      "int64",
-					//	},
-					//},
 					"template": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Template holds the latest specification for the Revision to be stamped out.",
@@ -118,7 +87,7 @@ func schema_pkg_apis_serving_v1alpha1_ServiceSpec(ref common.ReferenceCallback) 
 			},
 		},
 		Dependencies: []string{
-			"github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/serving/v1alpha1.ManualType", "github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/serving/v1alpha1.PinnedType", "github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/serving/v1alpha1.ReleaseType", "github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/serving/v1alpha1.RevisionTemplateSpec", "github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/serving/v1alpha1.RunLatestType"},
+			"github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/serving/v1alpha1.RevisionTemplateSpec"},
 	}
 }
 
