@@ -272,7 +272,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 		// Set deployment mode: sidecar/private-jet
 		var mode string
-		if len(swaggerCmNames) == 1 && instance.Spec.Mode != "" {
+		if len(swaggerCmNames) == 1 {
+			// override 'instance.Spec.Mode' if there is only one swagger
 			modeExt, isModeDefined := swagger.Extensions[deploymentMode]
 			if isModeDefined {
 				modeRawStr, _ := modeExt.(json.RawMessage)
@@ -284,11 +285,14 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 				log.Info("Deployment mode is not set in the swagger.")
 			}
 		} else {
+			// override mode in swaggers if there are multiple swaggers
 			if instance.Spec.Mode != "" {
 				mode = instance.Spec.Mode.String()
+				log.Info("Set deployment mode in multi swagger mode given in API crd", "mode", mode)
 			} else {
 				// if no defined in swagger or CRD mode set default
 				mode = privateJet
+				log.Info("Set deployment mode in multi swagger mode with default mode", "mode", mode)
 			}
 		}
 
@@ -2156,14 +2160,22 @@ func analyticsVolumeHandler(analyticsCertSecretName string, r *ReconcileAPI, job
 }
 
 func certMoutHandler(r *ReconcileAPI, cert *corev1.Secret, jobVolumeMount []corev1.VolumeMount, jobVolume []corev1.Volume) ([]corev1.VolumeMount, []corev1.Volume) {
+	name := certConfig + "-" + cert.Name
+	// check volume already exists
+	for _, volume := range jobVolume {
+		if volume.Name == name {
+			return jobVolumeMount, jobVolume
+		}
+	}
+
 	jobVolumeMount = append(jobVolumeMount, corev1.VolumeMount{
-		Name:      certConfig,
+		Name:      name,
 		MountPath: certPath + cert.Name,
 		ReadOnly:  true,
 	})
 
 	jobVolume = append(jobVolume, corev1.Volume{
-		Name: certConfig,
+		Name: name,
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
 				SecretName: cert.Name,
