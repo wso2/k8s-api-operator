@@ -304,46 +304,24 @@ func schema_pkg_apis_wso2_v1alpha1_SecuritySpec(ref common.ReferenceCallback) co
 							Format:      "",
 						},
 					},
-					"certificate": {
+					"securityConfig": {
 						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"alias": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"endpoint": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"credentials": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"issuer": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"audience": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.SecurityConfig"),
+									},
+								},
+							},
 						},
 					},
 				},
-				Required: []string{"type", "certificate", "alias", "endpoint", "credentials", "issuer", "audience"},
+				Required: []string{"type", "securityConfig"},
 			},
 		},
+		Dependencies: []string{
+			"github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1.SecurityConfig"},
 	}
 }
 

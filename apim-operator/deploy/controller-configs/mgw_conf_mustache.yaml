@@ -43,17 +43,17 @@ data:
       # Microgateway exposed IP / Host
       host = "0.0.0.0"
       # HTTP port that is used to make APIs available to the outside.
-      httpPort = {{httpPort}}
+      httpPort = {{$.HttpPort}}
       # HTTPs port that is used to make APIs available to the outside and for endpoints(/token, /authorize, /revoke/, userinfo) of Key Manager.
-      httpsPort = {{httpsPort}}
+      httpsPort = {{$.HttpsPort}}
       # HTTP port for endpoints(/token, /authorize, /revoke/, userinfo) of Key Manager
       tokenListenerPort = 9096
       # Internal keystore
-      keyStorePath = "{{keystorePath}}"
-      keyStorePassword = "{{keystorePassword}}"
+      keyStorePath = "{{$.KeystorePath}}"
+      keyStorePassword = "{{$.KeystorePassword}}"
       # Truststore
-      trustStorePath = "{{truststorePath}}"
-      trustStorePassword = "{{truststorePassword}}"
+      trustStorePath = "{{$.TruststorePath}}"
+      trustStorePassword = "{{$.TruststorePassword}}"
 
     # API Authorization security for the gateway and the backend
     [authConfig]
@@ -70,7 +70,7 @@ data:
     # Key manager configurations
     [keyManager]
       # Connection URL of the Key Manager server
-      serverUrl = "{{keymanagerServerurl}}"
+      serverUrl = "{{$.KeymanagerServerurl}}"
       # The token endpoint context of the Key Manager server
       tokenContext = "oauth2"
       # timestamp skew in seconds which added when checking the token validity period
@@ -80,8 +80,8 @@ data:
       # Basic security configurations
       [keymanager.security.basic]
         enabled = true
-        username = "{{keymanagerUsername}}"
-        password = "{{keymanagerPassword}}"
+        username = "{{$.KeymanagerUsername}}"
+        password = "{{$.KeymanagerPassword}}"
       # Oauth2 security configurations
       [keymanager.security.oauth2]
         enabled = false
@@ -114,24 +114,26 @@ data:
           clientSecret = ""
 
     # JWT token authorization configurations. You can provide multiple JWT issuers
-    [[jwtTokenConfig]]
-      issuer = "{{issuer}}"
-      audience = "{{audience}}"
-      certificateAlias = "{{certificateAlias}}"
-      # Validate subscribed APIs
-      validateSubscription = false
+    {{range .JwtConfigs}}
+        [[jwtTokenConfig]]
+        issuer = "{{.Issuer}}"
+        audience = "{{.Audience}}"
+        certificateAlias = "{{.CertificateAlias}}"
+        # Validate subscribed APIs
+        validateSubscription = {{.ValidateSubscription}}
+    {{end}}
 
     # JWT token revocation configurations
     [tokenRevocationConfig]
     # Real time revocation configurations
       [tokenRevocationConfig.realtime]
-        enableRealtimeMessageRetrieval = {{enableRealtimeMessageRetrieval}}
+        enableRealtimeMessageRetrieval = {{$.EnableRealtimeMessageRetrieval}}
         # The JMS Message Broker that identify messages related to revoked tokens
         jmsConnectionTopic = "tokenRevocation"
         # The message broker context factory
         jmsConnectioninitialContextFactory = "wso2mbInitialContextFactory"
         # The message broker connection URL
-        jmsConnectionProviderUrl= "amqp://admin:admin@carbon/carbon?brokerlist='tcp://{{jmsConnectionProvider}}"
+        jmsConnectionProviderUrl= "amqp://admin:admin@carbon/carbon?brokerlist='tcp://{{$.JmsConnectionProvider}}"
         # The username used to establish  the message broker connection
         jmsConnectionUsername = ""
         # The password used to establish  the message broker connection
@@ -161,21 +163,21 @@ data:
     [analytics]
       # Configurations for file upload analytics
       [analytics.fileUpload]
-        enable = {{analyticsEnabled}}
+        enable = {{$.AnalyticsEnabled}}
         # Time interval in milliseconds for file uploading task
-        uploadingTimeSpanInMillis = {{uploadingTimeSpanInMillis}}
+        uploadingTimeSpanInMillis = {{$.UploadingTimeSpanInMillis}}
         # Initial time delay in milliseconds for file upload analytics
         initialDelayInMillis = 5000
         # Endpoint configured to accept file upload analytics
-        uploadingEndpoint = "https://{{hostname}}:{{port}}/analytics/v1.0/usage/upload-file"
+        uploadingEndpoint = "https://{{$.Hostname}}:{{$.Port}}/analytics/v1.0/usage/upload-file"
         # File rotating period in milliseconds
-        rotatingPeriod = {{rotatingPeriod}}
+        rotatingPeriod = {{$.RotatingPeriod}}
         # To enable file upload task
-        taskUploadFiles = {{uploadFiles}}
+        taskUploadFiles = {{$.UploadFiles}}
         # Username used in analytics server
-        username = "{{analyticsUsername}}"
+        username = "{{$.AnalyticsUsername}}"
         # Password used in in analytics server
-        password = "{{analyticsPassword}}"
+        password = "{{$.AnalyticsPassword}}"
       [analytics.gRPCAnalytics]
         enable = false
         # APIM Analytics endpoint configured to accept gRPC analytics
@@ -185,14 +187,14 @@ data:
 
     # User configuration for Basic auth
     [b7a.users]
-      [b7a.users.{{basicUsername}}]
+      [b7a.users.{{$.BasicUsername}}]
           # password should be sha1 encrypted by default
-          password = "{{basicPassword}}"
+          password = "{{$.BasicPassword}}"
 
     # Request and response validation configurations
     [validationConfig]
-      enableRequestValidation = {{enableRequestValidation}}
-      enableResponseValidation = {{enableResponseValidation}}
+      enableRequestValidation = {{$.EnableRequestValidation}}
+      enableResponseValidation = {{$.EnableResponseValidation}}
 
     # Enable http2
     [http2]
@@ -201,7 +203,7 @@ data:
     # HTTP client configuration
     [httpClients]
       # Hostname verification
-      verifyHostname={{verifyHostname}}
+      verifyHostname={{$.VerifyHostname}}
 
     # Mutual SSL configuration
     [mutualSSLConfig]
@@ -228,20 +230,20 @@ data:
         cleanUpFrequency = 3600
 
       # Connect with the central traffic manager
-      enabledGlobalTMEventPublishing = {{enabledGlobalTMEventPublishing}}
+      enabledGlobalTMEventPublishing = {{$.EnabledGlobalTMEventPublishing}}
       # The message broker context factory
       jmsConnectioninitialContextFactory = "wso2mbInitialContextFactory"
       # The message broker connection URL
-      jmsConnectionProviderUrl = "amqp://admin:admin@carbon/carbon?brokerlist='tcp://{{jmsConnectionProvider}}'"
+      jmsConnectionProviderUrl = "amqp://admin:admin@carbon/carbon?brokerlist='tcp://{{$.JmsConnectionProvider}}'"
       # The username used to establish  the message broker connection
       jmsConnectionUsername = ""
       # The password used to establish  the message broker connection
       jmsConnectionPassword = ""
       # The central traffic management solution URL
-      throttleEndpointUrl = "https://{{throttleEndpoint}}/endpoints"
+      throttleEndpointUrl = "https://{{$.ThrottleEndpoint}}/endpoints"
       # username:password to create the connection to the central traffic manager
       throttleEndpointbase64Header = "admin:admin"
 
     # ballerina logs
     [b7a.log]
-      level="{{logLevel}}"
+      level="{{$.LogLevel}}"

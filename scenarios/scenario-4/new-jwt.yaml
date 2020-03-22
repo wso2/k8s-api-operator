@@ -17,9 +17,18 @@
 apiVersion: wso2.com/v1alpha1
 kind: Security
 metadata:
-  name: petstorebasic
+  name: petstorejwt
 spec:
-  # Security - Basic
-  type: basic
+  # Security - JWT
+  type: JWT
   securityConfig:
-    - credentials: secret-basic
+    - issuer: https://wso2apim:32001/oauth2/token
+      audience: http://org.wso2.apimgt/gateway
+      #create secret with certificate and add secret name
+      certificate: wso2am310-secret
+      validateSubscription: false
+    - issuer: https://dev-5uc4e1dm.au.auth0.com/
+      audience: https://dev-5uc4e1dm.au.auth0.com/api/v2/
+      #create secret with certificate and add secret name
+      certificate: jwt-secret
+      validateSubscription: false
