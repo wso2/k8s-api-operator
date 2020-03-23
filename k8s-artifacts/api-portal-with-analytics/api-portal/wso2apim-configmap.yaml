@@ -41,14 +41,14 @@ data:
     url = "jdbc:mysql://wso2apim-with-analytics-rdbms-service:3306/WSO2AM_APIMGT_DB?useSSL=false"
     username = "root"
     password = "root"
-    driver = "com.mysql.jdbc.Driver"
+    driver = "com.mysql.cj.jdbc.Driver"
 
     [database.shared_db]
     type = "mysql"
     url = "jdbc:mysql://wso2apim-with-analytics-rdbms-service:3306/WSO2AM_SHARED_DB?autoReconnect=true&amp;useSSL=false"
     username = "root"
     password = "root"
-    driver = "com.mysql.jdbc.Driver"
+    driver = "com.mysql.cj.jdbc.Driver"
 
     [keystore.tls]
     file_name =  "wso2carbon.jks"
@@ -115,7 +115,7 @@ data:
 
     [apim.analytics]
     enable = true
-    store_api_url = "https://wso2apim-analytics-service.wso2:7444"
+    store_api_url = "https://wso2apim-analytics-service:7444"
     username = "$ref{super_admin.username}"
     password = "$ref{super_admin.password}"
     event_publisher_type = "default"
@@ -123,8 +123,8 @@ data:
     publish_response_size = true
 
     [[apim.analytics.url_group]]
-    analytics_url =["tcp://wso2apim-analytics-service.wso2:7612"]
-    analytics_auth_url =["ssl://wso2apim-analytics-service.wso2:7712"]
+    analytics_url =["tcp://wso2apim-analytics-service:7612"]
+    analytics_auth_url =["ssl://wso2apim-analytics-service:7712"]
     #type = "loadbalance"
 
     #[[apim.analytics.url_group]]

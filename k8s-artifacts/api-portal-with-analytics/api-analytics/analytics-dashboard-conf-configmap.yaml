@@ -244,7 +244,7 @@ data:
             jdbcUrl: 'jdbc:mysql://wso2apim-with-analytics-rdbms-service:3306/DASHBOARD_DB?useSSL=false'
             username: wso2carbon
             password: wso2carbon
-            driverClassName: com.mysql.jdbc.Driver
+            driverClassName: com.mysql.cj.jdbc.Driver
             maxPoolSize: 20
             idleTimeout: 60000
             connectionTestQuery: SELECT 1
@@ -261,7 +261,7 @@ data:
             jdbcUrl: 'jdbc:mysql://wso2apim-with-analytics-rdbms-service:3306/BUSINESS_RULES_DB?useSSL=false'
             username: wso2carbon
             password: wso2carbon
-            driverClassName: com.mysql.jdbc.Driver
+            driverClassName: com.mysql.cj.jdbc.Driver
             maxPoolSize: 20
             idleTimeout: 60000
             connectionTestQuery: SELECT 1
@@ -297,7 +297,7 @@ data:
             jdbcUrl: 'jdbc:mysql://wso2apim-with-analytics-rdbms-service:3306/PERMISSION_DB?useSSL=false'
             username: wso2carbon
             password: wso2carbon
-            driverClassName: com.mysql.jdbc.Driver
+            driverClassName: com.mysql.cj.jdbc.Driver
             maxPoolSize: 10
             idleTimeout: 60000
             connectionTestQuery: SELECT 1
@@ -315,7 +315,7 @@ data:
             jdbcUrl: 'jdbc:mysql://wso2apim-with-analytics-rdbms-service:3306/APIM_ANALYTICS_DB?useSSL=false'
             username: wso2carbon
             password: wso2carbon
-            driverClassName: com.mysql.jdbc.Driver
+            driverClassName: com.mysql.cj.jdbc.Driver
             maxPoolSize: 50
             idleTimeout: 60000
             connectionTestQuery: SELECT 1
@@ -333,7 +333,7 @@ data:
             jdbcUrl: "jdbc:mysql://wso2apim-with-analytics-rdbms-service:3306/WSO2AM_APIMGT_DB?useSSL=false"
             username: wso2carbon
             password: wso2carbon
-            driverClassName: com.mysql.jdbc.Driver
+            driverClassName: com.mysql.cj.jdbc.Driver
             maxPoolSize: 10
             idleTimeout: 60000
             connectionTestQuery: SELECT 1
