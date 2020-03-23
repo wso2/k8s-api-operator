@@ -20,10 +20,10 @@ metadata:
   name: petstoreoauth
 spec:
   type: Oauth
-  #create secret with certificate and add secret name
-  certificate: wso2am310-secret
-  endpoint: "https://wso2apim.wso2:32001"
-  credentials: oauth-credentials
+  securityConfig:
+    - certificate: wso2am310-secret #create secret with certificate and add secret name
+      endpoint: "https://wso2apim.wso2:32001"
+      credentials: oauth-credentials
 
 ---
 

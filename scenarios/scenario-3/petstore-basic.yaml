@@ -21,4 +21,5 @@ metadata:
 spec:
   # Security - Basic
   type: basic
-  credentials: secret-basic
+  securityConfig:
+    - credentials: secret-basic

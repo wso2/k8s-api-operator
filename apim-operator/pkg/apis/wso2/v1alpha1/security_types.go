@@ -1,4 +1,3 @@
-
 // Copyright (c)  WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
 //
 // WSO2 Inc. licenses this file to you under the Apache License,
@@ -30,13 +29,8 @@ type SecuritySpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
-	Type        string `json:"type"`
-	Certificate string `json:"certificate"`
-	Alias       string `json:"alias"`
-	Endpoint    string `json:"endpoint"`
-	Credentials string `json:"credentials"`
-	Issuer      string `json:"issuer"`
-	Audience    string `json:"audience"`
+	Type           string           `json:"type"`
+	SecurityConfig []SecurityConfig `json:"securityConfig"`
 }
 
 // SecurityStatus defines the observed state of Security
@@ -66,6 +60,16 @@ type SecurityList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Security `json:"items"`
+}
+
+type SecurityConfig struct {
+	Certificate          string `json:"certificate"`
+	Alias                string `json:"alias"`
+	Endpoint             string `json:"endpoint"`
+	Credentials          string `json:"credentials"`
+	Issuer               string `json:"issuer"`
+	Audience             string `json:"audience"`
+	ValidateSubscription bool   `json:"validateSubscription,omitempty"`
 }
 
 func init() {

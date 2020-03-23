@@ -45,18 +45,25 @@ spec:
           type: object
         spec:
           properties:
-            alias:
-              type: string
-            audience:
-              type: string
-            certificate:
-              type: string
-            credentials:
-              type: string
-            endpoint:
-              type: string
-            issuer:
-              type: string
+            securityConfig:
+              items:
+                properties:
+                  alias:
+                    type: string
+                  audience:
+                    type: string
+                  certificate:
+                    type: string
+                  credentials:
+                    type: string
+                  endpoint:
+                    type: string
+                  issuer:
+                    type: string
+                  validateSubscription:
+                    type: boolean
+                type: object
+              type: array
             type:
               description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
                 Important: Run "operator-sdk generate k8s" to regenerate code after
