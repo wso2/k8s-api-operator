@@ -68,7 +68,7 @@
     ```
    
     ```
-    curl -X GET "https://<External_IP>:9095/petstoreint/v1/pet/55"  -H "accept: application/xml" -H "Authorization:Bearer $TOKEN" -k
+    curl -X GET "https://<External_IP>:9095/petstore/v1/pet/55"  -H "accept: application/xml" -H "Authorization:Bearer $TOKEN" -k
     ```
     
     - Once you execute the above command, it will call to the managed API (petstore-int), which then call its endpoint(https://petstore.swagger.io/v2). Since the request header did not contain "X-API-KEY", you would be able to see the error response as below.
