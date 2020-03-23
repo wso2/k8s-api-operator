@@ -858,6 +858,11 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		log.Info("No kaniko-arguments config map is available in wso2-system namespace")
 	}
 
+	// copy configs and secrets to user's namespace
+	if err = copyConfigVolumes(r, userNameSpace); err != nil {
+		log.Error(err, "Error coping registry specific configs to user's namespace", "user's namespace", userNameSpace)
+	}
+
 	// append kaniko specific volumes
 	tmpVolMounts, tmpVols := getVolumes(instance.Name, swaggerCmNames)
 	jobVolumeMount = append(jobVolumeMount, tmpVolMounts...)
@@ -1054,6 +1059,27 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			return reconcile.Result{}, deperr
 		}
 	}
+}
+
+// copyConfigVolumes copy the configured secrets and config maps to user's namespace
+func copyConfigVolumes(r *ReconcileAPI, namespace string) error {
+	config := registry.GetConfig()
+	for _, volume := range config.Volumes {
+		if volume.Secret != nil {
+			name := volume.Secret.SecretName
+			if err := copySecret(r, name, wso2NameSpaceConst, name, namespace); err != nil {
+				return err
+			}
+		}
+		if volume.ConfigMap != nil {
+			name := volume.ConfigMap.Name
+			if err := copyConfigMap(r, name, wso2NameSpaceConst, name, namespace); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 // gets the data from analytics secret
@@ -1927,10 +1953,10 @@ func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, nam
 	transportMode := controlConfigData[ingressTransportMode]
 	ingressName := controlConfigData[ingressResourceName]
 	ingressHostName := controlConfigData[ingressHostName]
-	tlsSecretName   := controlConfigData[tlsSecretName]
+	tlsSecretName := controlConfigData[tlsSecretName]
 
 	var hostArray []string
-	hostArray = append(hostArray,ingressHostName)
+	hostArray = append(hostArray, ingressHostName)
 
 	log.Info(fmt.Sprintf("Creating ingress resource with API Base Path: %v", apiBasePaths))
 	log.WithValues("Ingress metadata. Transport mode", transportMode, "Ingress name", ingressName,
@@ -1992,9 +2018,9 @@ func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, nam
 						},
 					},
 				},
-				TLS:[]v1beta1.IngressTLS {
+				TLS: []v1beta1.IngressTLS{
 					{
-						Hosts: hostArray,
+						Hosts:      hostArray,
 						SecretName: tlsSecretName,
 					},
 				},

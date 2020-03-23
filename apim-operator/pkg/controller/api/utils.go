@@ -17,7 +17,11 @@
 package api
 
 import (
+	"context"
 	"fmt"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
 	"math/rand"
 	"regexp"
 	"strings"
@@ -44,4 +48,97 @@ func isStringArrayContains(arr []string, text string) bool {
 func getRandFileName(filename string) string {
 	fileSplits := strings.SplitN(filename, ".", 2)
 	return fmt.Sprintf("%v-%v.%v", fileSplits[0], rand.Intn(10000), fileSplits[1])
+}
+
+// copySecret copies secret from given to destination given
+func copySecret(r *ReconcileAPI, fromName, fromNamespace, toName, toNamespace string) error {
+	// Get volume
+	fromScrt := &corev1.Secret{}
+	fromErr := r.client.Get(context.TODO(), types.NamespacedName{Name: fromName, Namespace: fromNamespace}, fromScrt)
+	if fromErr != nil && errors.IsNotFound(fromErr) {
+		log.Info("Secret not found", "namespace", fromNamespace, "name", fromName)
+		return fromErr
+	} else if fromErr != nil {
+		log.Error(fromErr, "Error getting secret", "namespace", fromNamespace, "name", fromName)
+		return fromErr
+	}
+
+	toScrt := &corev1.Secret{}
+	toErr := r.client.Get(context.TODO(), types.NamespacedName{Name: toName, Namespace: toNamespace}, toScrt)
+	toScrt.Data = fromScrt.Data
+	toScrt.StringData = fromScrt.StringData
+	toScrt.Type = fromScrt.Type
+	toScrt.Namespace = toNamespace
+	toScrt.Name = toName
+
+	// Place volume in to namespace
+	if toErr != nil && errors.IsNotFound(toErr) {
+		log.Info("Coping secret to users namespace", "from namespace", fromNamespace, "from name", fromName,
+			"to namespace", toNamespace, "to name", toName)
+
+		createErr := r.client.Create(context.TODO(), toScrt)
+		if createErr != nil {
+			log.Error(createErr, "Error creating secret", "namespace", toNamespace, "name", toName)
+			return createErr
+		}
+		return nil
+	} else if toErr != nil {
+		log.Error(toErr, "Error getting secret", "namespace", toNamespace, "name", toName)
+		return toErr
+	}
+
+	// toScrt already exists and update it
+	updateErr := r.client.Update(context.TODO(), toScrt)
+	if updateErr != nil {
+		log.Error(updateErr, "Error updating secret", "namespace", toNamespace, "name", toName)
+		return updateErr
+	}
+
+	return nil
+}
+
+// copyConfigMap copies config map from given to destination given
+func copyConfigMap(r *ReconcileAPI, fromName, fromNamespace, toName, toNamespace string) error {
+	// Get volume
+	fromCnf := &corev1.ConfigMap{}
+	fromErr := r.client.Get(context.TODO(), types.NamespacedName{Name: fromName, Namespace: fromNamespace}, fromCnf)
+	if fromErr != nil && errors.IsNotFound(fromErr) {
+		log.Info("Configmap not found", "namespace", fromNamespace, "name", fromName)
+		return fromErr
+	} else if fromErr != nil {
+		log.Error(fromErr, "Error getting configmap", "namespace", fromNamespace, "name", fromName)
+		return fromErr
+	}
+
+	toCnf := &corev1.ConfigMap{}
+	toErr := r.client.Get(context.TODO(), types.NamespacedName{Name: toName, Namespace: toNamespace}, toCnf)
+	toCnf.Data = fromCnf.Data
+	toCnf.BinaryData = fromCnf.BinaryData
+	toCnf.Namespace = toNamespace
+	toCnf.Name = toName
+
+	// Place volume in to namespace
+	if toErr != nil && errors.IsNotFound(toErr) {
+		log.Info("Coping configmap to users namespace", "from namespace", fromNamespace, "from name", fromName,
+			"to namespace", toNamespace, "to name", toName)
+
+		createErr := r.client.Create(context.TODO(), toCnf)
+		if createErr != nil {
+			log.Error(createErr, "Error creating configmap", "namespace", toNamespace, "name", toName)
+			return createErr
+		}
+		return nil
+	} else if toErr != nil {
+		log.Error(toErr, "Error getting configmap", "namespace", toNamespace, "name", toName)
+		return toErr
+	}
+
+	// configmap already exists and update it
+	updateErr := r.client.Update(context.TODO(), toCnf)
+	if updateErr != nil {
+		log.Error(updateErr, "Error updating configmap", "namespace", toNamespace, "name", toName)
+		return updateErr
+	}
+
+	return nil
 }
