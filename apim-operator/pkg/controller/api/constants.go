@@ -51,7 +51,7 @@ const (
 	mgwConfSecretConst   = "mgw-conf"
 	mgwConfConst         = "micro-gw.conf"
 	controllerConfName   = "controller-config"
-	ingressAnnotationMap = "ingress-annotations"
+	ingressConfigs       = "ingress-configs"
 	ingressProperties    = "ingress.properties"
 	policyFileConst      = "policies.yaml"
 	ingressResourceName  = "ingressResourceName"
