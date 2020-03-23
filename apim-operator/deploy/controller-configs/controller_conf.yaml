@@ -105,10 +105,19 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ingress-annotations
+  name: ingress-configs
   namespace: wso2-system
 data:
   ingress.properties: |
     nginx.ingress.kubernetes.io/backend-protocol: HTTPS
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/ssl-redirect: false
+
+  ingressResourceName: "api-operator-ingress"
+  #Define whether ingress to use http or https endpoint of operator deployment
+  ingressTransportMode: "https"
+  #Define the hostname of the ingress
+  ingressHostName : "mgw.ingress.wso2.com"
+  #Define the secret name for TLS certificate
+  #tlsSecretName: ""
+

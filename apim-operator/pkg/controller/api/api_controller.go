@@ -59,9 +59,9 @@ import (
 	b64 "encoding/base64"
 	"encoding/json"
 
-	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/openapi2"
 	"github.com/getkin/kin-openapi/openapi2conv"
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/wso2/k8s-apim-operator/apim-operator/pkg/controller/ratelimiting"
 )
 
@@ -185,6 +185,9 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	//get configurations file for the controller
 	controlConf, err := getConfigmap(r, controllerConfName, wso2NameSpaceConst)
+	//get configurations file for the controller
+	controlIngressConf, err := getConfigmap(r, ingressConfigs, wso2NameSpaceConst)
+
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Controller configmap is not found, could have been deleted after reconcile request.
@@ -853,7 +856,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 					reqLogger.Info("Operator mode is set to " + operatorMode)
 					if operatorMode == ingressMode {
 						ingErr := createorUpdateMgwIngressResource(r, instance, userNameSpace, int32(httpPortVal),
-							int32(httpsPortVal), apiBasePath, controlConf)
+							int32(httpsPortVal), apiBasePath, controlIngressConf)
 						if ingErr != nil {
 							return reconcile.Result{}, ingErr
 						}
@@ -907,7 +910,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 				reqLogger.Info("Operator mode is set to " + operatorMode)
 				if operatorMode == ingressMode {
 					ingErr := createorUpdateMgwIngressResource(r, instance, userNameSpace, int32(httpPortVal),
-						int32(httpsPortVal), apiBasePath, controlConf)
+						int32(httpsPortVal), apiBasePath, controlIngressConf)
 					if ingErr != nil {
 						return reconcile.Result{}, ingErr
 					}
@@ -967,7 +970,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 					reqLogger.Info("Operator mode is set to " + operatorMode)
 					if operatorMode == ingressMode {
 						ingErr := createorUpdateMgwIngressResource(r, instance, userNameSpace, int32(httpPortVal),
-							int32(httpsPortVal), apiBasePath, controlConf)
+							int32(httpsPortVal), apiBasePath, controlIngressConf)
 						if ingErr != nil {
 							return reconcile.Result{}, ingErr
 						}
@@ -1859,12 +1862,12 @@ func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, nam
 	tlsSecretName   := controlConfigData[tlsSecretName]
 
 	var hostArray []string
-	hostArray = append(hostArray,ingressHostName)
+	hostArray = append(hostArray, ingressHostName)
 
 	log.Info("Creating ingress resource with API Base Path" + apiBasePath)
 	log.WithValues("Ingress metadata. Transport mode", transportMode, "Ingress name", ingressName,
 		"Ingress hostname "+ingressHostName)
-	annotationMap, err := getConfigmap(r, ingressAnnotationMap, wso2NameSpaceConst)
+	annotationMap, err := getConfigmap(r, ingressConfigs, wso2NameSpaceConst)
 	var port int32
 
 	if httpConst == transportMode {
