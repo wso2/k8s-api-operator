@@ -27,4 +27,9 @@ spec:
   deploy:
     name: inventory-service
     dockerImage: pubudu/inventory:1.0.0
-    count: 1
+    minReplicas: 1
+    maxReplicas: 2
+    requestCPU: "60m"
+    reqMemory: "32Mi"
+    cpuLimit: "120m"
+  mode: privateJet
