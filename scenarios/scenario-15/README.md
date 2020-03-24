@@ -15,7 +15,7 @@
  - Init the API project using CLI. This will Initialize a new API project in same directory.
  
      ```
-     apictl init petstore-int --oas=interceptor_swagger.yaml
+     apictl init petstore-int --oas=swagger.yaml
     
     Output:    
     Initializing a new WSO2 API Manager project in ./product-apim-tooling/import-export-cli/build/target/apimcli/petstore-int
@@ -39,14 +39,16 @@
 - Create the API
 
     ```
-    apictl add api -n petstore-int --from-file=petstore-int
+    apictl add api -n petstore-java-interceptor --from-file=petstore-int
     
     Output:
+    Processing swagger 1: petstore-int
     creating configmap with swagger definition
-    configmap/petstore-int-swagger created
-    creating configmap with interceptors
-    configmap/petstore-int-interceptors created
-    api.wso2.com/petstore-int created
+    configmap/petstore-java-interceptor-1-swagger created
+    creating configmap with java interceptor petstore-java-interceptor-1-mgw-interceptor.jar
+    configmap/petstore-java-interceptor-1-mgw-interceptor.jar created
+    creating API definition
+    api.wso2.com/petstore-java-interceptor created
     ```
 - Get service details to invoke the API. (Please wait until the external-IP is populated in the corresponding service)
 
@@ -80,7 +82,7 @@
     - Then invoke the API with an "X-API-KEY" header as follows.
     
      ```
-     curl -X GET "https://<External_IP>:9095/petstore/v1/pet/55" -H "accept: application/json" -H "Authorization:Bearer $TOKEN" -H "X-API-KEY: 6fa741de1bdd1d91830ba" -k -v
+     curl -X GET "https://<External_IP>:9095/petstore/v1/pet/55" -H "accept: application/json" -H "Authorization:Bearer $TOKEN" -H "X-API-KEY: 6fa741de1bdd1d91830ba" -k
      ```
             
     - Once you execute the above command, you will get the success response message as follows.
@@ -92,11 +94,11 @@
 - Delete the API
 
     ```
-    apictl delete api petstore-int
+    apictl delete api petstore-java-interceptor
     ``` 
   
   - Output
    ```
-    api.wso2.com "petstore-int" deleted
+    api.wso2.com "petstore-java-interceptor" deleted
     ``` 
   

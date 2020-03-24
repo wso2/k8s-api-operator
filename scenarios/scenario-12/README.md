@@ -47,8 +47,10 @@ In this swagger definition, the rate limiting policy has been mentioned as follo
     ``` 
     - Output:
     ```
+        Processing swagger 1: swagger.yaml
         creating configmap with swagger definition
-        configmap/petstore-dist-rate-swagger created
+        configmap/petstore-dist-rate-1-swagger created
+        creating API definition
         api.wso2.com/petstore-dist-rate created
     ```
     

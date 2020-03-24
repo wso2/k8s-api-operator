@@ -117,7 +117,7 @@
     - Then invoke the API with "accept: application/json" header to test the response interceptor as follows.
     
         ```
-        >> curl -X GET "https://<External_IP>:9095/petstoreint/v1/pet/findByStatus?status=available"  -H "accept: application/json" -H "Authorization:Bearer $TOKEN" -k -v
+        >> curl -X GET "https://<External_IP>:9095/petstoreint/v1/pet/findByStatus?status=available"  -H "accept: application/json" -H "Authorization:Bearer $TOKEN" -k
         ```
         
         - Once you execute the above command, you will get the response as follows.

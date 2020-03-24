@@ -85,9 +85,11 @@ In this swagger definition, the rate limiting policy has been mentioned as follo
     - Following command will delete all the artifacts created with this API including pods, deployment and services.
     ```
         apictl delete api petstore-rate
+        apictl delete ratelimitings fivereqpolicy
     ```
     -  Output:
     ```
         api.wso2.com "petstore-rate" deleted
+        ratelimiting.wso2.com "fivereqpolicy" deleted
     ```
     

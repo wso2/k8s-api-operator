@@ -58,9 +58,7 @@ In this swagger definition, the backend service of the "products" service and th
     ```
         NAME                TYPE           CLUSTER-IP       EXTERNAL-IP   PORT(S)                         AGE
         inventory-sc        LoadBalancer   10.109.107.234   <pending>     9095:31565/TCP,9090:31420/TCP   87s
-        inventory-sidecar   ClusterIP      10.99.237.55     <none>        80/TCP                          8m18s
     ```
-    - You can see both the managed API service(inventory-sc) and the backend service(inventory-sidecar) are available.
     - Get the external IP of the managed API's service
  
 - Invoking the API <br />

@@ -188,9 +188,9 @@ Hence, in this swagger definition endpoint has been referred in resource level.
 - Delete the  API and Target Endpoint resources
     ```
        apictl delete api online-store-api
-       kubectl delete targetendpoints inventory-ep
-       kubectl delete targetendpoints products-ep
-       kubectl delete targetendpoints review-ep
+       apictl delete targetendpoints inventory-ep
+       apictl delete targetendpoints products-ep
+       apictl delete targetendpoints review-ep
     ```
     -  Output:
     ```
