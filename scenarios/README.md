@@ -13,3 +13,6 @@
 1. [Sample 11: Enabling Analytics for managed API](scenario-11)
 1. [Sample 12: Apply distributed rate-limiting to managed API in Kubernetes cluster](scenario-12)
 1. [Sample 13: K8s API Operator for Istio](scenario-13)
+1. [Sample 14: API Management in Serverless (Knative)](scenario-14)
+1. [Sample 15: Apply java interceptors to an API](scenario-15)
+1. [Sample 16: Deploy multiple swagger-projects as one API](scenario-16)
