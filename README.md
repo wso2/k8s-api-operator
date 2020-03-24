@@ -28,16 +28,16 @@ Minimum CPU and Memory for the K8s cluster: **2 vCPU, 8GB of Memory**
 
 - An account in DockerHub or private docker registry
 
-- Download [api-k8s-crds-1.1.0-alpha.zip](https://github.com/wso2/k8s-apim-operator/releases/download/v1.1.0-alpha/api-k8s-crds-1.1.0-alpha.zip) and extract the zip
+- Download [api-k8s-crds-1.1.0-alpha2.zip](https://github.com/wso2/k8s-apim-operator/releases/download/v1.1.0-alpha2/api-k8s-crds-1.1.0-alpha2.zip) and extract the zip
 
     1. This zip contains the artifacts that required to deploy in Kubernetes.
-    2. Extract api-k8s-crds-1.1.0-alpha.zip
+    2. Extract api-k8s-crds-1.1.0-alpha2.zip
     
     ```
-    cd api-k8s-crds-1.1.0-alpha
+    cd api-k8s-crds-1.1.0-alpha2
     ```
  
-**_Note:_** You need to run all commands from within the ***api-k8s-crds-1.1.0-alpha*** directory.
+**_Note:_** You need to run all commands from within the ***api-k8s-crds-1.1.0-alpha2*** directory.
 
 <br />
 
@@ -99,7 +99,7 @@ Minimum CPU and Memory for the K8s cluster: **2 vCPU, 8GB of Memory**
 
 #### Step 2: Configure API Controller
 
-- Download API controller v3.0.0 for your operating system from the [github](https://github.com/wso2/product-apim-tooling/releases/tag/v3.1.0-alpha)
+- Download API controller v3.1.0-beta for your operating system from the [github](https://github.com/wso2/product-apim-tooling/releases/tag/v3.1.0-beta)
 
 - Extract the API controller distribution and navigate inside the extracted folder using the command-line tool
 
@@ -115,7 +115,7 @@ You can find available operations using the below command.
 Set the environment variable `WSO2_API_OPERATOR_VERSION` with the latest API Operator version.
 
 ```sh
->> export WSO2_API_OPERATOR_VERSION=v1.1.0-alpha
+>> export WSO2_API_OPERATOR_VERSION=v1.1.0-alpha2
 ```
 
 - Execute the following command to install API Operator interactively and configure repository to push the microgateway image.
@@ -143,14 +143,12 @@ Confirm configurations: Y: Y
 
 Output:
 ```sh
-[Installing OLM]
-customresourcedefinition.apiextensions.k8s.io/clusterserviceversions.operators.coreos.com created
+customresourcedefinition.apiextensions.k8s.io/apis.wso2.com created
+customresourcedefinition.apiextensions.k8s.io/ratelimitings.wso2.com created
 ...
 
-[Installing API Operator]
-subscription.operators.coreos.com/my-api-operator created
-[Setting configs]
 namespace/wso2-system created
+deployment.apps/apim-operator created
 ...
 
 [Setting to K8s Mode]
@@ -408,7 +406,7 @@ API name:  OnlineStore & version:  v1.0.0 exists
 API  OnlineStore : v1.0.0 subscribed successfully.
 Access Token:  eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6IlpqUm1ZVE13TlRKak9XVTVNbUl6TWpnek5ESTNZMkl5TW1JeVkyRXpNamRoWmpWaU1qYzBaZz09In0.eyJhdWQiOiJodHRwOlwvXC9vcmcud3NvMi5hcGltZ3RcL2dhdGV3YXkiLCJzdWIiOiJhZG1pbkBjYXJib24uc3VwZXIiLCJhcHBsaWNhdGlvbiI6eyJvd25lciI6ImFkbWluIiwidGllciI6IlVubGltaXRlZCIsIm5hbWUiOiJkZWZhdWx0LWFwaWN0bC1hcHAiLCJpZCI6MiwidXVpZCI6bnVsbH0sInNjb3BlIjoiYW1fYXBwbGljYXRpb25fc2NvcGUgZGVmYXVsdCIsImlzcyI6Imh0dHBzOlwvXC93c28yYXBpbTozMjAwMVwvb2F1dGgyXC90b2tlbiIsInRpZXJJbmZvIjp7IlVubGltaXRlZCI6eyJzdG9wT25RdW90YVJlYWNoIjp0cnVlLCJzcGlrZUFycmVzdExpbWl0IjowLCJzcGlrZUFycmVzdFVuaXQiOm51bGx9fSwia2V5dHlwZSI6IlBST0RVQ1RJT04iLCJzdWJzY3JpYmVkQVBJcyI6W3sic3Vic2NyaWJlclRlbmFudERvbWFpbiI6ImNhcmJvbi5zdXBlciIsIm5hbWUiOiJPbmxpbmUtU3RvcmUiLCJjb250ZXh0IjoiXC9zdG9yZVwvdjEuMC4wXC92MS4wLjAiLCJwdWJsaXNoZXIiOiJhZG1pbiIsInZlcnNpb24iOiJ2MS4wLjAiLCJzdWJzY3JpcHRpb25UaWVyIjoiVW5saW1pdGVkIn1dLCJjb25zdW1lcktleSI6Im1Hd0lmUWZuZHdZTVZxT25JVW9Rczhqc1B0Y2EiLCJleHAiOjE1NzIyNjAyMjQsImlhdCI6MTU3MjI1NjYyNCwianRpIjoiNTNlYWJkYWEtY2IyZC00MTQ0LWEzYWUtZDNjNTIxMjgwYjM4In0.QU9rt4WBLcIOXzDkdiBpo_SAN_W4jpMlymPSgdhe4mf4FmdepA6hIXa_NXdzWyOST2XcHskWleL-9bhv4GecvDaCcMUwfSKOo_8DuphYhtv0BukpGpyfzK2SZDtABxxtdRUmNDcyXJiC5NU4laXlDGzUruI_LISjkeeCaK4gA93YQC3Nd0xe14uIO940UNsSiUuI5cZkeKlB9k5vKIzjN1-M-SJCvtDkusvdPTgkSHZL29ICsMQl9rTSRm6dL4xq9rcH7osD-o_amgurkm1RvNagzN0buku6y4tuEyisZvRUlNkQ2KRzX6E6VwNKHAFQ7CG95-k-QYvXDGDXYGNisw  
 ```
-**_Note:_** You also have the option to generate an access token by logging into the devportal.
+**_Note:_** You also have the option to generate an access token by logging into the devportal. 
 
 <br />
 
@@ -444,7 +442,9 @@ When prompted type `Y` when uninstalling API Operator.
 1. [Sample 11: Enabling Analytics for managed API](scenarios/scenario-11)
 1. [Sample 12: Apply distributed rate-limiting to managed API in Kubernetes cluster](scenarios/scenario-12)
 1. [Sample 13: K8s API Operator for Istio](scenarios/scenario-13)
-
+1. [Sample 14: API Management in Serverless (Knative)](scenarios/scenario-14)
+1. [Sample 15: Apply Java interceptors to an API](scenarios/scenario-15)
+1. [Sample 16: Deploy multiple swagger-projects as one API](scenarios/scenario-16)
 #### Troubleshooting Guide
 
 You can refer [troubleshooting guide](docs/Troubleshooting/troubleshooting.md).

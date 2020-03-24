@@ -11,7 +11,7 @@ kubernetes cluster as a managed API in the Kubernetes cluster.
 
  ##### Deploying the sample backend service
  
- - Navigate to api-k8s-crds-1.1.0-alpha/scenarios/scenario-1 directory and deploy the sample backend service using the following command.
+ - Navigate to scenarios/scenario-1 directory and deploy the sample backend service using the following command.
  
     ```
         apictl apply -f products_dep.yaml

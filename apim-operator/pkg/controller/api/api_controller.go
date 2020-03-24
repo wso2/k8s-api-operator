@@ -1599,7 +1599,8 @@ func createMgwDeployment(cr *wso2v1alpha1.API, conf *corev1.ConfigMap, analytics
 			Handler: corev1.Handler{
 				HTTPGet: &corev1.HTTPGetAction{
 					Path:        "/health",
-					Port:        intstr.IntOrString{Type: intstr.Int, IntVal: httpPortVal},
+					Port:        intstr.IntOrString{Type: intstr.Int, IntVal: httpsPortVal},
+					Scheme: 	 "HTTPS",
 				},
 			},
 			InitialDelaySeconds: int32(readDelay),
@@ -1610,7 +1611,8 @@ func createMgwDeployment(cr *wso2v1alpha1.API, conf *corev1.ConfigMap, analytics
 			Handler: corev1.Handler{
 				HTTPGet: &corev1.HTTPGetAction{
 					Path:        "/health",
-					Port:        intstr.IntOrString{Type: intstr.Int, IntVal: httpPortVal},
+					Port:        intstr.IntOrString{Type: intstr.Int, IntVal: httpsPortVal},
+					Scheme: 	 "HTTPS",
 				},
 			},
 			InitialDelaySeconds: int32(liveDelay),
@@ -1621,6 +1623,10 @@ func createMgwDeployment(cr *wso2v1alpha1.API, conf *corev1.ConfigMap, analytics
 
 	containerList = append(containerList, apiContainer)
 	return &appsv1.Deployment{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "apps/v1",
+			Kind:       "Deployment",
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            cr.Name,
 			Namespace:       nameSpace,

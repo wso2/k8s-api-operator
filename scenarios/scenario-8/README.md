@@ -11,7 +11,7 @@
 
  ##### Deploying the artifacts
  
- - Navigate to api-k8s-crds-1.1.0-alpha/scenarios/scenario-8 directory and deploy the sample backend service using the following command.
+ - Navigate to scenarios/scenario-8 directory and deploy the sample backend service using the following command.
     ```
         apictl apply -f inventory-sidecar.yaml
     ```
