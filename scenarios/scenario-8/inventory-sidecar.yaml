@@ -27,5 +27,9 @@ spec:
   deploy:
     name: inventory-sc-service
     dockerImage: pubudu/inventory:1.0.0
-    count: 2
+    minReplicas: 2
+    maxReplicas: 3
+    requestCPU: "60m"
+    reqMemory: "32Mi"
+    cpuLimit: "120m"
   mode: sidecar
