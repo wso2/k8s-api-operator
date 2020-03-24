@@ -143,8 +143,8 @@ Confirm configurations: Y: Y
 
 Output:
 ```sh
-customresourcedefinition.apiextensions.k8s.io/apis.wso2.com unchanged
-customresourcedefinition.apiextensions.k8s.io/ratelimitings.wso2.com unchanged
+customresourcedefinition.apiextensions.k8s.io/apis.wso2.com created
+customresourcedefinition.apiextensions.k8s.io/ratelimitings.wso2.com created
 ...
 
 namespace/wso2-system created
