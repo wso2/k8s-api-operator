@@ -9,7 +9,7 @@
 
 - Navigate to scenarios/scenario-16 directory.
 - Prepared petstore swagger definitions `pets_swagger.yaml` and `stores_swagger.yaml` can be found within this directory.
-- Base paths of the APIs are mentioned in the swagger files with the  "x-wso2-basePath".
+- Base paths of the APIs are mentioned in the swagger files with the "x-wso2-basetpath" vendor extension.
     ```
     in pets_swagger.yaml
   
