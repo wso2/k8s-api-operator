@@ -67,20 +67,6 @@ import (
 
 var log = logf.Log.WithName("controller_api")
 
-var containerList []corev1.Container      // containerList represents the list of containers for micro-gateway deployment
-var deployedSidecarEndpointNames []string // container already added sidecar endpoint names
-var jobVolume []corev1.Volume             // Volumes for Kaniko Job
-var jobVolumeMount []corev1.VolumeMount   // Volume mounts for Kaniko Job
-var apiBasePaths []string                 // API base paths
-var apiVersion string                     // API version - for the tag of final MGW docker image
-
-var alias string
-var existCert = false                  // keep to track the existence of certificates
-var existBalInterceptors = false       // keep to track the existence of interceptors
-var existJavaInterceptors = false      // keep to track the existence of java interceptors
-
-var certName string
-
 //XMGWProductionEndpoints represents the structure of endpoint
 type XMGWProductionEndpoints struct {
 	Urls []string `yaml:"urls" json:"urls"`
@@ -215,6 +201,19 @@ type ReconcileAPI struct {
 func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
 	reqLogger.Info("Reconciling API")
+
+	var containerList []corev1.Container      // containerList represents the list of containers for micro-gateway deployment
+	var deployedSidecarEndpointNames []string // container already added sidecar endpoint names
+	var jobVolume []corev1.Volume             // Volumes for Kaniko Job
+	var jobVolumeMount []corev1.VolumeMount   // Volume mounts for Kaniko Job
+	var apiBasePaths []string                 // API base paths
+	var apiVersion string                     // API version - for the tag of final MGW docker image
+
+	var alias string
+	var existCert = false             // keep to track the existence of certificates
+	var existBalInterceptors = false  // keep to track the existence of interceptors
+	var existJavaInterceptors = false // keep to track the existence of java interceptors
+	var certName string
 
 	//get multiple jwt issuer details
 	jwtConfigs := []SecurityTypeJWT{}
@@ -696,7 +695,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		TruststorePassword:             truststorePassword,
 		KeymanagerServerurl:            keymanagerServerurl,
 		KeymanagerUsername:             keymanagerUsername,
-		KeymanagerPassword:               keymanagerPassword,
+		KeymanagerPassword:             keymanagerPassword,
 		JwtConfigs:                     jwtConfigs,
 		EnabledGlobalTMEventPublishing: enabledGlobalTMEventPublishing,
 		JmsConnectionProvider:          jmsConnectionProvider,
