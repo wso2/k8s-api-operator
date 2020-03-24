@@ -25,7 +25,7 @@ data:
   #mgw runtime image to use in the mgw executable
   mgwRuntimeImg: wso2/wso2micro-gw:3.1.0-beta
   #kaniko image for the kaniko pod which builds the mgw api runtime and pushes to the registry
-  kanikoImg: gcr.io/kaniko-project/executor
+  kanikoImg: gcr.io/kaniko-project/executor:v0.18.0
   #docker registry type which the mgw image to be pushed. supported types: DOCKER_HUB, AMAZON_ECR, GCR, PRIVATE.   Default->  registryType: DOCKER_HUB
   registryType: DOCKER_HUB
   #docker repository name which the mgw image to be pushed.  eg->  repositoryName: username of Docker Hub account
