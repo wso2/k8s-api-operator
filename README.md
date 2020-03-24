@@ -125,7 +125,7 @@ Set the environment variable `WSO2_API_OPERATOR_VERSION` with the latest API Ope
 - Confirm configuration are correct with entering "Y"
 
 ```sh
->> apictl install api-operator -f apim-operator/controller-artifacts
+>> apictl install api-operator
 Choose registry type:
 1: Docker Hub (Or others, quay.io, HTTPS registry)
 2: Amazon ECR
