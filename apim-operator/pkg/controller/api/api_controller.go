@@ -125,9 +125,9 @@ type MGWConf struct {
 }
 
 type SecurityTypeJWT struct {
-	CertificateAlias string
-	Issuer           string
-	Audience         string
+	CertificateAlias     string
+	Issuer               string
+	Audience             string
 	ValidateSubscription bool
 }
 type authorizationCode struct {
@@ -376,25 +376,25 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		}
 
 		reqLogger.Info("getting security instance")
-	//check security scheme already exist
-	_, secSchemeDefined := swagger.Extensions[securitySchemeExtension]
+		//check security scheme already exist
+		_, secSchemeDefined := swagger.Extensions[securitySchemeExtension]
 
-	securityMap, isDefinedSecurity, resourceLevelSec, securityErr := getSecurityDefinedInSwagger(swagger)
-	if securityErr != nil {
-		return reconcile.Result{}, securityErr
-	}
+		securityMap, isDefinedSecurity, resourceLevelSec, securityErr := getSecurityDefinedInSwagger(swagger)
+		if securityErr != nil {
+			return reconcile.Result{}, securityErr
+		}
 
-	securityDefinition, existSecurityCerts, updatedCertList, volumemountTemp, volumeTemp, jwtConfArray, errsec := handleSecurity(r, securityMap, userNameSpace, instance, secSchemeDefined, certList, jobVolumeMount, jobVolume)
-	if errsec != nil {
-		return reconcile.Result{}, errsec
-	}
-	certList = updatedCertList
-	existCert = existSecurityCerts
-	jobVolumeMount = volumemountTemp
-	jobVolume = volumeTemp
-	jwtConfigs = jwtConfArray
+		securityDefinition, existSecurityCerts, updatedCertList, volumemountTemp, volumeTemp, jwtConfArray, errsec := handleSecurity(r, securityMap, userNameSpace, instance, secSchemeDefined, certList, jobVolumeMount, jobVolume)
+		if errsec != nil {
+			return reconcile.Result{}, errsec
+		}
+		certList = updatedCertList
+		existCert = existSecurityCerts
+		jobVolumeMount = volumemountTemp
+		jobVolume = volumeTemp
+		jwtConfigs = jwtConfArray
 
-	log.Info("cert list after returning from security handler method", certList)
+		log.Info("cert list after returning from security handler method", certList)
 		//adding security scheme to swagger
 		if len(securityDefinition) > 0 {
 			newSwagger.Components.Extensions[securitySchemeExtension] = securityDefinition
@@ -513,36 +513,36 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 					certList[alias] = certPath + defaultCert.Name + "/" + certName
 					defaultSecConf.CertificateAlias = alias
 				}
-			//copying default security to user namespace
-			log.Info("copying default security to " + userNameSpace)
-			newDefaultSecurity := copyDefaultSecurity(securityDefault, userNameSpace, owner)
-			errCreateSecurity := r.client.Create(context.TODO(), newDefaultSecurity)
-			if errCreateSecurity != nil {
-				log.Error(errCreateSecurity, "error creating secret for default security in user namespace")
-				return reconcile.Result{}, errCreateSecurity
-			}
-			log.Info("default security successfully copied to " + userNameSpace + " namespace")
-			if newDefaultSecurity.Spec.SecurityConfig[0].Issuer != "" {
-				defaultSecConf.Issuer = newDefaultSecurity.Spec.SecurityConfig[0].Issuer
-			}
-			if newDefaultSecurity.Spec.SecurityConfig[0].Audience != "" {
-				defaultSecConf.Audience = newDefaultSecurity.Spec.SecurityConfig[0].Audience
-			}
-			defaultSecConf.ValidateSubscription = newDefaultSecurity.Spec.SecurityConfig[0].ValidateSubscription
-		} else if errGetSec != nil {
-			log.Error(errGetSec, "error getting default security from user namespace")
-			return reconcile.Result{}, errGetSec
-		} else {
-			log.Info("default security exists in " + userNameSpace + " namespace")
-			//check default cert exist in usernamespace
-			var defaultCertUsrNs = &corev1.Secret{}
-			errCertUserns := r.client.Get(context.TODO(), types.NamespacedName{Name: securityDefault.Spec.SecurityConfig[0].Certificate, Namespace: userNameSpace}, defaultCertUsrNs)
-			if errCertUserns != nil && errors.IsNotFound(errCertUserns) {
-				log.Error(errCertUserns, "default certificate is not found in user namespace")
-				return reconcile.Result{}, errCertUserns
-			} else if errCertUserns != nil {
-				log.Error(errCertUserns, "error retrieving default certificate in user namespace")
-				return reconcile.Result{}, errCertUserns
+				//copying default security to user namespace
+				log.Info("copying default security to " + userNameSpace)
+				newDefaultSecurity := copyDefaultSecurity(securityDefault, userNameSpace, owner)
+				errCreateSecurity := r.client.Create(context.TODO(), newDefaultSecurity)
+				if errCreateSecurity != nil {
+					log.Error(errCreateSecurity, "error creating secret for default security in user namespace")
+					return reconcile.Result{}, errCreateSecurity
+				}
+				log.Info("default security successfully copied to " + userNameSpace + " namespace")
+				if newDefaultSecurity.Spec.SecurityConfig[0].Issuer != "" {
+					defaultSecConf.Issuer = newDefaultSecurity.Spec.SecurityConfig[0].Issuer
+				}
+				if newDefaultSecurity.Spec.SecurityConfig[0].Audience != "" {
+					defaultSecConf.Audience = newDefaultSecurity.Spec.SecurityConfig[0].Audience
+				}
+				defaultSecConf.ValidateSubscription = newDefaultSecurity.Spec.SecurityConfig[0].ValidateSubscription
+			} else if errGetSec != nil {
+				log.Error(errGetSec, "error getting default security from user namespace")
+				return reconcile.Result{}, errGetSec
+			} else {
+				log.Info("default security exists in " + userNameSpace + " namespace")
+				//check default cert exist in usernamespace
+				var defaultCertUsrNs = &corev1.Secret{}
+				errCertUserns := r.client.Get(context.TODO(), types.NamespacedName{Name: securityDefault.Spec.SecurityConfig[0].Certificate, Namespace: userNameSpace}, defaultCertUsrNs)
+				if errCertUserns != nil && errors.IsNotFound(errCertUserns) {
+					log.Error(errCertUserns, "default certificate is not found in user namespace")
+					return reconcile.Result{}, errCertUserns
+				} else if errCertUserns != nil {
+					log.Error(errCertUserns, "error retrieving default certificate in user namespace")
+					return reconcile.Result{}, errCertUserns
 				} else {
 					//mount certs
 					volumemountTemp, volumeTemp := certMoutHandler(r, defaultCertUsrNs, jobVolumeMount, jobVolume)
@@ -553,18 +553,18 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 					for k := range defaultCertUsrNs.Data {
 						certName = k
 					}
-				//add cert path and alias as key value pairs
-				certList[alias] = certPath + defaultCertUsrNs.Name + "/" + certName
-				certificateAlias = alias
-				defaultSecConf.CertificateAlias =alias
-				defaultSecConf.ValidateSubscription = securityDefault.Spec.SecurityConfig[0].ValidateSubscription
-			}
-			if securityDefault.Spec.SecurityConfig[0].Issuer != "" {
-				defaultSecConf.Issuer = securityDefault.Spec.SecurityConfig[0].Issuer
-			}
-			if securityDefault.Spec.SecurityConfig[0].Audience != "" {
-				defaultSecConf.Audience = securityDefault.Spec.SecurityConfig[0].Audience
-			}
+					//add cert path and alias as key value pairs
+					certList[alias] = certPath + defaultCertUsrNs.Name + "/" + certName
+					certificateAlias = alias
+					defaultSecConf.CertificateAlias = alias
+					defaultSecConf.ValidateSubscription = securityDefault.Spec.SecurityConfig[0].ValidateSubscription
+				}
+				if securityDefault.Spec.SecurityConfig[0].Issuer != "" {
+					defaultSecConf.Issuer = securityDefault.Spec.SecurityConfig[0].Issuer
+				}
+				if securityDefault.Spec.SecurityConfig[0].Audience != "" {
+					defaultSecConf.Audience = securityDefault.Spec.SecurityConfig[0].Audience
+				}
 			}
 			jwtConfigs = append(jwtConfigs, defaultSecConf)
 		}
@@ -690,7 +690,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	mgwConfValues := &MGWConf{
 		KeystorePath:                   keystorePath,
-		KeystorePassword:             keystorePassword,
+		KeystorePassword:               keystorePassword,
 		TruststorePath:                 truststorePath,
 		TruststorePassword:             truststorePassword,
 		KeymanagerServerurl:            keymanagerServerurl,
@@ -1598,9 +1598,9 @@ func createMgwDeployment(cr *wso2v1alpha1.API, conf *corev1.ConfigMap, analytics
 		ReadinessProbe: &corev1.Probe{
 			Handler: corev1.Handler{
 				HTTPGet: &corev1.HTTPGetAction{
-					Path:        "/health",
-					Port:        intstr.IntOrString{Type: intstr.Int, IntVal: httpsPortVal},
-					Scheme: 	 "HTTPS",
+					Path:   "/health",
+					Port:   intstr.IntOrString{Type: intstr.Int, IntVal: httpsPortVal},
+					Scheme: "HTTPS",
 				},
 			},
 			InitialDelaySeconds: int32(readDelay),
@@ -1610,9 +1610,9 @@ func createMgwDeployment(cr *wso2v1alpha1.API, conf *corev1.ConfigMap, analytics
 		LivenessProbe: &corev1.Probe{
 			Handler: corev1.Handler{
 				HTTPGet: &corev1.HTTPGetAction{
-					Path:        "/health",
-					Port:        intstr.IntOrString{Type: intstr.Int, IntVal: httpsPortVal},
-					Scheme: 	 "HTTPS",
+					Path:   "/health",
+					Port:   intstr.IntOrString{Type: intstr.Int, IntVal: httpsPortVal},
+					Scheme: "HTTPS",
 				},
 			},
 			InitialDelaySeconds: int32(liveDelay),
@@ -2584,23 +2584,23 @@ func interceptorHandler(r *ReconcileAPI, instance *wso2v1alpha1.API, owner []met
 				exsistBalInterceptors = false
 				errBalInterceptor = err
 			}
-	} else if err == nil {
-		//mount interceptors configmap to the volume
-		log.Info("Mounting interceptors configmap to volume.")
-		name := fmt.Sprintf("%s-%s", balConfig, interceptorsVolume)
-		jobVolumeMount = append(jobVolumeMount, corev1.VolumeMount{
-			Name:      name,
-			MountPath: fmt.Sprintf(interceptorsVolumeLocation, i),
-			ReadOnly:  true,
-		})
-		jobVolume = append(jobVolume, corev1.Volume{
-			Name: name,
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: balConfig,
+		} else {
+			//mount interceptors configmap to the volume
+			log.Info("Mounting interceptors configmap to volume.")
+			name := fmt.Sprintf("%s-%s", balConfig, interceptorsVolume)
+			jobVolumeMount = append(jobVolumeMount, corev1.VolumeMount{
+				Name:      name,
+				MountPath: fmt.Sprintf(interceptorsVolumeLocation, i),
+				ReadOnly:  true,
+			})
+			jobVolume = append(jobVolume, corev1.Volume{
+				Name: name,
+				VolumeSource: corev1.VolumeSource{
+					ConfigMap: &corev1.ConfigMapVolumeSource{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: balConfig,
+						},
 					},
-				},
 				},
 			})
 			//update configmap with owner reference
@@ -2618,7 +2618,7 @@ func interceptorHandler(r *ReconcileAPI, instance *wso2v1alpha1.API, owner []met
 	var confNames = instance.Spec.Definition.Interceptors.Java
 	if len(confNames) > 0 {
 		log.Info("java interceptor configmaps specified in API spec")
-		for _, configmapName := range confNames {
+		for i, configmapName := range confNames {
 			javaConfigmap, err := getConfigmap(r, configmapName, userNameSpace)
 			if err != nil {
 				if errors.IsNotFound(err) {
@@ -2630,9 +2630,10 @@ func interceptorHandler(r *ReconcileAPI, instance *wso2v1alpha1.API, owner []met
 					log.Error(err, "error retrieving configmap "+configmapName)
 					return exsistBalInterceptors, false, jobVolumeMount, jobVolume, errBalInterceptor, err
 				}
-			} else if err == nil {
+			} else {
+				volName := fmt.Sprintf("%s-%s", configmapName, javaInterceptorsVolume)
 				jobVolume = append(jobVolume, corev1.Volume{
-					Name: javaInterceptorsVolume,
+					Name: volName,
 					VolumeSource: corev1.VolumeSource{
 						ConfigMap: &corev1.ConfigMapVolumeSource{
 							LocalObjectReference: corev1.LocalObjectReference{
@@ -2642,8 +2643,8 @@ func interceptorHandler(r *ReconcileAPI, instance *wso2v1alpha1.API, owner []met
 					},
 				})
 				jobVolumeMount = append(jobVolumeMount, corev1.VolumeMount{
-					Name:      javaInterceptorsVolume,
-					MountPath: javaInterceptorsVolumeLocation,
+					Name:      volName,
+					MountPath: fmt.Sprintf(javaInterceptorsVolumeLocation, i),
 					ReadOnly:  true,
 				})
 			}

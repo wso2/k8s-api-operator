@@ -38,7 +38,7 @@ const (
 	analyticsVolumeLocation        = "/home/ballerina/api-usage-data/"
 	analyticsConfName              = "analytics-config"
 	interceptorsVolumeLocation     = "usr/wso2/interceptors/project-%v/"
-	javaInterceptorsVolumeLocation = "usr/wso2/libs/"
+	javaInterceptorsVolumeLocation = "usr/wso2/libs/project-%v/"
 
 	mgwToolkitImgConst   = "mgwToolkitImg"
 	mgwRuntimeImgConst   = "mgwRuntimeImg"
@@ -57,7 +57,7 @@ const (
 	ingressResourceName  = "ingressResourceName"
 	ingressTransportMode = "ingressTransportMode"
 	ingressHostName      = "ingressHostName"
-	tlsSecretName	     = "tlsSecretName"
+	tlsSecretName        = "tlsSecretName"
 
 	usernameConst  = "username"
 	passwordConst  = "password"
