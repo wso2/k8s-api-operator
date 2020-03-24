@@ -1600,6 +1600,10 @@ func createMgwDeployment(cr *wso2v1alpha1.API, conf *corev1.ConfigMap, analytics
 				TCPSocket: &corev1.TCPSocketAction{
 					Port: intstr.IntOrString{Type: intstr.Int, IntVal: httpPortVal},
 				},
+				HTTPGet: &corev1.HTTPGetAction{
+					Path:        "/health",
+					Port:        intstr.IntOrString{Type: intstr.Int, IntVal: httpPortVal},
+				},
 			},
 			InitialDelaySeconds: int32(readDelay),
 			PeriodSeconds:       int32(readPeriod),
@@ -1609,6 +1613,10 @@ func createMgwDeployment(cr *wso2v1alpha1.API, conf *corev1.ConfigMap, analytics
 			Handler: corev1.Handler{
 				TCPSocket: &corev1.TCPSocketAction{
 					Port: intstr.IntOrString{Type: intstr.Int, IntVal: httpPortVal},
+				},
+				HTTPGet: &corev1.HTTPGetAction{
+					Path:        "/health",
+					Port:        intstr.IntOrString{Type: intstr.Int, IntVal: httpPortVal},
 				},
 			},
 			InitialDelaySeconds: int32(liveDelay),
