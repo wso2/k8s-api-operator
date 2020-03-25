@@ -1879,7 +1879,7 @@ func createMgwLBService(r *ReconcileAPI, cr *wso2v1alpha1.API, nameSpace string,
 // Creating a LB balancer service to expose mgw
 // Supports for multiple apiBasePaths when there are multiple swaggers for one API CRD
 func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, nameSpace string, httpPortVal int32,
-	httpsPortVal int32, apiBasePaths []string, controllerConfig *corev1.ConfigMap,owner []metav1.OwnerReference) error {
+	httpsPortVal int32, apiBasePaths []string, controllerConfig *corev1.ConfigMap, owner []metav1.OwnerReference) error {
 	controlConfigData := controllerConfig.Data
 	transportMode := controlConfigData[ingressTransportMode]
 	ingressHostName := controlConfigData[ingressHostName]
