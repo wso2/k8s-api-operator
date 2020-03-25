@@ -845,7 +845,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 					reqLogger.Info("Operator mode is set to " + operatorMode)
 					if operatorMode == ingressMode {
 						ingErr := createorUpdateMgwIngressResource(r, instance, userNameSpace, int32(httpPortVal),
-							int32(httpsPortVal), apiBasePaths, controlIngressConf)
+							int32(httpsPortVal), apiBasePaths, controlIngressConf, owner)
 						if ingErr != nil {
 							return reconcile.Result{}, ingErr
 						}
@@ -899,7 +899,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 				reqLogger.Info("Operator mode is set to " + operatorMode)
 				if operatorMode == ingressMode {
 					ingErr := createorUpdateMgwIngressResource(r, instance, userNameSpace, int32(httpPortVal),
-						int32(httpsPortVal), apiBasePaths, controlIngressConf)
+						int32(httpsPortVal), apiBasePaths, controlIngressConf, owner)
 					if ingErr != nil {
 						return reconcile.Result{}, ingErr
 					}
@@ -959,7 +959,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 					reqLogger.Info("Operator mode is set to " + operatorMode)
 					if operatorMode == ingressMode {
 						ingErr := createorUpdateMgwIngressResource(r, instance, userNameSpace, int32(httpPortVal),
-							int32(httpsPortVal), apiBasePaths, controlIngressConf)
+							int32(httpsPortVal), apiBasePaths, controlIngressConf, owner)
 						if ingErr != nil {
 							return reconcile.Result{}, ingErr
 						}
@@ -1879,16 +1879,16 @@ func createMgwLBService(r *ReconcileAPI, cr *wso2v1alpha1.API, nameSpace string,
 // Creating a LB balancer service to expose mgw
 // Supports for multiple apiBasePaths when there are multiple swaggers for one API CRD
 func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, nameSpace string, httpPortVal int32,
-	httpsPortVal int32, apiBasePaths []string, controllerConfig *corev1.ConfigMap) error {
+	httpsPortVal int32, apiBasePaths []string, controllerConfig *corev1.ConfigMap, owner []metav1.OwnerReference) error {
 	controlConfigData := controllerConfig.Data
 	transportMode := controlConfigData[ingressTransportMode]
-	ingressName := controlConfigData[ingressResourceName]
 	ingressHostName := controlConfigData[ingressHostName]
 	tlsSecretName := controlConfigData[tlsSecretName]
+	ingressName := controlConfigData[ingressResourceName]
 
 	var hostArray []string
 	hostArray = append(hostArray, ingressHostName)
-
+	log.Info(fmt.Sprintf("Creating ingress resource with name: %v", ingressName))
 	log.Info(fmt.Sprintf("Creating ingress resource with API Base Path: %v", apiBasePaths))
 	log.WithValues("Ingress metadata. Transport mode", transportMode, "Ingress name", ingressName,
 		"Ingress hostname "+ingressHostName)
@@ -1930,13 +1930,15 @@ func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, nam
 		})
 	}
 
+	log.Info(fmt.Sprintf("Creating ingress resource with name: %v", ingressName))
 	if err != nil && errors.IsNotFound(err) {
 		log.Info("Ingress resource not found with name" + ingressName + ".Hence creating a new ingress resource")
 		ingress := &v1beta1.Ingress{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace:   nameSpace, // goes into backend full name
-				Name:        ingressName,
+				Name:        ingressName + "-" + cr.Name,
 				Annotations: ingressAnnotationMap,
+				OwnerReferences: owner,
 			},
 			Spec: v1beta1.IngressSpec{
 				Rules: []v1beta1.IngressRule{
