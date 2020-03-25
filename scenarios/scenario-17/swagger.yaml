@@ -1,0 +1,16 @@
+openapi: 3.0.0
+info:
+  title: hello-world
+  version: v1
+  description: This API contains operations related to node service.
+x-wso2-basePath: /node/1.0.0
+x-wso2-production-endpoints: hello-world-service
+x-wso2-mode: privateJet
+paths:
+  /hello/node:
+    get:
+      responses:
+        "200":
+          description: ""
+      x-auth-type: None
+      x-throttling-tier: Unlimited

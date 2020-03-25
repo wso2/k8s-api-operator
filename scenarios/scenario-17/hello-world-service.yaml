@@ -1,0 +1,20 @@
+apiVersion: wso2.com/v1alpha1
+kind: TargetEndpoint
+metadata:
+  name: hello-world-service
+  labels:
+    app: wso2
+spec:
+  protocol: http
+  port: 80
+  targetPort: 8080
+  deploy:
+    name: helloworld-service
+    dockerImage: gcr.io/knative-samples/helloworld-go
+    minReplicas: 1
+    maxReplicas: 5
+    requestCPU: "60m"
+    reqMemory: "32Mi"
+    cpuLimit: "120m"
+    memoryLimit: "64Mi"
+  mode: privateJet
