@@ -14,7 +14,14 @@
 # specific language governing permissions and limitations
 # under the License.
 ---
-swagger: "2.0"
+openapi: 3.0.0
+info:
+  title: hello-world
+  version: v1
+  description: This API contains operations related to node.
+x-wso2-basePath: /node/1.0.0
+x-wso2-production-endpoints: hello-world-serverless.default
+x-wso2-mode: Serverless
 paths:
   /hello/node:
     get:
@@ -23,8 +30,3 @@ paths:
           description: ""
       x-auth-type: None
       x-throttling-tier: Unlimited
-info:
-  title: hello-world
-  version: 1.0.0
-x-wso2-basePath: /node/1.0.0
-x-wso2-production-endpoints: hello-world-serverless.default
