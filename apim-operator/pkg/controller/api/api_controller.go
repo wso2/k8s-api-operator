@@ -845,7 +845,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 					reqLogger.Info("Operator mode is set to " + operatorMode)
 					if operatorMode == ingressMode {
 						ingErr := createorUpdateMgwIngressResource(r, instance, userNameSpace, int32(httpPortVal),
-							int32(httpsPortVal), apiBasePaths, controlIngressConf,owner)
+							int32(httpsPortVal), apiBasePaths, controlIngressConf, owner)
 						if ingErr != nil {
 							return reconcile.Result{}, ingErr
 						}
