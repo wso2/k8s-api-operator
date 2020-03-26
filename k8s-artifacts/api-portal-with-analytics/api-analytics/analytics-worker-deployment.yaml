@@ -39,7 +39,7 @@ spec:
           command: ["sh", "-c", "for i in $(seq 1 300); do nc -zvw1 wso2apim-with-analytics-rdbms-service 3306 && exit 0 || sleep 3; done; exit 1"]
       containers:
         - name: wso2apim-analytics
-          image: pubudu/wso2am-analytics-worker:3.1.0-rc1
+          image: wso2/wso2am-analytics-worker:3.1.0
           resources:
             limits:
               memory: "2Gi"
