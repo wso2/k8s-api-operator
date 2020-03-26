@@ -394,7 +394,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		jobVolume = volumeTemp
 		jwtConfigs = jwtConfArray
 
-		log.Info("cert list after returning from security handler method", certList)
 		//adding security scheme to swagger
 		if len(securityDefinition) > 0 {
 			newSwagger.Components.Extensions[securitySchemeExtension] = securityDefinition
@@ -2417,14 +2416,6 @@ func handleSecurity(r *ReconcileAPI, securityMap map[string][]string, userNameSp
 
 				log.Info("certificate issuer", issuer)
 				jwtConfArray = append(jwtConfArray, jwtConf)
-			}
-
-			certificateAlias = alias
-			if securityInstance.Spec.SecurityConfig[0].Issuer != "" {
-				issuer = securityInstance.Spec.SecurityConfig[0].Issuer
-			}
-			if securityInstance.Spec.SecurityConfig[0].Audience != "" {
-				audience = securityInstance.Spec.SecurityConfig[0].Audience
 			}
 		}
 		if strings.EqualFold(securityInstance.Spec.Type, basicSecurityAndScheme) {

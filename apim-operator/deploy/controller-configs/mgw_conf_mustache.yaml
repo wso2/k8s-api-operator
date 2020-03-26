@@ -115,12 +115,12 @@ data:
 
     # JWT token authorization configurations. You can provide multiple JWT issuers
     {{range .JwtConfigs}}
-        [[jwtTokenConfig]]
-        issuer = "{{.Issuer}}"
-        audience = "{{.Audience}}"
-        certificateAlias = "{{.CertificateAlias}}"
-        # Validate subscribed APIs
-        validateSubscription = {{.ValidateSubscription}}
+    [[jwtTokenConfig]]
+    issuer = "{{.Issuer}}"
+    audience = "{{.Audience}}"
+    certificateAlias = "{{.CertificateAlias}}"
+    # Validate subscribed APIs
+    validateSubscription = {{.ValidateSubscription}}
     {{end}}
 
     # JWT token revocation configurations
@@ -198,7 +198,7 @@ data:
 
     # Enable http2
     [http2]
-      enable = true
+      enable = false
 
     # HTTP client configuration
     [httpClients]
