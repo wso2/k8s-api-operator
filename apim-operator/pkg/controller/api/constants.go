@@ -57,12 +57,12 @@ const (
 	ingressResourceName  = "ingressResourceName"
 	ingressTransportMode = "ingressTransportMode"
 	ingressHostName      = "ingressHostName"
-	tlsSecretName	     = "tlsSecretName"
+	tlsSecretName        = "tlsSecretName"
 
 	usernameConst  = "username"
 	passwordConst  = "password"
 	certConst      = "cert_security"
-	analyticsAlias = "wso2analytics260"
+	analyticsAlias = "wso2analytics"
 
 	defaultSecurity                     = "default-security-jwt"
 	endpointExtension                   = "x-wso2-production-endpoints"
