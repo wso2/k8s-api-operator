@@ -31,6 +31,7 @@ ARG USER_HOME=/home/${USER}
 ARG WSO2_SERVER_NAME=wso2am-micro-gw-toolkit-linux
 ARG WSO2_SERVER_VERSION=3.1.0-rc2
 ARG WSO2_SERVER=${WSO2_SERVER_NAME}-${WSO2_SERVER_VERSION}
+# remove the suffix "rc2" from arg "WSO2_SERVER_HOME" for this release
 # ARG WSO2_SERVER_HOME=${USER_HOME}/${WSO2_SERVER}
 ARG WSO2_SERVER_HOME=${USER_HOME}/${WSO2_SERVER_NAME}-3.1.0
 ARG WSO2_SERVER_DIST_URL=https://github.com/wso2/product-microgateway/releases/download/v${WSO2_SERVER_VERSION}/${WSO2_SERVER}.zip
@@ -49,6 +50,12 @@ RUN \
     addgroup --gid ${USER_GROUP_ID} ${USER_GROUP} \
     && adduser --system --uid ${USER_ID} --home ${USER_HOME} --ingroup ${USER_GROUP} ${USER} \
     && echo ${MOTD} > "${ENV}"
+
+# install required packages
+RUN  apt-get update \
+  && apt-get install -y wget \
+  && apt-get install -y unzip \
+  && rm -rf /var/lib/apt/lists/*
 
 # add the WSO2 product distribution to user's home directory
 RUN \
