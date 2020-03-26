@@ -14,22 +14,26 @@
 # specific language governing permissions and limitations
 # under the License.
 
-FROM adoptopenjdk/openjdk8:jdk8u222-b10-alpine
+FROM alpine:3.11
 LABEL maintainer="<dev@wso2.org>"
+
+ENV LANG=C.UTF-8
 
 # set Docker image build arguments
 # build arguments for user/group configurations
-ARG USER=wso2carbon
+ARG USER=ballerina
 ARG USER_ID=802
-ARG USER_GROUP=wso2
+ARG USER_GROUP=ballerina
 ARG USER_GROUP_ID=802
 ARG USER_HOME=/home/${USER}
 
 # build arguments for WSO2 product installation
 ARG WSO2_SERVER_NAME=wso2am-micro-gw-toolkit-linux
-ARG WSO2_SERVER_VERSION=3.1.0-beta
+ARG WSO2_SERVER_VERSION=3.1.0-rc2
 ARG WSO2_SERVER=${WSO2_SERVER_NAME}-${WSO2_SERVER_VERSION}
-ARG WSO2_SERVER_HOME=${USER_HOME}/${WSO2_SERVER}
+# remove the suffix "rc2" from arg "WSO2_SERVER_HOME" for this release
+# ARG WSO2_SERVER_HOME=${USER_HOME}/${WSO2_SERVER}
+ARG WSO2_SERVER_HOME=${USER_HOME}/${WSO2_SERVER_NAME}-3.1.0
 ARG WSO2_SERVER_DIST_URL=https://github.com/wso2/product-microgateway/releases/download/v${WSO2_SERVER_VERSION}/${WSO2_SERVER}.zip
 
 # build argument for MOTD
@@ -58,7 +62,7 @@ RUN \
 RUN \
     wget --no-check-certificate -O ${WSO2_SERVER}.zip "${WSO2_SERVER_DIST_URL}" \
     && unzip -d ${USER_HOME} ${WSO2_SERVER}.zip \
-    && chown wso2carbon:wso2 -R ${WSO2_SERVER_HOME} \
+    && chown ${USER}:${USER_GROUP} -R ${WSO2_SERVER_HOME} \
     && rm -f ${WSO2_SERVER}.zip
 
 ENV PATH ${WSO2_SERVER_HOME}/bin:$PATH

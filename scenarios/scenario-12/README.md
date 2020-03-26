@@ -106,7 +106,7 @@ In this swagger definition, the rate limiting policy has been mentioned as follo
 
     - When distributed throttling is enabled, the API Microgateway upon recieving a request, checks against the local counter and if throttling limit  has not exceeded it publishes the events via a stream to a central traffic management solution. This is done over HTTP. The  central traffic management solution then  executes throttle policies against the events streams. When a particular request is throttled, the  central traffic management solution sends the details of the throttled out event to a JMS topic. Each API Microgateway node is subscribed to this JMS topic, and updates the local counter when the JMS topic is updated.  Hence the API Microgateway nodes gets notified of the throttle decisions through JMS messages.
 
-    - Enable distributed rate limiting by modifying the apim-config in controller-configs/controller_conf.yaml as below. Set the "enabledGlobalTMEventPublishing" to "true". Default JMS port of the API Portal is used here.
+    - Enable distributed rate limiting by modifying the apim-config in `controller-configs/controller_conf.yaml` as below. Set the "enabledGlobalTMEventPublishing" to "true". Default JMS port of the API Portal is used here.
 
     ```
     #Enable distributed ratelimiting. Default value:false. If enabled please deploy API Portal
@@ -121,7 +121,7 @@ In this swagger definition, the rate limiting policy has been mentioned as follo
     ```
     - Apply the changes
     ```
-        kubectl apply -f <api-k8s-crds-home>/apim-operator/controller-configs/controller_conf.yaml
+        kubectl apply -f <k8s-api-operator-home>/apim-operator/deploy/controller-configs/controller_conf.yaml
     ```
     - Delete the previous API if you had deployed it in earlier case
     ```
@@ -132,8 +132,8 @@ In this swagger definition, the rate limiting policy has been mentioned as follo
         apictl add api -n petstore-dist-rate --from-file=swagger.yaml --replicas=2 --override=true
     ``` 
     - Since the throttling is managed by the central traffic management system (i.e. API Portal), the same rate limiting policy should exist in the API Portal too.
-    - Go to https://wso2apim/admin Admin Portal and log in giving "admin" as username and password.
-    - Create an advanced policy with the same name and details as the policy you used earlier. Refer the below screenshot.
+    - Go to https://wso2apim:32001/admin Admin Portal and log in giving "admin" as username and password.
+    - Create an advanced policy with the same name ("fourreqpolicy") and details as the policy you used earlier. Refer the below screenshot.
 
     ![Alt text](images/creating_policy.png?raw=true "Title")
 
@@ -143,9 +143,11 @@ In this swagger definition, the rate limiting policy has been mentioned as follo
     - Following command will delete all the artifacts created with this API including pods, deployment and services.
     ```
         apictl delete api petstore-dist-rate
+        apictl delete -f k8s-artifacts/api-portal/wso2-namespace.yaml
     ```
     -  Output:
     ```
         api.wso2.com "petstore-dist-rate" deleted
+        namespace "wso2" deleted
     ```
     
