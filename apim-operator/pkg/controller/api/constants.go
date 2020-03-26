@@ -52,6 +52,7 @@ const (
 	mgwConfConst         = "micro-gw.conf"
 	controllerConfName   = "controller-config"
 	ingressConfigs       = "ingress-configs"
+	dockerRegConfigs     = "docker-registry-config"
 	ingressProperties    = "ingress.properties"
 	policyFileConst      = "policies.yaml"
 	ingressResourceName  = "ingressResourceName"

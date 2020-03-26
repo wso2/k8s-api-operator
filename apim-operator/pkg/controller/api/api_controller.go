@@ -242,10 +242,12 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	//get configurations file for the controller
 	controlConf, errConf := getConfigmap(r, controllerConfName, wso2NameSpaceConst)
-	//get configurations file for the controller
+	//get ingress configs
 	controlIngressConf, errIngressConf := getConfigmap(r, ingressConfigs, wso2NameSpaceConst)
+	//get docker registry configs
+	dockerRegistryConf, errRegConf := getConfigmap(r, dockerRegConfigs, wso2NameSpaceConst)
 
-	confErrs := []error{errConf, errIngressConf}
+	confErrs := []error{errConf, errIngressConf, errRegConf}
 	for _, err := range confErrs {
 		if err != nil {
 			if errors.IsNotFound(err) {
@@ -264,14 +266,15 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	mgwRuntimeImg := controlConfigData[mgwRuntimeImgConst]
 	kanikoImg := controlConfigData[kanikoImgConst]
 
-	if !registry.IsRegistryType(controlConfigData[registryTypeConst]) {
-		log.Error(err, "Invalid registry type", "registry-type", controlConfigData[registryTypeConst])
-		// Registry type is invalid.
-		// Return and don't requeue
-		return reconcile.Result{}, nil
+	registryTypeStr := dockerRegistryConf.Data[registryTypeConst]
+	if !registry.IsRegistryType(registryTypeStr) {
+		log.Error(err, "Invalid registry type", "registry-type", registryTypeStr)
+		// Registry type is invalid, user should update this with valid type.
+		// Return and requeue
+		return reconcile.Result{}, err
 	}
-	registryType := registry.Type(controlConfigData[registryTypeConst])
-	repositoryName := controlConfigData[repositoryNameConst]
+	registryType := registry.Type(dockerRegistryConf.Data[registryTypeConst])
+	repositoryName := dockerRegistryConf.Data[repositoryNameConst]
 	operatorMode := controlConfigData[operatorModeConst]
 
 	reqLogger.Info("Controller Configurations", "mgwToolkitImg", mgwToolkitImg, "mgwRuntimeImg", mgwRuntimeImg,
