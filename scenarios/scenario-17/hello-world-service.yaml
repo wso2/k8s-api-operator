@@ -14,19 +14,23 @@
 # specific language governing permissions and limitations
 # under the License.
 ---
-openapi: 3.0.0
-info:
-  title: hello-world
-  version: v1
-  description: This API contains operations related to node.
-x-wso2-basePath: /node/1.0.0
-x-wso2-production-endpoints: hello-world-serverless.default
-x-wso2-mode: Serverless
-paths:
-  /hello/node:
-    get:
-      responses:
-        "200":
-          description: ""
-      x-auth-type: None
-      x-throttling-tier: Unlimited
+apiVersion: wso2.com/v1alpha1
+kind: TargetEndpoint
+metadata:
+  name: hello-world-service
+  labels:
+    app: wso2
+spec:
+  protocol: http
+  port: 80
+  targetPort: 8080
+  deploy:
+    name: helloworld-service
+    dockerImage: gcr.io/knative-samples/helloworld-go
+    minReplicas: 1
+    maxReplicas: 5
+    requestCPU: "60m"
+    reqMemory: "32Mi"
+    cpuLimit: "120m"
+    memoryLimit: "64Mi"
+  mode: privateJet
