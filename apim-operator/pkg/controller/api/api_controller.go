@@ -241,19 +241,22 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	userNameSpace := instance.Namespace
 
 	//get configurations file for the controller
-	controlConf, err := getConfigmap(r, controllerConfName, wso2NameSpaceConst)
+	controlConf, errConf := getConfigmap(r, controllerConfName, wso2NameSpaceConst)
 	//get configurations file for the controller
-	controlIngressConf, err := getConfigmap(r, ingressConfigs, wso2NameSpaceConst)
+	controlIngressConf, errIngressConf := getConfigmap(r, ingressConfigs, wso2NameSpaceConst)
 
-	if err != nil {
-		if errors.IsNotFound(err) {
-			// Controller configmap is not found, could have been deleted after reconcile request.
-			// Return and requeue
-			log.Error(err, "Controller configuration file is not found")
+	confErrs := []error{errConf, errIngressConf}
+	for _, err := range confErrs {
+		if err != nil {
+			if errors.IsNotFound(err) {
+				// Required configmap is not found, could have been deleted after reconcile request.
+				// Return and requeue
+				log.Error(err, "Required configmap is not found")
+				return reconcile.Result{}, err
+			}
+			// Error reading the object - requeue the request.
 			return reconcile.Result{}, err
 		}
-		// Error reading the object - requeue the request.
-		return reconcile.Result{}, err
 	}
 
 	controlConfigData := controlConf.Data
@@ -1123,15 +1126,15 @@ func getConfigmap(r *ReconcileAPI, mapName string, ns string) (*corev1.ConfigMap
 			return nil, err
 
 		} else if err != nil {
-			log.Error(err, "error ")
+			log.Error(err, "error getting APIM configmap", "configmap name", mapName)
 			return apiConfigMap, err
 		}
 	} else {
 		if err != nil && errors.IsNotFound(err) {
-			log.Error(err, "Specified configmap is not found: %s", mapName)
+			log.Error(err, "Specified configmap is not found", "configmap name", mapName)
 			return apiConfigMap, err
 		} else if err != nil {
-			log.Error(err, "error ")
+			log.Error(err, "error getting configmap", "configmap name", mapName)
 			return apiConfigMap, err
 		}
 	}
@@ -1935,9 +1938,9 @@ func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, nam
 		log.Info("Ingress resource not found with name" + ingressName + ".Hence creating a new ingress resource")
 		ingress := &v1beta1.Ingress{
 			ObjectMeta: metav1.ObjectMeta{
-				Namespace:   nameSpace, // goes into backend full name
-				Name:        ingressName + "-" + cr.Name,
-				Annotations: ingressAnnotationMap,
+				Namespace:       nameSpace, // goes into backend full name
+				Name:            ingressName + "-" + cr.Name,
+				Annotations:     ingressAnnotationMap,
 				OwnerReferences: owner,
 			},
 			Spec: v1beta1.IngressSpec{
