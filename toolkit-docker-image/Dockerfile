@@ -14,7 +14,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-FROM ubuntu:18.04
+FROM alpine:3.11
 LABEL maintainer="<dev@wso2.org>"
 
 ENV LANG=C.UTF-8
@@ -47,15 +47,16 @@ ENV ENV=${USER_HOME}"/.ashrc"
 
 # create the non-root user and group and set MOTD login message
 RUN \
-    addgroup --gid ${USER_GROUP_ID} ${USER_GROUP} \
-    && adduser --system --uid ${USER_ID} --home ${USER_HOME} --ingroup ${USER_GROUP} ${USER} \
+    addgroup -S -g ${USER_GROUP_ID} ${USER_GROUP} \
+    && adduser -S -u ${USER_ID} -h ${USER_HOME} -G ${USER_GROUP} ${USER} \
     && echo ${MOTD} > "${ENV}"
 
 # install required packages
-RUN  apt-get update \
-  && apt-get install -y wget \
-  && apt-get install -y unzip \
-  && rm -rf /var/lib/apt/lists/*
+RUN \
+    apk add --no-cache \
+        bash \
+        libxml2-utils \
+        netcat-openbsd
 
 # add the WSO2 product distribution to user's home directory
 RUN \
