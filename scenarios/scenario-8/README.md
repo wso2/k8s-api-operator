@@ -67,7 +67,7 @@ In this swagger definition, the backend service of the "products" service and th
     ```
    
     ```
-        curl -X GET "https://<external IP of LB service>:9095/storesc/v1.0.0/inventory/301" -H "accept: application/json" -H "Authorization:Bearer $TOKEN" -k
+        curl -X GET "https://<external IP of LB service>:9095/storesc/v1/inventory/301" -H "accept: application/json" -H "Authorization:Bearer $TOKEN" -k
     ```
     - Once you execute the above command, it will call to the managed API (inventory-sc), which then call its endpoint ("inventory-sc-service" service) available in the same pod. If the request is success, you would be able to see the response as below.
     ```

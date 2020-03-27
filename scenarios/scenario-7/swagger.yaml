@@ -21,7 +21,7 @@ info:
   description: This API contains operations related to online shopping store.
 servers:
   - url: http://products
-x-wso2-basePath: /storepj/v1.0.0
+x-wso2-basePath: /storepj/{version}
 x-wso2-production-endpoints: products-privatejet
 x-wso2-mode: privateJet
 paths:
