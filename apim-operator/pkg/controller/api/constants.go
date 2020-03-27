@@ -20,8 +20,8 @@ const (
 	dockerConfigKey        = "config.json"
 	mgwDockerFile          = "dockerfile-conf"
 	swaggerVolume          = "swagger-volume"
-	interceptorsVolume     = "interceptors-volume"
-	javaInterceptorsVolume = "java-interceptors-volume"
+	interceptorsVolume     = "intcpt-vol"
+	javaInterceptorsVolume = "java-intcpt-vol"
 
 	swaggerLocation                = "/usr/wso2/swagger/project-%v/"
 	dockerFileLocation             = "/usr/wso2/dockerfile/"
