@@ -54,7 +54,7 @@ var amazonEcr = &Config{
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: utils.ConfigJsonVolume,
+						Name: utils.AmazonCredHelperConfMap,
 					},
 				},
 			},
@@ -63,7 +63,7 @@ var amazonEcr = &Config{
 			Name: AwsCredFileVolume,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: utils.AwsCredentialsVolume,
+					SecretName: utils.AwsCredentialsSecret,
 				},
 			},
 		},

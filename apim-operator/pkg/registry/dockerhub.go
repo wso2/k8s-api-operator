@@ -39,7 +39,7 @@ var dockerHub = &Config{
 			Name: "reg-secret-volume",
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: utils.ConfigJsonVolume,
+					SecretName: utils.DockerRegCredSecret,
 					Items: []corev1.KeyToPath{
 						{
 							Key:  utils.DockerConfigKeyConst,
@@ -51,7 +51,7 @@ var dockerHub = &Config{
 		},
 	},
 	ImagePullSecrets: []corev1.LocalObjectReference{
-		{Name: utils.ConfigJsonVolume},
+		{Name: utils.DockerRegCredSecret},
 	},
 }
 

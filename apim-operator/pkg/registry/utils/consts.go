@@ -16,8 +16,12 @@
 
 package utils
 
-const ConfigJsonVolume = "config-json"
-const AwsCredentialsVolume = "aws-cred"
-const GcrSvcAccKeyVolume = "gcr-key"
-const GcrSvcAccKeyFile = "gcr_key.json"
 const DockerConfigKeyConst = ".dockerconfigjson"
+const DockerRegCredSecret = "docker-registry-credentials"
+
+const AmazonCredHelperConfMap = "amazon-credential-helper"
+const AwsCredentialsSecret = "aws-credentials"
+
+const GcrSvcAccKeySecret = "google-application-credentials"
+const GcrSvcAccKeyFile = "gcr_key.json"
+const GcrPullSecret = "gcr-pull-secret"
