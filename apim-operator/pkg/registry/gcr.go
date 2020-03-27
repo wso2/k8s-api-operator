@@ -42,7 +42,7 @@ var gcr = &Config{
 			Name: svcAccKeyVolume,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: utils.GcrSvcAccKeyVolume,
+					SecretName: utils.GcrSvcAccKeySecret,
 				},
 			},
 		},
@@ -54,7 +54,7 @@ var gcr = &Config{
 		},
 	},
 	ImagePullSecrets: []corev1.LocalObjectReference{
-		{Name: utils.ConfigJsonVolume},
+		{Name: utils.GcrPullSecret},
 	},
 }
 
