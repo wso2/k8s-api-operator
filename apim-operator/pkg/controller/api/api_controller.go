@@ -2630,7 +2630,7 @@ func interceptorHandler(r *ReconcileAPI, instance *wso2v1alpha1.API, owner []met
 					return exsistBalInterceptors, false, jobVolumeMount, jobVolume, errBalInterceptor, err
 				}
 			} else {
-				volName := fmt.Sprintf("%s-%s", configmapName, javaInterceptorsVolume)
+				volName := strings.Replace(fmt.Sprintf("%s-%s", configmapName, javaInterceptorsVolume), ".jar", "", -1)
 				jobVolume = append(jobVolume, corev1.Volume{
 					Name: volName,
 					VolumeSource: corev1.VolumeSource{

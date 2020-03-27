@@ -116,7 +116,7 @@ In this swagger definition, the rate limiting policy has been mentioned as follo
     throttleEndpoint: "wso2apim.wso2:32001"
     #Message broker connection URL (related to distributed ratelimiting and token revocation)
     #Format: hostname_of_API_Portal:JMS_port
-    jmsConnectionProvider: "wso2apim.wso2:28230"
+    jmsConnectionProvider: "wso2apim.wso2:5672"
 
     ```
     - Apply the changes

@@ -1,4 +1,4 @@
-## Scenario 15 - Apply Java interceptors to an API
+    ## Scenario 15 - Apply Java interceptors to an API
 
 - This scenario describes how to apply interceptors written in java as .jar files to carry out transformations and mediations on the requests and responses.
 - First, we need to implement custom request interceptors and response interceptors. We have provided sample .jar file in scenario-15. If you want to learn more about implementing custom java interceptors you can refer the document [adding interceptors.](https://docs.wso2.com/display/MG310/Message+Transformation)
@@ -39,16 +39,16 @@
 - Create the API
 
     ```
-    apictl add api -n petstore-java-interceptor --from-file=petstore-int
+    apictl add api -n petstore-java-int --from-file=petstore-int
     
     Output:
     Processing swagger 1: petstore-int
     creating configmap with swagger definition
-    configmap/petstore-java-interceptor-1-swagger created
-    creating configmap with java interceptor petstore-java-interceptor-1-mgw-interceptor.jar
-    configmap/petstore-java-interceptor-1-mgw-interceptor.jar created
+    configmap/petstore-java-int-1-swagger created
+    creating configmap with java interceptor petstore-java-int-1-mgw-interceptor.jar
+    configmap/petstore-java-int-1-mgw-interceptor.jar created
     creating API definition
-    api.wso2.com/petstore-java-interceptor created
+    api.wso2.com/petstore-java-int created
     ```
 - Get service details to invoke the API. (Please wait until the external-IP is populated in the corresponding service)
 
@@ -94,11 +94,11 @@
 - Delete the API
 
     ```
-    apictl delete api petstore-java-interceptor
+    apictl delete api petstore-java-int
     ``` 
   
   - Output
    ```
-    api.wso2.com "petstore-java-interceptor" deleted
+    api.wso2.com "petstore-java-int" deleted
     ``` 
   
