@@ -241,19 +241,24 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	userNameSpace := instance.Namespace
 
 	//get configurations file for the controller
-	controlConf, err := getConfigmap(r, controllerConfName, wso2NameSpaceConst)
-	//get configurations file for the controller
-	controlIngressConf, err := getConfigmap(r, ingressConfigs, wso2NameSpaceConst)
+	controlConf, errConf := getConfigmap(r, controllerConfName, wso2NameSpaceConst)
+	//get ingress configs
+	controlIngressConf, errIngressConf := getConfigmap(r, ingressConfigs, wso2NameSpaceConst)
+	//get docker registry configs
+	dockerRegistryConf, errRegConf := getConfigmap(r, dockerRegConfigs, wso2NameSpaceConst)
 
-	if err != nil {
-		if errors.IsNotFound(err) {
-			// Controller configmap is not found, could have been deleted after reconcile request.
-			// Return and requeue
-			log.Error(err, "Controller configuration file is not found")
+	confErrs := []error{errConf, errIngressConf, errRegConf}
+	for _, err := range confErrs {
+		if err != nil {
+			if errors.IsNotFound(err) {
+				// Required configmap is not found, could have been deleted after reconcile request.
+				// Return and requeue
+				log.Error(err, "Required configmap is not found")
+				return reconcile.Result{}, err
+			}
+			// Error reading the object - requeue the request.
 			return reconcile.Result{}, err
 		}
-		// Error reading the object - requeue the request.
-		return reconcile.Result{}, err
 	}
 
 	controlConfigData := controlConf.Data
@@ -261,14 +266,15 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	mgwRuntimeImg := controlConfigData[mgwRuntimeImgConst]
 	kanikoImg := controlConfigData[kanikoImgConst]
 
-	if !registry.IsRegistryType(controlConfigData[registryTypeConst]) {
-		log.Error(err, "Invalid registry type", "registry-type", controlConfigData[registryTypeConst])
-		// Registry type is invalid.
-		// Return and don't requeue
-		return reconcile.Result{}, nil
+	registryTypeStr := dockerRegistryConf.Data[registryTypeConst]
+	if !registry.IsRegistryType(registryTypeStr) {
+		log.Error(err, "Invalid registry type", "registry-type", registryTypeStr)
+		// Registry type is invalid, user should update this with valid type.
+		// Return and requeue
+		return reconcile.Result{}, err
 	}
-	registryType := registry.Type(controlConfigData[registryTypeConst])
-	repositoryName := controlConfigData[repositoryNameConst]
+	registryType := registry.Type(dockerRegistryConf.Data[registryTypeConst])
+	repositoryName := dockerRegistryConf.Data[repositoryNameConst]
 	operatorMode := controlConfigData[operatorModeConst]
 
 	reqLogger.Info("Controller Configurations", "mgwToolkitImg", mgwToolkitImg, "mgwRuntimeImg", mgwRuntimeImg,
@@ -1122,15 +1128,15 @@ func getConfigmap(r *ReconcileAPI, mapName string, ns string) (*corev1.ConfigMap
 			return nil, err
 
 		} else if err != nil {
-			log.Error(err, "error ")
+			log.Error(err, "error getting APIM configmap", "configmap name", mapName)
 			return apiConfigMap, err
 		}
 	} else {
 		if err != nil && errors.IsNotFound(err) {
-			log.Error(err, "Specified configmap is not found: %s", mapName)
+			log.Error(err, "Specified configmap is not found", "configmap name", mapName)
 			return apiConfigMap, err
 		} else if err != nil {
-			log.Error(err, "error ")
+			log.Error(err, "error getting configmap", "configmap name", mapName)
 			return apiConfigMap, err
 		}
 	}
@@ -1934,9 +1940,9 @@ func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, nam
 		log.Info("Ingress resource not found with name" + ingressName + ".Hence creating a new ingress resource")
 		ingress := &v1beta1.Ingress{
 			ObjectMeta: metav1.ObjectMeta{
-				Namespace:   nameSpace, // goes into backend full name
-				Name:        ingressName + "-" + cr.Name,
-				Annotations: ingressAnnotationMap,
+				Namespace:       nameSpace, // goes into backend full name
+				Name:            ingressName + "-" + cr.Name,
+				Annotations:     ingressAnnotationMap,
 				OwnerReferences: owner,
 			},
 			Spec: v1beta1.IngressSpec{
