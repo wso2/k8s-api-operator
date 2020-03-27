@@ -132,11 +132,11 @@
 - Delete the API
 
     ```
-            >>> apictl delete api petstore-int
+    >> apictl delete api petstore-int
     ``` 
   
   - Output
     ```
-            api.wso2.com "petstore-int" deleted
+    api.wso2.com "petstore-int" deleted
     ``` 
   

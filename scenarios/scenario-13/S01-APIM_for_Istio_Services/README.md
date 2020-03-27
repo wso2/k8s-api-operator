@@ -14,7 +14,7 @@ This works only in Istio permissive mode.
 
 - An account in DockerHub or private docker registry
 
-- Download [api-k8s-crds-1.0.1.zip](https://github.com/wso2/k8s-apim-operator/releases/download/v1.0.1/api-k8s-crds-1.0.1.zip) and extract the zip
+- Download [api-k8s-crds-1.1.0.zip](https://github.com/wso2/k8s-apim-operator/releases/download/v1.0.1/api-k8s-crds-1.0.1.zip) and extract the zip
 
     1. This zip contains the artifacts that required to deploy in Kubernetes.
     2. Extract api-k8s-crds-1.0.1.zip
