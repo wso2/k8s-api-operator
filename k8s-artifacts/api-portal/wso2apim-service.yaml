@@ -24,6 +24,10 @@ spec:
     deployment: wso2apim
   ports:
     # ports that this service should serve on
+    - name: amqp-transport
+      port: 5672
+      targetPort: 5672
+      nodePort: 32005
     - name: pass-through-http
       port: 8280
       targetPort: 8280

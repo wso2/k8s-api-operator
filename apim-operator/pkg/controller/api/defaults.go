@@ -48,7 +48,7 @@ var (
 
 	//throttlingConfig
 	enabledGlobalTMEventPublishing string = "false"
-	jmsConnectionProvider          string = "wso2apim.wso2:28230"
+	jmsConnectionProvider          string = "wso2apim.wso2:32005"
 	throttleEndpoint               string = "wso2apim.wso2:32001"
 
 	//token revocation
