@@ -99,7 +99,7 @@ Minimum CPU and Memory for the K8s cluster: **2 vCPU, 8GB of Memory**
 
 #### Step 2: Configure API Controller
 
-- Download API controller v3.1.0-beta for your operating system from the [github](https://github.com/wso2/product-apim-tooling/releases/tag/v3.1.0-beta)
+- Download API controller v3.1.0-customized for your operating system from the [github](https://github.com/wso2/K8s-api-operator/tree/v1.1.0-beta)
 
 - Extract the API controller distribution and navigate inside the extracted folder using the command-line tool
 
