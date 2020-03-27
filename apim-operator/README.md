@@ -13,15 +13,13 @@ you should build the image when changes are added to the project. The steps to b
     ```
 2.  Build the apim-operator image 
     ```
-    operator-sdk build wso2am/apim-operator:v0.6
+    operator-sdk build wso2/k8s-api-operator:v1.1.0
     ```
 3.  Replace the image name in deploy/controller-artifacts/operator.yaml:
-    ```
-    sed -i 's|REPLACE_IMAGE|wso2am/apim-operator:v0.6|g' deploy/controller-artifacts/operator.yaml
-    ```
+
 4.  Push it to a registry:
     ```
-    docker push wso2am/apim-operator:v0.6
+    docker push wso2/apim-operator:v0.6
     ```
     
 **Additional Commands**

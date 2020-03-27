@@ -1,4 +1,4 @@
-## Scenario 17 - Expose API using Ingress
+## Scenario 17 - Expose an API using Ingress
 
 - This scenario showes how to expose a service using Ingress gateway.
 

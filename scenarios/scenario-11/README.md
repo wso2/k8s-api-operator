@@ -85,17 +85,22 @@ wso2apim-with-analytics-rdbms-service   ClusterIP   10.0.23.125   <none>        
 
 **Note:** To access the API portal and Analytics dashboard, add host mapping entries to the /etc/hosts file. As we have exposed the services in Node Port type, you can use the IP address of any Kubernetes node.
 
-
 ```
 <Any K8s Node IP>  wso2apim
 <Any K8s Node IP>  wso2apim-analytics
 ```
 
-- For Docker for Mac use "localhost" for the K8s node IP 
+- For Docker for Mac use "localhost" for the K8s node IP
 - For Minikube, use minikube ip command to get the K8s node IP
-	 
-    **API Portal** - https://wso2apim:32001/devportal <br>
-    **API Analytics Dashbaord** - https://wso2apim-analytics:32201/analytics-dashboard
+- For GKE
+    ```$xslt
+    (kubectl get nodes -o jsonpath='{ $.items[*].status.addresses[?(@.type=="ExternalIP")].address }')
+    ```
+    - This will give the external IPs of the nodes available in the cluster. Pick any IP to include in /etc/hosts file.
+  
+   **API Portal** - https://wso2apim:32001/devportal <br>
+   **API Analytics Dashbaord** - https://wso2apim-analytics:32201/analytics-dashboard
+
 
 
 #### Step 2: Enable API Analytics in the API Operator
@@ -104,7 +109,7 @@ wso2apim-with-analytics-rdbms-service   ClusterIP   10.0.23.125   <none>        
 - By deploying the analytics configmaps, you can enable analytics as follows.
 
 ```
->> apictl apply -f apim-operator/deploy/apim-analytics-configs
+>> apictl apply -f apim-operator/apim-analytics-configs
 
 ---
 configmap/analytics-config created

@@ -445,6 +445,8 @@ When prompted type `Y` when uninstalling API Operator.
 1. [Sample 14: API Management in Serverless (Knative)](scenarios/scenario-14)
 1. [Sample 15: Apply Java interceptors to an API](scenarios/scenario-15)
 1. [Sample 16: Deploy multiple swagger-projects as one API](scenarios/scenario-16)
+1. [Sample 17: Expose an API using Ingress](scenarios/scenario-17)
+
 #### Troubleshooting Guide
 
 You can refer [troubleshooting guide](docs/Troubleshooting/troubleshooting.md).
