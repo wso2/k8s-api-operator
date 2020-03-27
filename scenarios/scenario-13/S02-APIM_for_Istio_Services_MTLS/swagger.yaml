@@ -5,7 +5,7 @@ info:
   description: This API contains operations related to online shopping store.
 servers:
   - url: /store
-x-wso2-basePath: /storemep/v1.0.0
+x-wso2-basePath: /storemep/{version}
 x-wso2-production-endpoints:
   urls:
     - http://istio-ingressgateway.istio-system/storemep/v1.0.0
