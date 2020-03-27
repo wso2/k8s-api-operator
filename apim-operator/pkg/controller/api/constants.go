@@ -35,7 +35,7 @@ const (
 	analyticsCertFile              = "analytics-cert"
 	analyticsCertLocation          = "/usr/wso2/analyticssecret/"
 	analyticsVolumeName            = "analytics-volume-storage"
-	analyticsVolumeLocation        = "/home/ballerina/api-usage-data/"
+	analyticsVolumeLocation        = "/home/ballerina/wso2/api-usage-data/"
 	analyticsConfName              = "analytics-config"
 	interceptorsVolumeLocation     = "usr/wso2/interceptors/project-%v/"
 	javaInterceptorsVolumeLocation = "usr/wso2/libs/project-%v/"
