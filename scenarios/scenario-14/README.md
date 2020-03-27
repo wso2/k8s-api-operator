@@ -98,7 +98,7 @@
 
  ##### Deploying the artifacts
  
- - Navigate to api-k8s-crds-1.1.0/scenarios/scenario-13 directory and deploy the sample backend service using the following command.
+ - Navigate to `scenarios/scenario-13` directory and deploy the sample backend service using the following command.
     ```
         apictl apply -f hello-world-serverless.yaml
     ```

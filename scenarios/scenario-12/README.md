@@ -22,7 +22,7 @@
         enabledGlobalTMEventPublishing: "false"
     ```
  
- - Navigate to api-k8s-crds-1.0.1/scenarios/scenario-12 directory.
+ - Navigate to `scenarios/scenario-12` directory.
   
  - Deploy the sample rate-limiting CR using the following command.
     ```
@@ -102,7 +102,7 @@ In this swagger definition, the rate limiting policy has been mentioned as follo
     - To enable distributed rate limiting we need a central traffic management system. We will use the API Portal as the central traffic management system here.
 
      ***Important:***
-    > Deploy the API Portal if you have not already deployed it, using \<api-k8s-crds-home>/k8s-artifacts
+    > Deploy the API Portal if you have not already deployed it, using \<k8s-api-operator-home>/k8s-artifacts
 
     - When distributed throttling is enabled, the API Microgateway upon recieving a request, checks against the local counter and if throttling limit  has not exceeded it publishes the events via a stream to a central traffic management solution. This is done over HTTP. The  central traffic management solution then  executes throttle policies against the events streams. When a particular request is throttled, the  central traffic management solution sends the details of the throttled out event to a JMS topic. Each API Microgateway node is subscribed to this JMS topic, and updates the local counter when the JMS topic is updated.  Hence the API Microgateway nodes gets notified of the throttle decisions through JMS messages.
 

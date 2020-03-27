@@ -23,7 +23,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.wso2.apim</groupId>
     <artifactId>k8s-apim-operator-distribution</artifactId>
-    <version>1.1.0-alpha2</version>
+    <version>1.1.0-beta</version>
     <name>K8s APIM Operator Distribution</name>
 
     <build>
@@ -42,7 +42,7 @@
                             <descriptors>
                                 <descriptor>assembly.xml</descriptor>
                             </descriptors>
-                            <finalName>api-k8s-crds-${project.version}</finalName>
+                            <finalName>k8s-api-operator-${project.version}</finalName>
                         </configuration>
                     </execution>
                 </executions>

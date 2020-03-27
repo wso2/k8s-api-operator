@@ -28,16 +28,16 @@ Minimum CPU and Memory for the K8s cluster: **2 vCPU, 8GB of Memory**
 
 - An account in DockerHub or private docker registry
 
-- Download [api-k8s-crds-1.1.0-alpha2.zip](https://github.com/wso2/k8s-apim-operator/releases/download/v1.1.0-alpha2/api-k8s-crds-1.1.0-alpha2.zip) and extract the zip
+- Download [k8s-api-operator-1.1.0-beta.zip](https://github.com/wso2/k8s-apim-operator/releases/download/v1.1.0-beta/k8s-api-operator-1.1.0-beta.zip) and extract the zip
 
     1. This zip contains the artifacts that required to deploy in Kubernetes.
-    2. Extract api-k8s-crds-1.1.0-alpha2.zip
+    2. Extract k8s-api-operator-1.1.0-beta.zip
     
     ```
-    cd api-k8s-crds-1.1.0-alpha2
+    cd k8s-api-operator-1.1.0-beta
     ```
  
-**_Note:_** You need to run all commands from within the ***api-k8s-crds-1.1.0-alpha2*** directory.
+**_Note:_** You need to run all commands from within the ***k8s-api-operator-1.1.0-beta*** directory.
 
 <br />
 
@@ -115,7 +115,7 @@ You can find available operations using the below command.
 Set the environment variable `WSO2_API_OPERATOR_VERSION` with the latest API Operator version.
 
 ```sh
->> export WSO2_API_OPERATOR_VERSION=v1.1.0-alpha2
+>> export WSO2_API_OPERATOR_VERSION=v1.1.0-beta
 ```
 
 - Execute the following command to install API Operator interactively and configure repository to push the microgateway image.

@@ -94,14 +94,14 @@ online-storee-kaniko-6dvb8             1/1     Running   0          5s
 #### How to enable debug logs for the API
 
 - If you want to analyze logs in depth, enable the debug logs.
-- For this, you need to add the following entry in the ***\<api-k8s-crds-home>/apim-operator/controller-configs/mgw_conf_mustache.yaml***
+- For this, you need to add the following entry in the ***\<k8s-api-operator-home>/apim-operator/deploy/controller-configs/mgw_conf_mustache.yaml***
 ```$xslt
 [b7a.log]
 level="DEBUG"
 ```
 - Reapply this configuration separately using the following command.
 ```$xslt
-kubectl apply -f <api-k8s-crds-home>/apim-operator/controller-configs/mgw_conf_mustache.yaml
+kubectl apply -f <k8s-api-operator-home>/apim-operator/controller-configs/mgw_conf_mustache.yaml
 ```
 - Once you apply this, you need to build the API from scratch to reflect these changes to the already deployed APIs.
 
