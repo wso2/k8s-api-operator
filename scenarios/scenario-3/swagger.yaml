@@ -43,7 +43,7 @@ tags:
     externalDocs:
       description: Find out more about our store
       url: http://swagger.io
-x-wso2-basePath: /petstorebasic/v1
+x-wso2-basePath: /petstorebasic/{version}
 x-wso2-production-endpoints:
   urls:
     - https://petstore.swagger.io/v2

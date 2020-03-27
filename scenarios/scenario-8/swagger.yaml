@@ -21,7 +21,7 @@ info:
   description: This API contains operations related to online shopping store.
 servers:
   - url: http://products
-x-wso2-basePath: /storesc/v1.0.0
+x-wso2-basePath: /storesc/{version}
 x-wso2-production-endpoints: inventory-sidecar
 x-wso2-mode: sidecar
 paths:
