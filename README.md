@@ -111,6 +111,7 @@ You can find available operations using the below command.
 ```
 >> apictl --help
 ```
+<br />
 
 #### Step 3: Install API Operator
 
@@ -155,7 +156,9 @@ deployment.apps/apim-operator created
 
 [Setting to K8s Mode]
 ```
-        
+    
+<br />
+
 #### Step 4: Install the API portal and security token service
 
 Kubernetes installation artifacts for API portal and security token service are available in the k8s-artifacts directory.
@@ -301,7 +304,7 @@ You now have a microgateway deployed in Kubernetes that runs your API for the mi
 </p>
 </details>
 
----
+-----
 
 - Invoke the API as a regular microservice
 
@@ -414,11 +417,12 @@ Access Token:  eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6IlpqUm1ZVE13TlRKak9XV
 
 <br />
 
-#### Documentation
+### Documentation
 
 You can find the documentation [here](docs/Readme.md).
 
-#### Cleanup
+
+### Cleanup
 
 Execute the following commands if you wish to clean up the Kubernetes cluster by removing all the applied artifacts and configurations related to API operator and API portal.
 
@@ -431,7 +435,8 @@ Execute the following commands if you wish to clean up the Kubernetes cluster by
 
 When prompted type `Y` when uninstalling API Operator.
   
-#### Sample Scenarios
+
+### Sample Scenarios
 
 1. [Sample 1: Expose a K8s service as an API](scenarios/scenario-1)
 1. [Sample 2: Deploy pet store service as a managed API in k8s cluster](scenarios/scenario-2)
@@ -451,6 +456,7 @@ When prompted type `Y` when uninstalling API Operator.
 1. [Sample 16: Deploy multiple swagger-projects as one API](scenarios/scenario-16)
 1. [Sample 17: Expose an API using Ingress](scenarios/scenario-17)
 
-#### Troubleshooting Guide
+
+### Troubleshooting Guide
 
 You can refer [troubleshooting guide](docs/Troubleshooting/troubleshooting.md).
