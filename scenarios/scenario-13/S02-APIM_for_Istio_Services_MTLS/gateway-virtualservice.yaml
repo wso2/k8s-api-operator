@@ -61,7 +61,7 @@ spec:
         - destination:
             host: review
             port:
-              number: 80
+              number: 8080
     - match:
         - uri:
             prefix: "/storemep/v1.0.0/inventory"

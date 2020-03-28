@@ -848,7 +848,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 					}
 
 					reqLogger.Info("Operator mode is set to " + operatorMode)
-					if operatorMode == ingressMode {
+					if strings.EqualFold(operatorMode, ingressMode) {
 						ingErr := createorUpdateMgwIngressResource(r, instance, userNameSpace, int32(httpPortVal),
 							int32(httpsPortVal), apiBasePaths, controlIngressConf, owner)
 						if ingErr != nil {
@@ -902,7 +902,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 				}
 
 				reqLogger.Info("Operator mode is set to " + operatorMode)
-				if operatorMode == ingressMode {
+				if strings.EqualFold(operatorMode, ingressMode) {
 					ingErr := createorUpdateMgwIngressResource(r, instance, userNameSpace, int32(httpPortVal),
 						int32(httpsPortVal), apiBasePaths, controlIngressConf, owner)
 					if ingErr != nil {
@@ -962,7 +962,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 					}
 
 					reqLogger.Info("Operator mode is set to " + operatorMode)
-					if operatorMode == ingressMode {
+					if strings.EqualFold(operatorMode, ingressMode) {
 						ingErr := createorUpdateMgwIngressResource(r, instance, userNameSpace, int32(httpPortVal),
 							int32(httpsPortVal), apiBasePaths, controlIngressConf, owner)
 						if ingErr != nil {
@@ -1071,9 +1071,9 @@ func createHorizontalPodAutoscaler(dep *appsv1.Deployment, r *ReconcileAPI, owne
 	minReplicas int32, maxReplicas int32, targetAverageUtilizationCPU int32) error {
 
 	targetResource := v2beta1.CrossVersionObjectReference{
-		Kind:       "Deployment",
+		Kind:       dep.Kind,
 		Name:       dep.Name,
-		APIVersion: "extensions/v1beta1",
+		APIVersion: dep.APIVersion,
 	}
 	//CPU utilization
 	resourceMetricsForCPU := &v2beta1.ResourceMetricSource{
@@ -1629,8 +1629,8 @@ func createMgwDeployment(cr *wso2v1alpha1.API, conf *corev1.ConfigMap, analytics
 	containerList = append(containerList, apiContainer)
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "apps/v1",
-			Kind:       "Deployment",
+			APIVersion: apiVersion,
+			Kind:       deploymentKind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            cr.Name,
@@ -1847,7 +1847,7 @@ func createMgwLBService(r *ReconcileAPI, cr *wso2v1alpha1.API, nameSpace string,
 	var serviceType corev1.ServiceType
 	serviceType = corev1.ServiceTypeLoadBalancer
 
-	if operatorMode == ingressMode {
+	if strings.EqualFold(operatorMode, ingressMode) || strings.EqualFold(operatorMode, clusterIPMode) {
 		serviceType = corev1.ServiceTypeClusterIP
 	}
 
@@ -1865,11 +1865,11 @@ func createMgwLBService(r *ReconcileAPI, cr *wso2v1alpha1.API, nameSpace string,
 		Spec: corev1.ServiceSpec{
 			Type: serviceType,
 			Ports: []corev1.ServicePort{{
-				Name:       "port-9095",
+				Name:       httpsConst + "-" + portConst,
 				Port:       httpsPortVal,
 				TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: httpsPortVal},
 			}, {
-				Name:       "port-9090",
+				Name:       httpConst + "-" + portConst,
 				Port:       httpPortVal,
 				TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: httpPortVal},
 			}},
@@ -2478,8 +2478,8 @@ func (r *ReconcileAPI) createDeploymentForSidecarBackend(m *wso2v1alpha1.TargetE
 	replicas := m.Spec.Deploy.MinReplicas
 	dep := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "apps/v1",
-			Kind:       "Deployment",
+			APIVersion: apiVersion,
+			Kind:       deploymentKind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      m.ObjectMeta.Name,

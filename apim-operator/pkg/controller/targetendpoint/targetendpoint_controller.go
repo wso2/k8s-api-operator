@@ -25,6 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"reflect"
 	"strconv"
+	"strings"
 
 	wso2v1alpha1 "github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1"
 	v1 "github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/serving/v1alpha1"
@@ -174,7 +175,9 @@ func (r *ReconcileTargetEndpoint) Reconcile(request reconcile.Request) (reconcil
 		limitMemory = getResourceLimitMemory
 	}
 
-	mode := instance.Spec.Mode
+	var mode string
+	mode = instance.Spec.Mode.String()
+
 	if mode == "" {
 		mode =  privateJet
 	}
@@ -184,11 +187,12 @@ func (r *ReconcileTargetEndpoint) Reconcile(request reconcile.Request) (reconcil
 		minReplicas = 1
 	}
 
-	if instance.Spec.Deploy.DockerImage != "" && mode == "Serverless" {
+
+	if instance.Spec.Deploy.DockerImage != "" && strings.EqualFold(mode, serverless) {
 		if err := r.reconcileKnativeDeployment(instance); err != nil {
 			return reconcile.Result{}, err
 		}
-	} else if instance.Spec.Deploy.DockerImage != "" && mode == "privateJet" {
+	} else if instance.Spec.Deploy.DockerImage != "" && strings.EqualFold(mode, privateJet) {
 
 		reqLogger.Info("Reconcile K8s Endpoint")
 		if err := r.reconcileDeployment(instance, reqCpu, reqMemory, limitCpu, limitMemory, minReplicas);
@@ -215,7 +219,7 @@ func (r *ReconcileTargetEndpoint) Reconcile(request reconcile.Request) (reconcil
 	}
 	targetAvgUtilizationCPU := int32(intValueUtilCPU)
 
-	if instance.Spec.Mode != "Serverless" {
+	if strings.EqualFold(mode, privateJet) {
 		errGettingHpa := createTargetEndPointHPA(dep,r,owner, minReplicas, maxReplicas, targetAvgUtilizationCPU)
 		if errGettingHpa != nil {
 			log.Error(errGettingHpa, "Error getting HPA")
@@ -229,6 +233,7 @@ func (r *ReconcileTargetEndpoint) newDeploymentForCR(m *wso2v1alpha1.TargetEndpo
 	resourceLimitCPU string, resourceLimitMemory string, minReplicas int32) *appsv1.Deployment {
 
 	replicas := minReplicas
+
 	req := corev1.ResourceList{
 		corev1.ResourceCPU:    resource.MustParse(resourceReqCPU),
 		corev1.ResourceMemory: resource.MustParse(resourceReqMemory),
@@ -239,8 +244,8 @@ func (r *ReconcileTargetEndpoint) newDeploymentForCR(m *wso2v1alpha1.TargetEndpo
 	}
 	dep := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "apps/v1",
-			Kind:       "Deployment",
+			APIVersion: apiVersion,
+			Kind:       deploymentKind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      m.ObjectMeta.Name,
@@ -260,6 +265,7 @@ func (r *ReconcileTargetEndpoint) newDeploymentForCR(m *wso2v1alpha1.TargetEndpo
 						Image: m.Spec.Deploy.DockerImage,
 						Name:  m.Spec.Deploy.Name,
 						Ports: []corev1.ContainerPort{{
+							Name: m.Spec.Protocol + "-" + portKey,
 							ContainerPort: m.Spec.Port,
 						}},
 						Resources:corev1.ResourceRequirements{
@@ -281,8 +287,8 @@ func (r *ReconcileTargetEndpoint) newDeploymentForCR(m *wso2v1alpha1.TargetEndpo
 func (r *ReconcileTargetEndpoint) newKnativeDeploymentForCR(m *wso2v1alpha1.TargetEndpoint) *v1.Service {
 	ser := &v1.Service{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "serving.knative.dev/v1",
-			Kind:       "Service",
+			APIVersion: knativeApiVersion,
+			Kind:       serviceKind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      m.ObjectMeta.Name,
@@ -305,6 +311,7 @@ func (r *ReconcileTargetEndpoint) newKnativeDeploymentForCR(m *wso2v1alpha1.Targ
 									Image: m.Spec.Deploy.DockerImage,
 									Name:  m.Spec.Deploy.Name,
 									Ports: []corev1.ContainerPort{{
+										Name: m.Spec.Protocol + "-" + portKey,
 										ContainerPort: m.Spec.Port,
 									}},
 								},
@@ -372,6 +379,7 @@ func (r *ReconcileTargetEndpoint) reconcileDeployment(m *wso2v1alpha1.TargetEndp
 }
 
 func (r *ReconcileTargetEndpoint) reconcileKnativeDeployment(m *wso2v1alpha1.TargetEndpoint) error {
+
 	found := &v1.Service{}
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: m.Name, Namespace: m.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
@@ -418,8 +426,8 @@ func (r *ReconcileTargetEndpoint) newServiceForCR(m *wso2v1alpha1.TargetEndpoint
 
 	service := corev1.Service{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       "Service",
-			APIVersion: "apps/v1",
+			Kind:       serviceKind,
+			APIVersion: apiVersion,
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      m.ObjectMeta.Name,
@@ -428,7 +436,10 @@ func (r *ReconcileTargetEndpoint) newServiceForCR(m *wso2v1alpha1.TargetEndpoint
 		Spec: corev1.ServiceSpec{
 			Selector: m.ObjectMeta.Labels,
 			Ports: []corev1.ServicePort{
-				corev1.ServicePort{Port: m.Spec.Port, TargetPort: intstr.FromInt(targetPort)},
+				corev1.ServicePort{
+					Name: m.Spec.Protocol + "-" + portKey,
+					Port: m.Spec.Port,
+					TargetPort: intstr.FromInt(targetPort)},
 			},
 		},
 	}
@@ -442,11 +453,10 @@ func createTargetEndPointHPA(dep *appsv1.Deployment ,r *ReconcileTargetEndpoint,
 
 	instance := &wso2v1alpha1.TargetEndpoint{}
 
-
 	targetResource := v2beta1.CrossVersionObjectReference{
-		Kind:       "Deployment",
+		Kind:       dep.Kind,
 		Name:       dep.Name,
-		APIVersion: "extensions/v1beta1",
+		APIVersion: dep.APIVersion,
 	}
 	//CPU utilization
 	resourceMetricsForCPU := &v2beta1.ResourceMetricSource{
@@ -454,13 +464,13 @@ func createTargetEndPointHPA(dep *appsv1.Deployment ,r *ReconcileTargetEndpoint,
 		TargetAverageUtilization: &targetAverageUtilizationCPU,
 	}
 	metricsResCPU := v2beta1.MetricSpec{
-		Type:     "Resource",
+		Type:     resourceKey,
 		Resource: resourceMetricsForCPU,
 	}
 	metricsSet := []v2beta1.MetricSpec{metricsResCPU}
 	hpa := &v2beta1.HorizontalPodAutoscaler{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:            dep.Name + "-hpa",
+			Name:            dep.Name + "-" + hpaKey,
 			Namespace:       dep.Namespace,
 			OwnerReferences: owner,
 		},

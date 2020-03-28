@@ -95,7 +95,8 @@ const (
 	portConst                           = "port"
 	analyticsSecretConst                = "analyticsSecret"
 	operatorModeConst                   = "operatorMode"
-	ingressMode                         = "ingress"
+	ingressMode                         = "Ingress"
+	clusterIPMode                       = "ClusterIP"
 
 	authorizationUrl        = "https://example.com/oauth/authorize"
 	tokenUrl                = "https://example.com/oauth/token"
@@ -109,8 +110,6 @@ const (
 	pathsExtension          = "paths"
 	sidecar                 = "sidecar"
 	privateJet              = "privateJet"
-	serverless              = "serverless"
-	shared                  = "shared"
 	verifyHostNameVal       = "false"
 	apiCrdDefaultVersion    = "v1.0.0"
 
@@ -125,12 +124,12 @@ const (
 	resourceRequestMemory              = "resourceRequestMemory"
 	resourceLimitCPU                   = "resourceLimitCPU"
 	resourceLimitMemory                = "resourceLimitMemory"
-	resourceRequestCPUTarget           = "resourceRequestCPUTarget"
-	resourceRequestMemoryTarget        = "resourceRequestMemoryTarget"
-	resourceLimitCPUTarget             = "resourceLimitCPUTarget"
-	resourceLimitMemoryTarget          = "resourceLimitMemoryTarget"
 	generatekubernbetesartifactsformgw = "generatekubernbetesartifactsformgw"
 
 	httpPortValConst  = 9090
 	httpsPortValConst = 9095
+
+	deploymentKind					   = "Deployment"
+	serviceKind 					   = "Service"
+	apiVersion						   = "apps/v1"
 )
