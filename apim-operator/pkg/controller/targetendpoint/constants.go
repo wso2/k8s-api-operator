@@ -17,8 +17,8 @@ package targetendpoint
 
 const (
 
-	privateJet              		   = "privateJet"
-	serverless              		   = "serverless"
+	privateJet              	   = "privateJet"
+	serverless                   	   = "serverless"
 	hpaMaxReplicas                     = "hpaMaxReplicas"
 	hpaTargetAverageUtilizationCPU     = "hpaTargetAverageUtilizationCPU"
 
@@ -27,13 +27,13 @@ const (
 	resourceLimitCPUTarget             = "resourceLimitCPUTarget"
 	resourceLimitMemoryTarget          = "resourceLimitMemoryTarget"
 
-	resourceKey         			   = "Resource"
-	portKey						       = "port"
-	hpaKey 							   = "hpa"
+	resourceKey         	   	   = "Resource"
+	portKey			   	   = "port"
+	hpaKey 				   = "hpa"
 
-	deploymentKind					   = "Deployment"
-	serviceKind 					   = "Service"
-	apiVersion						   = "apps/v1"
-	knativeApiVersion				   = "serving.knative.dev/v1"
+	deploymentKind			   = "Deployment"
+	serviceKind 			   = "Service"
+	apiVersion			   = "apps/v1"
+	knativeApiVersion		   = "serving.knative.dev/v1"
 
 )
