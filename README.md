@@ -5,7 +5,7 @@
 As microservices are increasingly being deployed on Kubernetes, the need to expose these microservices as well documented, easy to consume, managed APIs is becoming important to develop great applications. The API operator for Kubernetes makes APIs a first-class citizen in the Kubernetes ecosystem. Similar to deploying microservices, you can now use this operator to deploy APIs for individual microservices or compose several microservices into individual APIs. With this users will be able to expose their microservice as managed API in Kubernetes environment without any additional work.
 
 
-![Alt text](docs/images/API-K8s-Operator.png?raw=true "Title")
+![Alt text](docs/images/K8s-API-Operator.png?raw=true "K8s API Operator")
 
 ## Quick Start Guide
 
@@ -24,7 +24,9 @@ In this document, we will walk through on the following.
 - [Kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
 
 - [Kubernetes v1.12 or above](https://Kubernetes.io/docs/setup/) <br>
-Minimum CPU and Memory for the K8s cluster: **2 vCPU, 8GB of Memory**
+
+    - Minimum CPU : 4vCPU
+    - Minimum Memory : 8GB
 
 - An account in DockerHub or private docker registry
 
@@ -291,13 +293,15 @@ You now have a microgateway deployed in Kubernetes that runs your API for the mi
 
     ```
     >> minikube service <SERVICE_NAME> --url
-    >> minikube service online-store
+    >> minikube service online-store --url
     ```
     
     The IP you receive from above output can be used as the "external-IP" in the following command.
 
 </p>
 </details>
+
+---
 
 - Invoke the API as a regular microservice
 

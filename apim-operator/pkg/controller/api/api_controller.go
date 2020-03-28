@@ -1896,7 +1896,7 @@ func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, nam
 	log.Info(fmt.Sprintf("Creating ingress resource with name: %v", ingressName))
 	log.Info(fmt.Sprintf("Creating ingress resource with API Base Path: %v", apiBasePaths))
 	log.WithValues("Ingress metadata. Transport mode", transportMode, "Ingress name", ingressName,
-		"Ingress hostname "+ingressHostName)
+		"Ingress hostname " + ingressHostName)
 	annotationMap, err := getConfigmap(r, ingressConfigs, wso2NameSpaceConst)
 	var port int32
 

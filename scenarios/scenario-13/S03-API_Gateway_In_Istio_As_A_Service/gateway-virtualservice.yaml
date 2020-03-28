@@ -14,29 +14,35 @@
 # specific language governing permissions and limitations
 # under the License.
 
-openapi: 3.0.0
-info:
-  title: Online-Store
-  version: v1.0.0
-  description: This API contains operations related to online shopping store.
-x-wso2-basePath: /store/{version}
-x-wso2-production-endpoints:
-  urls:
-  - http://products
-paths:
-  /products:
-    get:
-      responses:
-        "200":
-          description: successful operation
-  /products/{productId}:
-    get:
-      parameters:
-        - name: productId
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: successful operation
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: wso2-gateway
+  namespace: micro
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "api.wso2.com"
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: wso2-gateway-vs
+  namespace: micro
+spec:
+  hosts:
+  - "api.wso2.com"
+  gateways:
+  - wso2-gateway
+  http:
+   - route:
+     - destination:
+        host: online-store-api
+        port:
+          number: 9090
