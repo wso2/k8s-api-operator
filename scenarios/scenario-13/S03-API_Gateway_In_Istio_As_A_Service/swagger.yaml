@@ -22,13 +22,13 @@ info:
 x-wso2-basePath: /storemep/{version}
 x-wso2-production-endpoints:
   urls:
-    - http://products.micro
+    - http://products
 paths:
   /products:
     get:
       x-wso2-production-endpoints:
         urls:
-          - http://products.micro
+          - http://products
       responses:
         "200":
           description: ""
@@ -43,7 +43,7 @@ paths:
             type: string
       x-wso2-production-endpoints:
         urls:
-          - http://products.micro
+          - http://products
       responses:
         "200":
           description: ""
@@ -57,7 +57,7 @@ paths:
             type: string
       x-wso2-production-endpoints:
         urls:
-          - http://review.micro
+          - http://review
       responses:
         "200":
           description: ""
@@ -71,7 +71,7 @@ paths:
             type: string
       x-wso2-production-endpoints:
         urls:
-          - http://inventory.micro
+          - http://inventory
       responses:
         "200":
           description: ""
@@ -84,7 +84,7 @@ paths:
             type: string
       x-wso2-production-endpoints:
         urls:
-          - http://inventory.micro
+          - http://inventory
       requestBody:
         content:
           application/json:

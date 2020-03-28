@@ -4,124 +4,126 @@ In this scenario, we have several microservices which are deployed in Istio. For
 
 This works in Istio permissive mode and Strict MTLS mode.
 
+![Alt text](mtls-mode.png?raw=true "Istio in Permissive mode and MTLS mode")
+
 ### Installation Prerequisites
 
 - [Kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
 
-- [Kubernetes v1.12 or above](https://Kubernetes.io/docs/setup/) 
+- [Kubernetes v1.12 or above](https://Kubernetes.io/docs/setup/) <br>
 
-- Istio
+    - Minimum CPU : 6vCPU
+    - Minimum Memory : 8GB
+    
+- [Istio v1.3.x or above](https://istio.io/docs/setup/platform-setup/)
 
 - An account in DockerHub or private docker registry
 
-- Download [api-k8s-crds-1.0.1.zip](https://github.com/wso2/k8s-apim-operator/releases/download/v1.0.1/api-k8s-crds-1.0.1.zip) and extract the zip
+- Download [k8s-api-operator-1.1.0-beta.zip](https://github.com/wso2/k8s-apim-operator/releases/download/v1.1.0-beta/k8s-api-operator-1.1.0-beta.zip) and extract the zip
 
     1. This zip contains the artifacts that required to deploy in Kubernetes.
-    2. Extract api-k8s-crds-1.0.1.zip
+    2. Extract k8s-api-operator-1.1.0-beta.zip
     
     ```
-    cd api-k8s-crds-1.0.1
+    cd k8s-api-operator-1.1.0-beta
     ```
+ 
+**_Note:_** You need to run all commands from within the ***k8s-api-operator-1.1.0-beta*** directory.
 
-### Step 1: Install API Operator
-
-* Deploy the Controller artifacts <br>
-This will deploy the artifacts related to the API Operator
-    ```
-    >> kubectl apply -f apim-operator/controller-artifacts/
-    
-    Output:
-    
-    namespace/wso2-system created
-    deployment.apps/apim-operator created
-    clusterrole.rbac.authorization.k8s.io/apim-operator created
-    clusterrolebinding.rbac.authorization.k8s.io/apim-operator created
-    serviceaccount/apim-operator created
-    customresourcedefinition.apiextensions.k8s.io/apis.wso2.com created
-    customresourcedefinition.apiextensions.k8s.io/ratelimitings.wso2.com created
-    customresourcedefinition.apiextensions.k8s.io/securities.wso2.com created
-    customresourcedefinition.apiextensions.k8s.io/targetendpoints.wso2.com created
-    ```
-
-* Deploy the controller level configurations **[IMPORTANT]**
-
-    When you deploy an API, this will create a docker image for the API and be pushed to Docker-Hub. For this, your Docker-Hub credentials are required.
-    
-    1. Open **apim-operator/controller-configs/controller_conf.yaml** and navigate to docker registry section(mentioned below), and  update ***user's docker registry***.
-            
-        ```
-        #docker registry name which the mgw image to be pushed.  eg->  dockerRegistry: username
-        dockerRegistry: <username-docker-registry>
-        ```
-        
-    2. Open **apim-operator/controller-configs/docker_secret_template.yaml** and navigate to data section. <br>
-        Enter the base 64 encoded username and password of the Docker-Hub account 
-        
-        ```
-        data:
-         username: ENTER YOUR BASE64 ENCODED USERNAME
-         password: ENTER YOUR BASE64 ENCODED PASSWORD
-        ```
-        Once you done with the above configurations, execute the following command to deploy controller configurations.
-
-        ```
-        >> kubectl apply -f apim-operator/controller-configs/
-        
-        configmap/controller-config created
-        configmap/apim-config created
-        security.wso2.com/default-security-jwt created
-        secret/wso2am310-secret created
-        configmap/docker-secret-mustache created
-        secret/docker-secret created
-        configmap/dockerfile-template created
-        configmap/mgw-conf-mustache created
-        ```
 <br />
 
-### Step 2: Install Kubectl extensions
+#### Step 1: Configure API Controller
 
-- Make the extensions executable using the following command.
-    ```
-    >> chmod +x apim-operator/kubectl-extensions/kubectl-*
-    ```
-- Copy the extensions into ***/usr/local/bin*** directory.
-    ```
-    >> cp apim-operator/kubectl-extensions/kubectl-* /usr/local/bin/
-    ```
-    - **NOTE**: You may need to execute the COPY command with ***sudo***.
+- Download API controller v3.1.0-customized for your operating system from the [github](https://github.com/wso2/K8s-api-operator/tree/v1.1.0-beta)
+
+- Extract the API controller distribution and navigate inside the extracted folder using the command-line tool
+
+- Add the location of the extracted folder to your system's $PATH variable to be able to access the executable from anywhere.
+
+You can find available operations using the below command.
+```
+>> apictl --help
+```
+
+#### Step 2: Install API Operator
+
+Set the environment variable `WSO2_API_OPERATOR_VERSION` with the latest API Operator version.
+
+```sh
+>> export WSO2_API_OPERATOR_VERSION=v1.1.0-beta
+```
+
+- Execute the following command to install API Operator interactively and configure repository to push the microgateway image.
+- Select "Docker Hub" as the repository type.
+- Enter repository name of your Docker Hub account (usually it is the username as well).
+- Enter username and the password
+- Confirm configuration are correct with entering "Y"
+
+```sh
+>> apictl install api-operator
+Choose registry type:
+1: Docker Hub (Or others, quay.io, HTTPS registry)
+2: Amazon ECR
+3: GCR
+4: HTTP Private Registry
+Choose a number: 1: 1
+Enter repository name (docker.io/john | quay.io/mark | 10.100.5.225:5000/jennifer): docker.io/jennifer
+Enter username: jennifer
+Enter password: *******
+
+Repository: docker.io/jennifer
+Username  : jennifer
+Confirm configurations: Y: Y
+```
+
+Output:
+```sh
+customresourcedefinition.apiextensions.k8s.io/apis.wso2.com created
+customresourcedefinition.apiextensions.k8s.io/ratelimitings.wso2.com created
+...
+
+namespace/wso2-system created
+deployment.apps/apim-operator created
+...
+
+[Setting to K8s Mode]
+```
+
+#### Step 3: Deploy Microservices
+
+    >> apictl create -f microservices.yaml
+
+When you execute this command, it creates a namespace called micro and enable Istio sidecar injection for that namespace. Also this deploys 3 microservices.
+
+    >> apictl get pods -n micro
+    Output:
+    NAME                         READY   STATUS    RESTARTS   AGE
+    inventory-7dc5dfdc58-gnxqx   2/2     Running   0          9m
+    products-8d478dd48-2kgdk     2/2     Running   0          9m
+    review-677dd8fbd8-9ntth      2/2     Running   0          9m
     
-### Step 3: Deploy Microservices
+#### Step 4: Deploy an API for the microservices
 
-- Create the namespace micro and enable Istio injection.
-
-     ```
-     >> kubectl create ns micro
-     >> kubectl label namespace micro istio-injection=enabled
-     ```
-- Deploy microservices
-
-The following artifacts resides in the demo repo. <br/>
-
-    >> kubectl create -f microservices.yaml
-
+    >> apictl create ns wso2
+    >> apictl add api -n online-store-api --from-file=./swagger.yaml --namespace=wso2
     
-### Step 4: Deploy an API for the microservices
+We are creating a namespace called wso2 and deploy our API there. In this namespace, we have not enabled Istio sidecar injection.
+ 
+    >> apictl get pods -n wso2
+    Output:
+    NAME                                                        READY   STATUS      RESTARTS   AGE
+    online-store-api-5748695f7b-jxnpf                           1/1     Running     0          14m
+    online-store-api-kaniko-b5hqb                               0/1     Completed   0          14m
 
-     
-    >> kubectl create ns wso2
-    >> kubectl add api online-store-api --from-file=swagger.yaml --namespace=wso2 
-   
-### Step 5: Setup routing in Istio
+#### Step 5: Setup routing in Istio
 
 Due to Strict MTLS in Istio, we are deploying a gateway and a virtual service in Istio.
 
-    >> kubectl create -f gateway.yaml
-    >> kubectl create -f virtualservice.yaml
+    >> apictl create -f gateway-virtualservice.yaml
    
-### Step 6: Invoke the API
+#### Step 6: Invoke the API
  
- 
- - Retrieve the API service endpoint details
+- Retrieve the API service endpoint details
  
      The API service is exposed as the Load Balancer service type. You can get the API service endpoint details by using the following command.
  
@@ -129,7 +131,7 @@ Due to Strict MTLS in Istio, we are deploying a gateway and a virtual service in
      >> kubectl get services -n wso2
      
      Output:
-     NAME               TYPE           CLUSTER-IP     EXTERNAL-IP      PORT(S)                         AGE
+     NAME                   TYPE           CLUSTER-IP     EXTERNAL-IP      PORT(S)                         AGE
      online-store-api       LoadBalancer   10.83.9.142    35.232.188.134   9095:31055/TCP,9090:32718/TCP   57s
      ```
  
@@ -142,7 +144,7 @@ Due to Strict MTLS in Istio, we are deploying a gateway and a virtual service in
  
      ```
      >> minikube service <SERVICE_NAME> --url
-     >> minikube service online-store
+     >> minikube service online-store --url
      ```
      
      The IP you receive from above output can be used as the "external-IP" in the following command.
@@ -150,11 +152,13 @@ Due to Strict MTLS in Istio, we are deploying a gateway and a virtual service in
  </p>
  </details>
  
+---
+ 
  - Invoke the API as a regular microservice
  
      Let’s observe what happens if you try to invoke the API as a regular microservice.
      ```
-     >> curl -X GET "https://<EXTERNAL-IP>:9095/store/v1.0.0/products" -k
+     >> curl -X GET "https://<EXTERNAL-IP>:9095/storemep/v1.0.0/products" -k
      ```
      
      You will get an error as below.
@@ -177,19 +181,19 @@ Due to Strict MTLS in Istio, we are deploying a gateway and a virtual service in
      ```
      Format: 
      
-     >> curl -X GET "https://<EXTERNAL-IP>:9095/<API-context>/<API-resource>" -H "accept: application/json" -H "Authorization:Bearer $TOKEN" -k
+     >> curl -X GET "https://<EXTERNAL-IP>:9095/<API-context>/<API-resource>" -H "Authorization:Bearer $TOKEN" -k
      ```
  
      Example commands:
      
      ```
-     >> curl -X GET "https://35.232.188.134:9095/store/v1.0.0/products" -H "Authorization:Bearer $TOKEN" -k
+     >> curl -X GET "https://35.232.188.134:9095/storemep/v1.0.0/products" -H "Authorization:Bearer $TOKEN" -k
      
-     >> curl -X GET "https://35.232.188.134:9095/store/v1.0.0/products/101" -H "Authorization:Bearer $TOKEN" -k
+     >> curl -X GET "https://35.232.188.134:9095/storemep/v1.0.0/products/101" -H "Authorization:Bearer $TOKEN" -k
           
-     >> curl -X GET "https://35.232.188.134:9095/store/v1.0.0/review/101" -H "Authorization:Bearer $TOKEN" -k
+     >> curl -X GET "https://35.232.188.134:9095/storemep/v1.0.0/review/101" -H "Authorization:Bearer $TOKEN" -k
      
-     >> curl -X GET "https://35.232.188.134:9095/store/v1.0.0/inventory/101" -H "Authorization:Bearer $TOKEN" -k
+     >> curl -X GET "https://35.232.188.134:9095/storemep/v1.0.0/inventory/101" -H "Authorization:Bearer $TOKEN" -k
      ```
 
  <br />

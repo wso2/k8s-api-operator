@@ -144,10 +144,10 @@ func (r *ReconcileTargetEndpoint) Reconcile(request reconcile.Request) (reconcil
 
 	controlConfigData := controlConf.Data
 	var getResourceReqCPU string
-	getResourceReqCPU = controlConfigData["resourceRequestCPUTarget"]
-	getResourceReqMemory := controlConfigData["resourceRequestMemoryTarget"]
-	getResourceLimitCPU := controlConfigData["resourceLimitCPUTarget"]
-	getResourceLimitMemory := controlConfigData["resourceLimitMemoryTarget"]
+	getResourceReqCPU = controlConfigData[resourceRequestCPUTarget]
+	getResourceReqMemory := controlConfigData[resourceRequestMemoryTarget]
+	getResourceLimitCPU := controlConfigData[resourceLimitCPUTarget]
+	getResourceLimitMemory := controlConfigData[resourceLimitMemoryTarget]
 
 	var reqCpu string
 	if instance.Spec.Deploy.ReqCpu != "" {
@@ -174,13 +174,24 @@ func (r *ReconcileTargetEndpoint) Reconcile(request reconcile.Request) (reconcil
 		limitMemory = getResourceLimitMemory
 	}
 
-	if instance.Spec.Deploy.DockerImage != "" && instance.Spec.Mode == "Serverless" {
+	mode := instance.Spec.Mode
+	if mode == "" {
+		mode =  privateJet
+	}
+
+	minReplicas := int32(instance.Spec.Deploy.MinReplicas)
+	if minReplicas <= 0 {
+		minReplicas = 1
+	}
+
+	if instance.Spec.Deploy.DockerImage != "" && mode == "Serverless" {
 		if err := r.reconcileKnativeDeployment(instance); err != nil {
 			return reconcile.Result{}, err
 		}
-	} else if instance.Spec.Deploy.DockerImage != "" && instance.Spec.Mode == "privateJet" {
+	} else if instance.Spec.Deploy.DockerImage != "" && mode == "privateJet" {
+
 		reqLogger.Info("Reconcile K8s Endpoint")
-		if err := r.reconcileDeployment(instance,reqCpu,reqMemory,limitCpu,limitMemory);
+		if err := r.reconcileDeployment(instance, reqCpu, reqMemory, limitCpu, limitMemory, minReplicas);
 		err != nil {
 			return reconcile.Result{}, err
 		}
@@ -189,21 +200,21 @@ func (r *ReconcileTargetEndpoint) Reconcile(request reconcile.Request) (reconcil
 		}
 	}
 
-	dep := r.newDeploymentForCR(instance,reqCpu,reqMemory,limitCpu,limitMemory)
+	dep := r.newDeploymentForCR(instance, reqCpu, reqMemory, limitCpu, limitMemory, minReplicas)
 
-	getMaxRep := controlConfigData["hpaMaxReplicas"]
+	getMaxRep := controlConfigData[hpaMaxReplicas]
 	intValueRep, err := strconv.ParseInt(getMaxRep, 10, 32)
 	if err != nil {
 		log.Error(err, "error getting max replicas")
 	}
 	maxReplicas := int32(intValueRep)
-	GetAvgUtilCPU := controlConfigData["hpaTargetAverageUtilizationCPU"]
+	GetAvgUtilCPU := controlConfigData[hpaTargetAverageUtilizationCPU]
 	intValueUtilCPU, err := strconv.ParseInt(GetAvgUtilCPU, 10, 32)
 	if err != nil {
 		log.Error(err, "error getting hpa target average utilization for CPU")
 	}
 	targetAvgUtilizationCPU := int32(intValueUtilCPU)
-	minReplicas := int32(instance.Spec.Deploy.MinReplicas)
+
 	if instance.Spec.Mode != "Serverless" {
 		errGettingHpa := createTargetEndPointHPA(dep,r,owner, minReplicas, maxReplicas, targetAvgUtilizationCPU)
 		if errGettingHpa != nil {
@@ -215,8 +226,9 @@ func (r *ReconcileTargetEndpoint) Reconcile(request reconcile.Request) (reconcil
 
 // Create newDeploymentForCR method to create a deployment.
 func (r *ReconcileTargetEndpoint) newDeploymentForCR(m *wso2v1alpha1.TargetEndpoint, resourceReqCPU string, resourceReqMemory string,
-	resourceLimitCPU string, resourceLimitMemory string) *appsv1.Deployment {
-	replicas := m.Spec.Deploy.MinReplicas
+	resourceLimitCPU string, resourceLimitMemory string, minReplicas int32) *appsv1.Deployment {
+
+	replicas := minReplicas
 	req := corev1.ResourceList{
 		corev1.ResourceCPU:    resource.MustParse(resourceReqCPU),
 		corev1.ResourceMemory: resource.MustParse(resourceReqMemory),
@@ -337,13 +349,15 @@ func (r *ReconcileTargetEndpoint) reconcileService(m *wso2v1alpha1.TargetEndpoin
 }
 
 func (r *ReconcileTargetEndpoint) reconcileDeployment(m *wso2v1alpha1.TargetEndpoint,resourceReqCPU string, resourceReqMemory string,
-	resourceLimitCPU string, resourceLimitMemory string) error {
+	resourceLimitCPU string, resourceLimitMemory string, minReplicas int32) error {
+
 	found := &appsv1.Deployment{}
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: m.Name, Namespace: m.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new deployment
-		dep := r.newDeploymentForCR(m,resourceReqCPU,resourceReqMemory,resourceLimitCPU,resourceLimitMemory)
-		log.WithValues("Creating a new Deployment %s/%s\n", dep.Namespace, dep.Name)
+		dep := r.newDeploymentForCR(m, resourceReqCPU, resourceReqMemory, resourceLimitCPU, resourceLimitMemory, minReplicas)
+		log.WithValues("Creating a new Deployment [namespace] ", dep.Namespace, "[deployment-name]", dep.Name)
+
 		err = r.client.Create(context.TODO(), dep)
 		if err != nil {
 			log.WithValues("Failed to create new Deployment: %v\n", err)
@@ -363,7 +377,8 @@ func (r *ReconcileTargetEndpoint) reconcileKnativeDeployment(m *wso2v1alpha1.Tar
 	if err != nil && errors.IsNotFound(err) {
 		//Define new Knative deployment
 		ser := r.newKnativeDeploymentForCR(m)
-		log.WithValues("Creating new Knative Service %s%s\n", ser.Namespace, ser.Name)
+		log.WithValues("Creating new Knative Service [namespace] ", ser.Namespace, " [knative-service-name] ", ser.Name)
+
 		err = r.client.Create(context.TODO(), ser)
 		if err != nil {
 			log.WithValues("Failed to create new Knative Service: %v\n", err)
