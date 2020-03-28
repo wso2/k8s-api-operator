@@ -4,6 +4,7 @@
 
 As microservices are increasingly being deployed on Kubernetes, the need to expose these microservices as well documented, easy to consume, managed APIs is becoming important to develop great applications. The API operator for Kubernetes makes APIs a first-class citizen in the Kubernetes ecosystem. Similar to deploying microservices, you can now use this operator to deploy APIs for individual microservices or compose several microservices into individual APIs. With this users will be able to expose their microservice as managed API in Kubernetes environment without any additional work.
 
+
 ![Alt text](../images/K8s-API-Operator.png?raw=true "K8s API Operator")
 
 ## Quick Start Guide
@@ -100,7 +101,7 @@ In this document, we will walk through on the following.
 
 #### Step 2: Configure API Controller
 
-- Download API controller v3.1.0-beta for your operating system from the [github](https://github.com/wso2/product-apim-tooling/releases/tag/v3.1.0-beta)
+- Download API controller v3.1.0-customized for your operating system from the [github](https://github.com/wso2/K8s-api-operator/tree/v1.1.0-beta)
 
 - Extract the API controller distribution and navigate inside the extracted folder using the command-line tool
 
@@ -110,6 +111,7 @@ You can find available operations using the below command.
 ```
 >> apictl --help
 ```
+<br />
 
 #### Step 3: Install API Operator
 
@@ -154,7 +156,9 @@ deployment.apps/apim-operator created
 
 [Setting to K8s Mode]
 ```
-        
+    
+<br />
+
 #### Step 4: Install the API portal and security token service
 
 Kubernetes installation artifacts for API portal and security token service are available in the k8s-artifacts directory.
@@ -300,7 +304,7 @@ You now have a microgateway deployed in Kubernetes that runs your API for the mi
 </p>
 </details>
 
----
+-----
 
 - Invoke the API as a regular microservice
 
@@ -413,11 +417,12 @@ Access Token:  eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6IlpqUm1ZVE13TlRKak9XV
 
 <br />
 
-#### Documentation
+### Documentation
 
-You can find the documentation [here](docs/Readme.md).
+You can find the documentation [here](../Readme.md).
 
-#### Cleanup
+
+### Cleanup
 
 Execute the following commands if you wish to clean up the Kubernetes cluster by removing all the applied artifacts and configurations related to API operator and API portal.
 
@@ -430,26 +435,28 @@ Execute the following commands if you wish to clean up the Kubernetes cluster by
 
 When prompted type `Y` when uninstalling API Operator.
   
-#### Sample Scenarios
 
-1. [Sample 1: Expose a K8s service as an API](scenarios/scenario-1)
-1. [Sample 2: Deploy pet store service as a managed API in k8s cluster](scenarios/scenario-2)
-1. [Sample 3: Deploy pet store service as a managed API secured with Basic Auth](scenarios/scenario-3)
-1. [Sample 4: Deploy pet store service as a managed API secured with JWT](scenarios/scenario-4)
-1. [Sample 5: Deploy pet store service as a managed API secured with OAuth2](scenarios/scenario-5)
-1. [Sample 6: Apply rate-limiting to managed API in Kubernetes cluster](scenarios/scenario-6)
-1. [Sample 7: Deploy APIs in k8s in private jet mode](scenarios/scenario-7)
-1. [Sample 8: Deploy APIs in k8s in sidecar mode](scenarios/scenario-8)
-1. [Sample 9: Expose an API with multiple service endpoints](scenarios/scenario-9)
-1. [Sample 10: Apply interceptors to an API](scenarios/scenario-10)
-1. [Sample 11: Enabling Analytics for managed API](scenarios/scenario-11)
-1. [Sample 12: Apply distributed rate-limiting to managed API in Kubernetes cluster](scenarios/scenario-12)
-1. [Sample 13: K8s API Operator for Istio](scenarios/scenario-13)
-1. [Sample 14: API Management in Serverless (Knative)](scenarios/scenario-14)
-1. [Sample 15: Apply Java interceptors to an API](scenarios/scenario-15)
-1. [Sample 16: Deploy multiple swagger-projects as one API](scenarios/scenario-16)
-1. [Sample 17: Expose an API using Ingress](scenarios/scenario-17)
+### Sample Scenarios
 
-#### Troubleshooting Guide
+1. [Sample 1: Expose a K8s service as an API](../../scenarios/scenario-1)
+1. [Sample 2: Deploy pet store service as a managed API in k8s cluster](../../scenarios/scenario-2)
+1. [Sample 3: Deploy pet store service as a managed API secured with Basic Auth](../../scenarios/scenario-3)
+1. [Sample 4: Deploy pet store service as a managed API secured with JWT](../../scenarios/scenario-4)
+1. [Sample 5: Deploy pet store service as a managed API secured with OAuth2](../../scenarios/scenario-5)
+1. [Sample 6: Apply rate-limiting to managed API in Kubernetes cluster](../../scenarios/scenario-6)
+1. [Sample 7: Deploy APIs in k8s in private jet mode](../../scenarios/scenario-7)
+1. [Sample 8: Deploy APIs in k8s in sidecar mode](../../scenarios/scenario-8)
+1. [Sample 9: Expose an API with multiple service endpoints](../../scenarios/scenario-9)
+1. [Sample 10: Apply interceptors to an API](../../scenarios/scenario-10)
+1. [Sample 11: Enabling Analytics for managed API](../../scenarios/scenario-11)
+1. [Sample 12: Apply distributed rate-limiting to managed API in Kubernetes cluster](../../scenarios/scenario-12)
+1. [Sample 13: K8s API Operator for Istio](../../scenarios/scenario-13)
+1. [Sample 14: API Management in Serverless (Knative)](../../scenarios/scenario-14)
+1. [Sample 15: Apply Java interceptors to an API](../../scenarios/scenario-15)
+1. [Sample 16: Deploy multiple swagger-projects as one API](../../scenarios/scenario-16)
+1. [Sample 17: Expose an API using Ingress](../../scenarios/scenario-17)
 
-You can refer [troubleshooting guide](docs/Troubleshooting/troubleshooting.md).
+
+### Troubleshooting Guide
+
+You can refer [troubleshooting guide](../Troubleshooting/troubleshooting.md).
