@@ -19,7 +19,7 @@ package registry
 import (
 	"fmt"
 	"github.com/go-logr/logr"
-	"github.com/wso2/k8s-apim-operator/apim-operator/pkg/registry/utils"
+	"github.com/wso2/k8s-api-operator/apim-operator/pkg/registry/utils"
 	corev1 "k8s.io/api/core/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )

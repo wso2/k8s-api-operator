@@ -19,8 +19,9 @@ package ratelimiting
 import (
 	"context"
 
-	wso2v1alpha1 "github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1"
+	wso2v1alpha1 "github.com/wso2/k8s-api-operator/apim-operator/pkg/apis/wso2/v1alpha1"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -33,7 +34,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	appsv1 "k8s.io/api/apps/v1"
 
 	"fmt"
 	"strings"
@@ -125,7 +125,7 @@ func (r *ReconcileRateLimiting) Reconcile(request reconcile.Request) (reconcile.
 	//gets the details of the operator as the owner
 	operatorOwner, ownerErr := getOperatorOwner(r)
 	if ownerErr != nil {
-		reqLogger.Info("Operator was not found in the "+wso2NameSpaceConst+" namespace. No owner will be set for the artifacts")
+		reqLogger.Info("Operator was not found in the " + wso2NameSpaceConst + " namespace. No owner will be set for the artifacts")
 	}
 
 	// GENERATE POLICY YAML USING CRD INSTANCE
@@ -196,12 +196,11 @@ func (r *ReconcileRateLimiting) Reconcile(request reconcile.Request) (reconcile.
 	var newSub []map[string]Policy
 	var newApp []map[string]Policy
 
-
 	if policyType == resourceConst && !IsPolicyExist(oldRes, name) {
 		newRes = append(oldRes, newPolObj)
 		newSub = oldSub
 		newApp = oldApp
-	} else if policyType == subscriptionConst && !IsPolicyExist(oldSub, name){
+	} else if policyType == subscriptionConst && !IsPolicyExist(oldSub, name) {
 		newRes = oldRes
 		newSub = append(oldSub, newPolObj)
 		newApp = oldApp
@@ -244,8 +243,8 @@ func CreatePolicyConfigMap(output string, operatorOwner []metav1.OwnerReference,
 
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      policyConfMapNameConst,
-			Namespace: userNameSpace,
+			Name:            policyConfMapNameConst,
+			Namespace:       userNameSpace,
 			OwnerReferences: operatorOwner,
 		},
 		Data: map[string]string{
@@ -266,8 +265,6 @@ func IsPolicyExist(policyArrayMap []map[string]Policy, name string) bool {
 		return false
 	}
 }
-
-
 
 // CreateDefault creates the structure of policy yaml with default policies
 func CreateDefault() string {

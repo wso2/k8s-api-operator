@@ -134,4 +134,4 @@
     - For more information refer [how to define security guide](../HowToGuide/apply-security-to-api.md)
     
 
-| Did not find what you were looking for? Please let us know by creating a [GitHub issue](https://github.com/wso2/k8s-apim-operator/issues).
+| Did not find what you were looking for? Please let us know by creating a [GitHub issue](https://github.com/wso2/k8s-api-operator/issues).

@@ -23,9 +23,9 @@ import (
 	"fmt"
 	"github.com/golang/glog"
 	"github.com/sirupsen/logrus"
-	v1 "github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/serving/v1alpha1"
-	"github.com/wso2/k8s-apim-operator/apim-operator/pkg/registry"
-	"github.com/wso2/k8s-apim-operator/apim-operator/pkg/registry/utils"
+	v1 "github.com/wso2/k8s-api-operator/apim-operator/pkg/apis/serving/v1alpha1"
+	"github.com/wso2/k8s-api-operator/apim-operator/pkg/registry"
+	"github.com/wso2/k8s-api-operator/apim-operator/pkg/registry/utils"
 	"k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/client-go/kubernetes"
@@ -37,7 +37,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	wso2v1alpha1 "github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/wso2/v1alpha1"
+	wso2v1alpha1 "github.com/wso2/k8s-api-operator/apim-operator/pkg/apis/wso2/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/api/autoscaling/v2beta1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -62,7 +62,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi2"
 	"github.com/getkin/kin-openapi/openapi2conv"
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/wso2/k8s-apim-operator/apim-operator/pkg/controller/ratelimiting"
+	"github.com/wso2/k8s-api-operator/apim-operator/pkg/controller/ratelimiting"
 )
 
 var log = logf.Log.WithName("controller_api")
@@ -1896,7 +1896,7 @@ func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, nam
 	log.Info(fmt.Sprintf("Creating ingress resource with name: %v", ingressName))
 	log.Info(fmt.Sprintf("Creating ingress resource with API Base Path: %v", apiBasePaths))
 	log.WithValues("Ingress metadata. Transport mode", transportMode, "Ingress name", ingressName,
-		"Ingress hostname " + ingressHostName)
+		"Ingress hostname "+ingressHostName)
 	annotationMap, err := getConfigmap(r, ingressConfigs, wso2NameSpaceConst)
 	var port int32
 

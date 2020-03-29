@@ -22,7 +22,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ecr"
 	"github.com/go-logr/logr"
-	"github.com/wso2/k8s-apim-operator/apim-operator/pkg/registry/utils"
+	"github.com/wso2/k8s-api-operator/apim-operator/pkg/registry/utils"
 	corev1 "k8s.io/api/core/v1"
 	"strings"
 )

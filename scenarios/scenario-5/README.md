@@ -77,7 +77,7 @@ In this swagger definition, the security schema of the "petstore" service has be
             ```
             - Output:
             ```$xslt
-                Initializing a new WSO2 API Manager project in /home/dinusha/k8s-apim-operator/scenarios/scenario-5/petstore-oauth
+                Initializing a new WSO2 API Manager project in /home/wso2/k8s-api-operator/scenarios/scenario-5/petstore-oauth
                 Project initialized
                 Open README file to learn more
             ```

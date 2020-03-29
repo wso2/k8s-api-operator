@@ -75,7 +75,7 @@ apictl set --mode k8s
 ```
 kubectl create ns wso2-system
 ```
-* Extract [api-k8s-crds-1.0.1.zip](https://github.com/wso2/k8s-apim-operator/releases/download/v1.0.1/api-k8s-crds-1.0.1.zip). This zip contains the artifacts that required to deploy in Kubernetes. 
+* Extract [api-k8s-crds-1.0.1.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.0.1/api-k8s-crds-1.0.1.zip). This zip contains the artifacts that required to deploy in Kubernetes. 
 ```
 cd api-k8s-crds-1.0.1    
 ```

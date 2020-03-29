@@ -1,4 +1,4 @@
-module github.com/wso2/k8s-apim-operator/apim-operator
+module github.com/wso2/k8s-api-operator/apim-operator
 
 go 1.13
 

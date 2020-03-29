@@ -13,9 +13,9 @@ import (
 
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
-		"github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/serving/v1alpha1.Service":       schema_pkg_apis_serving_v1alpha1_Service(ref),
-		"github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/serving/v1alpha1.ServiceSpec":   schema_pkg_apis_serving_v1alpha1_ServiceSpec(ref),
-		"github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/serving/v1alpha1.ServiceStatus": schema_pkg_apis_serving_v1alpha1_ServiceStatus(ref),
+		"github.com/wso2/k8s-api-operator/apim-operator/pkg/apis/serving/v1alpha1.Service":       schema_pkg_apis_serving_v1alpha1_Service(ref),
+		"github.com/wso2/k8s-api-operator/apim-operator/pkg/apis/serving/v1alpha1.ServiceSpec":   schema_pkg_apis_serving_v1alpha1_ServiceSpec(ref),
+		"github.com/wso2/k8s-api-operator/apim-operator/pkg/apis/serving/v1alpha1.ServiceStatus": schema_pkg_apis_serving_v1alpha1_ServiceStatus(ref),
 	}
 }
 
@@ -47,19 +47,19 @@ func schema_pkg_apis_serving_v1alpha1_Service(ref common.ReferenceCallback) comm
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/serving/v1alpha1.ServiceSpec"),
+							Ref: ref("github.com/wso2/k8s-api-operator/apim-operator/pkg/apis/serving/v1alpha1.ServiceSpec"),
 						},
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/serving/v1alpha1.ServiceStatus"),
+							Ref: ref("github.com/wso2/k8s-api-operator/apim-operator/pkg/apis/serving/v1alpha1.ServiceStatus"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/serving/v1alpha1.ServiceSpec", "github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/serving/v1alpha1.ServiceStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/wso2/k8s-api-operator/apim-operator/pkg/apis/serving/v1alpha1.ServiceSpec", "github.com/wso2/k8s-api-operator/apim-operator/pkg/apis/serving/v1alpha1.ServiceStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -80,14 +80,14 @@ func schema_pkg_apis_serving_v1alpha1_ServiceSpec(ref common.ReferenceCallback) 
 					"template": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Template holds the latest specification for the Revision to be stamped out.",
-							Ref:         ref("github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/serving/v1alpha1.RevisionTemplateSpec"),
+							Ref:         ref("github.com/wso2/k8s-api-operator/apim-operator/pkg/apis/serving/v1alpha1.RevisionTemplateSpec"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/wso2/k8s-apim-operator/apim-operator/pkg/apis/serving/v1alpha1.RevisionTemplateSpec"},
+			"github.com/wso2/k8s-api-operator/apim-operator/pkg/apis/serving/v1alpha1.RevisionTemplateSpec"},
 	}
 }
 
