@@ -47,16 +47,16 @@ An OperatorGroup selects a set of target namespaces in which to generate require
 apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
 metadata:
-  name: my-apim-operator
+  name: my-api-operator
   namespace: wso2-system
 spec:
   channel: stable
-  name: apim-operator
+  name: api-operator
   source: operatorhubio-catalog
   sourceNamespace: olm
 ```
 A subscription keeps CSVs up to date by tracking a channel in a package.
-The above "my-apim-operator" subscription is deployed in the wso2-system namespace and we have provided the name and namespace of the catalog source coming with the operator lifecycle manager. We have also provided the operator name we want to deploy and the channel of the operator we want to subscribe.
+The above "my-api-operator" subscription is deployed in the wso2-system namespace and we have provided the name and namespace of the catalog source coming with the operator lifecycle manager. We have also provided the operator name we want to deploy and the channel of the operator we want to subscribe.
 </br>
 A CatalogSource is a repository of CSVs, CRDs, and packages that define an application. "operatorhubio-catalog" contains the CSVs, CRDs and packages of all the operators available in OperatorHub.io.
 </br>
@@ -96,12 +96,12 @@ cd api-k8s-crds-1.0.1
 ```
 * Deploy the controller level configurations </br>
 **[IMPORTANT]**   When you deploy an API, this will create a docker image for the API and be pushed to Docker-Hub. For this, your Docker-Hub credentials are required.   
-1. Open **apim-operator/controller-configs/controller_conf.yaml** and navigate to docker registry section(mentioned below), and  update ***user's docker registry***.       
+1. Open **api-operator/controller-configs/controller_conf.yaml** and navigate to docker registry section(mentioned below), and  update ***user's docker registry***.       
 ```
 #docker registry name which the mgw image to be pushed.
 dockerRegistry: <username-docker-registry>        
 ``` 
-2. Open **apim-operator/controller-configs/docker_secret_template.yaml** and navigate to data section. </br> Enter the base 64 encoded username and password of the Docker-Hub account        
+2. Open **api-operator/controller-configs/docker_secret_template.yaml** and navigate to data section. </br> Enter the base 64 encoded username and password of the Docker-Hub account        
 ```        
 data:         
   username: ENTER YOUR BASE64 ENCODED USERNAME         
@@ -109,7 +109,7 @@ data:
 ```        
 Once you done with the above configurations, execute the following command to deploy controller configurations.       
 ```
-kubectl apply -f apim-operator/controller-configs/
+kubectl apply -f api-operator/controller-configs/
 
 configmap/controller-config created       
 configmap/apim-config created   

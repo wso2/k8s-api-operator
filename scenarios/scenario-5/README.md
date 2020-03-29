@@ -8,7 +8,7 @@
 - Then we will create the API and push it to API Manager deployment to obtain OAuth2 access token. **Hence we would need API Portal in the Kubernetes cluster to try out this scenario**. 
 
  ***Important:***
-> Follow the main README and deploy the apim-operator and configuration files. Make sure to set the analyticsEnabled to "true" and deploy analytics secret with credentials to analytics server and certificate, if you want to check analytics.
+> Follow the main README and deploy the api-operator and configuration files. Make sure to set the analyticsEnabled to "true" and deploy analytics secret with credentials to analytics server and certificate, if you want to check analytics.
 
  ##### Deploying the artifacts
 

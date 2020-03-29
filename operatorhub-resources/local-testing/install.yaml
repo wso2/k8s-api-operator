@@ -40,7 +40,7 @@ metadata:
   namespace: marketplace
 spec:
   channel: stable
-  name: apim-operator
+  name: api-operator
   source: rameshakaru-operators
   sourceNamespace: marketplace
   

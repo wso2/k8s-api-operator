@@ -13,7 +13,7 @@ You can refer the available additional flags for the Kaniko [here](https://githu
 If you wish to add these additional flags to the Kaniko job, please follow the instructions below.
 
 
-1. Find the config map named "kaniko-arguments" (can be found inside <API-Operator-home>/apim-operator/controller-artifacts/controller_conf.yaml)
+1. Find the config map named "kaniko-arguments" (can be found inside <API-Operator-home>/api-operator/controller-artifacts/controller_conf.yaml)
 2. Include the [Kaniko additional flags]((https://github.com/GoogleContainerTools/kaniko#additional-flags)) you need under ***KanikoArguments***. 
 
 An example is shown below.

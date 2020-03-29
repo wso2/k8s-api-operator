@@ -61,6 +61,6 @@ spec:
    limit: 3
 ```
 
-Implementation of the ratelimiting controller is found [here](https://github.com/wso2/k8s-api-operator/blob/master/apim-operator/pkg/controller/ratelimiting/ratelimiting_controller.go)
+Implementation of the ratelimiting controller is found [here](https://github.com/wso2/k8s-api-operator/blob/master/api-operator/pkg/controller/ratelimiting/ratelimiting_controller.go)
 
-Sample ratelimiting definitions are provided [here](../../apim-operator/deploy/sample-definitions/wso2_v1alpha1_ratelimiting_cr.yaml)
+Sample ratelimiting definitions are provided [here](../../api-operator/deploy/sample-definitions/wso2_v1alpha1_ratelimiting_cr.yaml)

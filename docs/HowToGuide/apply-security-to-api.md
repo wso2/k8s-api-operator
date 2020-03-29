@@ -106,4 +106,4 @@
      ```
 
 
-   sample security definitions are provided in [here](../../apim-operator/deploy/sample-definitions/security_definitions.yaml)
+   sample security definitions are provided in [here](../../api-operator/deploy/sample-definitions/security_definitions.yaml)

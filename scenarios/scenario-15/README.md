@@ -7,7 +7,7 @@
 - Finally, we will invoke the API and observe how the added interceptors act on requests and responses.
 
 ***Important:***
-> Follow the main README and deploy the apim-operator and configuration files. Make sure to set the analyticsEnabled to "true" and deploy analytics secret with credentials to analytics server and certificate, if you want to check analytics.
+> Follow the main README and deploy the api-operator and configuration files. Make sure to set the analyticsEnabled to "true" and deploy analytics secret with credentials to analytics server and certificate, if you want to check analytics.
 
 
  ##### Deploying the artifacts

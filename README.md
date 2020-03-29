@@ -151,7 +151,7 @@ customresourcedefinition.apiextensions.k8s.io/ratelimitings.wso2.com created
 ...
 
 namespace/wso2-system created
-deployment.apps/apim-operator created
+deployment.apps/api-operator created
 ...
 
 [Setting to K8s Mode]

@@ -2,7 +2,7 @@
 
 [OperatorHub.io](https://operatorhub.io) is a place where K8s community share Operators. API Operator is available in OperatorHub and is compatible with Operator Lifecycle Manager.
 
-For more information please visit [OperatorHub](https://operatorhub.io/operator/apim-operator) 
+For more information please visit [OperatorHub](https://operatorhub.io/operator/api-operator) 
 
 The Operator Lifecycle Manager (OLM) helps users install, update, and manage the lifecycle of all Operators and their associated services running across their clusters. It is part of the Operator Framework, an open source toolkit designed to manage Kubernetes native applications (Operators) in an effective, automated, and scalable way.
 
