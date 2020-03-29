@@ -593,7 +593,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	registry.SetRegistry(registryType, repositoryName, builtImage, builtImageTag)
 
 	// check if the image already exists
-	imageExist, errImage := isImageExist(r, ConfigJsonVolume, userNameSpace)
+	imageExist, errImage := isImageExist(r, utils.DockerRegCredSecret, userNameSpace)
 	if errImage != nil {
 		log.Error(errImage, "Error in image finding")
 	}

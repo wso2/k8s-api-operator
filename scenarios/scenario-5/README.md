@@ -92,7 +92,7 @@ In this swagger definition, the security schema of the "petstore" service has be
                 Username:admin
                 Password:
                 Logged into k8s environment
-                WARNING: credentials are stored as a plain text in /Users/ramesha/.wso2apictl/keys.json
+                WARNING: credentials are stored as a plain text in /Users/wso2/.wso2apictl/keys.json
 
                 The specified API was not found.
                 Creating: Petstore-Oauth v1

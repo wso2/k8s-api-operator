@@ -16,7 +16,6 @@
 package api
 
 const (
-	ConfigJsonVolume       = "config-json"
 	mgwDockerFile          = "dockerfile-conf"
 	interceptorsVolume     = "intcpt-vol"
 	javaInterceptorsVolume = "java-intcpt-vol"
