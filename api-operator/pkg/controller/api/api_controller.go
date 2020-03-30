@@ -593,7 +593,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	registry.SetRegistry(registryType, repositoryName, builtImage, builtImageTag)
 
 	// check if the image already exists
-	imageExist, errImage := isImageExist(r, utils.DockerRegCredSecret, userNameSpace)
+	imageExist, errImage := isImageExist(r, utils.DockerRegCredSecret, wso2NameSpaceConst)
 	if errImage != nil {
 		log.Error(errImage, "Error in image finding")
 	}
@@ -1743,7 +1743,7 @@ func policyHandler(r *ReconcileAPI, operatorOwner []metav1.OwnerReference, userN
 }
 
 // isImageExist checks if the image exists in the given registry using the secret in the user-namespace
-func isImageExist(r *ReconcileAPI, secretName string, userNamespace string) (bool, error) {
+func isImageExist(r *ReconcileAPI, secretName string, namespace string) (bool, error) {
 	var registryUrl string
 	var username string
 	var password string
@@ -1758,11 +1758,11 @@ func isImageExist(r *ReconcileAPI, secretName string, userNamespace string) (boo
 
 	// checks if the secret is available
 	dockerConfigSecret := &corev1.Secret{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: secretName, Namespace: userNamespace}, dockerConfigSecret)
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: secretName, Namespace: namespace}, dockerConfigSecret)
 	if err != nil && errors.IsNotFound(err) {
-		log.Info("Docker credentials secret is not found", "secret-name", secretName, "namespace", userNamespace)
+		log.Info("Docker credentials secret is not found", "secret-name", secretName, "namespace", namespace)
 	} else if err != nil {
-		log.Error(err, "Error while getting docker credentials secret", "secret-name", secretName, "namespace", userNamespace)
+		log.Error(err, "Error while getting docker credentials secret", "secret-name", secretName, "namespace", namespace)
 	} else {
 		authsJsonString := dockerConfigSecret.Data[utils.DockerConfigKeyConst]
 		auths := Auth{}
