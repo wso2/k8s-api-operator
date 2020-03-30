@@ -22,8 +22,8 @@ metadata:
 data:
   analyticsEnabled: "true"
   analyticsSecret: "analytics-secret"
-  uploadingTimeSpanInMillis: "60000"
-  rotatingPeriod: "60000"
+  uploadingTimeSpanInMillis: "30000"
+  rotatingPeriod: "30000"
   uploadFiles: "true"
   verifyHostname: "false"
   hostname: wso2apim-analytics-service.wso2

@@ -1232,7 +1232,7 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string, 
 				} else if erCr != nil {
 					log.Error(err, "Error in getting targetendpoint CRD object")
 				}
-				if targetEndpointCr.Spec.Mode == "Serverless" {
+				if strings.EqualFold(targetEndpointCr.Spec.Mode.String(), serverless) {
 					currentService := &v1.Service{}
 					err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: userNameSpace,
 						Name: endPoint}, currentService)
@@ -1252,11 +1252,13 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string, 
 						endpointNames[targetEndpointCr.Name] = endPointSidecar
 						checkt = append(checkt, endPointSidecar)
 					}
-					if targetEndpointCr.Spec.Mode == "Serverless" {
+					if strings.EqualFold(targetEndpointCr.Spec.Mode.String(), serverless) {
+
 						endPoint = protocol + "://" + endPoint + "." + userNameSpace + ".svc.cluster.local"
 						checkt = append(checkt, endPoint)
+
 					} else {
-						endPoint = protocol + "://" + endPoint
+						endPoint = protocol + "://" + endPoint + ":" + strconv.Itoa(int(targetEndpointCr.Spec.Port))
 						checkt = append(checkt, endPoint)
 					}
 					prodEp.Urls = checkt
@@ -1278,7 +1280,7 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string, 
 							erCr := r.client.Get(context.TODO(), types.NamespacedName{Namespace: userNameSpace, Name: urlVal}, targetEndpointCr)
 							if err == nil && erCr == nil {
 								protocol := targetEndpointCr.Spec.Protocol
-								urlVal = protocol + "://" + urlVal
+								urlVal = protocol + "://" + urlVal + ":" + strconv.Itoa(int(targetEndpointCr.Spec.Port))
 								if mode == sidecar {
 									urlValSidecar := protocol + "://" + "localhost:" + strconv.Itoa(int(targetEndpointCr.Spec.Port))
 									endpointNames[urlVal] = urlValSidecar
@@ -1462,7 +1464,7 @@ func resolveEps(r *ReconcileAPI, pathName string, resourceGetEp interface{}, end
 						endpointNames[endPoint] = endPointSidecar
 						checkr = append(checkr, endPointSidecar)
 					} else {
-						endPoint = protocol + "://" + endPoint
+						endPoint = protocol + "://" + endPoint + ":" + strconv.Itoa(int(targetEndpointCr.Spec.Port))
 						checkr = append(checkr, endPoint)
 					}
 					prodEp.Urls = checkr
@@ -1490,7 +1492,7 @@ func resolveEps(r *ReconcileAPI, pathName string, resourceGetEp interface{}, end
 									endpointNames[urlVal] = urlValSidecar
 									endpointList[index] = urlValSidecar
 								} else {
-									urlVal = protocol + "://" + urlVal
+									urlVal = protocol + "://" + urlVal + ":" + strconv.Itoa(int(targetEndpointCr.Spec.Port))
 									endpointList[index] = urlVal
 								}
 								isServiceDef = true
@@ -1598,9 +1600,14 @@ func createMgwDeployment(cr *wso2v1alpha1.API, conf *corev1.ConfigMap, analytics
 		},
 		VolumeMounts: deployVolumeMount,
 		Env:          regConfig.Env,
-		Ports: []corev1.ContainerPort{{
-			ContainerPort: httpsPortVal,
-		}},
+		Ports: []corev1.ContainerPort{
+			{
+				ContainerPort: httpPortVal,
+			},
+			{
+				ContainerPort: httpsPortVal,
+			},
+		},
 		ReadinessProbe: &corev1.Probe{
 			Handler: corev1.Handler{
 				HTTPGet: &corev1.HTTPGetAction{
@@ -2471,45 +2478,6 @@ func copyDefaultSecurity(securityDefault *wso2v1alpha1.Security, userNameSpace s
 			SecurityConfig: securityConfArray,
 		},
 	}
-}
-
-// Create newDeploymentForCR method to create a deployment.
-func (r *ReconcileAPI) createDeploymentForSidecarBackend(m *wso2v1alpha1.TargetEndpoint,
-	namespace string, instance *wso2v1alpha1.API) *appsv1.Deployment {
-	replicas := m.Spec.Deploy.MinReplicas
-	dep := &appsv1.Deployment{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: apiVersion,
-			Kind:       deploymentKind,
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      m.ObjectMeta.Name,
-			Namespace: namespace,
-		},
-		Spec: appsv1.DeploymentSpec{
-			Replicas: &replicas,
-			Selector: &metav1.LabelSelector{
-				MatchLabels: m.ObjectMeta.Labels,
-			},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: m.ObjectMeta.Labels,
-				},
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{{
-						Image: m.Spec.Deploy.DockerImage,
-						Name:  m.Spec.Deploy.Name,
-						Ports: []corev1.ContainerPort{{
-							ContainerPort: m.Spec.Port,
-						}},
-					}},
-				},
-			},
-		},
-	}
-	controllerutil.SetControllerReference(instance, dep, r.scheme)
-	return dep
-
 }
 
 func deleteCompletedJobs(namespace string) error {

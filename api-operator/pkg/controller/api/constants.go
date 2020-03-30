@@ -109,6 +109,7 @@ const (
 	pathsExtension          = "paths"
 	sidecar                 = "sidecar"
 	privateJet              = "privateJet"
+	serverless              = "serverless"
 	verifyHostNameVal       = "false"
 	apiCrdDefaultVersion    = "v1.0.0"
 
@@ -128,7 +129,7 @@ const (
 	httpPortValConst  = 9090
 	httpsPortValConst = 9095
 
-	deploymentKind		= "Deployment"
-	serviceKind 	        = "Service"
-	apiVersion		= "apps/v1"
+	deploymentKind = "Deployment"
+	serviceKind    = "Service"
+	apiVersion     = "apps/v1"
 )
