@@ -129,7 +129,7 @@ const (
 	httpPortValConst  = 9090
 	httpsPortValConst = 9095
 
-	deploymentKind		= "Deployment"
-	serviceKind 	        = "Service"
-	apiVersion		= "apps/v1"
+	deploymentKind = "Deployment"
+	serviceKind    = "Service"
+	apiVersion     = "apps/v1"
 )
