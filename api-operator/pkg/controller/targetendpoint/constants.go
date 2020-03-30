@@ -16,12 +16,24 @@
 package targetendpoint
 
 const (
-	privateJet                     = "privateJet"
-	hpaMaxReplicas                 = "hpaMaxReplicas"
-	hpaTargetAverageUtilizationCPU = "hpaTargetAverageUtilizationCPU"
 
-	resourceRequestCPUTarget    = "resourceRequestCPUTarget"
-	resourceRequestMemoryTarget = "resourceRequestMemoryTarget"
-	resourceLimitCPUTarget      = "resourceLimitCPUTarget"
-	resourceLimitMemoryTarget   = "resourceLimitMemoryTarget"
+	privateJet              	   = "privateJet"
+	serverless                   	   = "serverless"
+	hpaMaxReplicas                     = "hpaMaxReplicas"
+	hpaTargetAverageUtilizationCPU     = "hpaTargetAverageUtilizationCPU"
+
+	resourceRequestCPUTarget           = "resourceRequestCPUTarget"
+	resourceRequestMemoryTarget        = "resourceRequestMemoryTarget"
+	resourceLimitCPUTarget             = "resourceLimitCPUTarget"
+	resourceLimitMemoryTarget          = "resourceLimitMemoryTarget"
+
+	resourceKey         	   	   = "Resource"
+	portKey			   	   = "port"
+	hpaKey 				   = "hpa"
+
+	deploymentKind			   = "Deployment"
+	serviceKind 			   = "Service"
+	apiVersion			   = "apps/v1"
+	knativeApiVersion		   = "serving.knative.dev/v1"
+
 )
