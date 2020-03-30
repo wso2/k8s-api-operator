@@ -58,6 +58,7 @@ import (
 	"bytes"
 	b64 "encoding/base64"
 	"encoding/json"
+	"gopkg.in/yaml.v2"
 
 	"github.com/getkin/kin-openapi/openapi2"
 	"github.com/getkin/kin-openapi/openapi2conv"
@@ -1192,7 +1193,7 @@ func mgwSwaggerLoader(swaggerDataMap map[string]string) (*openapi3.Swagger, stri
 	} else {
 		log.Info("OpenAPI v3 not found. Hence converting Swagger 2 to Swagger 3")
 		var swagger2 openapi2.Swagger
-		err2 := json.Unmarshal([]byte(swaggerData), &swagger2)
+		err2 := yaml.Unmarshal([]byte(swaggerData), &swagger2)
 		swaggerV3, err2 := openapi2conv.ToV3Swagger(&swagger2)
 		return swaggerV3, swaggerDataFile, err2
 	}
