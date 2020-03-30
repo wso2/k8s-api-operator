@@ -419,26 +419,27 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		formattedSwaggerCmName := swaggerCmName + "-mgw"
 		//create configmap with modified swagger
 		swaggerConfMap := createConfigMap(formattedSwaggerCmName, swaggerDataFile, formattedSwagger, userNameSpace, owner)
-		log.Info("Creating swagger configmap for mgw")
-		foundConfMap, errgetConf := getConfigmap(r, formattedSwaggerCmName, userNameSpace)
-		if errgetConf != nil && errors.IsNotFound(errgetConf) {
+		log.Info("Creating swagger configmap for mgw", "name", formattedSwaggerCmName, "namespace", userNameSpace)
+
+		_, errGetConf := getConfigmap(r, formattedSwaggerCmName, userNameSpace)
+		if errGetConf != nil && errors.IsNotFound(errGetConf) {
 			log.Info("swagger-mgw is not found. Hence creating new configmap")
-			errConf := r.client.Create(context.TODO(), swaggerConfMap)
-			if errConf != nil {
-				log.Error(err, "Error in mgw swagger configmap create")
+			errCrtConf := r.client.Create(context.TODO(), swaggerConfMap)
+			if errCrtConf != nil {
+				log.Error(errCrtConf, "Error creating mgw swagger configmap")
 			}
-		} else if errgetConf != nil {
-			log.Error(errgetConf, "error getting swagger-mgw")
+		} else if errGetConf != nil {
+			log.Error(errGetConf, "error getting swagger-mgw")
 		} else {
 			if instance.Spec.UpdateTimeStamp != "" {
-				//updating configmap
-				foundConfMap.Data[swaggerDataFile] = formattedSwagger
-				updateEr := r.client.Update(context.TODO(), foundConfMap)
+				log.Info("updating swagger-mgw since timestamp value is given")
+				updateEr := r.client.Update(context.TODO(), swaggerConfMap)
 				if updateEr != nil {
 					log.Error(updateEr, "Error in updating configmap with updated swagger definition")
 				}
 			}
 		}
+
 		if isDefinedSecurity == false && resourceLevelSec == 0 {
 			log.Info("use default security")
 			//var certName string
@@ -2630,7 +2631,7 @@ func interceptorHandler(r *ReconcileAPI, instance *wso2v1alpha1.API, owner []met
 					return exsistBalInterceptors, false, jobVolumeMount, jobVolume, errBalInterceptor, err
 				}
 			} else {
-				volName := strings.Replace(fmt.Sprintf("%s-%s", configmapName, javaInterceptorsVolume), ".jar", "", -1)
+				volName := fmt.Sprintf("%s-%s", configmapName, javaInterceptorsVolume)
 				jobVolume = append(jobVolume, corev1.Volume{
 					Name: volName,
 					VolumeSource: corev1.VolumeSource{
