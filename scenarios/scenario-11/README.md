@@ -1,7 +1,7 @@
 ## Scenario 11 - Enabling Analytics for managed API
 
 
-- This scenario describes how to enable analytics in the apim-operator and monitor analytics in the analytics dashboard
+- This scenario describes how to enable analytics in the api-operator and monitor analytics in the analytics dashboard
 
 This setup provides resources to deploy WSO2 API Manager 3.0.0 and WSO2 APIM Analytics 3.0.0 in the Kubernetes cluster and configure them with WSO2 Microgateway using k8s CRD operator.
  
@@ -109,7 +109,7 @@ wso2apim-with-analytics-rdbms-service   ClusterIP   10.0.23.125   <none>        
 - By deploying the analytics configmaps, you can enable analytics as follows.
 
 ```
->> apictl apply -f apim-operator/apim-analytics-configs
+>> apictl apply -f api-operator/apim-analytics-configs
 
 ---
 configmap/analytics-config created
@@ -147,9 +147,9 @@ By changing the following artifacts, you can point the API Operator to use the A
     1. Secret 1: Analytics certificate
     2. Secret 2: Include admin credentials (base64 encoded username and password) and secret name of the secret 1.
     
-    Samples can be found in apim-operator/apim-analytics-configs/apim_analytics_secret_template.yaml
+    Samples can be found in api-operator/apim-analytics-configs/apim_analytics_secret_template.yaml
     
 - To enable analytics you can change the apim_analytics_conf.yaml analyticsEnabled to true. Give the name of the secret you created above in the analyticsSecret field value.
 
-    Samples can be found apim-operator/apim-analytics-configs/apim_analytics_conf.yaml
+    Samples can be found api-operator/apim-analytics-configs/apim_analytics_conf.yaml
 

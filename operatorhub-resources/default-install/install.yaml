@@ -17,10 +17,10 @@
 apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
 metadata:
-  name: my-apim-operator
+  name: my-api-operator
   namespace: operators
 spec:
   channel: stable
-  name: apim-operator
+  name: api-operator
   source: operatorhubio-catalog
   sourceNamespace: olm

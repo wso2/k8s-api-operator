@@ -30,7 +30,7 @@ In this document, we will walk through on the following.
 
 - An account in DockerHub or private docker registry
 
-- Download [k8s-api-operator-1.1.0-beta.zip](https://github.com/wso2/k8s-apim-operator/releases/download/v1.1.0-beta/k8s-api-operator-1.1.0-beta.zip) and extract the zip
+- Download [k8s-api-operator-1.1.0-beta.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.1.0-beta/k8s-api-operator-1.1.0-beta.zip) and extract the zip
 
     1. This zip contains the artifacts that required to deploy in Kubernetes.
     2. Extract k8s-api-operator-1.1.0-beta.zip
@@ -151,7 +151,7 @@ customresourcedefinition.apiextensions.k8s.io/ratelimitings.wso2.com created
 ...
 
 namespace/wso2-system created
-deployment.apps/apim-operator created
+deployment.apps/api-operator created
 ...
 
 [Setting to K8s Mode]
@@ -376,7 +376,7 @@ The following commands will help you to push the API to the API portal in Kubern
     >> apictl init online-store --oas=./scenarios/scenario-1/products_swagger.yaml --initial-state=PUBLISHED
     
     Output:
-    Initializing a new WSO2 API Manager project in /home/dinusha/k8s-apim-operator/scenarios/scenario-1/online-store
+    Initializing a new WSO2 API Manager project in /home/wso2/k8s-api-operator/scenarios/scenario-1/online-store
     Project initialized
     Open README file to learn more
     ```

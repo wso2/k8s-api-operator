@@ -19,7 +19,7 @@ This works in Istio permissive mode and Strict MTLS mode.
 
 - An account in DockerHub or private docker registry
 
-- Download [k8s-api-operator-1.1.0-beta.zip](https://github.com/wso2/k8s-apim-operator/releases/download/v1.1.0-beta/k8s-api-operator-1.1.0-beta.zip) and extract the zip
+- Download [k8s-api-operator-1.1.0-beta.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.1.0-beta/k8s-api-operator-1.1.0-beta.zip) and extract the zip
 
     1. This zip contains the artifacts that required to deploy in Kubernetes.
     2. Extract k8s-api-operator-1.1.0-beta.zip
@@ -83,7 +83,7 @@ customresourcedefinition.apiextensions.k8s.io/ratelimitings.wso2.com created
 ...
 
 namespace/wso2-system created
-deployment.apps/apim-operator created
+deployment.apps/api-operator created
 ...
 
 [Setting to K8s Mode]

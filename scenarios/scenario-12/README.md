@@ -9,7 +9,7 @@
 2. When distributed throttling is enabled
 
  ***Important:***
-> Follow the main README and deploy the apim-operator and configuration files. Make sure to set the analyticsEnabled to "true" and deploy analytics secret with credentials to analytics server and certificate, if you want to check analytics.
+> Follow the main README and deploy the api-operator and configuration files. Make sure to set the analyticsEnabled to "true" and deploy analytics secret with credentials to analytics server and certificate, if you want to check analytics.
 
 
  ##### Deploying the artifacts
@@ -121,7 +121,7 @@ In this swagger definition, the rate limiting policy has been mentioned as follo
     ```
     - Apply the changes
     ```
-        kubectl apply -f <k8s-api-operator-home>/apim-operator/deploy/controller-configs/controller_conf.yaml
+        kubectl apply -f <k8s-api-operator-home>/api-operator/deploy/controller-configs/controller_conf.yaml
     ```
     - Delete the previous API if you had deployed it in earlier case
     ```

@@ -8,7 +8,7 @@
 - Then we will create the API and push it to API Manager deployment to obtain OAuth2 access token. **Hence we would need API Portal in the Kubernetes cluster to try out this scenario**. 
 
  ***Important:***
-> Follow the main README and deploy the apim-operator and configuration files. Make sure to set the analyticsEnabled to "true" and deploy analytics secret with credentials to analytics server and certificate, if you want to check analytics.
+> Follow the main README and deploy the api-operator and configuration files. Make sure to set the analyticsEnabled to "true" and deploy analytics secret with credentials to analytics server and certificate, if you want to check analytics.
 
  ##### Deploying the artifacts
 
@@ -77,7 +77,7 @@ In this swagger definition, the security schema of the "petstore" service has be
             ```
             - Output:
             ```$xslt
-                Initializing a new WSO2 API Manager project in /home/dinusha/k8s-apim-operator/scenarios/scenario-5/petstore-oauth
+                Initializing a new WSO2 API Manager project in /home/wso2/k8s-api-operator/scenarios/scenario-5/petstore-oauth
                 Project initialized
                 Open README file to learn more
             ```
@@ -92,7 +92,7 @@ In this swagger definition, the security schema of the "petstore" service has be
                 Username:admin
                 Password:
                 Logged into k8s environment
-                WARNING: credentials are stored as a plain text in /Users/ramesha/.wso2apictl/keys.json
+                WARNING: credentials are stored as a plain text in /Users/wso2/.wso2apictl/keys.json
 
                 The specified API was not found.
                 Creating: Petstore-Oauth v1

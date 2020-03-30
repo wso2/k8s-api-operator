@@ -3,11 +3,11 @@
 - This scenario showes how to expose a service using Ingress gateway.
 
  ***Important:***
-> Follow the main README and deploy the apim-operator and configuration files. Make sure to set the analyticsEnabled to "true" and deploy analytics secret with credentials to analytics server and certificate, if you want to check analytics.
+> Follow the main README and deploy the api-operator and configuration files. Make sure to set the analyticsEnabled to "true" and deploy analytics secret with credentials to analytics server and certificate, if you want to check analytics.
 
 ***Prerequrireties:***
 - First install the [Nginx-ingress controller.](https://kubernetes.github.io/ingress-nginx/deploy/)
-- Navigate to the apim-operator/controller-artifacts directory and set the operatorMode to "ingress" in the 
+- Navigate to the api-operator/controller-artifacts directory and set the operatorMode to "ingress" in the 
   controler_conf.yaml file.
   
   ```
@@ -16,7 +16,7 @@
 - If you have already deployed the operator you have to update operatorMode to "ingress" and apply the changes using
   following command.
   ```
-  kubectl apply -f apim-operator/controller-artifacts/controler_conf.yaml
+  kubectl apply -f api-operator/controller-artifacts/controler_conf.yaml
   ```
   
 ##### Deploying the artifacts
@@ -77,7 +77,7 @@
      
  ##### Configure SSL Passthrough in ingress 
  
- - Navigate to the apim-operator/controller-artifacts directory and set the tlsSecretName to "tls-secret" in the 
+ - Navigate to the api-operator/controller-artifacts directory and set the tlsSecretName to "tls-secret" in the 
    controler_conf.yaml file.
    
  - Now you need to create a TLS certificate, using following command you can create one.

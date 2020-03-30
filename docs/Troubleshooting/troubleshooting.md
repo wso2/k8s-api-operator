@@ -11,18 +11,18 @@
 - Output:
     ```$xslt
     NAME                             READY   STATUS    RESTARTS   AGE
-    apim-operator-59c665f477-9bw7l   1/1     Running   0          4h23m
+    api-operator-59c665f477-9bw7l   1/1     Running   0          4h23m
      
     ```
-- Once you are able to see the apim-operator pod up and running, you can check its logs using the below command.
+- Once you are able to see the api-operator pod up and running, you can check its logs using the below command.
     
     ```$xslt
-    kubectl logs -f -n wso2-system <name of the apim-operator pod>
+    kubectl logs -f -n wso2-system <name of the api-operator pod>
     ```
 - Example: 
 
     ```$xslt
-    kubectl logs -f -n wso2-system apim-operator-59c665f477-9bw7l
+    kubectl logs -f -n wso2-system api-operator-59c665f477-9bw7l
     ```
 - Once the above command is executed, it will show the logs in the API operator.
 
@@ -47,19 +47,19 @@ online-storee-kaniko-6dvb8             1/1     Running   0          5s
 ```
 - If it's in the running "status", it's working fine. If it says "Err", most possibly it can be due to configuration issue related to Docker-Hub user. Hence pushing the image may leads the kaniko pod to a erroneous state.
 - In that case check the following, <br>
-    1. Check the if you have put the proper Docker-Hub username in "\<api-k8s-crd-home>/apim-operator/controller-configs/controller_conf.yaml" 
-    - Check the following configuration in \<api-k8s-crd-home>/apim-operator/controller-configs/controller_conf.yaml.
+    1. Check the if you have put the proper Docker-Hub username in "\<api-k8s-crd-home>/api-operator/controller-configs/controller_conf.yaml" 
+    - Check the following configuration in \<api-k8s-crd-home>/api-operator/controller-configs/controller_conf.yaml.
     - Replace the \<username-docker-registry> with the proper Docker-Hub username.   
         ```
         #docker registry name which the mgw image to be pushed.  eg->  dockerRegistry: username
         dockerRegistry: <username-docker-registry>
         ```  
         ```$xslt
-        kubectl apply -f <api-k8s-crd-home>/apim-operator/controller-configs/controller_conf.yaml
+        kubectl apply -f <api-k8s-crd-home>/api-operator/controller-configs/controller_conf.yaml
         ```
     - Once it's modified, execute the following command to apply the changes in the cluster
     2. Check if you have provided the Docker-Hub username and password in the docker_secret_template.file.
-    - Open the <api-k8s-crd-home>/apim-operator/controller-configs/docker_secret_template.yaml file. 
+    - Open the <api-k8s-crd-home>/api-operator/controller-configs/docker_secret_template.yaml file. 
     - Check if you have entered the **base 64 encoded value of username and password** in the following section.
         ```$xslt
         data:
@@ -67,7 +67,7 @@ online-storee-kaniko-6dvb8             1/1     Running   0          5s
           password: ENTER YOUR BASE64 ENCODED PASSWORD
         ``` 
         ```$xslt
-        kubectl apply -f <api-k8s-crd-home>/apim-operator/controller-configs/docker_secret_template.yaml
+        kubectl apply -f <api-k8s-crd-home>/api-operator/controller-configs/docker_secret_template.yaml
         ```
 #### How to check logs in API
 
@@ -94,14 +94,14 @@ online-storee-kaniko-6dvb8             1/1     Running   0          5s
 #### How to enable debug logs for the API
 
 - If you want to analyze logs in depth, enable the debug logs.
-- For this, you need to add the following entry in the ***\<k8s-api-operator-home>/apim-operator/deploy/controller-configs/mgw_conf_mustache.yaml***
+- For this, you need to add the following entry in the ***\<k8s-api-operator-home>/api-operator/deploy/controller-configs/mgw_conf_mustache.yaml***
 ```$xslt
 [b7a.log]
 level="DEBUG"
 ```
 - Reapply this configuration separately using the following command.
 ```$xslt
-kubectl apply -f <k8s-api-operator-home>/apim-operator/controller-configs/mgw_conf_mustache.yaml
+kubectl apply -f <k8s-api-operator-home>/api-operator/controller-configs/mgw_conf_mustache.yaml
 ```
 - Once you apply this, you need to build the API from scratch to reflect these changes to the already deployed APIs.
 

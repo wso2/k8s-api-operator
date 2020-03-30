@@ -21,7 +21,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.wso2.apim</groupId>
-    <artifactId>k8s-apim-operator</artifactId>
+    <artifactId>k8s-api-operator</artifactId>
     <version>1.1.0-beta</version>
     <name>API Operator For K8S</name>
     <packaging>pom</packaging>
