@@ -150,9 +150,10 @@ TOKEN=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6Ik5UZG1aak00WkRrM05qWTBZemM1TW
  ```
  Format: 
  
- >> curl -X GET "http://api.wso2.com/storemep/v1.0.0/products/101" -H "Authorization:Bearer $TOKEN" -k
- >> curl -X GET "http://api.wso2.com/storemep/v1.0.0/inventory/101" -H "Authorization:Bearer $TOKEN" -k
- >> curl -X GET "http://api.wso2.com/storemep/v1.0.0/review/101" -H "Authorization:Bearer $TOKEN" -k
+ >> curl -X GET "http://api.wso2.com/storemep/v1.0.0/products" -H "Authorization:Bearer $TOKEN"
+ >> curl -X GET "http://api.wso2.com/storemep/v1.0.0/products/101" -H "Authorization:Bearer $TOKEN"
+ >> curl -X GET "http://api.wso2.com/storemep/v1.0.0/inventory/101" -H "Authorization:Bearer $TOKEN"
+ >> curl -X GET "http://api.wso2.com/storemep/v1.0.0/review/101" -H "Authorization:Bearer $TOKEN"
  ```
 
 **Note:** In the microgateway, only 1 API is exposed in this sample. Like in the example, you can deploy multiple microservices in Istio. Then you can expose those microservices via the API microgateway.

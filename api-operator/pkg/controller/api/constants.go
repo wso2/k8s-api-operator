@@ -109,6 +109,7 @@ const (
 	pathsExtension          = "paths"
 	sidecar                 = "sidecar"
 	privateJet              = "privateJet"
+	serverless              = "serverless"
 	verifyHostNameVal       = "false"
 	apiCrdDefaultVersion    = "v1.0.0"
 
