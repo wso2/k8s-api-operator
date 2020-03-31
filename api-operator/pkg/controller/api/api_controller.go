@@ -2060,7 +2060,6 @@ func createMgwRouteResource (r *ReconcileAPI, cr *wso2v1alpha1.API, nameSpace st
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: routeName, Namespace: nameSpace}, route)
 	var port int32
 
-
 	if httpConst == routeTransportMode {
 		port = httpPortVal
 	} else {
