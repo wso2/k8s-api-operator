@@ -3,21 +3,21 @@
 - This scenario describes how to deploy the petstore service(https://petstore.swagger.io/v2) on a kubernetes cluster as a managed API.
 
  ***Important:***
-> Follow the main README and deploy the apim-operator and configuration files. Make sure to set the analyticsEnabled to "true" and deploy analytics secret with credentials to analytics server and certificate, if you want to check analytics.
+> Follow the main README and deploy the api-operator and configuration files. Make sure to set the analyticsEnabled to "true" and deploy analytics secret with credentials to analytics server and certificate, if you want to check analytics.
 
 ##### Deploying the artifacts
 
 - Navigate to scenarios/scenario-16 directory.
 - Prepared petstore swagger definitions `pets_swagger.yaml` and `stores_swagger.yaml` can be found within this directory.
 - Base paths of the APIs are mentioned in the swagger files with the "x-wso2-basetpath" vendor extension.
+    
+    Base path in `pets_swagger.yaml` file
     ```
-    in pets_swagger.yaml
-  
     x-wso2-basePath: /pet/v1
     ```
+  
+    Base path in `stores_swagger.yaml` file
     ```
-    in stores_swagger.yaml
-    
     x-wso2-basePath: /store/v1
     ```
 
@@ -41,7 +41,7 @@
 
 - Create API
     ```sh
-    >> apictl add api -n petstore-multiple-api --from-file=pets-int --from-file=stores-int 
+    >> apictl add api -n petstore-multiple-api --from-file=pets-int --from-file=stores-int
     ```
   
     Output:
@@ -91,8 +91,10 @@
     **Invoke Pets API**
     
     ```sh
-    curl -X GET "https://<external IP of LB service>:9095/pet/v1/pet/10" -H "accept: application/json" -H "Authorization:Bearer $TOKEN" -k
+    curl -X GET "https://<external IP of LB service>:9095/pet/v1/pet/1" -H "accept: application/json" -H "Authorization:Bearer $TOKEN" -k
     ```
+  
+    If the output message is "Pet not found" try with different pet id.
   
     Output:
     

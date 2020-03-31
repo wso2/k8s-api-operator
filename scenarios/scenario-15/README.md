@@ -7,7 +7,7 @@
 - Finally, we will invoke the API and observe how the added interceptors act on requests and responses.
 
 ***Important:***
-> Follow the main README and deploy the apim-operator and configuration files. Make sure to set the analyticsEnabled to "true" and deploy analytics secret with credentials to analytics server and certificate, if you want to check analytics.
+> Follow the main README and deploy the api-operator and configuration files. Make sure to set the analyticsEnabled to "true" and deploy analytics secret with credentials to analytics server and certificate, if you want to check analytics.
 
 
  ##### Deploying the artifacts
@@ -39,16 +39,16 @@
 - Create the API
 
     ```
-    apictl add api -n petstore-java-interceptor --from-file=petstore-int
+    apictl add api -n petstore-java-int --from-file=petstore-int
     
     Output:
     Processing swagger 1: petstore-int
     creating configmap with swagger definition
-    configmap/petstore-java-interceptor-1-swagger created
-    creating configmap with java interceptor petstore-java-interceptor-1-mgw-interceptor.jar
-    configmap/petstore-java-interceptor-1-mgw-interceptor.jar created
+    configmap/petstore-java-int-1-swagger created
+    creating configmap with java interceptor petstore-java-int-1-mgw-interceptor.jar
+    configmap/petstore-java-int-1-mgw-interceptor.jar created
     creating API definition
-    api.wso2.com/petstore-java-interceptor created
+    api.wso2.com/petstore-java-int created
     ```
 - Get service details to invoke the API. (Please wait until the external-IP is populated in the corresponding service)
 
@@ -94,11 +94,11 @@
 - Delete the API
 
     ```
-    apictl delete api petstore-java-interceptor
+    apictl delete api petstore-java-int
     ``` 
   
   - Output
    ```
-    api.wso2.com "petstore-java-interceptor" deleted
-    ``` 
+    api.wso2.com "petstore-java-int" deleted
+   ```
   

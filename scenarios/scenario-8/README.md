@@ -6,7 +6,7 @@
 - Later we will deploy the API using the swagger definition 
 
  ***Important:***
-> Follow the main README and deploy the apim-operator and configuration files. Make sure to set the analyticsEnabled to "true" and deploy analytics secret with credentials to analytics server and certificate, if you want to check analytics.
+> Follow the main README and deploy the api-operator and configuration files. Make sure to set the analyticsEnabled to "true" and deploy analytics secret with credentials to analytics server and certificate, if you want to check analytics.
 
 
  ##### Deploying the artifacts
@@ -67,7 +67,7 @@ In this swagger definition, the backend service of the "products" service and th
     ```
    
     ```
-        curl -X GET "https://<external IP of LB service>:9095/storesc/v1.0.0/inventory/301" -H "accept: application/json" -H "Authorization:Bearer $TOKEN" -k
+        curl -X GET "https://<external IP of LB service>:9095/storesc/v1/inventory/301" -H "accept: application/json" -H "Authorization:Bearer $TOKEN" -k
     ```
     - Once you execute the above command, it will call to the managed API (inventory-sc), which then call its endpoint ("inventory-sc-service" service) available in the same pod. If the request is success, you would be able to see the response as below.
     ```

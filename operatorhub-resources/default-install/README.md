@@ -1,7 +1,7 @@
 ## How to install the API Operator 
 
 - This documentation explains how to install the API Operator for kubernetes using Operator Lifecycle Manager
-- In this example we shall use the same steps in [OperatorHub](https://operatorhub.io/operator/apim-operator) to deploy the operator
+- In this example we shall use the same steps in [OperatorHub](https://operatorhub.io/operator/api-operator) to deploy the operator
 
 Note:
 - Here the API Operator will be created in **operators** namespace and will be usable from all namespaces in the cluster.
@@ -23,7 +23,7 @@ curl -sL https://github.com/operator-framework/operator-lifecycle-manager/releas
 ```
 #### Step 2: Install the API Operator
 ```
-kubectl create -f https://operatorhub.io/install/apim-operator.yaml
+kubectl create -f https://operatorhub.io/install/api-operator.yaml
 ```
 
 When you execute the above command, it will create a Subscription in the "operators" namespace, including the details of the CSV source of the API operator.
@@ -31,16 +31,16 @@ When you execute the above command, it will create a Subscription in the "operat
 apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
 metadata:
-  name: my-apim-operator
+  name: my-api-operator
   namespace: operators
 spec:
   channel: stable
-  name: apim-operator
+  name: api-operator
   source: operatorhubio-catalog
   sourceNamespace: olm
 ```
 - A subscription keeps CSVs up to date by tracking a channel in a package.
-The above "my-apim-operator" subscription is deployed in the "operators" namespace and we have provided the name and namespace of the catalog source coming with the operator lifecycle manager. We have also provided the operator name we want to deploy and the channel of the operator we want to subscribe.
+The above "my-api-operator" subscription is deployed in the "operators" namespace and we have provided the name and namespace of the catalog source coming with the operator lifecycle manager. We have also provided the operator name we want to deploy and the channel of the operator we want to subscribe.
 - A CatalogSource is a repository of CSVs, CRDs, and packages that define an application. "operatorhubio-catalog" contains the CSVs, CRDs and packages of all the operators available in OperatorHub.io.
 - A ClusterServiceVersion (CSV) is a YAML manifest created from Operator metadata that assists the Operator Lifecycle Manager (OLM) in running the Operator in a cluster. It contains the metadata such as name, version, icon, required resources, installation, etc.
 - Once the above suscription is deployed, the required CRDs and CSV of the API Operator will be deployed in "operators" namespace, which will install the API Operator deployment with neccessary roles and bindings.
@@ -75,18 +75,18 @@ apictl set --mode k8s
 ```
 kubectl create ns wso2-system
 ```
-* Extract [api-k8s-crds-1.0.1.zip](https://github.com/wso2/k8s-apim-operator/releases/download/v1.0.1/api-k8s-crds-1.0.1.zip). This zip contains the artifacts that required to deploy in Kubernetes. 
+* Extract [api-k8s-crds-1.0.1.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.0.1/api-k8s-crds-1.0.1.zip). This zip contains the artifacts that required to deploy in Kubernetes. 
 ```
 cd api-k8s-crds-1.0.1    
 ```
 * Deploy the controller level configurations </br>
 **[IMPORTANT]**   When you deploy an API, this will create a docker image for the API and be pushed to Docker-Hub. For this, your Docker-Hub credentials are required.   
-1. Open **apim-operator/controller-configs/controller_conf.yaml** and navigate to docker registry section(mentioned below), and  update ***user's docker registry***.       
+1. Open **api-operator/controller-configs/controller_conf.yaml** and navigate to docker registry section(mentioned below), and  update ***user's docker registry***.       
 ```
 #docker registry name which the mgw image to be pushed.
 dockerRegistry: <username-docker-registry>        
 ``` 
-2. Open **apim-operator/controller-configs/docker_secret_template.yaml** and navigate to data section. </br> Enter the base 64 encoded username and password of the Docker-Hub account        
+2. Open **api-operator/controller-configs/docker_secret_template.yaml** and navigate to data section. </br> Enter the base 64 encoded username and password of the Docker-Hub account        
 ```        
 data:         
   username: ENTER YOUR BASE64 ENCODED USERNAME         
@@ -94,7 +94,7 @@ data:
 ```        
 Once you done with the above configurations, execute the following command to deploy controller configurations.       
 ```
-kubectl apply -f apim-operator/controller-configs/
+kubectl apply -f api-operator/controller-configs/
 
 configmap/controller-config created       
 configmap/apim-config created   

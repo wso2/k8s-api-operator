@@ -6,7 +6,7 @@
 - Later we will deploy the API using the swagger definition. 
 
  ***Important:***
-> Follow the main README and deploy the apim-operator and configuration files. Make sure to set the analyticsEnabled to "true" and deploy analytics secret with credentials to analytics server and certificate, if you want to check analytics.
+> Follow the main README and deploy the api-operator and configuration files. Make sure to set the analyticsEnabled to "true" and deploy analytics secret with credentials to analytics server and certificate, if you want to check analytics.
 
  ##### Installing Istio for Knative
   
@@ -98,7 +98,7 @@
 
  ##### Deploying the artifacts
  
- - Navigate to api-k8s-crds-1.1.0/scenarios/scenario-13 directory and deploy the sample backend service using the following command.
+ - Navigate to `scenarios/scenario-13` directory and deploy the sample backend service using the following command.
     ```
         apictl apply -f hello-world-serverless.yaml
     ```

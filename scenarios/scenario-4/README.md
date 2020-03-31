@@ -9,7 +9,7 @@
  
 
  ***Important:***
-> Follow the main README and deploy the apim-operator and configuration files. Make sure to set the analyticsEnabled to "true" and deploy analytics secret with credentials to analytics server and certificate, if you want to check analytics.
+> Follow the main README and deploy the api-operator and configuration files. Make sure to set the analyticsEnabled to "true" and deploy analytics secret with credentials to analytics server and certificate, if you want to check analytics.
 
  #### Secure APIs using JWT (Self Contained JWT)
   
@@ -125,13 +125,13 @@ In this swagger definition, the security schema of the "petstore" service has be
 
 - Deploy the  API <br /> 
     ```
-        apictl add api -n petstore-jwt --from-file=swagger.yaml
+        apictl add api -n petstore-multiple-jwt --from-file=swagger.yaml
     ``` 
     - Output:
     ```
         creating configmap with swagger definition
-        configmap/petstore-jwt-swagger created
-        api.wso2.com/petstore-jwt created
+        configmap/petstore-multiple-jwt-swagger created
+        api.wso2.com/petstore-multiple-jwt created
     ```
     
 - Get available API <br /> 
@@ -141,7 +141,7 @@ In this swagger definition, the security schema of the "petstore" service has be
     - Output:
     ```    
         NAME          AGE
-        petstore-jwt   3m
+        petstore-multiple-jwt   3m
     ```
 
 - Get service details to invoke the API. (Please wait until the external-IP is populated in the corresponding service)
@@ -152,7 +152,7 @@ In this swagger definition, the security schema of the "petstore" service has be
     
     ```
         NAME           TYPE           CLUSTER-IP     EXTERNAL-IP     PORT(S)                         AGE
-        petstore-jwt   LoadBalancer   10.83.10.125   35.188.53.193   9095:32465/TCP,9090:30163/TCP   4m39s
+        petstore-multiple-jwt   LoadBalancer   10.83.10.125   35.188.53.193   9095:32465/TCP,9090:30163/TCP   4m39s
     ```
     - You can see petstore service has been exposed as a managed API.
     - Get the external IP of the managed API's service
@@ -186,9 +186,9 @@ In this swagger definition, the security schema of the "petstore" service has be
  - Delete the  API <br /> 
      - Following command will delete all the artifacts created with this API including pods, deployment and services.
      ```
-         apictl delete api petstore-jwt
+         apictl delete api petstore-multiple-jwt
      ```
      -  Output:
      ```
-         api.wso2.com "petstore-jwt" deleted
+         api.wso2.com "petstore-multiple-jwt" deleted
      ```

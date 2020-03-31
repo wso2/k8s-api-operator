@@ -16,3 +16,4 @@
 1. [Sample 14: API Management in Serverless (Knative)](scenario-14)
 1. [Sample 15: Apply Java interceptors to an API](scenario-15)
 1. [Sample 16: Deploy multiple swagger-projects as one API](scenario-16)
+1. [Sample 17: Expose an API using Ingress](scenario-17)

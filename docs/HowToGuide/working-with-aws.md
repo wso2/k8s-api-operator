@@ -57,10 +57,10 @@ Choose repository type:
 4: HTTP Private Registry
 Choose a number: 1: 2
 Enter repository name (<aws_account_id.dkr.ecr.region.amazonaws.com>/repository): 610968236798.dkr.ecr.us-east-2.amazonaws.com/my-ecr-repo
-Amazon credential file: /Users/renuka/.aws/credentials:
+Amazon credential file: /Users/wso2/.aws/credentials:
 
 Repository     : 111222333444.dkr.ecr.us-east-1.amazonaws.com/my-ecr-repo
-Credential File: /Users/renuka/.aws/credentials
+Credential File: /Users/wso2/.aws/credentials
 Confirm configurations: Y:
 ```
 

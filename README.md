@@ -5,7 +5,7 @@
 As microservices are increasingly being deployed on Kubernetes, the need to expose these microservices as well documented, easy to consume, managed APIs is becoming important to develop great applications. The API operator for Kubernetes makes APIs a first-class citizen in the Kubernetes ecosystem. Similar to deploying microservices, you can now use this operator to deploy APIs for individual microservices or compose several microservices into individual APIs. With this users will be able to expose their microservice as managed API in Kubernetes environment without any additional work.
 
 
-![Alt text](docs/images/API-K8s-Operator.png?raw=true "Title")
+![Alt text](docs/images/K8s-API-Operator.png?raw=true "K8s API Operator")
 
 ## Quick Start Guide
 
@@ -24,20 +24,22 @@ In this document, we will walk through on the following.
 - [Kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
 
 - [Kubernetes v1.12 or above](https://Kubernetes.io/docs/setup/) <br>
-Minimum CPU and Memory for the K8s cluster: **2 vCPU, 8GB of Memory**
+
+    - Minimum CPU : 4vCPU
+    - Minimum Memory : 8GB
 
 - An account in DockerHub or private docker registry
 
-- Download [api-k8s-crds-1.1.0-alpha2.zip](https://github.com/wso2/k8s-apim-operator/releases/download/v1.1.0-alpha2/api-k8s-crds-1.1.0-alpha2.zip) and extract the zip
+- Download [k8s-api-operator-1.1.0-beta.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.1.0-beta/k8s-api-operator-1.1.0-beta.zip) and extract the zip
 
     1. This zip contains the artifacts that required to deploy in Kubernetes.
-    2. Extract api-k8s-crds-1.1.0-alpha2.zip
+    2. Extract k8s-api-operator-1.1.0-beta.zip
     
     ```
-    cd api-k8s-crds-1.1.0-alpha2
+    cd k8s-api-operator-1.1.0-beta
     ```
  
-**_Note:_** You need to run all commands from within the ***api-k8s-crds-1.1.0-alpha2*** directory.
+**_Note:_** You need to run all commands from within the ***k8s-api-operator-1.1.0-beta*** directory.
 
 <br />
 
@@ -99,7 +101,7 @@ Minimum CPU and Memory for the K8s cluster: **2 vCPU, 8GB of Memory**
 
 #### Step 2: Configure API Controller
 
-- Download API controller v3.1.0-beta for your operating system from the [github](https://github.com/wso2/product-apim-tooling/releases/tag/v3.1.0-beta)
+- Download API controller v3.1.0-customized for your operating system from the [github](https://github.com/wso2/K8s-api-operator/releases/tag/v1.1.0-beta)
 
 - Extract the API controller distribution and navigate inside the extracted folder using the command-line tool
 
@@ -109,13 +111,14 @@ You can find available operations using the below command.
 ```
 >> apictl --help
 ```
+<br />
 
 #### Step 3: Install API Operator
 
 Set the environment variable `WSO2_API_OPERATOR_VERSION` with the latest API Operator version.
 
 ```sh
->> export WSO2_API_OPERATOR_VERSION=v1.1.0-alpha2
+>> export WSO2_API_OPERATOR_VERSION=v1.1.0-beta
 ```
 
 - Execute the following command to install API Operator interactively and configure repository to push the microgateway image.
@@ -148,12 +151,14 @@ customresourcedefinition.apiextensions.k8s.io/ratelimitings.wso2.com created
 ...
 
 namespace/wso2-system created
-deployment.apps/apim-operator created
+deployment.apps/api-operator created
 ...
 
 [Setting to K8s Mode]
 ```
-        
+    
+<br />
+
 #### Step 4: Install the API portal and security token service
 
 Kubernetes installation artifacts for API portal and security token service are available in the k8s-artifacts directory.
@@ -185,7 +190,7 @@ wso2apim   NodePort   10.97.8.86   <none>        30838:32004/TCP,30801:32003/TCP
 <Any K8s Node IP>  wso2apim-analytics
 ```
 
-- For Docker for Mac use "localhost" for the K8s node IP
+- For Docker for Mac use "127.0.0.1" for the K8s node IP
 - For Minikube, use minikube ip command to get the K8s node IP
 - For GKE
     ```$xslt
@@ -291,13 +296,15 @@ You now have a microgateway deployed in Kubernetes that runs your API for the mi
 
     ```
     >> minikube service <SERVICE_NAME> --url
-    >> minikube service online-store
+    >> minikube service online-store --url
     ```
     
     The IP you receive from above output can be used as the "external-IP" in the following command.
 
 </p>
 </details>
+
+-----
 
 - Invoke the API as a regular microservice
 
@@ -369,7 +376,7 @@ The following commands will help you to push the API to the API portal in Kubern
     >> apictl init online-store --oas=./scenarios/scenario-1/products_swagger.yaml --initial-state=PUBLISHED
     
     Output:
-    Initializing a new WSO2 API Manager project in /home/dinusha/k8s-apim-operator/scenarios/scenario-1/online-store
+    Initializing a new WSO2 API Manager project in /home/wso2/k8s-api-operator/scenarios/scenario-1/online-store
     Project initialized
     Open README file to learn more
     ```
@@ -410,11 +417,12 @@ Access Token:  eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6IlpqUm1ZVE13TlRKak9XV
 
 <br />
 
-#### Documentation
+### Documentation
 
 You can find the documentation [here](docs/Readme.md).
 
-#### Cleanup
+
+### Cleanup
 
 Execute the following commands if you wish to clean up the Kubernetes cluster by removing all the applied artifacts and configurations related to API operator and API portal.
 
@@ -427,7 +435,8 @@ Execute the following commands if you wish to clean up the Kubernetes cluster by
 
 When prompted type `Y` when uninstalling API Operator.
   
-#### Sample Scenarios
+
+### Sample Scenarios
 
 1. [Sample 1: Expose a K8s service as an API](scenarios/scenario-1)
 1. [Sample 2: Deploy pet store service as a managed API in k8s cluster](scenarios/scenario-2)
@@ -445,6 +454,9 @@ When prompted type `Y` when uninstalling API Operator.
 1. [Sample 14: API Management in Serverless (Knative)](scenarios/scenario-14)
 1. [Sample 15: Apply Java interceptors to an API](scenarios/scenario-15)
 1. [Sample 16: Deploy multiple swagger-projects as one API](scenarios/scenario-16)
-#### Troubleshooting Guide
+1. [Sample 17: Expose an API using Ingress](scenarios/scenario-17)
+
+
+### Troubleshooting Guide
 
 You can refer [troubleshooting guide](docs/Troubleshooting/troubleshooting.md).

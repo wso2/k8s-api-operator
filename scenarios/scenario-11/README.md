@@ -1,7 +1,7 @@
 ## Scenario 11 - Enabling Analytics for managed API
 
 
-- This scenario describes how to enable analytics in the apim-operator and monitor analytics in the analytics dashboard
+- This scenario describes how to enable analytics in the api-operator and monitor analytics in the analytics dashboard
 
 This setup provides resources to deploy WSO2 API Manager 3.0.0 and WSO2 APIM Analytics 3.0.0 in the Kubernetes cluster and configure them with WSO2 Microgateway using k8s CRD operator.
  
@@ -85,17 +85,22 @@ wso2apim-with-analytics-rdbms-service   ClusterIP   10.0.23.125   <none>        
 
 **Note:** To access the API portal and Analytics dashboard, add host mapping entries to the /etc/hosts file. As we have exposed the services in Node Port type, you can use the IP address of any Kubernetes node.
 
-
 ```
 <Any K8s Node IP>  wso2apim
 <Any K8s Node IP>  wso2apim-analytics
 ```
 
-- For Docker for Mac use "localhost" for the K8s node IP 
+- For Docker for Mac use "127.0.0.1" for the K8s node IP
 - For Minikube, use minikube ip command to get the K8s node IP
-	 
-    **API Portal** - https://wso2apim:32001/devportal <br>
-    **API Analytics Dashbaord** - https://wso2apim-analytics:32201/analytics-dashboard
+- For GKE
+    ```$xslt
+    (kubectl get nodes -o jsonpath='{ $.items[*].status.addresses[?(@.type=="ExternalIP")].address }')
+    ```
+    - This will give the external IPs of the nodes available in the cluster. Pick any IP to include in /etc/hosts file.
+  
+   **API Portal** - https://wso2apim:32001/devportal <br>
+   **API Analytics Dashbaord** - https://wso2apim-analytics:32201/analytics-dashboard
+
 
 
 #### Step 2: Enable API Analytics in the API Operator
@@ -104,7 +109,7 @@ wso2apim-with-analytics-rdbms-service   ClusterIP   10.0.23.125   <none>        
 - By deploying the analytics configmaps, you can enable analytics as follows.
 
 ```
->> apictl apply -f apim-operator/deploy/apim-analytics-configs
+>> apictl apply -f api-operator/apim-analytics-configs
 
 ---
 configmap/analytics-config created
@@ -142,9 +147,9 @@ By changing the following artifacts, you can point the API Operator to use the A
     1. Secret 1: Analytics certificate
     2. Secret 2: Include admin credentials (base64 encoded username and password) and secret name of the secret 1.
     
-    Samples can be found in apim-operator/apim-analytics-configs/apim_analytics_secret_template.yaml
+    Samples can be found in api-operator/apim-analytics-configs/apim_analytics_secret_template.yaml
     
 - To enable analytics you can change the apim_analytics_conf.yaml analyticsEnabled to true. Give the name of the secret you created above in the analyticsSecret field value.
 
-    Samples can be found apim-operator/apim-analytics-configs/apim_analytics_conf.yaml
+    Samples can be found api-operator/apim-analytics-configs/apim_analytics_conf.yaml
 

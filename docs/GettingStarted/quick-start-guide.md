@@ -4,15 +4,16 @@
 
 As microservices are increasingly being deployed on Kubernetes, the need to expose these microservices as well documented, easy to consume, managed APIs is becoming important to develop great applications. The API operator for Kubernetes makes APIs a first-class citizen in the Kubernetes ecosystem. Similar to deploying microservices, you can now use this operator to deploy APIs for individual microservices or compose several microservices into individual APIs. With this users will be able to expose their microservice as managed API in Kubernetes environment without any additional work.
 
-![Alt text](../images/API-K8s-Operator.png?raw=true "Title")
+
+![Alt text](../images/K8s-API-Operator.png?raw=true "K8s API Operator")
 
 ## Quick Start Guide
 
 In this document, we will walk through on the following.
 - Deploy a sample microservice in Kubernetes
+- Configure the API controller
 - Install API Operator in Kubernetes
 - Install the API portal and security token service
-- Configure the API controller
 - Expose the sample microservice as a managed API
 - Invoke the API
 - Push the deployed API to the API portal 
@@ -23,11 +24,24 @@ In this document, we will walk through on the following.
 - [Kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
 
 - [Kubernetes v1.12 or above](https://Kubernetes.io/docs/setup/) <br>
-Minimum CPU and Memory for the K8s cluster: **2 vCPU, 8GB of Memory**
 
-- [API Controller](https://wso2.com/api-management/tooling/) tool
+    - Minimum CPU : 4vCPU
+    - Minimum Memory : 8GB
 
 - An account in DockerHub or private docker registry
+
+- Download [k8s-api-operator-1.1.0-beta.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.1.0-beta/k8s-api-operator-1.1.0-beta.zip) and extract the zip
+
+    1. This zip contains the artifacts that required to deploy in Kubernetes.
+    2. Extract k8s-api-operator-1.1.0-beta.zip
+    
+    ```
+    cd k8s-api-operator-1.1.0-beta
+    ```
+ 
+**_Note:_** You need to run all commands from within the ***k8s-api-operator-1.1.0-beta*** directory.
+
+<br />
 
 #### Step 1: Deploy a sample microservice in Kubernetes
 
@@ -85,7 +99,27 @@ Minimum CPU and Memory for the K8s cluster: **2 vCPU, 8GB of Memory**
     ```
 <br />
 
-#### Step 2: Install API Operator
+#### Step 2: Configure API Controller
+
+- Download API controller v3.1.0-customized for your operating system from the [github](https://github.com/wso2/K8s-api-operator/tree/v1.1.0-beta)
+
+- Extract the API controller distribution and navigate inside the extracted folder using the command-line tool
+
+- Add the location of the extracted folder to your system's $PATH variable to be able to access the executable from anywhere.
+
+You can find available operations using the below command.
+```
+>> apictl --help
+```
+<br />
+
+#### Step 3: Install API Operator
+
+Set the environment variable `WSO2_API_OPERATOR_VERSION` with the latest API Operator version.
+
+```sh
+>> export WSO2_API_OPERATOR_VERSION=v1.1.0-beta
+```
 
 - Execute the following command to install API Operator interactively and configure repository to push the microgateway image.
 - Select "Docker Hub" as the repository type.
@@ -95,36 +129,37 @@ Minimum CPU and Memory for the K8s cluster: **2 vCPU, 8GB of Memory**
 
 ```sh
 >> apictl install api-operator
-Choose repository type:
-1: Docker Hub (Or others, quay.io)
+Choose registry type:
+1: Docker Hub (Or others, quay.io, HTTPS registry)
 2: Amazon ECR
 3: GCR
+4: HTTP Private Registry
 Choose a number: 1: 1
-Enter repository name (john or quay.io/mark): : jennifer
-Enter username: : jennifer
-Enter password:
+Enter repository name (docker.io/john | quay.io/mark | 10.100.5.225:5000/jennifer): docker.io/jennifer
+Enter username: jennifer
+Enter password: *******
 
-Repository: jennifer
+Repository: docker.io/jennifer
 Username  : jennifer
 Confirm configurations: Y: Y
 ```
 
 Output:
 ```sh
-[Installing OLM]
-customresourcedefinition.apiextensions.k8s.io/clusterserviceversions.operators.coreos.com created
+customresourcedefinition.apiextensions.k8s.io/apis.wso2.com created
+customresourcedefinition.apiextensions.k8s.io/ratelimitings.wso2.com created
 ...
 
-[Installing API Operator]
-subscription.operators.coreos.com/my-api-operator created
-[Setting configs]
 namespace/wso2-system created
+deployment.apps/api-operator created
 ...
 
 [Setting to K8s Mode]
 ```
+    
+<br />
 
-#### Step 3: Install the API portal and security token service
+#### Step 4: Install the API portal and security token service
 
 Kubernetes installation artifacts for API portal and security token service are available in the k8s-artifacts directory.
 
@@ -141,7 +176,7 @@ service "wso2apim" created
 ```
 You can check the details of the running server by checking the status of running pods or services in Kubernetes. 
 
-```$xslt
+```
 >> kubectl get services -n wso2
 NAME       TYPE       CLUSTER-IP   EXTERNAL-IP   PORT(S)                                                           AGE
 wso2apim   NodePort   10.97.8.86   <none>        30838:32004/TCP,30801:32003/TCP,32321:32002/TCP,32001:32001/TCP   16s
@@ -155,7 +190,7 @@ wso2apim   NodePort   10.97.8.86   <none>        30838:32004/TCP,30801:32003/TCP
 <Any K8s Node IP>  wso2apim-analytics
 ```
 
-- For Docker for Mac use "localhost" for the K8s node IP
+- For Docker for Mac use "127.0.0.1" for the K8s node IP
 - For Minikube, use minikube ip command to get the K8s node IP
 - For GKE
     ```$xslt
@@ -165,26 +200,6 @@ wso2apim   NodePort   10.97.8.86   <none>        30838:32004/TCP,30801:32003/TCP
   
    **API Portal** - https://wso2apim:32001/devportal 
 
-<br />
-
-#### Step 4: Configure API Controller
-
-- Download API controller v3.0.0 for your operating system from the [website](https://wso2.com/api-management/tooling/)
-
-- Extract the API controller distribution and navigate inside the extracted folder using the command-line tool
-
-- Add the location of the extracted folder to your system's $PATH variable to be able to access the executable from anywhere.
-
-You can find available operations using the below command.
-```
->> apictl --help
-```
-By default API controller does not support kubectl command. 
-Set the API Controller’s mode to Kubernetes to be compatible with kubectl commands
-
-```
->> apictl set --mode k8s 
-```
 <br />
 
 #### Step 5: Expose the sample microservice as a managed API
@@ -212,7 +227,7 @@ The endpoint of our microservice is referred in the API definition.
     ```
     --replicas=3          Number of replicas
     --namespace=wso2      Namespace to deploy the API
-    --override      	  Overwrite the docker image creation for already created docker image
+    --override            Overwrite the docker image creation for already created docker image
     
     >> apictl add api -n "api_name" --from-file="location to the api swagger definition" --replicas="number of replicas" --namespace="desired namespace"
     ```
@@ -281,13 +296,15 @@ You now have a microgateway deployed in Kubernetes that runs your API for the mi
 
     ```
     >> minikube service <SERVICE_NAME> --url
-    >> minikube service online-store
+    >> minikube service online-store --url
     ```
     
     The IP you receive from above output can be used as the "external-IP" in the following command.
 
 </p>
 </details>
+
+-----
 
 - Invoke the API as a regular microservice
 
@@ -316,7 +333,7 @@ You now have a microgateway deployed in Kubernetes that runs your API for the mi
     ```
     Format: 
     
-    >> curl -X GET "https://<EXTERNAL-IP>:9095/<API-context>/<API-resource>" -H "accept: application/json" -H "Authorization:Bearer $TOKEN" -k
+    >> curl -X GET "https://<EXTERNAL-IP>:9095/<API-context>/<API-resource>"  -H "Authorization:Bearer $TOKEN" -k
     ```
 
     Example commands:
@@ -344,7 +361,7 @@ To make the API discoverable for other users and get the access tokens, we need 
 The following commands will help you to push the API to the API portal in Kubernetes. Commands of the API Controller can be found [here](https://github.com/wso2/product-apim-tooling/blob/v3.0.0-rc/import-export-cli/docs/apictl.md) 
 
 
-- Add the API portal to the API controller using the following command.
+- Add the API portal as an environment to the API controller using the following command.
 
     ```
     >> apictl add-env -e k8s --registration https://wso2apim:32001/client-registration/v0.16/register --apim https://wso2apim:32003 --token https://wso2apim:32003/token --admin https://wso2apim:32001/api/am/admin/v0.16 --api_list https://wso2apim:32001/api/am/publisher/v1/apis --app_list https://wso2apim:32001/api/am/store/v1/applications
@@ -356,17 +373,16 @@ The following commands will help you to push the API to the API portal in Kubern
 - Initialize the API project using API Controller
 
     ```
-    >> apictl init online-store --oas=./scenarios/scenario-1/products_swagger.yaml
+    >> apictl init online-store --oas=./scenarios/scenario-1/products_swagger.yaml --initial-state=PUBLISHED
     
     Output:
-    Initializing a new WSO2 API Manager project in /home/dinusha/k8s-apim-operator/scenarios/scenario-1/online-store
+    Initializing a new WSO2 API Manager project in /home/wso2/k8s-api-operator/scenarios/scenario-1/online-store
     Project initialized
     Open README file to learn more
     ```
 
 - Import the API to the API portal. **[IMPORTANT]**
 
-    You need to change the API life cycle status to **PUBLISHED** before importing the API. You can edit the api.yaml file located in online-store/Meta-information/ location.
     For testing purpose use ***admin*** as username and password when prompted.
     </br>
     
@@ -395,28 +411,32 @@ Generate access token for the API with the following command.
 Output:
 API name:  OnlineStore & version:  v1.0.0 exists
 API  OnlineStore : v1.0.0 subscribed successfully.
-Access Token:  eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6IlpqUm1ZVE13TlRKak9XVTVNbUl6TWpnek5ESTNZMkl5TW1JeVkyRXpNamRoWmpWaU1qYzBaZz09In0=.eyJhdWQiOiJodHRwOlwvXC9vcmcud3NvMi5hcGltZ3RcL2dhdGV3YXkiLCJzdWIiOiJhZG1pbkBjYXJib24uc3VwZXIiLCJhcHBsaWNhdGlvbiI6eyJvd25lciI6ImFkbWluIiwidGllciI6IlVubGltaXRlZCIsIm5hbWUiOiJkZWZhdWx0LWFwaW1jbGktYXBwIiwiaWQiOjR9LCJzY29wZSI6ImFtX2FwcGxpY2F0aW9uX3Njb3BlIGRlZmF1bHQiLCJpc3MiOiJodHRwczpcL1wvd3NvMmFwaW06OTQ0M1wvb2F1dGgyXC90b2tlbiIsInRpZXJJbmZvIjp7fSwia2V5dHlwZSI6IlBST0RVQ1RJT04iLCJzdWJzY3JpYmVkQVBJcyI6W3sic3Vic2NyaWJlclRlbmFudERvbWFpbiI6ImNhcmJvbi5zdXBlciIsIm5hbWUiOiJPbmxpbmVTdG9yZSIsImNvbnRleHQiOiJcL3N0b3JlXC92MS4wLjBcL3YxLjAuMCIsInB1Ymxpc2hlciI6ImFkbWluIiwidmVyc2lvbiI6InYxLjAuMCIsInN1YnNjcmlwdGlvblRpZXIiOm51bGx9XSwiY29uc3VtZXJLZXkiOiJTcXQxQmdoT0JXTGVrQ0tmbTRXOFZoWFRvUW9hIiwiZXhwIjoxNTcxODA5MDQ3LCJpYXQiOjE1NzE4MDU0NDcsImp0aSI6ImExOGNkOTA1LTM3MjItNDExMC05OTJlLWI2YzZmYTk2OTE0YSJ9.ZQj7S6kDWkagA7tbeNHhCFwA0E9JsphItZRXGYfAj1fJFN6rJlrs-5PfE6U_RP1oJzcog68rkZxiil46blFyFPNwRO0sG6LMK92PFhA_c2-FYKzxc5FtR3jRK4zQbABkL5qyYBdjNxwn_2r-vtE1IJMa3F-4YMPFpXHfSc0CjHq433Kmcvj_HIwTGaiWL86nBH3YbluwbHC2-2zaeqsECm3g_6cfN_z_Aq0FBGoYfrQHfuntVqGavZxKN1KJNguMPTQGlMFE3obx3LtV8WKMQzm9Qg8_J9yHcRXnQnd8goV20lmvagmprd4do6u6I0ZznkawO165ALswJVof-pJwqw=  
+Access Token:  eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6IlpqUm1ZVE13TlRKak9XVTVNbUl6TWpnek5ESTNZMkl5TW1JeVkyRXpNamRoWmpWaU1qYzBaZz09In0.eyJhdWQiOiJodHRwOlwvXC9vcmcud3NvMi5hcGltZ3RcL2dhdGV3YXkiLCJzdWIiOiJhZG1pbkBjYXJib24uc3VwZXIiLCJhcHBsaWNhdGlvbiI6eyJvd25lciI6ImFkbWluIiwidGllciI6IlVubGltaXRlZCIsIm5hbWUiOiJkZWZhdWx0LWFwaWN0bC1hcHAiLCJpZCI6MiwidXVpZCI6bnVsbH0sInNjb3BlIjoiYW1fYXBwbGljYXRpb25fc2NvcGUgZGVmYXVsdCIsImlzcyI6Imh0dHBzOlwvXC93c28yYXBpbTozMjAwMVwvb2F1dGgyXC90b2tlbiIsInRpZXJJbmZvIjp7IlVubGltaXRlZCI6eyJzdG9wT25RdW90YVJlYWNoIjp0cnVlLCJzcGlrZUFycmVzdExpbWl0IjowLCJzcGlrZUFycmVzdFVuaXQiOm51bGx9fSwia2V5dHlwZSI6IlBST0RVQ1RJT04iLCJzdWJzY3JpYmVkQVBJcyI6W3sic3Vic2NyaWJlclRlbmFudERvbWFpbiI6ImNhcmJvbi5zdXBlciIsIm5hbWUiOiJPbmxpbmUtU3RvcmUiLCJjb250ZXh0IjoiXC9zdG9yZVwvdjEuMC4wXC92MS4wLjAiLCJwdWJsaXNoZXIiOiJhZG1pbiIsInZlcnNpb24iOiJ2MS4wLjAiLCJzdWJzY3JpcHRpb25UaWVyIjoiVW5saW1pdGVkIn1dLCJjb25zdW1lcktleSI6Im1Hd0lmUWZuZHdZTVZxT25JVW9Rczhqc1B0Y2EiLCJleHAiOjE1NzIyNjAyMjQsImlhdCI6MTU3MjI1NjYyNCwianRpIjoiNTNlYWJkYWEtY2IyZC00MTQ0LWEzYWUtZDNjNTIxMjgwYjM4In0.QU9rt4WBLcIOXzDkdiBpo_SAN_W4jpMlymPSgdhe4mf4FmdepA6hIXa_NXdzWyOST2XcHskWleL-9bhv4GecvDaCcMUwfSKOo_8DuphYhtv0BukpGpyfzK2SZDtABxxtdRUmNDcyXJiC5NU4laXlDGzUruI_LISjkeeCaK4gA93YQC3Nd0xe14uIO940UNsSiUuI5cZkeKlB9k5vKIzjN1-M-SJCvtDkusvdPTgkSHZL29ICsMQl9rTSRm6dL4xq9rcH7osD-o_amgurkm1RvNagzN0buku6y4tuEyisZvRUlNkQ2KRzX6E6VwNKHAFQ7CG95-k-QYvXDGDXYGNisw  
 ```
-**_Note:_** You also have the option to generate an access token by logging into the devportal.
+**_Note:_** You also have the option to generate an access token by logging into the devportal. 
 
 <br />
 
-#### Documentation
+### Documentation
 
 You can find the documentation [here](../Readme.md).
 
-#### Cleanup
+
+### Cleanup
 
 Execute the following commands if you wish to clean up the Kubernetes cluster by removing all the applied artifacts and configurations related to API operator and API portal.
 
 ```
->> kubectl delete api online-store
->> kubectl delete -f k8s-artifacts/api-portal
->> kubectl delete -f apim-operator/controller-configs/
->> kubectl delete -f apim-operator/controller-artifacts/
+>> apictl delete api online-store
+>> apictl delete -f k8s-artifacts/api-portal
+>> apictl remove-env -e k8s
+>> apictl uninstall api-operator
 ```
+
+When prompted type `Y` when uninstalling API Operator.
   
-#### Sample Scenarios
+
+### Sample Scenarios
 
 1. [Sample 1: Expose a K8s service as an API](../../scenarios/scenario-1)
 1. [Sample 2: Deploy pet store service as a managed API in k8s cluster](../../scenarios/scenario-2)
@@ -429,8 +449,14 @@ Execute the following commands if you wish to clean up the Kubernetes cluster by
 1. [Sample 9: Expose an API with multiple service endpoints](../../scenarios/scenario-9)
 1. [Sample 10: Apply interceptors to an API](../../scenarios/scenario-10)
 1. [Sample 11: Enabling Analytics for managed API](../../scenarios/scenario-11)
+1. [Sample 12: Apply distributed rate-limiting to managed API in Kubernetes cluster](../../scenarios/scenario-12)
+1. [Sample 13: K8s API Operator for Istio](../../scenarios/scenario-13)
+1. [Sample 14: API Management in Serverless (Knative)](../../scenarios/scenario-14)
+1. [Sample 15: Apply Java interceptors to an API](../../scenarios/scenario-15)
+1. [Sample 16: Deploy multiple swagger-projects as one API](../../scenarios/scenario-16)
+1. [Sample 17: Expose an API using Ingress](../../scenarios/scenario-17)
 
 
-#### Troubleshooting Guide
+### Troubleshooting Guide
 
 You can refer [troubleshooting guide](../Troubleshooting/troubleshooting.md).

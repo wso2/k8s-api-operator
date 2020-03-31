@@ -6,7 +6,7 @@ kubernetes cluster as a managed API in the Kubernetes cluster.
 - Then the backend service (exposed k8s service) will be exposed as a managed API in the Kubernetes cluster 
 
  ***Important:***
-> Follow the main README and deploy the apim-operator and configuration files. Make sure to set the analyticsEnabled to "true" and deploy analytics secret with credentials to analytics server and certificate, if you want to check analytics.
+> Follow the main README and deploy the api-operator and configuration files. Make sure to set the analyticsEnabled to "true" and deploy analytics secret with credentials to analytics server and certificate, if you want to check analytics.
 
 
  ##### Deploying the sample backend service
@@ -57,7 +57,7 @@ kubernetes cluster as a managed API in the Kubernetes cluster.
 
 ##### Exposing the backend service as a managed API in the K8S cluster
 
-> Please note that you need to configure the k8s-apim-operator in the Kubernetes cluster prior to trying out the scenarios.
+> Please note that you need to configure the k8s-api-operator in the Kubernetes cluster prior to trying out the scenarios.
 
 - Basic swagger definition belongs to the "products" service is available in products_swagger.yaml.<br>
 
