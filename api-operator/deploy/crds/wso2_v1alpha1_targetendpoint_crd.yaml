@@ -44,6 +44,69 @@ spec:
         metadata:
           type: object
         spec:
+          properties:
+            deploy:
+              properties:
+                cpuLimit:
+                  type: string
+                dockerImage:
+                  type: string
+                maxReplicas:
+                  format: int32
+                  type: integer
+                memoryLimit:
+                  type: string
+                minReplicas:
+                  format: int32
+                  type: integer
+                name:
+                  type: string
+                reqMemory:
+                  type: string
+                requestCPU:
+                  type: string
+              required:
+              - name
+              - dockerImage
+              type: object
+            endpointName:
+              type: string
+            endpointSecurity:
+              properties:
+                password:
+                  type: string
+                type:
+                  type: string
+                username:
+                  type: string
+              required:
+              - username
+              - password
+              - type
+              type: object
+            hostname:
+              type: string
+            mode:
+              type: string
+            port:
+              format: int32
+              type: integer
+            protocol:
+              type: string
+            targetPort:
+              format: int32
+              type: integer
+            type:
+              description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+                Important: Run "operator-sdk generate k8s" to regenerate code after
+                modifying this file Add custom validation using kubebuilder tags:
+                https://book.kubebuilder.io/beyond_basics/generating_crd.html'
+              type: string
+          required:
+          - protocol
+          - port
+          - targetPort
+          - deploy
           type: object
         status:
           type: object
