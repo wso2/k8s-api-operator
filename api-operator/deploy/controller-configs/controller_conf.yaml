@@ -125,3 +125,17 @@ metadata:
 data:
   kanikoArguments: |
   #kaniko additional flags should go here: Please refer https://github.com/GoogleContainerTools/kaniko#additional-flags
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: openshift-configs
+  namespace: wso2-system
+data:
+  routeName: "api-operator-route"
+  #Define whether ingress to use http or https endpoint of operator deployment
+  routeTransportMode: "http"
+  #Define the hostname of the ingress
+  routeHost : "mgw.route.wso2.com"
+

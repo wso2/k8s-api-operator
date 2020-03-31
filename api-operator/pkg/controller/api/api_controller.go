@@ -246,10 +246,12 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	controlConf, errConf := getConfigmap(r, controllerConfName, wso2NameSpaceConst)
 	//get ingress configs
 	controlIngressConf, errIngressConf := getConfigmap(r, ingressConfigs, wso2NameSpaceConst)
+	//get openshift configs
+	controlOpenshiftConf, errOpenshiftConf := getConfigmap(r, openShiftConfigs, wso2NameSpaceConst)
 	//get docker registry configs
 	dockerRegistryConf, errRegConf := getConfigmap(r, dockerRegConfigs, wso2NameSpaceConst)
 
-	confErrs := []error{errConf, errIngressConf, errRegConf}
+	confErrs := []error{errConf, errIngressConf, errRegConf, errOpenshiftConf}
 	for _, err := range confErrs {
 		if err != nil {
 			if errors.IsNotFound(err) {
@@ -858,9 +860,9 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 							return reconcile.Result{}, ingErr
 						}
 					}
-					if strings.EqualFold(operatorMode, "route") {
+					if strings.EqualFold(operatorMode, routeMode) {
 						rutErr := createMgwRouteResource(r, instance, userNameSpace, int32(httpPortVal),
-							int32(httpsPortVal), apiBasePaths, controlIngressConf, owner)
+							int32(httpsPortVal), apiBasePaths, controlOpenshiftConf, owner)
 						if rutErr != nil {
 							return reconcile.Result{}, rutErr
 						}
@@ -919,9 +921,9 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 						return reconcile.Result{}, ingErr
 					}
 				}
-				if strings.EqualFold(operatorMode, "route") {
+				if strings.EqualFold(operatorMode, routeMode) {
 					rutErr := createMgwRouteResource(r, instance, userNameSpace, int32(httpPortVal),
-						int32(httpsPortVal), apiBasePaths, controlIngressConf, owner)
+						int32(httpsPortVal), apiBasePaths, controlOpenshiftConf, owner)
 					if rutErr != nil {
 						return reconcile.Result{}, rutErr
 					}
@@ -986,9 +988,9 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 							return reconcile.Result{}, ingErr
 						}
 					}
-					if strings.EqualFold(operatorMode, "route") {
+					if strings.EqualFold(operatorMode, routeMode) {
 						rutErr := createMgwRouteResource(r, instance, userNameSpace, int32(httpPortVal),
-							int32(httpsPortVal), apiBasePaths, controlIngressConf, owner)
+							int32(httpsPortVal), apiBasePaths, controlOpenshiftConf, owner)
 						if rutErr != nil {
 							return reconcile.Result{}, rutErr
 						}
@@ -1886,7 +1888,7 @@ func createMgwLBService(r *ReconcileAPI, cr *wso2v1alpha1.API, nameSpace string,
 		serviceType = corev1.ServiceTypeClusterIP
 	}
 
-	if strings.EqualFold(operatorMode,"route") || strings.EqualFold(operatorMode, clusterIPMode) {
+	if strings.EqualFold(operatorMode,routeMode) || strings.EqualFold(operatorMode, clusterIPMode) {
 		serviceType = corev1.ServiceTypeClusterIP
 	}
 
@@ -2050,9 +2052,9 @@ func createMgwRouteResource (r *ReconcileAPI, cr *wso2v1alpha1.API, nameSpace st
 	httpsPortVal int32, apiBasePaths []string, controllerConfig *corev1.ConfigMap, owner []metav1.OwnerReference) error {
 
 	controlConfigData := controllerConfig.Data
-	routeName := controlConfigData["routeName"]
-	routeHost := controlConfigData["routeHost"]
-	routeTransportMode := controlConfigData["routeTransportMode"]
+	routeName := controlConfigData[routeName]
+	routeHost := controlConfigData[routeHost]
+	routeTransportMode := controlConfigData[routeTransportMode]
 
 	route := &routv1.Route{}
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: routeName, Namespace: nameSpace}, route)
