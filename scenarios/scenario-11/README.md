@@ -90,7 +90,7 @@ wso2apim-with-analytics-rdbms-service   ClusterIP   10.0.23.125   <none>        
 <Any K8s Node IP>  wso2apim-analytics
 ```
 
-- For Docker for Mac use "localhost" for the K8s node IP
+- For Docker for Mac use "127.0.0.1" for the K8s node IP
 - For Minikube, use minikube ip command to get the K8s node IP
 - For GKE
     ```$xslt
