@@ -99,3 +99,15 @@ rules:
   - delete
   - patch
   - watch
+- apiGroups:
+  - route.openshift.io
+  resources:
+  - "*"
+  verbs:
+  - get
+  - list
+  - create
+  - update
+  - delete
+  - patch
+  - watch
