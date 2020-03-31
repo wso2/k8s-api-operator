@@ -38,6 +38,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
+	routv1 "github.com/openshift/api/route/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/api/autoscaling/v2beta1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -245,10 +246,12 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	controlConf, errConf := getConfigmap(r, controllerConfName, wso2NameSpaceConst)
 	//get ingress configs
 	controlIngressConf, errIngressConf := getConfigmap(r, ingressConfigs, wso2NameSpaceConst)
+	//get openshift configs
+	controlOpenshiftConf, errOpenshiftConf := getConfigmap(r, openShiftConfigs, wso2NameSpaceConst)
 	//get docker registry configs
 	dockerRegistryConf, errRegConf := getConfigmap(r, dockerRegConfigs, wso2NameSpaceConst)
 
-	confErrs := []error{errConf, errIngressConf, errRegConf}
+	confErrs := []error{errConf, errIngressConf, errRegConf, errOpenshiftConf}
 	for _, err := range confErrs {
 		if err != nil {
 			if errors.IsNotFound(err) {
@@ -857,6 +860,13 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 							return reconcile.Result{}, ingErr
 						}
 					}
+					if strings.EqualFold(operatorMode, routeMode) {
+						rutErr := createMgwRouteResource(r, instance, userNameSpace, int32(httpPortVal),
+							int32(httpsPortVal), apiBasePaths, controlOpenshiftConf, owner)
+						if rutErr != nil {
+							return reconcile.Result{}, rutErr
+						}
+					}
 					//Service created successfully - don't requeue
 					return reconcile.Result{}, nil
 				} else if svcErr != nil {
@@ -909,6 +919,13 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 						int32(httpsPortVal), apiBasePaths, controlIngressConf, owner)
 					if ingErr != nil {
 						return reconcile.Result{}, ingErr
+					}
+				}
+				if strings.EqualFold(operatorMode, routeMode) {
+					rutErr := createMgwRouteResource(r, instance, userNameSpace, int32(httpPortVal),
+						int32(httpsPortVal), apiBasePaths, controlOpenshiftConf, owner)
+					if rutErr != nil {
+						return reconcile.Result{}, rutErr
 					}
 				}
 				//Service created successfully - don't requeue
@@ -969,6 +986,13 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 							int32(httpsPortVal), apiBasePaths, controlIngressConf, owner)
 						if ingErr != nil {
 							return reconcile.Result{}, ingErr
+						}
+					}
+					if strings.EqualFold(operatorMode, routeMode) {
+						rutErr := createMgwRouteResource(r, instance, userNameSpace, int32(httpPortVal),
+							int32(httpsPortVal), apiBasePaths, controlOpenshiftConf, owner)
+						if rutErr != nil {
+							return reconcile.Result{}, rutErr
 						}
 					}
 					//Service created successfully - don't requeue
@@ -1798,6 +1822,7 @@ func isImageExist(r *ReconcileAPI, secretName string, namespace string) (bool, e
 //Schedule Kaniko Job to generate micro-gw image
 func scheduleKanikoJob(cr *wso2v1alpha1.API, conf *corev1.ConfigMap, jobVolumeMount []corev1.VolumeMount,
 	jobVolume []corev1.Volume, timeStamp string, owner []metav1.OwnerReference) *batchv1.Job {
+	roolValue := int64(0)
 	regConfig := registry.GetConfig()
 	kanikoJobName := cr.Name + "-kaniko"
 	if timeStamp != "" {
@@ -1842,6 +1867,9 @@ func scheduleKanikoJob(cr *wso2v1alpha1.API, conf *corev1.ConfigMap, jobVolumeMo
 							Env:          regConfig.Env,
 						},
 					},
+					SecurityContext: &corev1.PodSecurityContext{
+						RunAsUser: &roolValue,
+					},
 					RestartPolicy: "Never",
 					Volumes:       jobVolume,
 				},
@@ -1859,6 +1887,11 @@ func createMgwLBService(r *ReconcileAPI, cr *wso2v1alpha1.API, nameSpace string,
 	if strings.EqualFold(operatorMode, ingressMode) || strings.EqualFold(operatorMode, clusterIPMode) {
 		serviceType = corev1.ServiceTypeClusterIP
 	}
+
+	if strings.EqualFold(operatorMode,routeMode) || strings.EqualFold(operatorMode, clusterIPMode) {
+		serviceType = corev1.ServiceTypeClusterIP
+	}
+
 
 	labels := map[string]string{
 		"app": cr.Name,
@@ -2011,6 +2044,51 @@ func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, nam
 			err = r.client.Update(context.TODO(), ingress)
 			return err
 		}
+	}
+	return err
+}
+
+func createMgwRouteResource (r *ReconcileAPI, cr *wso2v1alpha1.API, nameSpace string, httpPortVal int32,
+	httpsPortVal int32, apiBasePaths []string, controllerConfig *corev1.ConfigMap, owner []metav1.OwnerReference) error {
+
+	controlConfigData := controllerConfig.Data
+	routeName := controlConfigData[routeName]
+	routeHost := controlConfigData[routeHost]
+	routeTransportMode := controlConfigData[routeTransportMode]
+
+	route := &routv1.Route{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: routeName, Namespace: nameSpace}, route)
+	var port int32
+
+	if httpConst == routeTransportMode {
+		port = httpPortVal
+	} else {
+		port = httpsPortVal
+	}
+
+	log.Info(fmt.Sprintf("Creating Route resource with name: %v", routeName))
+	if err != nil && errors.IsNotFound(err) {
+		log.Info("Route resource not found with name" + routeName + ".Hence creating a new route resource")
+		serviceName := cr.Name
+		route := &routv1.Route{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:            cr.Name,
+				Namespace:       nameSpace,
+				OwnerReferences: owner,
+			},
+			Spec: routv1.RouteSpec{
+				Host: routeHost,
+				Path: apiBasePaths[0],
+				Port: &routv1.RoutePort{
+					TargetPort: intstr.IntOrString{IntVal: port},
+				},
+				To: routv1.RouteTargetReference{
+					Kind: "Service",
+					Name: serviceName,
+				},
+			},
+		}
+		err = r.client.Create(context.TODO(), route)
 	}
 	return err
 }

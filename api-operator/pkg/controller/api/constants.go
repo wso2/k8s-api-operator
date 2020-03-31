@@ -48,6 +48,7 @@ const (
 	mgwConfConst         = "micro-gw.conf"
 	controllerConfName   = "controller-config"
 	ingressConfigs       = "ingress-configs"
+	openShiftConfigs     = "openshift-configs"
 	dockerRegConfigs     = "docker-registry-config"
 	ingressProperties    = "ingress.properties"
 	policyFileConst      = "policies.yaml"
@@ -55,6 +56,9 @@ const (
 	ingressTransportMode = "ingressTransportMode"
 	ingressHostName      = "ingressHostName"
 	tlsSecretName        = "tlsSecretName"
+	routeName            = "api-operator-route"
+	routeHost            = "mgw.route.wso2.com"
+	routeTransportMode   = "http"
 
 	usernameConst  = "username"
 	passwordConst  = "password"
@@ -96,6 +100,7 @@ const (
 	operatorModeConst                   = "operatorMode"
 	ingressMode                         = "Ingress"
 	clusterIPMode                       = "ClusterIP"
+	routeMode                           = "Route"
 
 	authorizationUrl        = "https://example.com/oauth/authorize"
 	tokenUrl                = "https://example.com/oauth/token"
