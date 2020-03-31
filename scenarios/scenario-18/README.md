@@ -8,19 +8,23 @@
 ***Prerequrireties:***
 - Openshift Cluster (v3.11 or higher version).
 - If you are in a new project you need to setup following security context constraints.
+
     - Grant access to the privileged SCC:
         ```
         oc adm policy add-scc-to-user <scc_name> <user_name>
         ```
     - Make sure to grant service accounts access to the privileged SCC.
+    
         ```
         oc adm policy add-scc-to-user privileged system:serviceaccount:<project-name>:<service-account>
         ```
     - Add this command to enable container images with any user.
+    
         ```
         oc adm policy add-scc-to-group anyuid system:authenticated
         ```   
     - Add this command to enable container images that require root.
+    
         ```
         oc adm policy add-scc-to-user anyuid system:serviceaccount:<your-project>:<service-account>
         ```  
