@@ -1820,6 +1820,7 @@ func isImageExist(r *ReconcileAPI, secretName string, namespace string) (bool, e
 //Schedule Kaniko Job to generate micro-gw image
 func scheduleKanikoJob(cr *wso2v1alpha1.API, conf *corev1.ConfigMap, jobVolumeMount []corev1.VolumeMount,
 	jobVolume []corev1.Volume, timeStamp string, owner []metav1.OwnerReference) *batchv1.Job {
+	roolValue := int64(0)
 	regConfig := registry.GetConfig()
 	kanikoJobName := cr.Name + "-kaniko"
 	if timeStamp != "" {
@@ -1863,6 +1864,9 @@ func scheduleKanikoJob(cr *wso2v1alpha1.API, conf *corev1.ConfigMap, jobVolumeMo
 							Args:         args,
 							Env:          regConfig.Env,
 						},
+					},
+					SecurityContext: &corev1.PodSecurityContext{
+						RunAsUser: &roolValue,
 					},
 					RestartPolicy: "Never",
 					Volumes:       jobVolume,
