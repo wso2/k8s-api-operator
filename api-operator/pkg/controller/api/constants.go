@@ -56,9 +56,9 @@ const (
 	ingressTransportMode = "ingressTransportMode"
 	ingressHostName      = "ingressHostName"
 	tlsSecretName        = "tlsSecretName"
-	routeName            = "api-operator-route"
-	routeHost            = "mgw.route.wso2.com"
-	routeTransportMode   = "http"
+	routeName            = "routeName"
+	routeHost            = "routeHost"
+	routeTransportMode   = "routeTransportMode"
 
 	usernameConst  = "username"
 	passwordConst  = "password"
