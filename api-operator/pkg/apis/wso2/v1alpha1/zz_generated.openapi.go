@@ -440,14 +440,8 @@ func schema_pkg_apis_wso2_v1alpha1_TargetEndpointSpec(ref common.ReferenceCallba
 							Format: "",
 						},
 					},
-					"serverless": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"boolean"},
-							Format: "",
-						},
-					},
 				},
-				Required: []string{"type", "protocol", "hostname", "port", "targetPort", "deploy", "endpointName", "endpointSecurity", "mode", "serverless"},
+				Required: []string{"protocol", "port", "targetPort", "deploy"},
 			},
 		},
 		Dependencies: []string{

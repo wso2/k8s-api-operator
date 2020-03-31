@@ -29,16 +29,15 @@ type TargetEndpointSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
-	Type             string           `json:"type"`
+	Type             string           `json:"type,omitempty"`
 	Protocol         string           `json:"protocol"`
-	Hostname         string           `json:"hostname"`
+	Hostname         string           `json:"hostname,omitempty"`
 	Port             int32            `json:"port"`
 	TargetPort       int32            `json:"targetPort"`
 	Deploy           Deploy           `json:"deploy"`
-	EndpointName     string           `json:"endpointName"`
-	EndpointSecurity EndpointSecurity `json:"endpointSecurity"`
-	Mode             Mode             `json:"mode"`
-	Serverless       bool             `json:"serverless"`
+	EndpointName     string           `json:"endpointName,omitempty"`
+	EndpointSecurity EndpointSecurity `json:"endpointSecurity,omitempty"`
+	Mode             Mode             `json:"mode,omitempty"`
 }
 
 // TargetEndpointStatus defines the observed state of TargetEndpoint
@@ -59,12 +58,12 @@ type EndpointSecurity struct {
 type Deploy struct {
 	Name        string `json:"name"`
 	DockerImage string `json:"dockerImage"`
-	MinReplicas int32  `json:"minReplicas"`
-	MaxReplicas int32  `json:"maxReplicas"`
-	ReqCpu      string `json:"requestCPU,"`
-	ReqMemory   string `json:"reqMemory"`
-	LimitCpu    string `json:"cpuLimit"`
-	MemoryLimit string `json:"memoryLimit"`
+	MinReplicas int32  `json:"minReplicas,omitempty"`
+	MaxReplicas int32  `json:"maxReplicas,omitempty"`
+	ReqCpu      string `json:"requestCPU,omitempty"`
+	ReqMemory   string `json:"reqMemory,omitempty"`
+	LimitCpu    string `json:"cpuLimit,omitempty"`
+	MemoryLimit string `json:"memoryLimit,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
