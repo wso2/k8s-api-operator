@@ -190,7 +190,7 @@ wso2apim   NodePort   10.97.8.86   <none>        30838:32004/TCP,30801:32003/TCP
 <Any K8s Node IP>  wso2apim-analytics
 ```
 
-- For Docker for Mac use "localhost" for the K8s node IP
+- For Docker for Mac use "127.0.0.1" for the K8s node IP
 - For Minikube, use minikube ip command to get the K8s node IP
 - For GKE
     ```$xslt
