@@ -1,4 +1,4 @@
-    ## Scenario 15 - Apply Java interceptors to an API
+## Scenario 15 - Apply Java interceptors to an API
 
 - This scenario describes how to apply interceptors written in java as .jar files to carry out transformations and mediations on the requests and responses.
 - First, we need to implement custom request interceptors and response interceptors. We have provided sample .jar file in scenario-15. If you want to learn more about implementing custom java interceptors you can refer the document [adding interceptors.](https://docs.wso2.com/display/MG310/Message+Transformation)
@@ -100,5 +100,5 @@
   - Output
    ```
     api.wso2.com "petstore-java-int" deleted
-    ``` 
+   ```
   
