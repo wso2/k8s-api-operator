@@ -123,9 +123,11 @@ Hence, in this swagger definition endpoint has been referred in resource level.
         apictl add api -n online-store-api --from-file=swagger.yaml
     ``` 
     - Output:
-    ```$xslt
+    ```sh
+        Processing swagger 1: swagger.yaml
         creating configmap with swagger definition
-        configmap/online-store-api-swagger created
+        configmap/online-store-api-1-swagger created
+        creating API definition
         api.wso2.com/online-store-api created
     ```
     

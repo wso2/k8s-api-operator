@@ -34,8 +34,10 @@ In this swagger definition, the backend service of the "products" service and th
     ``` 
     - Output:
     ```
+        Processing swagger 1: swagger.yaml
         creating configmap with swagger definition
-        configmap/inventory-sc-swagger created
+        configmap/inventory-sc-1-swagger created
+        creating API definition
         api.wso2.com/inventory-sc created
     ```
     
@@ -77,7 +79,7 @@ In this swagger definition, the backend service of the "products" service and th
 - List the pods and check how the backend services and the managed API have been deployed
 
     ```$xslt
-        apictl get pods        
+        apictl get pods
     ```
     - Output:
     ```$xslt
