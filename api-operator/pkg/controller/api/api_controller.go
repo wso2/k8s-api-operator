@@ -1884,14 +1884,10 @@ func createMgwLBService(r *ReconcileAPI, cr *wso2v1alpha1.API, nameSpace string,
 	var serviceType corev1.ServiceType
 	serviceType = corev1.ServiceTypeLoadBalancer
 
-	if strings.EqualFold(operatorMode, ingressMode) || strings.EqualFold(operatorMode, clusterIPMode) {
+	if strings.EqualFold(operatorMode, ingressMode) || strings.EqualFold(operatorMode, clusterIPMode) ||
+		strings.EqualFold(operatorMode, routeMode) {
 		serviceType = corev1.ServiceTypeClusterIP
 	}
-
-	if strings.EqualFold(operatorMode,routeMode) || strings.EqualFold(operatorMode, clusterIPMode) {
-		serviceType = corev1.ServiceTypeClusterIP
-	}
-
 
 	labels := map[string]string{
 		"app": cr.Name,

@@ -81,6 +81,8 @@ In this document, we will walk through on the following.
 </p>
 </details>
 
+-----
+
 <br>
 
 - To test the microservice, execute the following commands.
@@ -161,44 +163,63 @@ deployment.apps/api-operator created
 
 #### Step 4: Install the API portal and security token service
 
-Kubernetes installation artifacts for API portal and security token service are available in the k8s-artifacts directory.
+[WSO2AM Kubernetes Operator](https://github.com/wso2/k8s-wso2am-operator) is used to deploy API portal and security token service. 
 
-The following command will deploy API portal & token service under a namespace called “wso2”. 
+- Install the WSO2AM Operator in Kubernetes.
 
-```
->> kubectl apply -f k8s-artifacts/api-portal/
-
-Output:
-namespace "wso2" created
-configmap "apim-conf" created
-deployment.apps "wso2apim" created
-service "wso2apim" created
-```
-You can check the details of the running server by checking the status of running pods or services in Kubernetes. 
-
-```
->> kubectl get services -n wso2
-NAME       TYPE       CLUSTER-IP   EXTERNAL-IP   PORT(S)                                                           AGE
-wso2apim   NodePort   10.97.8.86   <none>        30838:32004/TCP,30801:32003/TCP,32321:32002/TCP,32001:32001/TCP   16s
-
-```
-
-**_Note:_** To access the API portal, add host mapping entries to the /etc/hosts file. As we have exposed the API portal service in Node Port type, you can use the IP address of any Kubernetes node.
-
-```
-<Any K8s Node IP>  wso2apim
-<Any K8s Node IP>  wso2apim-analytics
-```
-
-- For Docker for Mac use "127.0.0.1" for the K8s node IP
-- For Minikube, use minikube ip command to get the K8s node IP
-- For GKE
-    ```$xslt
-    (kubectl get nodes -o jsonpath='{ $.items[*].status.addresses[?(@.type=="ExternalIP")].address }')
     ```
-    - This will give the external IPs of the nodes available in the cluster. Pick any IP to include in /etc/hosts file.
-  
-   **API Portal** - https://wso2apim:32001/devportal 
+    >> apictl install wso2am-operator -f https://bit.ly/2QYe6U3
+    
+    namespace/wso2-system created
+    serviceaccount/wso2am-pattern-1-svc-account created
+    ...
+    configmap/wso2am-p1-apim-2-conf created
+    configmap/wso2am-p1-mysql-dbscripts created
+    [Setting to K8s Mode]
+    ```
+
+- Install API Portal and security token service under a namespace called "wso2"
+
+    ```
+    >> apictl apply -f k8s-artifacts/wso2am-operator/api-portal/
+    
+    Output:
+    namespace/wso2 created
+    configmap/apim-conf created
+    apimanager.apim.wso2.com/custom-pattern-1 created
+    ```
+
+- Access API Portal and security token service
+
+    ```
+    >> apictl get pods -n wso2
+    
+    Output:
+    NAME                                                        READY   STATUS    RESTARTS   AGE
+    all-in-one-api-manager-5694f99754-4zhpq                     1/1     Running   0          2m39s
+        
+    >> apictl get services -n wso2
+    
+    Output:
+    NAME       TYPE       CLUSTER-IP    EXTERNAL-IP   PORT(S)                                                       AGE
+    wso2apim   NodePort   10.0.39.192   <none>        8280:32004/TCP,8243:32003/TCP,9763:32002/TCP,9443:32001/TCP   114s
+    ```
+
+    **_Note:_** To access the API portal, add host mapping entry to the /etc/hosts file. As we have exposed the API portal service in Node Port type, you can use the IP address of any Kubernetes node.
+    
+    ```
+    <Any K8s Node IP>  wso2apim
+    ```
+    
+    - For Docker for Mac use "127.0.0.1" for the K8s node IP
+    - For Minikube, use minikube ip command to get the K8s node IP
+    - For GKE
+        ```$xslt
+        (apictl get nodes -o jsonpath='{ $.items[*].status.addresses[?(@.type=="ExternalIP")].address }')
+        ```
+        - This will give the external IPs of the nodes available in the cluster. Pick any IP to include in /etc/hosts file.
+      
+       **API Portal** - https://wso2apim:32001/devportal 
 
 <br />
 
@@ -243,7 +264,7 @@ The endpoint of our microservice is referred in the API definition.
     If you list down the pods immediately after the add API command you will only see the pod related to Kaniko job. Once it is completed you will see the deployed API. If you are on Minikube, this might take several minutes.
 
     ```
-    >> kubectl get pods 
+    >> apictl get pods 
     
     Output:
     NAME                                   READY   STATUS    RESTARTS   AGE
@@ -253,7 +274,7 @@ The endpoint of our microservice is referred in the API definition.
     If you execute the same command after sometime you will see the managed API has been deployed after the Kaniko job.
 
     ```
-    >> kubectl get pods 
+    >> apictl get pods 
     
     Output:
     NAME                                   READY   STATUS    RESTARTS   AGE
@@ -261,7 +282,7 @@ The endpoint of our microservice is referred in the API definition.
     ```
 
     ```
-    >> kubectl get services 
+    >> apictl get services 
     
     Output:
     NAME               TYPE           CLUSTER-IP     EXTERNAL-IP      PORT(S)                         AGE
@@ -280,7 +301,7 @@ You now have a microgateway deployed in Kubernetes that runs your API for the mi
     The API service is exposed as the Load Balancer service type. You can get the API service endpoint details by using the following command.
 
     ```
-    >> kubectl get services
+    >> apictl get services
     
     Output:
     NAME               TYPE           CLUSTER-IP     EXTERNAL-IP      PORT(S)                         AGE

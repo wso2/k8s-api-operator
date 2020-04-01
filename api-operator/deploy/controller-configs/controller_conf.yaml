@@ -134,8 +134,8 @@ metadata:
   namespace: wso2-system
 data:
   routeName: "api-operator-route"
-  #Define whether ingress to use http or https endpoint of operator deployment
+  #Define whether Route to use http or https endpoint of operator deployment
   routeTransportMode: "http"
-  #Define the hostname of the ingress
+  #Define the hostname of the Route
   routeHost : "mgw.route.wso2.com"
 

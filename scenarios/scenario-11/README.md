@@ -3,104 +3,97 @@
 
 - This scenario describes how to enable analytics in the api-operator and monitor analytics in the analytics dashboard
 
-This setup provides resources to deploy WSO2 API Manager 3.0.0 and WSO2 APIM Analytics 3.0.0 in the Kubernetes cluster and configure them with WSO2 Microgateway using k8s CRD operator.
+This setup provides resources to deploy WSO2 API Manager 3.1.0 and WSO2 APIM Analytics 3.1.0 in the Kubernetes cluster and configure them with WSO2 Microgateway using k8s CRD operator.
  
 Few databases of WSO2 API Manager and Analytics need to be shared with each other and hence we have provided resources to deploy mysql in kubernetes and configure the necessary databases in mysql.
 
 
-To try out the scenario navigate to wso2am-k8s-crds-1.1.0 directory.
+To try out the scenario navigate to ```k8s-api-operator-<version>``` directory.
 
 #### Step 1: Deploy and configure API Portal and Analytics Dashbaord
 
-**Note:** If you have already deployed the API portal without enabling analytics, please remove it by executing the below command.
+[WSO2AM Kubernetes Operator](https://github.com/wso2/k8s-wso2am-operator) is used to deploy API portal and Analytics dashboard. 
 
-```
->> kubectl delete -f k8s-artifacts/api-portal/
----
-namespace "wso2" deleted
-configmap "apim-conf" deleted
-deployment.apps "wso2apim" deleted
-service "wso2apim" deleted
-```
+- Install the WSO2AM Operator in Kubernetes.
 
-- Execute the following commands to deploy the API Portal and Analytics Dashboard
-
-```
->> apictl apply -f k8s-artifacts/api-portal-with-analytics/wso2-namespace.yaml
-
----
-namespace/wso2 created  
----
-
->> apictl apply -f k8s-artifacts/api-portal-with-analytics/mysql/
-
----
-configmap/mysql-dbscripts created
-deployment.apps/wso2apim-with-analytics-mysql-deployment created
-service/wso2apim-with-analytics-rdbms-service created
----
-
->> apictl apply -f k8s-artifacts/api-portal-with-analytics/api-analytics/
-
----
-configmap/dash-bin created
-configmap/dash-conf created
-deployment.apps/wso2apim-dashboard-analytics-deployment created
-service/wso2apim-dashboard-analytics-service created
----
-
->> apictl apply -f k8s-artifacts/api-portal-with-analytics/api-portal/
-
----
-configmap/apim-conf created
-deployment.apps/wso2apim created
-service/wso2apim created
----
-```
-
-You can verify the installation by checking the pods and services as follows.
-
-```
->> apictl get pods -n wso2
-
----
-NAME                                                        READY   STATUS    RESTARTS   AGE
-wso2apim-76b4cd8974-gpdz7                                   1/1     Running   0          3m12s
-wso2apim-analytics-deployment-cdc8db56b-zv6qp               1/1     Running   0          3m17s
-wso2apim-dashboard-analytics-deployment-79fb44f4b8-p49km    1/1     Running   0          3m20s
-wso2apim-with-analytics-mysql-deployment-749dd5fb7b-fh7cd   1/1     Running   0          3m28s
----
-
->> apictl get services -n wso2
-
----
-
-NAME                                    TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)                                                                            AGE
-wso2apim                                NodePort    10.0.28.252   <none>        30838:32004/TCP,30801:32003/TCP,32321:32002/TCP,32001:32001/TCP                    69m
-wso2apim-analytics-service              ClusterIP   10.0.18.144   <none>        7612/TCP,7712/TCP,9444/TCP,9091/TCP,7071/TCP,7444/TCP,7575/TCP,7576/TCP,7577/TCP   69m
-wso2apim-dashboard-analytics-service    NodePort    10.0.24.27    <none>        32201:32201/TCP                                                                    70m
-wso2apim-with-analytics-rdbms-service   ClusterIP   10.0.23.125   <none>        3306/TCP                                                                           70m
----
-```
-
-**Note:** To access the API portal and Analytics dashboard, add host mapping entries to the /etc/hosts file. As we have exposed the services in Node Port type, you can use the IP address of any Kubernetes node.
-
-```
-<Any K8s Node IP>  wso2apim
-<Any K8s Node IP>  wso2apim-analytics
-```
-
-- For Docker for Mac use "127.0.0.1" for the K8s node IP
-- For Minikube, use minikube ip command to get the K8s node IP
-- For GKE
-    ```$xslt
-    (kubectl get nodes -o jsonpath='{ $.items[*].status.addresses[?(@.type=="ExternalIP")].address }')
     ```
-    - This will give the external IPs of the nodes available in the cluster. Pick any IP to include in /etc/hosts file.
-  
-   **API Portal** - https://wso2apim:32001/devportal <br>
-   **API Analytics Dashbaord** - https://wso2apim-analytics:32201/analytics-dashboard
+    >> apictl install wso2am-operator -f https://bit.ly/2QYe6U3
+    
+    namespace/wso2-system created
+    serviceaccount/wso2am-pattern-1-svc-account created
+    ...
+    configmap/wso2am-p1-apim-2-conf created
+    configmap/wso2am-p1-mysql-dbscripts created
+    [Setting to K8s Mode]
+    ```
 
+- Install API Portal and API Analytics in a namespace called "wso2"
+
+    ```
+    >> apictl apply -f k8s-artifacts/wso2am-operator/api-portal-with-analytics/wso2-namespace.yaml
+    
+    Output:
+    namespace/wso2 created
+
+    >> apictl apply -f k8s-artifacts/wso2am-operator/api-portal-with-analytics/mysql/
+    
+    Output:
+    configmap/mysql-dbscripts created
+    deployment.apps/wso2apim-with-analytics-mysql-deployment created
+    service/wso2apim-with-analytics-rdbms-service created
+    
+    >> apictl apply -f k8s-artifacts/wso2am-operator/api-portal-with-analytics/configmaps/
+    
+    Output:
+    configmap/dash-conf created
+    configmap/worker-conf created
+    configmap/apim-conf created
+    
+    >> apictl apply -f k8s-artifacts/wso2am-operator/api-portal-with-analytics/custom-pattern.yaml
+    
+    Output:
+    apimanager.apim.wso2.com/custom-pattern-2 created
+    ```
+
+- Access API Portal and API Analytics 
+
+    ```
+    >> apictl get pods -n wso2
+    
+    Output:
+    NAME                                                        READY   STATUS    RESTARTS   AGE
+    all-in-one-api-manager-5694f99754-4zhpq                     1/1     Running   0          2m39s
+    analytics-dashboard-6d6c5dd-2xd4r                           1/1     Running   0          2m39s
+    analytics-worker-6c64b9bd79-794l7                           1/1     Running   0          2m39s
+    wso2apim-with-analytics-mysql-deployment-6659655c65-njs7r   1/1     Running   0          3m3s
+    
+    >> apictl get services -n wso2
+    
+    Output:
+    NAME                                    TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)                                                       AGE
+    wso2apim                                NodePort    10.0.38.209   <none>        8280:32004/TCP,8243:32003/TCP,9763:32002/TCP,9443:32001/TCP   3m43s
+    wso2apim-analytics-service              ClusterIP   10.0.47.66    <none>        7612/TCP,7712/TCP,9444/TCP,9091/TCP,7071/TCP,7444/TCP         3m44s
+    wso2apim-dashboard-analytics-service    NodePort    10.0.35.34    <none>        9643:32201/TCP                                                3m44s
+    wso2apim-with-analytics-rdbms-service   ClusterIP   10.0.36.229   <none>        3306/TCP                                                      4m7s
+    ```
+    
+    **Note:** To access the API portal and Analytics dashboard, add host mapping entries to the /etc/hosts file. As we have exposed the services in Node Port type, you can use the IP address of any Kubernetes node.
+    
+    ```
+    <Any K8s Node IP>  wso2apim
+    <Any K8s Node IP>  wso2apim-analytics
+    ```
+
+    - For Docker for Mac use "127.0.0.1" for the K8s node IP
+    - For Minikube, use minikube ip command to get the K8s node IP
+    - For GKE
+        ```$xslt
+        (apictl get nodes -o jsonpath='{ $.items[*].status.addresses[?(@.type=="ExternalIP")].address }')
+        ```
+        - This will give the external IPs of the nodes available in the cluster. Pick any IP to include in /etc/hosts file.
+      
+       **API Portal** - https://wso2apim:32001/devportal <br>
+       **API Analytics Dashbaord** - https://wso2apim-analytics:32201/analytics-dashboard
 
 
 #### Step 2: Enable API Analytics in the API Operator
