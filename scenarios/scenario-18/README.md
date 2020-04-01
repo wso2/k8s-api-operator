@@ -1,4 +1,4 @@
-## Scenario 17 - Expose an API using Openshift Route
+## Scenario 18 - Expose an API using Openshift Route
 
 - This scenario showes how to expose a service using Openshift Route.
 
