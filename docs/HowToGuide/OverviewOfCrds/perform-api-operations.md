@@ -6,44 +6,54 @@ This guide explains how you can add, update and delete an API. Also operations y
 
 Using the following command, you can add an API to the microservice.
 
-```
+```sh
 Format:
->> apictl add api -n "api_name" --from-file="location to the Open API definition"
+>> apictl add api -n <API_NAME> --from-file=<PATH_TO_OPEN_API_DEFINITION_1>
 ```
 
 ```
 >> apictl add api -n online-store --from-file=scenarios/scenario-1/products_swagger.yaml
 
 Output:
+Processing swagger 1: scenarios/scenario-1/products_swagger.yaml
 creating configmap with swagger definition
-configmap/online-store-swagger created
+configmap/online-store-1-swagger created
+creating API definition
 api.wso2.com/online-store created
 ```
 
 Optional Parameters
 
-```
+```sh
 --replicas=3          Number of replicas
 --namespace=wso2      Namespace to deploy the API
 --override      	  Overwrite the docker image creation for already created docker image
+--mode                Overwrite the deploying mode when multiple open API definitions provided. Available modes: privateJet, sidecar
+--version             Overwrite the deploying version when multiple open API definitions provided
 
->> apictl add api -n "api_name" --from-file="location to the api swagger definition" --replicas="number of replicas" --namespace="desired namespace"
+Format:
+>> apictl add api -n <API_NAME> --from-file=<PATH_TO_OPEN_API_DEFINITION_1> --from-file=<PATH_TO_API_INIT_PROJECT_1> ... \
+    --replicas=<NUMBER_OF_REPLICAS> \
+    --namespace=<DESIRED_NAMESPACE> \
+    --mode=<DEPLOY_MODE> \
+    --version=<DEPLOY_VERSION>
 ```
 
 #### Update an API
 
 Using the following command you can update the deployed API.
 
-```
+```sh
 Format:
->> apimcli update api -n "api_name" --from-file="location to the api swagger definition"
+>> apictl update api -n <API_NAME> --from-file=<PATH_TO_OPEN_API_DEFINITION_1>
 
->> apimcli update api -n online-store --from-file=scenarios/scenario-1/products_swagger.yaml
+>> apictl update api -n online-store --from-file=scenarios/scenario-1/products_swagger.yaml
 
 Output:
+Processing swagger 1: scenarios/scenario-1/products_swagger.yaml
 creating configmap with swagger definition
-configmap/online-store-swagger-up-20191028143610 created
-updating the API Kind
+configmap/online-store-1-swagger created
+creating API definition
 api.wso2.com/online-store configured
 ```
 
@@ -53,9 +63,9 @@ When you update the API, it will create a new docker image and push to the docke
 
 Using the following command you can delete the deployed API and the artifacts related to that API (pods, deployment, service, HPA)
 
-```
+```sh
 Format:
->> apictl delete api "api_name"
+>> apictl delete api <API_NAME>
 
 >> apictl delete api online-store
 
@@ -66,8 +76,8 @@ api.wso2.com "online-store" deleted
 #### List the APIs in Kubernetes
 
 You can list down the APIs as follows.
-```
->> kubectl get apis
+```sh
+>> apictl get apis
 
 Output:
 NAME       AGE
@@ -76,9 +86,8 @@ online-store   20h
 
 #### Describe the API in Kubernetes
 
-
-```
->> kubectl describe api online-store
+```sh
+>> apictl describe api online-store
 
 Output:
 Name:         online-store

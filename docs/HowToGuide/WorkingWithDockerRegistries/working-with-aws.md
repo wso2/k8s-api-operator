@@ -12,7 +12,7 @@ Use the AWS CLI command: [update-kubeconfig](https://docs.aws.amazon.com/cli/lat
 
 For the following case it is `my-esk-cluster` and configure `kubectl` as follows.
 
-![Amazon EKS cluster](../images/aws-eks-cluster.png)
+![Amazon EKS cluster](../../images/aws-eks-cluster.png)
 
 ```sh
 >> aws eks --region us-east-1 update-kubeconfig --name my-eks-cluster
@@ -38,7 +38,7 @@ Verify that you have running Node Groups with following command. Otherwise launc
 
 You can use Amazon ECR as the registry or other registry type. Following [Install API Operator](#install-api-operator) section describes using an Amazon ECR registry type. It also works with other registry types.
 
-![Amazon ECR repo](../images/aws-ecr-repo.png)
+![Amazon ECR repo](../../images/aws-ecr-repo.png)
 
 ## Install API Operator
 
@@ -80,7 +80,7 @@ namespace/wso2-system created
 ```
 
 ## Try out
-Try out [sample scenarios](../GettingStarted/quick-start-guide.md#sample-scenarios) in the quick start guide.
+Try out [sample scenarios](../../GettingStarted/quick-start-guide.md#sample-scenarios) in the quick start guide.
 
 ## Clean up
 
