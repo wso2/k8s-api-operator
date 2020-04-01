@@ -2080,7 +2080,6 @@ func createMgwRouteResource (r *ReconcileAPI, cr *wso2v1alpha1.API, nameSpace st
 				},
 			},
 			Spec: routv1.RouteSpec{
-
 				Host: routeHost,
 				Path: apiBasePaths[0],
 				Port: &routv1.RoutePort{
