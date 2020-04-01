@@ -7,7 +7,7 @@ You can install the WSO2 API Operator in AWS EKS cluster.
 Use the AWS CLI command: [update-kubeconfig](https://docs.aws.amazon.com/cli/latest/reference/eks/update-kubeconfig.html) to configure the `kubectl` so that you can connect to an Amazon EKS cluster. 
 
 ```sh
->> aws eks --region region update-kubeconfig --name cluster_name
+>> aws eks --region <REGION> update-kubeconfig --name <CLUSTER_NAME>
 ```
 
 For the following case it is `my-esk-cluster` and configure `kubectl` as follows.
@@ -85,4 +85,24 @@ Try out [sample scenarios](../GettingStarted/quick-start-guide.md#sample-scenari
 ## Clean up
 
 - Delete the AWS ECR repository.
-- Delete the AWS EKS cluster.
+- Uninstall the operator
+
+```sh
+>> apictl uninstall api-operator
+
+Uninstall "api-operator" and all related resources: APIs, Securities, Rate Limitings and Target Endpoints
+[WARNING] Remove the namespace: wso2-system
+Are you sure: N: Y
+```
+
+Output:
+```sh
+Deleting kubernetes resources for API Operator
+Removing namespace: wso2-system
+This operation will take some minutes...
+namespace "wso2-system" deleted
+customresourcedefinition.apiextensions.k8s.io "apis.wso2.com" deleted
+customresourcedefinition.apiextensions.k8s.io "securities.wso2.com" deleted
+customresourcedefinition.apiextensions.k8s.io "ratelimitings.wso2.com" deleted
+customresourcedefinition.apiextensions.k8s.io "targetendpoints.wso2.com" deleted
+```
