@@ -94,8 +94,9 @@ var amazonEcr = &Config{
 
 		for _, id := range images.ImageIds {
 			// found the image with tag
-			logger.Info("Found the image tag from the AWS ECR repository", "RegistryId", awsRegistryId, "RepositoryName", awsRepoName, "image", imageName, "tag", tag)
-			if *id.ImageTag == fmt.Sprintf("%s-%s", imageName, tag) {
+			// untagged images 'id.ImageTag' returns nil; check nil before accessing the pointer
+			if id.ImageTag != nil && *id.ImageTag == fmt.Sprintf("%s-%s", imageName, tag) {
+				logger.Info("Found the image tag from the AWS ECR repository", "RegistryId", awsRegistryId, "RepositoryName", awsRepoName, "image", imageName, "tag", tag)
 				return true, nil
 			}
 		}
