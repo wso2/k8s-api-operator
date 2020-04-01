@@ -2075,8 +2075,12 @@ func createMgwRouteResource (r *ReconcileAPI, cr *wso2v1alpha1.API, nameSpace st
 				Name:            cr.Name,
 				Namespace:       nameSpace,
 				OwnerReferences: owner,
+				Annotations: map[string]string{
+					"openshift.io/host.generated": "false",
+				},
 			},
 			Spec: routv1.RouteSpec{
+
 				Host: routeHost,
 				Path: apiBasePaths[0],
 				Port: &routv1.RoutePort{
