@@ -1283,7 +1283,7 @@ func mgwSwaggerHandler(r *ReconcileAPI, swagger *openapi3.Swagger, mode string, 
 						checkt = append(checkt, endPoint)
 
 					} else {
-						endPoint = protocol + "://" + endPoint + ":" + strconv.Itoa(int(targetEndpointCr.Spec.Port))
+						endPoint = protocol + "://" + endPoint + "." + userNameSpace + ":" + strconv.Itoa(int(targetEndpointCr.Spec.Port))
 						checkt = append(checkt, endPoint)
 					}
 					prodEp.Urls = checkt
@@ -1468,28 +1468,47 @@ func resolveEps(r *ReconcileAPI, pathName string, resourceGetEp interface{}, end
 		if checkJsonResource {
 			err := json.Unmarshal(ResourceEndpointJson, &endPoint)
 			if err == nil {
-				//check if service & targetendpoint cr object are available
-				currentService := &corev1.Service{}
+
+				extractData := strings.Split(endPoint, ".")
+				if len(extractData) == 2 {
+					userNameSpace = extractData[1]
+					endPoint = extractData[0]
+				}
 				targetEndpointCr := &wso2v1alpha1.TargetEndpoint{}
-				err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: userNameSpace,
-					Name: endPoint}, currentService)
 				erCr := r.client.Get(context.TODO(), types.NamespacedName{Namespace: userNameSpace, Name: endPoint}, targetEndpointCr)
-				if err != nil && errors.IsNotFound(err) && mode != sidecar {
-					log.Error(err, "Service is not found")
-				} else if erCr != nil && errors.IsNotFound(erCr) {
-					log.Error(err, "targetendpoint CRD object is not found")
-				} else if err != nil && mode != sidecar {
-					log.Error(err, "Error in getting service")
+
+				if erCr != nil && errors.IsNotFound(erCr) {
+					log.Error(err, "targetEndpoint CRD object is not found")
 				} else if erCr != nil {
 					log.Error(err, "Error in getting targetendpoint CRD object")
+				}
+				if strings.EqualFold(targetEndpointCr.Spec.Mode.String(), serverless) {
+					currentService := &v1.Service{}
+					err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: userNameSpace,
+						Name: endPoint}, currentService)
+				} else {
+					currentService := &corev1.Service{}
+					err = r.client.Get(context.TODO(), types.NamespacedName{Namespace: userNameSpace,
+						Name: endPoint}, currentService)
+				}
+				if err != nil && errors.IsNotFound(err) && mode != sidecar {
+					log.Error(err, "service not found")
+				} else if err != nil && mode != sidecar {
+					log.Error(err, "Error in getting service")
 				} else {
 					protocol := targetEndpointCr.Spec.Protocol
 					if mode == sidecar {
 						endPointSidecar := protocol + "://" + "localhost:" + strconv.Itoa(int(targetEndpointCr.Spec.Port))
-						endpointNames[endPoint] = endPointSidecar
+						endpointNames[targetEndpointCr.Name] = endPointSidecar
 						checkr = append(checkr, endPointSidecar)
+					}
+					if strings.EqualFold(targetEndpointCr.Spec.Mode.String(), serverless) {
+
+						endPoint = protocol + "://" + endPoint + "." + userNameSpace + ".svc.cluster.local"
+						checkr = append(checkr, endPoint)
+
 					} else {
-						endPoint = protocol + "://" + endPoint + ":" + strconv.Itoa(int(targetEndpointCr.Spec.Port))
+						endPoint = protocol + "://" + endPoint +  "." + userNameSpace + ":" + strconv.Itoa(int(targetEndpointCr.Spec.Port))
 						checkr = append(checkr, endPoint)
 					}
 					prodEp.Urls = checkr

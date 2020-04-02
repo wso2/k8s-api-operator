@@ -89,6 +89,9 @@
  - Enter following commands to finish the installation.
     ```
      kubectl apply --filename https://github.com/knative/serving/releases/download/v0.13.0/serving-core.yaml
+     kubectl apply --filename https://github.com/knative/serving/releases/download/v0.13.0/serving-istio.yaml
+     kubectl apply --filename https://github.com/knative/serving/releases/download/v0.13.0/serving-default-domain.yaml
+
     ```
    
  - Check all your Knative component is up and running using following command.
@@ -98,7 +101,7 @@
 
  ##### Deploying the artifacts
  
- - Navigate to `scenarios/scenario-13` directory and deploy the sample backend service using the following command.
+ - Navigate to `<api-operator-home>/scenarios/scenario-14` directory and deploy the sample backend service using the following command.
     ```
         apictl apply -f hello-world-serverless.yaml
     ```
