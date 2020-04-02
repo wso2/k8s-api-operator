@@ -136,6 +136,6 @@ const (
 
 	deploymentKind = "Deployment"
 	serviceKind    = "Service"
-	apiVersionKey = "apps/v1"
-	versionField  = "{version}"
+	apiVersionKey  = "apps/v1"
+	versionField   = "{version}"
 )
