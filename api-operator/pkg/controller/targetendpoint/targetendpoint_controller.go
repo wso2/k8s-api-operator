@@ -309,7 +309,6 @@ func (r *ReconcileTargetEndpoint) newKnativeDeploymentForCR(m *wso2v1alpha1.Targ
 									Image: m.Spec.Deploy.DockerImage,
 									Name:  m.Spec.Deploy.Name,
 									Ports: []corev1.ContainerPort{{
-										Name: m.Spec.Protocol + "-" + portKey,
 										ContainerPort: m.Spec.Port,
 									}},
 								},

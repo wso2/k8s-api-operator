@@ -59,14 +59,7 @@ data:
   generatekubernbetesartifactsformgw: "true"
   #Available modes - ingress, default and clusterIP
   operatorMode: "default"
-  #Ingress resource name
-  ingressResourceName: "api-operator-ingress"
-  #Define whether ingress to use http or https endpoint of operator deployment
-  ingressTransportMode: "https"
-  #Define the hostname of the ingress
-  ingressHostName : "mgw.ingress.wso2.com"
-  #Define the secret name for TLS certificate
-  #tlsSecretName: ""
+
 
 ---
 apiVersion: v1
