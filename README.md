@@ -25,7 +25,7 @@ In this document, we will walk through on the following.
 
 - [Kubernetes v1.12 or above](https://Kubernetes.io/docs/setup/) <br>
 
-    - Minimum CPU : 4vCPU
+    - Minimum CPU : 6vCPU
     - Minimum Memory : 8GB
 
 - An account in DockerHub or private docker registry
@@ -168,7 +168,7 @@ deployment.apps/api-operator created
 - Install the WSO2AM Operator in Kubernetes.
 
     ```
-    >> apictl install wso2am-operator -f https://bit.ly/2QYe6U3
+    >> apictl install wso2am-operator -f https://bit.ly/2X1ICQr
     
     namespace/wso2-system created
     serviceaccount/wso2am-pattern-1-svc-account created
@@ -385,7 +385,7 @@ The following commands will help you to push the API to the API portal in Kubern
 - Add the API portal as an environment to the API controller using the following command.
 
     ```
-    >> apictl add-env -e k8s --registration https://wso2apim:32001/client-registration/v0.16/register --apim https://wso2apim:32003 --token https://wso2apim:32003/token --admin https://wso2apim:32001/api/am/admin/v0.16 --api_list https://wso2apim:32001/api/am/publisher/v1/apis --app_list https://wso2apim:32001/api/am/store/v1/applications
+    >> apictl add-env -e k8s --apim https://wso2apim:32001 --token https://wso2apim:32003/token
     
     Output:
     Successfully added environment 'k8s'
@@ -449,8 +449,8 @@ Execute the following commands if you wish to clean up the Kubernetes cluster by
 
 ```
 >> apictl delete api online-store
->> apictl delete -f k8s-artifacts/api-portal
 >> apictl remove-env -e k8s
+>> apictl delete -f k8s-artifacts/wso2am-operator/api-portal/
 >> apictl uninstall api-operator
 ```
 
