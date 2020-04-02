@@ -37,8 +37,8 @@ import (
 
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
 	routv1 "github.com/openshift/api/route/v1"
+	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/api/autoscaling/v2beta1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -217,6 +217,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	var existJavaInterceptors = false // keep to track the existence of java interceptors
 	var certName string
 
+	apiBasePathMap := make(map[string]string)  // API base paths with versions
+
 	//get multiple jwt issuer details
 	jwtConfigs := []SecurityTypeJWT{}
 	var certList = make(map[string]string) // to add multiple certs with alias
@@ -348,12 +350,11 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			}
 		}
 
-		// Set the apiVersion of the swagger if there is only one swagger
-		if len(swaggerCmNames) == 1 {
-			apiVersion = swagger.Info.Version
-		}
+		apiVersion = swagger.Info.Version
 
 		endpointNames, newSwagger, apiBasePath := mgwSwaggerHandler(r, swagger, mode, userNameSpace)
+		apiBasePathMap[apiBasePath] = apiVersion
+
 		apiBasePaths = append(apiBasePaths, apiBasePath)
 		for endpointNameL, _ := range endpointNames {
 			log.Info("Endpoint name " + endpointNameL)
@@ -845,6 +846,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 					return reconcile.Result{}, updateEr
 				}
 				reqLogger.Info("Skip reconcile: Deployment updated", "Dep.Name", depFound.Name)
+
 				if svcErr != nil && errors.IsNotFound(svcErr) {
 					reqLogger.Info("Creating a new Service", "SVC.Namespace", svc.Namespace, "SVC.Name", svc.Name)
 					svcErr = r.client.Create(context.TODO(), svc)
@@ -852,29 +854,30 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 						return reconcile.Result{}, svcErr
 					}
 
-					reqLogger.Info("Operator mode is set to " + operatorMode)
-					if strings.EqualFold(operatorMode, ingressMode) {
-						ingErr := createorUpdateMgwIngressResource(r, instance, userNameSpace, int32(httpPortVal),
-							int32(httpsPortVal), apiBasePaths, controlIngressConf, owner)
-						if ingErr != nil {
-							return reconcile.Result{}, ingErr
-						}
-					}
-					if strings.EqualFold(operatorMode, routeMode) {
-						rutErr := createMgwRouteResource(r, instance, userNameSpace, int32(httpPortVal),
-							int32(httpsPortVal), apiBasePaths, controlOpenshiftConf, owner)
-						if rutErr != nil {
-							return reconcile.Result{}, rutErr
-						}
-					}
-					//Service created successfully - don't requeue
-					return reconcile.Result{}, nil
 				} else if svcErr != nil {
 					return reconcile.Result{}, svcErr
+				} else {
+					// if service already exsits
+					reqLogger.Info("Skip reconcile: Service already exists", "SVC.Namespace",
+						svcFound.Namespace, "SVC.Name", svcFound.Name)
 				}
-				// if service already exsits
-				reqLogger.Info("Skip reconcile: Service already exists", "SVC.Namespace",
-					svcFound.Namespace, "SVC.Name", svcFound.Name)
+
+				reqLogger.Info("Operator mode is set to " + operatorMode)
+				if strings.EqualFold(operatorMode, ingressMode) {
+					ingErr := createorUpdateMgwIngressResource(r, instance, int32(httpPortVal), int32(httpsPortVal),
+						apiBasePathMap, controlIngressConf, owner)
+					if ingErr != nil {
+						return reconcile.Result{}, ingErr
+					}
+				}
+				if strings.EqualFold(operatorMode, routeMode) {
+					rutErr := createMgwRouteResource(r, instance, userNameSpace, int32(httpPortVal),
+						int32(httpsPortVal), apiBasePaths, controlOpenshiftConf, owner)
+					if rutErr != nil {
+						return reconcile.Result{}, rutErr
+					}
+				}
+
 				return reconcile.Result{}, nil
 			} else {
 				log.Info("skip updating kubernetes artifacts")
@@ -913,29 +916,31 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 					return reconcile.Result{}, svcErr
 				}
 
-				reqLogger.Info("Operator mode is set to " + operatorMode)
-				if strings.EqualFold(operatorMode, ingressMode) {
-					ingErr := createorUpdateMgwIngressResource(r, instance, userNameSpace, int32(httpPortVal),
-						int32(httpsPortVal), apiBasePaths, controlIngressConf, owner)
-					if ingErr != nil {
-						return reconcile.Result{}, ingErr
-					}
-				}
-				if strings.EqualFold(operatorMode, routeMode) {
-					rutErr := createMgwRouteResource(r, instance, userNameSpace, int32(httpPortVal),
-						int32(httpsPortVal), apiBasePaths, controlOpenshiftConf, owner)
-					if rutErr != nil {
-						return reconcile.Result{}, rutErr
-					}
-				}
-				//Service created successfully - don't requeue
-				return reconcile.Result{}, nil
 			} else if svcErr != nil {
 				return reconcile.Result{}, svcErr
+			} else {
+				// if service already exsits
+				reqLogger.Info("Skip reconcile: Service already exists", "SVC.Namespace",
+					svcFound.Namespace, "SVC.Name", svcFound.Name)
 			}
-			// if service already exsits
-			reqLogger.Info("Skip reconcile: Service already exists", "SVC.Namespace",
-				svcFound.Namespace, "SVC.Name", svcFound.Name)
+
+			reqLogger.Info("Operator mode is set to " + operatorMode)
+			if strings.EqualFold(operatorMode, ingressMode) {
+				ingErr := createorUpdateMgwIngressResource(r, instance, int32(httpPortVal), int32(httpsPortVal),
+					apiBasePathMap, controlIngressConf, owner)
+				if ingErr != nil {
+					return reconcile.Result{}, ingErr
+				}
+			}
+			if strings.EqualFold(operatorMode, routeMode) {
+				rutErr := createMgwRouteResource(r, instance, userNameSpace, int32(httpPortVal),
+					int32(httpsPortVal), apiBasePaths, controlOpenshiftConf, owner)
+				if rutErr != nil {
+					return reconcile.Result{}, rutErr
+				}
+			}
+			return reconcile.Result{}, nil
+
 		} else {
 			log.Info("skip generating kubernetes artifacts")
 		}
@@ -980,29 +985,30 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 						return reconcile.Result{}, svcErr
 					}
 
-					reqLogger.Info("Operator mode is set to " + operatorMode)
-					if strings.EqualFold(operatorMode, ingressMode) {
-						ingErr := createorUpdateMgwIngressResource(r, instance, userNameSpace, int32(httpPortVal),
-							int32(httpsPortVal), apiBasePaths, controlIngressConf, owner)
-						if ingErr != nil {
-							return reconcile.Result{}, ingErr
-						}
-					}
-					if strings.EqualFold(operatorMode, routeMode) {
-						rutErr := createMgwRouteResource(r, instance, userNameSpace, int32(httpPortVal),
-							int32(httpsPortVal), apiBasePaths, controlOpenshiftConf, owner)
-						if rutErr != nil {
-							return reconcile.Result{}, rutErr
-						}
-					}
-					//Service created successfully - don't requeue
-					return reconcile.Result{}, nil
 				} else if svcErr != nil {
 					return reconcile.Result{}, svcErr
+				} else {
+					// if service already exsits
+					reqLogger.Info("Skip reconcile: Service already exists", "SVC.Namespace",
+						svcFound.Namespace, "SVC.Name", svcFound.Name)
 				}
-				// if service already exsits
-				reqLogger.Info("Skip reconcile: Service already exists", "SVC.Namespace",
-					svcFound.Namespace, "SVC.Name", svcFound.Name)
+
+				reqLogger.Info("Operator mode is set to " + operatorMode)
+				if strings.EqualFold(operatorMode, ingressMode) {
+					ingErr := createorUpdateMgwIngressResource(r, instance, int32(httpPortVal),
+						int32(httpsPortVal), apiBasePathMap, controlIngressConf, owner)
+					if ingErr != nil {
+						return reconcile.Result{}, ingErr
+					}
+				}
+				if strings.EqualFold(operatorMode, routeMode) {
+					rutErr := createMgwRouteResource(r, instance, userNameSpace, int32(httpPortVal),
+						int32(httpsPortVal), apiBasePaths, controlOpenshiftConf, owner)
+					if rutErr != nil {
+						return reconcile.Result{}, rutErr
+					}
+				}
+
 				return reconcile.Result{}, nil
 			} else {
 				log.Info("Skip generating kubernetes artifacts")
@@ -1681,7 +1687,7 @@ func createMgwDeployment(cr *wso2v1alpha1.API, conf *corev1.ConfigMap, analytics
 	containerList = append(containerList, apiContainer)
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: apiVersion,
+			APIVersion: apiVersionKey,
 			Kind:       deploymentKind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -1940,20 +1946,23 @@ func createMgwLBService(r *ReconcileAPI, cr *wso2v1alpha1.API, nameSpace string,
 
 // Creating a LB balancer service to expose mgw
 // Supports for multiple apiBasePaths when there are multiple swaggers for one API CRD
-func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, nameSpace string, httpPortVal int32,
-	httpsPortVal int32, apiBasePaths []string, controllerConfig *corev1.ConfigMap, owner []metav1.OwnerReference) error {
+func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, httpPortVal int32, httpsPortVal int32,
+	apiBasePathMap map[string]string, controllerConfig *corev1.ConfigMap, owner []metav1.OwnerReference) error {
+
 	controlConfigData := controllerConfig.Data
 	transportMode := controlConfigData[ingressTransportMode]
 	ingressHostName := controlConfigData[ingressHostName]
 	tlsSecretName := controlConfigData[tlsSecretName]
-	ingressName := controlConfigData[ingressResourceName]
+	ingressNamePrefix := controlConfigData[ingressResourceName]
+	ingressName := ingressNamePrefix + "-" + cr.Name
+	namespace := cr.Namespace
+	apiServiceName := cr.Name
 
 	var hostArray []string
 	hostArray = append(hostArray, ingressHostName)
 	log.Info(fmt.Sprintf("Creating ingress resource with name: %v", ingressName))
-	log.Info(fmt.Sprintf("Creating ingress resource with API Base Path: %v", apiBasePaths))
 	log.WithValues("Ingress metadata. Transport mode", transportMode, "Ingress name", ingressName,
-		"Ingress hostname "+ingressHostName)
+		"Ingress hostname ", ingressHostName)
 	annotationMap, err := getConfigmap(r, ingressConfigs, wso2NameSpaceConst)
 	var port int32
 
@@ -1963,11 +1972,7 @@ func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, nam
 		port = httpsPortVal
 	}
 
-	apiServiceName := cr.Name
-	ingress := &v1beta1.Ingress{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: ingressName, Namespace: nameSpace}, ingress)
 	annotationConfigData := annotationMap.Data
-
 	annotationsList := annotationConfigData[ingressProperties]
 	var ingressAnnotationMap map[string]string
 	ingressAnnotationMap = make(map[string]string)
@@ -1980,9 +1985,19 @@ func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, nam
 		}
 	}
 
+	log.Info("Creating ingress resource with the following Base Paths")
+
 	// add multiple api base paths
 	var httpIngressPaths []v1beta1.HTTPIngressPath
-	for _, apiBasePath := range apiBasePaths {
+	for basePath := range apiBasePathMap {
+
+		apiBasePath := basePath
+		// if the base path contains /petstore/{version}, then it is converted to /petstore/1.0.0
+		if strings.Contains(basePath, versionField) {
+			apiBasePath = strings.Replace(basePath, versionField, apiBasePathMap[basePath], -1)
+		}
+
+		log.Info(fmt.Sprintf("Adding the base path: %v to ingress resource", apiBasePath))
 		httpIngressPaths = append(httpIngressPaths, v1beta1.HTTPIngressPath{
 			Path: apiBasePath,
 			Backend: v1beta1.IngressBackend{
@@ -1990,75 +2005,47 @@ func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, nam
 				ServicePort: intstr.IntOrString{IntVal: port},
 			},
 		})
+
 	}
 
-	log.Info(fmt.Sprintf("Creating ingress resource with name: %v", ingressName))
-	if err != nil && errors.IsNotFound(err) {
-		log.Info("Ingress resource not found with name" + ingressName + ".Hence creating a new ingress resource")
-		ingress := &v1beta1.Ingress{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace:       nameSpace, // goes into backend full name
-				Name:            ingressName + "-" + cr.Name,
-				Annotations:     ingressAnnotationMap,
-				OwnerReferences: owner,
-			},
-			Spec: v1beta1.IngressSpec{
-				Rules: []v1beta1.IngressRule{
-					{
-						Host: ingressHostName,
-						IngressRuleValue: v1beta1.IngressRuleValue{
-							HTTP: &v1beta1.HTTPIngressRuleValue{
-								Paths: httpIngressPaths,
-							},
+	ingressResource := &v1beta1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace:       namespace, // goes into backend full name
+			Name:            ingressName,
+			Annotations:     ingressAnnotationMap,
+			OwnerReferences: owner,
+		},
+		Spec: v1beta1.IngressSpec{
+			Rules: []v1beta1.IngressRule{
+				{
+					Host: ingressHostName,
+					IngressRuleValue: v1beta1.IngressRuleValue{
+						HTTP: &v1beta1.HTTPIngressRuleValue{
+							Paths: httpIngressPaths,
 						},
 					},
 				},
-				TLS: []v1beta1.IngressTLS{
-					{
-						Hosts:      hostArray,
-						SecretName: tlsSecretName,
-					},
+			},
+			TLS: []v1beta1.IngressTLS{
+				{
+					Hosts:      hostArray,
+					SecretName: tlsSecretName,
 				},
 			},
-		}
-		err = r.client.Create(context.TODO(), ingress)
+		},
+	}
+
+	ingress := &v1beta1.Ingress{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: ingressName, Namespace: namespace}, ingress)
+
+	if err != nil && errors.IsNotFound(err) {
+		log.Info("Ingress resource not found with name" + ingressName + ".Hence creating a new Ingress resource")
+		err = r.client.Create(context.TODO(), ingressResource)
 		return err
 	} else {
-		log.Info("Ingress resource found with name" + ingressName + ".Hence updating the existing ingress resource")
-		rules := ingress.Spec.Rules
-		var rulesArray []v1beta1.IngressRule
-		var update bool = false
-		for _, element := range rules {
-			var pathArray []v1beta1.HTTPIngressPath
-			for _, path := range element.IngressRuleValue.HTTP.Paths {
-				if isStringArrayContains(apiBasePaths, path.Path) {
-					path.Backend.ServiceName = apiServiceName
-					path.Backend.ServicePort = intstr.IntOrString{IntVal: port}
-					update = true
-				}
-				pathArray = append(pathArray, path)
-				element.IngressRuleValue.HTTP.Paths = pathArray
-			}
-			rulesArray = append(rulesArray, element)
-		}
-
-		if update {
-			log.Info(fmt.Sprintf("Ingress API Base path found with name %v.Hence updating the rule", apiBasePaths))
-			ingress.Spec.Rules = rulesArray
-			err = r.client.Update(context.TODO(), ingress)
-			return err
-		}
-
-		rulesArray = make([]v1beta1.IngressRule, 0)
-		for _, element := range rules {
-			paths := element.IngressRuleValue.HTTP.Paths
-			paths = append(paths, httpIngressPaths...)
-			element.IngressRuleValue.HTTP.Paths = paths
-			rulesArray = append(rulesArray, element)
-			ingress.Spec.Rules = rulesArray
-			err = r.client.Update(context.TODO(), ingress)
-			return err
-		}
+		log.Info("Ingress resource found with name" + ingressName + ".Hence updating the existing Ingress resource")
+		err = r.client.Update(context.TODO(), ingressResource)
+		return err
 	}
 	return err
 }

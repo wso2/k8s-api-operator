@@ -25,8 +25,8 @@ In this document, we will walk through on the following.
 
 - [Kubernetes v1.12 or above](https://Kubernetes.io/docs/setup/) <br>
 
-    - Minimum CPU : 4vCPU
-    - Minimum Memory : 8GB
+    - Minimum CPU : 6vCPU
+    - Minimum Memory : 6GB
 
 - An account in DockerHub or private docker registry
 
@@ -168,7 +168,7 @@ deployment.apps/api-operator created
 - Install the WSO2AM Operator in Kubernetes.
 
     ```
-    >> apictl install wso2am-operator -f https://bit.ly/2QYe6U3
+    >> apictl install wso2am-operator -f https://bit.ly/2X1ICQr
     
     namespace/wso2-system created
     serviceaccount/wso2am-pattern-1-svc-account created
