@@ -48,9 +48,10 @@ const (
 	mgwConfConst         = "micro-gw.conf"
 	controllerConfName   = "controller-config"
 	ingressConfigs       = "ingress-configs"
-	openShiftConfigs     = "openshift-configs"
+	openShiftConfigs     = "route-configs"
 	dockerRegConfigs     = "docker-registry-config"
 	ingressProperties    = "ingress.properties"
+	routeProperties      = "route.properties"
 	policyFileConst      = "policies.yaml"
 	ingressResourceName  = "ingressResourceName"
 	ingressTransportMode = "ingressTransportMode"
@@ -59,6 +60,7 @@ const (
 	routeName            = "routeName"
 	routeHost            = "routeHost"
 	routeTransportMode   = "routeTransportMode"
+	tlsTermination       = "tlsTermination"
 
 	usernameConst  = "username"
 	passwordConst  = "password"
@@ -138,4 +140,8 @@ const (
 	serviceKind    = "Service"
 	apiVersionKey  = "apps/v1"
 	versionField   = "{version}"
+
+	edge          = "edge"
+	reencrypt     = "reencrypt"
+	passthrough   = "passthrough"
 )

@@ -476,6 +476,7 @@ When prompted type `Y` when uninstalling API Operator.
 1. [Sample 15: Apply Java interceptors to an API](scenarios/scenario-15)
 1. [Sample 16: Deploy multiple swagger-projects as one API](scenarios/scenario-16)
 1. [Sample 17: Expose an API using Ingress](scenarios/scenario-17)
+1. [Sample 18: Expose an API using Openshift Route](scenarios/scenario-18)
 
 
 ### Troubleshooting Guide
