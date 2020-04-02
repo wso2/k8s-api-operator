@@ -85,9 +85,6 @@
  - Using following commands you can install Knative into your cluster.
     ```
      kubectl apply --filename https://github.com/knative/serving/releases/download/v0.13.0/serving-crds.yaml
-    ```
- - Enter following commands to finish the installation.
-    ```
      kubectl apply --filename https://github.com/knative/serving/releases/download/v0.13.0/serving-core.yaml
      kubectl apply --filename https://github.com/knative/serving/releases/download/v0.13.0/serving-istio.yaml
      kubectl apply --filename https://github.com/knative/serving/releases/download/v0.13.0/serving-default-domain.yaml
@@ -96,7 +93,7 @@
    
  - Check all your Knative component is up and running using following command.
     ```` 
-   kubectl get pods --namespace knative-serving
+     kubectl get pods --namespace knative-serving
     ````
 
  ##### Deploying the artifacts
