@@ -208,7 +208,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	var deployedSidecarEndpointNames []string // container already added sidecar endpoint names
 	var jobVolume []corev1.Volume             // Volumes for Kaniko Job
 	var jobVolumeMount []corev1.VolumeMount   // Volume mounts for Kaniko Job
-	var apiBasePaths []string                 // API base paths
 	var apiVersion string                     // API version - for the tag of final MGW docker image
 
 	var alias string
@@ -217,7 +216,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	var existJavaInterceptors = false // keep to track the existence of java interceptors
 	var certName string
 
-	apiBasePathMap := make(map[string]string)  // API base paths with versions
+	apiBasePathMap := make(map[string]string) // API base paths with versions
 
 	//get multiple jwt issuer details
 	jwtConfigs := []SecurityTypeJWT{}
@@ -354,11 +353,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 		endpointNames, newSwagger, apiBasePath := mgwSwaggerHandler(r, swagger, mode, userNameSpace)
 		apiBasePathMap[apiBasePath] = apiVersion
-
-		apiBasePaths = append(apiBasePaths, apiBasePath)
-		for endpointNameL, _ := range endpointNames {
-			log.Info("Endpoint name " + endpointNameL)
-		}
 
 		//Creating sidecar endpoint deployment
 		if mode == sidecar {
@@ -783,10 +777,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 	targetAvgUtilizationCPU := int32(intValueUtilCPU)
 	minReplicas := int32(instance.Spec.Replicas)
-	errGettingHpa := createHorizontalPodAutoscaler(dep, r, owner, minReplicas, maxReplicas, targetAvgUtilizationCPU)
-	if errGettingHpa != nil {
-		log.Error(errGettingHpa, "Error getting HPA")
-	}
+
 	kanikoArgs, err = getConfigmap(r, "kaniko-arguments", "wso2-system")
 	if err != nil && errors.IsNotFound(err) {
 		log.Info("No kaniko-arguments config map is available in wso2-system namespace")
@@ -862,6 +853,12 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 						svcFound.Namespace, "SVC.Name", svcFound.Name)
 				}
 
+				errGettingHpa := createHorizontalPodAutoscaler(dep, r, owner, minReplicas, maxReplicas, targetAvgUtilizationCPU)
+				if errGettingHpa != nil {
+					log.Error(errGettingHpa, "Error getting HPA")
+					return reconcile.Result{}, errGettingHpa
+				}
+
 				reqLogger.Info("Operator mode is set to " + operatorMode)
 				if strings.EqualFold(operatorMode, ingressMode) {
 					ingErr := createorUpdateMgwIngressResource(r, instance, int32(httpPortVal), int32(httpsPortVal),
@@ -871,8 +868,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 					}
 				}
 				if strings.EqualFold(operatorMode, routeMode) {
-					rutErr := createMgwRouteResource(r, instance, userNameSpace, int32(httpPortVal),
-						int32(httpsPortVal), apiBasePaths, controlOpenshiftConf, owner)
+					rutErr := createorUpdateMgwRouteResource(r, instance, int32(httpPortVal),
+						int32(httpsPortVal), apiBasePathMap, controlOpenshiftConf, owner)
 					if rutErr != nil {
 						return reconcile.Result{}, rutErr
 					}
@@ -924,6 +921,12 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 					svcFound.Namespace, "SVC.Name", svcFound.Name)
 			}
 
+			errGettingHpa := createHorizontalPodAutoscaler(dep, r, owner, minReplicas, maxReplicas, targetAvgUtilizationCPU)
+			if errGettingHpa != nil {
+				log.Error(errGettingHpa, "Error getting HPA")
+				return reconcile.Result{}, errGettingHpa
+			}
+
 			reqLogger.Info("Operator mode is set to " + operatorMode)
 			if strings.EqualFold(operatorMode, ingressMode) {
 				ingErr := createorUpdateMgwIngressResource(r, instance, int32(httpPortVal), int32(httpsPortVal),
@@ -933,8 +936,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 				}
 			}
 			if strings.EqualFold(operatorMode, routeMode) {
-				rutErr := createMgwRouteResource(r, instance, userNameSpace, int32(httpPortVal),
-					int32(httpsPortVal), apiBasePaths, controlOpenshiftConf, owner)
+				rutErr := createorUpdateMgwRouteResource(r, instance, int32(httpPortVal),
+					int32(httpsPortVal), apiBasePathMap, controlOpenshiftConf, owner)
 				if rutErr != nil {
 					return reconcile.Result{}, rutErr
 				}
@@ -993,6 +996,12 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 						svcFound.Namespace, "SVC.Name", svcFound.Name)
 				}
 
+				errGettingHpa := createHorizontalPodAutoscaler(dep, r, owner, minReplicas, maxReplicas, targetAvgUtilizationCPU)
+				if errGettingHpa != nil {
+					log.Error(errGettingHpa, "Error getting HPA")
+					return reconcile.Result{}, errGettingHpa
+				}
+
 				reqLogger.Info("Operator mode is set to " + operatorMode)
 				if strings.EqualFold(operatorMode, ingressMode) {
 					ingErr := createorUpdateMgwIngressResource(r, instance, int32(httpPortVal),
@@ -1002,8 +1011,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 					}
 				}
 				if strings.EqualFold(operatorMode, routeMode) {
-					rutErr := createMgwRouteResource(r, instance, userNameSpace, int32(httpPortVal),
-						int32(httpsPortVal), apiBasePaths, controlOpenshiftConf, owner)
+					rutErr := createorUpdateMgwRouteResource(r, instance, int32(httpPortVal),
+						int32(httpsPortVal), apiBasePathMap, controlOpenshiftConf, owner)
 					if rutErr != nil {
 						return reconcile.Result{}, rutErr
 					}
@@ -1217,7 +1226,7 @@ func mgwSwaggerLoader(swaggerDataMap map[string]string) (*openapi3.Swagger, stri
 	swagger, err := openapi3.NewSwaggerLoader().LoadSwaggerFromData([]byte(swaggerData))
 
 	swaggerV3Version := swagger.OpenAPI
-	log.Info("Swagger version", swaggerV3Version)
+	log.Info("Swagger version " + swaggerV3Version)
 
 	if swaggerV3Version != "" {
 		return swagger, swaggerDataFile, err
@@ -1514,7 +1523,7 @@ func resolveEps(r *ReconcileAPI, pathName string, resourceGetEp interface{}, end
 						checkr = append(checkr, endPoint)
 
 					} else {
-						endPoint = protocol + "://" + endPoint +  "." + userNameSpace + ":" + strconv.Itoa(int(targetEndpointCr.Spec.Port))
+						endPoint = protocol + "://" + endPoint + "." + userNameSpace + ":" + strconv.Itoa(int(targetEndpointCr.Spec.Port))
 						checkr = append(checkr, endPoint)
 					}
 					prodEp.Urls = checkr
@@ -1944,7 +1953,7 @@ func createMgwLBService(r *ReconcileAPI, cr *wso2v1alpha1.API, nameSpace string,
 	return svc
 }
 
-// Creating a LB balancer service to expose mgw
+// Creating an Ingress resource to expose mgw
 // Supports for multiple apiBasePaths when there are multiple swaggers for one API CRD
 func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, httpPortVal int32, httpsPortVal int32,
 	apiBasePathMap map[string]string, controllerConfig *corev1.ConfigMap, owner []metav1.OwnerReference) error {
@@ -2039,63 +2048,140 @@ func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, htt
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: ingressName, Namespace: namespace}, ingress)
 
 	if err != nil && errors.IsNotFound(err) {
-		log.Info("Ingress resource not found with name" + ingressName + ".Hence creating a new Ingress resource")
+		log.Info("Ingress resource not found with name " + ingressName + ".Hence creating a new Ingress resource")
 		err = r.client.Create(context.TODO(), ingressResource)
 		return err
 	} else {
-		log.Info("Ingress resource found with name" + ingressName + ".Hence updating the existing Ingress resource")
+		log.Info("Ingress resource found with name " + ingressName + ".Hence updating the existing Ingress resource")
 		err = r.client.Update(context.TODO(), ingressResource)
 		return err
 	}
 	return err
 }
 
-func createMgwRouteResource (r *ReconcileAPI, cr *wso2v1alpha1.API, nameSpace string, httpPortVal int32,
-	httpsPortVal int32, apiBasePaths []string, controllerConfig *corev1.ConfigMap, owner []metav1.OwnerReference) error {
+// Creating a Route resource to expose microgateway
+// Supports for multiple apiBasePaths when there are multiple swaggers for one API CRD
+func createorUpdateMgwRouteResource(r *ReconcileAPI, cr *wso2v1alpha1.API, httpPortVal int32, httpsPortVal int32,
+	apiBasePathMap map[string]string, controllerConfig *corev1.ConfigMap, owner []metav1.OwnerReference) error {
 
 	controlConfigData := controllerConfig.Data
-	routeName := controlConfigData[routeName]
-	routeHost := controlConfigData[routeHost]
-	routeTransportMode := controlConfigData[routeTransportMode]
+	routePrefix := controlConfigData[routeName]
+	routesHostname := controlConfigData[routeHost]
+	transportMode := controlConfigData[routeTransportMode]
+	tlsTerminationValue := controlConfigData[tlsTermination]
 
-	route := &routv1.Route{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: routeName, Namespace: nameSpace}, route)
+	var tlsTerminationType routv1.TLSTerminationType
+	if strings.EqualFold(tlsTerminationValue, edge) {
+		tlsTerminationType = routv1.TLSTerminationEdge
+	} else if strings.EqualFold(tlsTerminationValue, reencrypt) {
+		tlsTerminationType = routv1.TLSTerminationReencrypt
+	} else if strings.EqualFold(tlsTerminationValue, passthrough){
+		tlsTerminationType = routv1.TLSTerminationPassthrough
+	} else {
+		tlsTerminationType = ""
+	}
+
+	routeName := routePrefix + "-" + cr.Name
+	namespace := cr.Namespace
+	apiServiceName := cr.Name
+
+	var hostArray []string
+	hostArray = append(hostArray, routesHostname)
+	log.Info(fmt.Sprintf("Creating route resource with name: %v", routeName))
+	log.WithValues("Route metadata. Transport mode", transportMode, "Route name", routeName,
+		"Ingress hostname ", routesHostname)
+
+	annotationMap, err := getConfigmap(r, openShiftConfigs, wso2NameSpaceConst)
 	var port int32
 
-	if httpConst == routeTransportMode {
+	if httpConst == transportMode {
 		port = httpPortVal
 	} else {
 		port = httpsPortVal
 	}
 
-	log.Info(fmt.Sprintf("Creating Route resource with name: %v", routeName))
-	if err != nil && errors.IsNotFound(err) {
-		log.Info("Route resource not found with name" + routeName + ".Hence creating a new route resource")
-		serviceName := cr.Name
-		route := &routv1.Route{
+	annotationConfigData := annotationMap.Data
+	annotationsList := annotationConfigData[routeProperties]
+	var routeAnnotationMap map[string]string
+	routeAnnotationMap = make(map[string]string)
+
+	splitArray := strings.Split(annotationsList, "\n")
+	for _, element := range splitArray {
+		if element != "" && strings.ContainsAny(element, ":") {
+			splitValues := strings.Split(element, ":")
+			routeAnnotationMap[strings.TrimSpace(splitValues[0])] = strings.TrimSpace(splitValues[1])
+		}
+	}
+
+	log.Info("Creating route resource for API " + cr.Name)
+
+	var routeList []routv1.Route
+
+	for basePath := range apiBasePathMap {
+
+		apiBasePath := basePath
+		// if the base path contains /petstore/{version}, then it is converted to /petstore/1.0.0
+		if strings.Contains(basePath, versionField) {
+			apiBasePath = strings.Replace(basePath, versionField, apiBasePathMap[basePath], -1)
+		}
+
+		apiBasePathSuffix := apiBasePath
+		apiBasePathSuffix = strings.Replace(apiBasePathSuffix, "/", "-", -1)
+		routeNewName := routeName + apiBasePathSuffix
+
+		log.Info(fmt.Sprintf("Creating the route : %v to ingress resource", apiBasePath))
+
+		routeResource := routv1.Route{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:            cr.Name,
-				Namespace:       nameSpace,
+				Name:            routeNewName,
+				Namespace:       namespace,
 				OwnerReferences: owner,
-				Annotations: map[string]string{
-					"openshift.io/host.generated": "false",
-				},
+				Annotations:     routeAnnotationMap,
 			},
 			Spec: routv1.RouteSpec{
-				Host: routeHost,
-				Path: apiBasePaths[0],
+				Host: routesHostname,
+				Path: apiBasePath,
 				Port: &routv1.RoutePort{
 					TargetPort: intstr.IntOrString{IntVal: port},
 				},
 				To: routv1.RouteTargetReference{
-					Kind: "Service",
-					Name: serviceName,
+					Kind: serviceKind,
+					Name: apiServiceName,
+				},
+				TLS: &routv1.TLSConfig{
+					Termination:                   tlsTerminationType,
 				},
 			},
 		}
-		err = r.client.Create(context.TODO(), route)
+
+		routeList = append(routeList, routeResource)
 	}
-	return err
+
+	for _, route := range routeList {
+
+		routeGet := &routv1.Route{}
+		err = r.client.Get(context.TODO(), types.NamespacedName{Name: route.Name, Namespace: route.Namespace}, routeGet)
+
+		if err != nil && errors.IsNotFound(err) {
+			log.Info("Route resource not found with name " + route.Name + ".Hence creating a new Route resource")
+			errInCreating := r.client.Create(context.TODO(), &route)
+
+			if errInCreating != nil {
+				return errInCreating
+			}
+		} else {
+			log.Info("Route resource found with name " + route.Name + ".Hence updating the existing Route resource")
+			routeGet.Spec = route.Spec
+			errInUpdating := r.client.Update(context.TODO(), routeGet)
+
+			if errInUpdating != nil {
+				return errInUpdating
+			}
+		}
+
+	}
+
+	return nil
 }
 
 //default volume mounts for the kaniko job
