@@ -37,8 +37,8 @@ import (
 
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
 	routv1 "github.com/openshift/api/route/v1"
+	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/api/autoscaling/v2beta1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -820,10 +820,13 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		} else if jobErr != nil {
 			return reconcile.Result{}, jobErr
 		}
+
+		// delete completed kaniko job
 		errDeleteJob := deleteCompletedJobs(instance.Namespace)
 		if errDeleteJob != nil {
 			log.Error(errDeleteJob, "error deleting completed jobs")
 		}
+
 		// if kaniko job is succeeded, edit the deployment
 		if kubeJob.Status.Succeeded > 0 {
 			if genArtifacts {
@@ -886,12 +889,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		}
 
 	} else if imageExist && !instance.Spec.Override {
-
 		log.Info("Image already exist, hence skipping the kaniko job")
-		errDeleteJob := deleteCompletedJobs(instance.Namespace)
-		if errDeleteJob != nil {
-			log.Error(errDeleteJob, "error deleting completed jobs")
-		}
 
 		if genArtifacts {
 			log.Info("generating kubernetes artifacts")
@@ -958,6 +956,12 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			}
 		} else if jobErr != nil {
 			return reconcile.Result{}, jobErr
+		}
+
+		// delete completed kaniko job
+		errDeleteJob := deleteCompletedJobs(instance.Namespace)
+		if errDeleteJob != nil {
+			log.Error(errDeleteJob, "error deleting completed jobs")
 		}
 
 		if kubeJob.Status.Succeeded > 0 {
@@ -2044,7 +2048,7 @@ func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, nam
 	return err
 }
 
-func createMgwRouteResource (r *ReconcileAPI, cr *wso2v1alpha1.API, nameSpace string, httpPortVal int32,
+func createMgwRouteResource(r *ReconcileAPI, cr *wso2v1alpha1.API, nameSpace string, httpPortVal int32,
 	httpsPortVal int32, apiBasePaths []string, controllerConfig *corev1.ConfigMap, owner []metav1.OwnerReference) error {
 
 	controlConfigData := controllerConfig.Data
