@@ -17,12 +17,12 @@
 apiVersion: operators.coreos.com/v1
 kind: OperatorSource
 metadata:
-  name: rakhitharr-operators
+  name: wso2am-operators
   namespace: marketplace
 spec:
   type: appregistry
   endpoint: https://quay.io/cnr
-  registryNamespace: rakhitharr
+  registryNamespace: wso2am
 ---
 apiVersion: operators.coreos.com/v1alpha2
 kind: OperatorGroup
@@ -41,6 +41,6 @@ metadata:
 spec:
   channel: stable
   name: api-operator
-  source: rakhitharr-operators
+  source: wso2am-operators
   sourceNamespace: marketplace
   
