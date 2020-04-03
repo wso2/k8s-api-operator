@@ -821,14 +821,15 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			return reconcile.Result{}, jobErr
 		}
 
-		// delete completed kaniko job
-		errDeleteJob := deleteCompletedJobs(instance.Namespace)
-		if errDeleteJob != nil {
-			log.Error(errDeleteJob, "error deleting completed jobs")
-		}
-
 		// if kaniko job is succeeded, edit the deployment
 		if kubeJob.Status.Succeeded > 0 {
+			// Kaniko completed the push image, so the image is exists but kaniko job is exists
+			// delete completed kaniko job if kaniko is exists
+			errDeleteJob := deleteCompletedJobs(instance.Namespace)
+			if errDeleteJob != nil {
+				log.Error(errDeleteJob, "error deleting completed jobs")
+			}
+
 			if genArtifacts {
 				reqLogger.Info("Job completed successfully", "Job.Namespace", job.Namespace, "Job.Name", job.Name)
 				if deperr != nil && errors.IsNotFound(deperr) {
@@ -890,6 +891,12 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	} else if imageExist && !instance.Spec.Override {
 		log.Info("Image already exist, hence skipping the kaniko job")
+
+		// delete completed kaniko job
+		errDeleteJob := deleteCompletedJobs(instance.Namespace)
+		if errDeleteJob != nil {
+			log.Error(errDeleteJob, "error deleting completed jobs")
+		}
 
 		if genArtifacts {
 			log.Info("generating kubernetes artifacts")
@@ -958,14 +965,15 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			return reconcile.Result{}, jobErr
 		}
 
-		// delete completed kaniko job
-		errDeleteJob := deleteCompletedJobs(instance.Namespace)
-		if errDeleteJob != nil {
-			log.Error(errDeleteJob, "error deleting completed jobs")
-		}
-
 		if kubeJob.Status.Succeeded > 0 {
 			reqLogger.Info("Job completed successfully", "Job.Namespace", job.Namespace, "Job.Name", job.Name)
+			// delete completed kaniko job
+			// this delete only happened in override scenario
+			errDeleteJob := deleteCompletedJobs(instance.Namespace)
+			if errDeleteJob != nil {
+				log.Error(errDeleteJob, "error deleting completed jobs")
+			}
+
 			if genArtifacts {
 				if deperr != nil && errors.IsNotFound(deperr) {
 					reqLogger.Info("Creating a new Deployment", "Dep.Namespace", dep.Namespace, "Dep.Name", dep.Name)
@@ -2560,6 +2568,7 @@ func copyDefaultSecurity(securityDefault *wso2v1alpha1.Security, userNameSpace s
 }
 
 func deleteCompletedJobs(namespace string) error {
+	log.Info("Deleting completed kaniko job")
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		glog.Errorf("Can't load in cluster config: %v", err)
