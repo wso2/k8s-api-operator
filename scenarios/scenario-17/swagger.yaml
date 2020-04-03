@@ -28,5 +28,3 @@ paths:
       responses:
         "200":
           description: ""
-      x-auth-type: None
-      x-throttling-tier: Unlimited
