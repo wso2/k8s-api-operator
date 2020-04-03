@@ -39,11 +39,11 @@ data:
   #Max Memory usage limit a pod can use.   Default->  resourceLimitMemory: "512Mi"
   resourceLimitMemory: "512Mi"
 
-  resourceRequestCPUTarget: "1000m"
+  resourceRequestCPUTarget: "500m"
   #Required Memory usage pods can use for TargetEndPoint.   Default->  resourceRequestMemory: "512Mi"
   resourceRequestMemoryTarget: "512Mi"
   #Max CPU usage limit a pod can use for TargetEndPoint.   Default->  resourceLimitCPU: "2000m"
-  resourceLimitCPUTarget: "2000m"
+  resourceLimitCPUTarget: "500m"
   #Max Memory usage limit a pod can use for TargetEndPoint.   Default->  resourceLimitMemory: "512Mi"
   resourceLimitMemoryTarget: "512Mi"
   #Configure readiness probe initial delay for API pod
