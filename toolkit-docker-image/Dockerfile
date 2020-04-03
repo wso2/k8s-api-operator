@@ -14,7 +14,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-FROM alpine:3.11
+FROM adoptopenjdk/openjdk8:jdk8u222-b10-alpine
 LABEL maintainer="<dev@wso2.org>"
 
 ENV LANG=C.UTF-8
