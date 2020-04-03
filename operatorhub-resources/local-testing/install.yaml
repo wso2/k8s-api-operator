@@ -17,12 +17,12 @@
 apiVersion: operators.coreos.com/v1
 kind: OperatorSource
 metadata:
-  name: rameshakaru-operators
+  name: rakhitharr-operators
   namespace: marketplace
 spec:
   type: appregistry
   endpoint: https://quay.io/cnr
-  registryNamespace: rameshakaru
+  registryNamespace: rakhitharr
 ---
 apiVersion: operators.coreos.com/v1alpha2
 kind: OperatorGroup
@@ -41,6 +41,6 @@ metadata:
 spec:
   channel: stable
   name: api-operator
-  source: rameshakaru-operators
+  source: rakhitharr-operators
   sourceNamespace: marketplace
   
