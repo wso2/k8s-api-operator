@@ -812,12 +812,16 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		} else if jobErr != nil {
 			return reconcile.Result{}, jobErr
 		}
-		errDeleteJob := deleteCompletedJobs(instance.Namespace)
-		if errDeleteJob != nil {
-			log.Error(errDeleteJob, "error deleting completed jobs")
-		}
+
 		// if kaniko job is succeeded, edit the deployment
 		if kubeJob.Status.Succeeded > 0 {
+			// Kaniko completed pushing the image and `isImageExists` becomes true. But kaniko job exists
+			// delete the completed kaniko job if it exists
+			errDeleteJob := deleteCompletedJobs(instance.Namespace)
+			if errDeleteJob != nil {
+				log.Error(errDeleteJob, "error deleting completed jobs")
+			}
+
 			if genArtifacts {
 				reqLogger.Info("Job completed successfully", "Job.Namespace", job.Namespace, "Job.Name", job.Name)
 				if deperr != nil && errors.IsNotFound(deperr) {
@@ -886,8 +890,9 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		}
 
 	} else if imageExist && !instance.Spec.Override {
-
 		log.Info("Image already exist, hence skipping the kaniko job")
+
+		// delete completed kaniko job
 		errDeleteJob := deleteCompletedJobs(instance.Namespace)
 		if errDeleteJob != nil {
 			log.Error(errDeleteJob, "error deleting completed jobs")
@@ -970,6 +975,13 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 		if kubeJob.Status.Succeeded > 0 {
 			reqLogger.Info("Job completed successfully", "Job.Namespace", job.Namespace, "Job.Name", job.Name)
+			// delete completed kaniko job
+			// this delete only happens in override scenario
+			errDeleteJob := deleteCompletedJobs(instance.Namespace)
+			if errDeleteJob != nil {
+				log.Error(errDeleteJob, "error deleting completed jobs")
+			}
+
 			if genArtifacts {
 				if deperr != nil && errors.IsNotFound(deperr) {
 					reqLogger.Info("Creating a new Deployment", "Dep.Namespace", dep.Namespace, "Dep.Name", dep.Name)
@@ -2075,7 +2087,7 @@ func createorUpdateMgwRouteResource(r *ReconcileAPI, cr *wso2v1alpha1.API, httpP
 		tlsTerminationType = routv1.TLSTerminationEdge
 	} else if strings.EqualFold(tlsTerminationValue, reencrypt) {
 		tlsTerminationType = routv1.TLSTerminationReencrypt
-	} else if strings.EqualFold(tlsTerminationValue, passthrough){
+	} else if strings.EqualFold(tlsTerminationValue, passthrough) {
 		tlsTerminationType = routv1.TLSTerminationPassthrough
 	} else {
 		tlsTerminationType = ""
@@ -2149,7 +2161,7 @@ func createorUpdateMgwRouteResource(r *ReconcileAPI, cr *wso2v1alpha1.API, httpP
 					Name: apiServiceName,
 				},
 				TLS: &routv1.TLSConfig{
-					Termination:                   tlsTerminationType,
+					Termination: tlsTerminationType,
 				},
 			},
 		}
@@ -2651,6 +2663,7 @@ func copyDefaultSecurity(securityDefault *wso2v1alpha1.Security, userNameSpace s
 }
 
 func deleteCompletedJobs(namespace string) error {
+	log.Info("Deleting completed kaniko job")
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		glog.Errorf("Can't load in cluster config: %v", err)
