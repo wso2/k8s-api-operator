@@ -14,7 +14,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-FROM adoptopenjdk/openjdk8:jdk8u222-b10-alpine
+FROM alpine:3.11
 LABEL maintainer="<dev@wso2.org>"
 
 ENV LANG=C.UTF-8
@@ -29,11 +29,9 @@ ARG USER_HOME=/home/${USER}
 
 # build arguments for WSO2 product installation
 ARG WSO2_SERVER_NAME=wso2am-micro-gw-toolkit-linux
-ARG WSO2_SERVER_VERSION=3.1.0-rc2
+ARG WSO2_SERVER_VERSION=3.1.0
 ARG WSO2_SERVER=${WSO2_SERVER_NAME}-${WSO2_SERVER_VERSION}
-# remove the suffix "rc2" from arg "WSO2_SERVER_HOME" for this release
-# ARG WSO2_SERVER_HOME=${USER_HOME}/${WSO2_SERVER}
-ARG WSO2_SERVER_HOME=${USER_HOME}/${WSO2_SERVER_NAME}-3.1.0
+ARG WSO2_SERVER_HOME=${USER_HOME}/${WSO2_SERVER}
 ARG WSO2_SERVER_DIST_URL=https://github.com/wso2/product-microgateway/releases/download/v${WSO2_SERVER_VERSION}/${WSO2_SERVER}.zip
 
 # build argument for MOTD
