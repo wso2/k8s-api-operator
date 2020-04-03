@@ -30,16 +30,16 @@ In this document, we will walk through on the following.
 
 - An account in DockerHub or private docker registry
 
-- Download [k8s-api-operator-1.1.0-beta.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.1.0-beta/k8s-api-operator-1.1.0-beta.zip) and extract the zip
+- Download [k8s-api-operator-1.1.0.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.1.0/k8s-api-operator-1.1.0.zip) and extract the zip
 
     1. This zip contains the artifacts that required to deploy in Kubernetes.
-    2. Extract k8s-api-operator-1.1.0-beta.zip
+    2. Extract k8s-api-operator-1.1.0.zip
     
     ```
-    cd k8s-api-operator-1.1.0-beta
+    cd k8s-api-operator-1.1.0
     ```
  
-**_Note:_** You need to run all commands from within the ***k8s-api-operator-1.1.0-beta*** directory.
+**_Note:_** You need to run all commands from within the ***k8s-api-operator-1.1.0*** directory.
 
 <br />
 
@@ -103,7 +103,7 @@ In this document, we will walk through on the following.
 
 #### Step 2: Configure API Controller
 
-- Download API controller v3.1.0-customized for your operating system from the [github](https://github.com/wso2/K8s-api-operator/releases/tag/v1.1.0-beta)
+- Download API controller v3.1.0-customized for your operating system from the [github](https://github.com/wso2/K8s-api-operator/releases/tag/v1.1.0)
 
 - Extract the API controller distribution and navigate inside the extracted folder using the command-line tool
 
@@ -116,12 +116,6 @@ You can find available operations using the below command.
 <br />
 
 #### Step 3: Install API Operator
-
-Set the environment variable `WSO2_API_OPERATOR_VERSION` with the latest API Operator version.
-
-```sh
->> export WSO2_API_OPERATOR_VERSION=v1.1.0-beta
-```
 
 - Execute the following command to install API Operator interactively and configure repository to push the microgateway image.
 - Select "Docker Hub" as the repository type.
