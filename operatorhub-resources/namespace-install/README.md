@@ -76,48 +76,68 @@ kubectl get pods -n wso2-system
 ### Using the API Operator
 
 #### Step 1: Configure API Controller
-- Download API controller v3.0.0 for your operating system from the [website](https://wso2.com/api-management/tooling/) or from [GitHub]((https://github.com/wso2/product-apim-tooling/releases/)
+- Download API controller v3.1.0 for your operating system from the [website](https://wso2.com/api-management/tooling/) or from [GitHub](https://github.com/wso2/product-apim-tooling/releases/)
 - Extract the API controller distribution and navigate inside the extracted folder using the command-line tool
 - Add the location of the extracted folder to your system's $PATH variable to be able to access the executable from anywhere.
 
 You can find available operations using the below command.
 ```
-apictl --help
+>> apictl --help
 ```
 By default API controller does not support kubectl command.
 Set the API Controller’s mode to Kubernetes to be compatible with kubectl commands
 ```
-apictl set --mode k8s 
+>> apictl set --mode k8s 
 ```
-#### Step 2: Install API Operator Configurations
-* Extract [api-k8s-crds-1.0.1.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.0.1/api-k8s-crds-1.0.1.zip). This zip contains the artifacts that required to deploy in Kubernetes. 
-```
-cd api-k8s-crds-1.0.1    
-```
-* Deploy the controller level configurations </br>
-**[IMPORTANT]**   When you deploy an API, this will create a docker image for the API and be pushed to Docker-Hub. For this, your Docker-Hub credentials are required.   
-1. Open **api-operator/controller-configs/controller_conf.yaml** and navigate to docker registry section(mentioned below), and  update ***user's docker registry***.       
-```
-#docker registry name which the mgw image to be pushed.
-dockerRegistry: <username-docker-registry>        
-``` 
-2. Open **api-operator/controller-configs/docker_secret_template.yaml** and navigate to data section. </br> Enter the base 64 encoded username and password of the Docker-Hub account        
-```        
-data:         
-  username: ENTER YOUR BASE64 ENCODED USERNAME         
-  password: ENTER YOUR BASE64 ENCODED PASSWORD        
-```        
-Once you done with the above configurations, execute the following command to deploy controller configurations.       
-```
-kubectl apply -f api-operator/controller-configs/
 
-configmap/controller-config created       
-configmap/apim-config created   
-security.wso2.com/default-security-jwt created       secret/wso2am310-secret created
-configmap/docker-secret-mustache created        
-secret/docker-secret created        
-configmap/dockerfile-template created      
-configmap/mgw-conf-mustache created
+#### Step 2: Install API Operator Configurations
+
+* Download [k8s-api-operator-1.1.0.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.1.0/api-k8s-crds-1.1.0.zip)
+  1. This zip contains the artifacts that required to deploy in Kubernetes.
+  2. Extract k8s-api-operator-1.1.0.zip
+```
+cd k8s-api-operator-1.1.0
+```     
+* Create namspace and deploy the controller level configurations **[IMPORTANT]**
+  *  When you create an API, a docker image of it will be created and pushed to a docker registry. For this, credentials for your docker resgitry are required.
+  
+```
+>>  apictl change registry
+    
+Choose registry type:
+1: Docker Hub (Or others, quay.io, HTTPS registry)
+2: Amazon ECR
+3: GCR
+4: HTTP Private Registry
+Choose a number: 1: 1
+Enter repository name (docker.io/john | quay.io/mark | 10.100.5.225:5000/jennifer): docker.io/jennifer
+Enter username: jennifer
+Enter password: *******
+Repository: docker.io/jennifer
+Username  : jennifer
+Confirm configurations: Y: Y
+
+Output:
+
+configmap/docker-registry-config configured
+secret/docker-registry-credentials configured
+```
+Once you are done with the above configurations, execute the following command to deploy controller configurations.
+
+```
+>> kubectl apply -f api-operator/operatorhub-controller-configs/
+
+namespace/wso2-system created
+configmap/controller-config created
+configmap/apim-config created
+configmap/ingress-configs created
+configmap/kaniko-arguments created
+configmap/route-configs created
+security.wso2.com/default-security-jwt created
+secret/wso2am310-secret created
+configmap/docker-registry-config ceated
+configmap/dockerfile-template created
+configmap/mgw-conf-mustache unchanged
 ```
 
 Now you can follow any scenarios provided [here](../../scenarios/README.md) and try out how the API Operator works.

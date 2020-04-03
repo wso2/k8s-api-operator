@@ -52,37 +52,39 @@ defaultChannel: stable
  
 4. Install OLM
 ```
-kubectl apply -f https://github.com/operator-framework/operator-lifecycle-manager/releases/download/0.10.0/crds.yaml
-kubectl apply -f https://github.com/operator-framework/operator-lifecycle-manager/releases/download/0.10.0/olm.yaml
+>> kubectl apply -f https://github.com/operator-framework/operator-lifecycle-manager/releases/download/0.13.0/crds.yaml
+>> kubectl apply -f https://github.com/operator-framework/operator-lifecycle-manager/releases/download/0.13.0/olm.yaml
 ```
 
 5. Deploy operator-marketplace. (operator-marketplace operator is needed only for local testing)
 ```
-git clone https://github.com/operator-framework/operator-marketplace.git
-kubectl apply -f operator-marketplace/deploy/upstream/
+>> git clone https://github.com/operator-framework/operator-marketplace.git
+>> kubectl apply -f operator-marketplace/deploy/upstream/
 ```
 5. Install operator courier
 ```
-pip3 install operator-courier
+>> pip3 install operator-courier
 ```
 
 6. Verify your bundle
 ```
-ramesha:operatorhub-resources ramesha$ operator-courier --verbose verify --ui_validate_io api-operator
+>> operator-courier --verbose verify --ui_validate_io api-operator
+
 INFO:operatorcourier.verified_manifest:The source directory is in nested structure.
-INFO:operatorcourier.verified_manifest:Parsing version: 1.0.1
+INFO:operatorcourier.verified_manifest:Parsing version: 1.1.0
 INFO: Validating bundle. []
 INFO: Validating custom resource definitions. []
-INFO: Evaluating crd apis.wso2.com [1.0.1/apis.wso2.com.crd.yaml]
-INFO: Evaluating crd securities.wso2.com [1.0.1/securities.wso2.com.crd.yaml]
-INFO: Evaluating crd ratelimitings.wso2.com [1.0.1/ratelimitings.wso2.com.crd.yaml]
-INFO: Evaluating crd targetendpoints.wso2.com [1.0.1/targetendpoints.wso2.com.crd.yaml]
-INFO: Validating cluster service versions. [1.0.1/targetendpoints.wso2.com.crd.yaml]
-INFO: Evaluating csv api-operator.v1.0.1 [1.0.1/api-operator.v1.0.1.clusterserviceversion.yaml]
-INFO: Validating packages. [1.0.1/api-operator.v1.0.1.clusterserviceversion.yaml]
+INFO: Evaluating crd apis.wso2.com [1.1.0/apis.wso2.com.crd.yaml]
+INFO: Evaluating crd securities.wso2.com [1.1.0/securities.wso2.com.crd.yaml]
+INFO: Evaluating crd targetendpoints.wso2.com [1.1.0/targetendpoints.wso2.com.crd.yaml]
+INFO: Evaluating crd ratelimitings.wso2.com [1.1.0/ratelimitings.wso2.com.crd.yaml]
+INFO: Validating cluster service versions. [1.1.0/ratelimitings.wso2.com.crd.yaml]
+INFO: Evaluating csv api-operator.v1.1.0 [1.1.0/api-operator.v1.1.0.clusterserviceversion.yaml]
+INFO: Validating packages. [1.1.0/api-operator.v1.1.0.clusterserviceversion.yaml]
 INFO: Evaluating package api-operator [api-operator/api-operator.package.yaml]
 INFO: Validating cluster service versions for operatorhub.io UI. [api-operator/api-operator.package.yaml]
-INFO: Evaluating csv api-operator.v1.0.1 [api-operator/api-operator.package.yaml]
+INFO: Evaluating csv api-operator.v1.1.0 [api-operator/api-operator.package.yaml]
+
 ```
 
 7. Login to quay.io account
@@ -99,11 +101,11 @@ export QUAY_TOKEN="basic abcdefghijkl=="
 
 ```
 export OPERATOR_DIR=api-operator/
-export QUAY_NAMESPACE=rameshakaru
+export QUAY_NAMESPACE=johndoe
 export PACKAGE_NAME=api-operator
 export PACKAGE_VERSION=1.0.1
 export TOKEN=$QUAY_TOKEN
-operator-courier --verbose push "$OPERATOR_DIR" "$QUAY_NAMESPACE" "$PACKAGE_NAME" "$PACKAGE_VERSION" "$TOKEN"
+>> operator-courier --verbose push "$OPERATOR_DIR" "$QUAY_NAMESPACE" "$PACKAGE_NAME" "$PACKAGE_VERSION" "$TOKEN"
 ```
 9. Go to your quay.io account and check if the bundle is available in the **applications** tab.
 
