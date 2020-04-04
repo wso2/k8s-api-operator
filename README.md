@@ -380,7 +380,7 @@ The following commands will help you to push the API to the API portal in Kubern
 - Add the API portal as an environment to the API controller using the following command.
 
     ```
-    >> apictl add-env -e k8s --apim https://wso2apim:32001 --token https://wso2apim:32003/token
+    >> apictl add-env -e k8s --apim https://wso2apim:32001 --token https://wso2apim:32001/oauth2/token
     
     Output:
     Successfully added environment 'k8s'

@@ -17,9 +17,9 @@ To try out the scenario navigate to ```k8s-api-operator-<version>``` directory.
 - Install the WSO2AM Operator in Kubernetes.
 
     ```
-    >> apictl install wso2am-operator -f https://bit.ly/2QYe6U3
+    >> apictl install wso2am-operator
     
-    namespace/wso2-system created
+    namespace/wso2-system configured
     serviceaccount/wso2am-pattern-1-svc-account created
     ...
     configmap/wso2am-p1-apim-2-conf created
@@ -98,18 +98,18 @@ To try out the scenario navigate to ```k8s-api-operator-<version>``` directory.
 
 #### Step 2: Enable API Analytics in the API Operator
 
-- If you haven't deployed the API Operator please follow the quick start guide in root readme and follow step 1,2 and 4.
+- If you haven't deployed the API Operator please follow the quick start guide in root readme and follow step 2 and 3.
 - By deploying the analytics configmaps, you can enable analytics as follows.
 
-```
->> apictl apply -f api-operator/apim-analytics-configs
-
----
-configmap/analytics-config created
-secret/analytics-secret created
-secret/wso2analytics300-secret created
----
-```
+    ```
+    >> apictl apply -f api-operator/apim-analytics-configs
+    
+    ---
+    configmap/analytics-config created
+    secret/analytics-secret created
+    secret/wso2analytics300-secret created
+    ---
+    ```
 
 #### Step 3: Deploy an API
 
@@ -120,15 +120,15 @@ secret/wso2analytics300-secret created
 - You will be able to monitor the analytics as shown in below images.
 
 ##### [Analytics Dashboard](https://wso2apim-analytics:32201/analytics-dashboard)
-![Alt text](images/Analytics-Dashboard.png?raw=true "Title")
+![Alt text](images/Analytics-Dashboards.png?raw=true "Analytics-Dashboards")
 
 ##### Analytics for Developer Portal
 
-![Alt text](images/Developer-Analytics.png?raw=true "Title")
+![Alt text](images/Developer-Analytics.png?raw=true "Developer Portal Analytics")
 
 ##### Analytics for Publisher
 
-![Alt text](images/Publisher-Analytics.png?raw=true "Title")
+![Alt text](images/Publisher-Analytics.png?raw=true "Publisher Portal Analytics")
 
 
 #### Customize API Analytics 
