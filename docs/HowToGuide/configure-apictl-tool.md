@@ -20,6 +20,6 @@
   
 - If you wish to switch back to default mode, use the following command
     ```sh
-    >>apictl set --mode default
+    >> apictl set --mode default
     ```
 <br />
