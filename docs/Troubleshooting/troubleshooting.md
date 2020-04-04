@@ -6,7 +6,7 @@
 - Following command will list the available pods in the "wso2-system" namespace.
 
     ```sh
-    >> kubectl get pods -n wso2-system
+    >> apictl get pods -n wso2-system
   
     Output:
     NAME                             READY   STATUS    RESTARTS   AGE
@@ -16,12 +16,12 @@
 - Once you are able to see the api-operator pod up and running, you can check its logs using the below command.
     
     ```sh
-    >> kubectl logs -f -n wso2-system <NAME_OF_THE_API-OPERATOR_POD>
+    >> apictl logs -f -n wso2-system <NAME_OF_THE_API-OPERATOR_POD>
     ```
 - Example: 
 
     ```sh
-    >> kubectl logs -f -n wso2-system api-operator-59c665f477-9bw7l
+    >> apictl logs -f -n wso2-system api-operator-59c665f477-9bw7l
     ```
 - Once the above command is executed, it will show the logs in the API operator.
 
@@ -36,7 +36,7 @@
     `online-store-kaniko-xxxxxx-xxxx` (x denotes random alphanumeric values)
 
     ```sh
-    >> kubectl get pods
+    >> apictl get pods
     
     Output:
     NAME                                   READY   STATUS    RESTARTS   AGE    
@@ -47,8 +47,8 @@
 
 - Find the logs in the Kaniko job for more information and get description about the pod that runs the Kaniko job.
     ```sh
-    >> kubectl describe pod <POD_NAME_OF_KANIKO_JOB>
-    >> kubectl logs -f <POD_NAME_OF_KANIKO_JOB>
+    >> apictl describe pod <POD_NAME_OF_KANIKO_JOB>
+    >> apictl logs -f <POD_NAME_OF_KANIKO_JOB>
     ```
 
 - If the error is related to authentication, reconfigure registry credentials using `apictl` tool. Go through the interactive session to reconfigure credentials.
@@ -70,7 +70,7 @@
   
 - To check its log, execute the following command.
     ```sh
-    >> kubectl logs -f online-store-794cd7b66-lnnxd
+    >> apictl logs -f online-store-794cd7b66-lnnxd
     
     Sample logs:
     [ballerina/http] started HTTPS/WSS endpoint 0.0.0.0:9096
@@ -98,7 +98,7 @@
 
 - Reapply this configuration separately using the following command.
     ```sh
-    >> kubectl apply -f <k8s-api-operator-home>/api-operator/controller-configs/controller_conf.yaml
+    >> apictl apply -f <k8s-api-operator-home>/api-operator/controller-configs/controller_conf.yaml
     ```
 - Once you apply this, you need to build the API from scratch to reflect these changes to the already deployed APIs.
 
