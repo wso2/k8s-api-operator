@@ -15,10 +15,8 @@ kubernetes cluster as a managed API in the Kubernetes cluster.
  
     ```
         apictl apply -f products_dep.yaml
-    ```
     
-    - Output:
-    ```
+    Output:
         service/products created
         deployment.apps/products-deployment created
     ```
@@ -30,10 +28,8 @@ kubernetes cluster as a managed API in the Kubernetes cluster.
  - Execute the following command to check if the service is present in the Kubernetes cluster.
     ```
         apictl get services products
-    ``` 
     
-    - Output:
-    ```
+    Output:
         NAME       TYPE           CLUSTER-IP    EXTERNAL-IP       PORT(S)        AGE
         products   LoadBalancer   10.83.1.131   104.197.114.248   80:30475/TCP   27m
     ```
@@ -77,21 +73,19 @@ kubernetes cluster as a managed API in the Kubernetes cluster.
 
 - Create API <br /> 
     ```
-        apictl add api -n online-store --from-file=products_swagger.yaml
-    ``` 
-    - Output:
-    ```$xslt
+        apictl add api -n online-store --from-file=products_swagger.yaml --override
+    
+    Output:
         creating configmap with swagger definition
         configmap/online-store-swagger created
         api.wso2.com/online-store created
     ```
-    
+    Note: ***--override*** flag is used to you want to rebuild the API image even if it exists in the configured docker repository.
 - Get available API <br /> 
     ```
         apictl get apis
-    ```
-    - Output:
-    ```    
+    
+    Output:
         NAME          AGE
         online-store   55m
     ```
@@ -99,10 +93,8 @@ kubernetes cluster as a managed API in the Kubernetes cluster.
 - Get service details to invoke the API<br />
     ```
         apictl get services
-    ```
-    - Output:
     
-    ```
+    Output:
         NAME                 TYPE           CLUSTER-IP     EXTERNAL-IP       PORT(S)                         AGE
         online-store        LoadBalancer   10.83.9.188    34.66.153.49      9095:32087/TCP,9090:32572/TCP   98m
         products            LoadBalancer   10.83.1.131    104.197.114.248   80:30475/TCP                    77m
@@ -127,8 +119,7 @@ kubernetes cluster as a managed API in the Kubernetes cluster.
 - Delete the  API <br /> 
     ```
         apictl delete api online-store
-    ```
-    -  Output:
-    ```
+    
+    Output:
         api.wso2.com "online-store" deleted
     ```

@@ -20,9 +20,8 @@
 - Deploy Kubernetes secret of the public cert of the JWT token issues and JWT Security custom resource.
     ```$xslt
         apictl apply -f jwt-security.yaml
-    ```
-    - Output:
-    ```$xslt
+    
+    Output:
         security.wso2.com/petstorejwt created
         secret/wso2am310-secret created
     ```
@@ -41,9 +40,8 @@ In this swagger definition, the security schema of the "petstore" service has be
 - Deploy the  API <br /> 
     ```
         apictl add api -n petstore-jwt --from-file=swagger.yaml
-    ``` 
-    - Output:
-    ```
+    
+    Output:
         creating configmap with swagger definition
         configmap/petstore-jwt-swagger created
         api.wso2.com/petstore-jwt created
@@ -52,9 +50,8 @@ In this swagger definition, the security schema of the "petstore" service has be
 - Get available API <br /> 
     ```
         apictl get apis
-    ```
-    - Output:
-    ```    
+    
+    Output:
         NAME          AGE
         petstore-jwt   3m
     ```
@@ -62,10 +59,8 @@ In this swagger definition, the security schema of the "petstore" service has be
 - Get service details to invoke the API. (Please wait until the external-IP is populated in the corresponding service)
     ```
         apictl get services
-    ```
-    - Output:
     
-    ```
+    Output:
         NAME           TYPE           CLUSTER-IP     EXTERNAL-IP     PORT(S)                         AGE
         petstore-jwt   LoadBalancer   10.83.10.125   35.188.53.193   9095:32465/TCP,9090:30163/TCP   4m39s
     ```
@@ -90,9 +85,8 @@ In this swagger definition, the security schema of the "petstore" service has be
     - Following command will delete all the artifacts created with this API including pods, deployment and services.
     ```
         apictl delete api petstore-jwt
-    ```
-    -  Output:
-    ```
+    
+    Output:
         api.wso2.com "petstore-jwt" deleted
     ```
   
@@ -105,9 +99,8 @@ In this swagger definition, the security schema of the "petstore" service has be
  - Deploy Kubernetes secrets of the public certificates of the JWT token issuers and JWT Security custom resource.
      ```$xslt
          apictl apply -f multiple-jwt-security.yaml
-     ```
-     - Output:
-     ```$xslt
+     
+     Output:
          security.wso2.com/petstorejwt created
          secret/wso2am310-secret created
          secret/jwt-secret created
@@ -126,9 +119,8 @@ In this swagger definition, the security schema of the "petstore" service has be
 - Deploy the  API <br /> 
     ```
         apictl add api -n petstore-multiple-jwt --from-file=swagger.yaml
-    ``` 
-    - Output:
-    ```
+    
+    Output:
         creating configmap with swagger definition
         configmap/petstore-multiple-jwt-swagger created
         api.wso2.com/petstore-multiple-jwt created
@@ -137,9 +129,8 @@ In this swagger definition, the security schema of the "petstore" service has be
 - Get available API <br /> 
     ```
         apictl get apis
-    ```
-    - Output:
-    ```    
+    
+    Output:
         NAME          AGE
         petstore-multiple-jwt   3m
     ```
@@ -147,10 +138,8 @@ In this swagger definition, the security schema of the "petstore" service has be
 - Get service details to invoke the API. (Please wait until the external-IP is populated in the corresponding service)
     ```
         apictl get services
-    ```
-    - Output:
     
-    ```
+    Output:
         NAME           TYPE           CLUSTER-IP     EXTERNAL-IP     PORT(S)                         AGE
         petstore-multiple-jwt   LoadBalancer   10.83.10.125   35.188.53.193   9095:32465/TCP,9090:30163/TCP   4m39s
     ```
@@ -187,8 +176,7 @@ In this swagger definition, the security schema of the "petstore" service has be
      - Following command will delete all the artifacts created with this API including pods, deployment and services.
      ```
          apictl delete api petstore-multiple-jwt
-     ```
-     -  Output:
-     ```
+     
+     Output:
          api.wso2.com "petstore-multiple-jwt" deleted
      ```

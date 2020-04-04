@@ -69,7 +69,7 @@ In this swagger definition, the security schema of the "petstore" service has be
     - Publish the API in WSO2 API Manager deployment.
         - Add the APIM deployment as an environment to the apictl
             ```$xslt
-                apictl add-env -e k8s --registration https://wso2apim:32001/client-registration/v0.16/register --apim https://wso2apim:32001 --token https://wso2apim:32003/token --admin https://wso2apim:32001/api/am/admin/v0.16 --api_list https://wso2apim:32001/api/am/publisher/v1/apis --app_list https://wso2apim:32001/api/am/store/v1/applications
+                apictl add-env -e k8s --apim https://wso2apim:32001 --token https://wso2apim:32001/oauth2/token
             ```
         - Create the API project using swagger file with setting the initial state to `PUBLISHED`.
             ```$xslt
@@ -111,9 +111,8 @@ In this swagger definition, the security schema of the "petstore" service has be
                 
             ```    
                 apictl get-keys -n Petstore-Oauth -v v1 -r admin -k -e k8s
-            ```
-            - Output: 
-            ```
+            
+            Output: 
                 API name:  Petstore-Oauth & version:  v1 exists
                 API  Petstore-Oauth : v1 subscribed successfully.
                 Access Token:  a68e6467-023e-3670-909c-11752449997e
@@ -123,10 +122,9 @@ In this swagger definition, the security schema of the "petstore" service has be
     - Get service details to invoke the API. (Please wait until the external-IP is populated in the corresponding service)
         ```
             apictl get services
-        ```
-        - Output:
         
-        ```
+        Output:
+        
             NAME             TYPE           CLUSTER-IP     EXTERNAL-IP     PORT(S)                         AGE
             petstore-oauth   LoadBalancer   10.83.10.125   35.188.53.193   9095:32465/TCP,9090:30163/TCP   4m39s
         ```
