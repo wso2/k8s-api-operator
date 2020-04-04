@@ -20,7 +20,7 @@ info:
   version: 1.0.0
   description: This API contains operations related to node.
 x-wso2-basePath: /node/{version}
-x-wso2-production-endpoints: hello-world-serverless.default
+x-wso2-production-endpoints: hello-world-serverless.micro
 x-wso2-mode: Serverless
 paths:
   /hello/node:

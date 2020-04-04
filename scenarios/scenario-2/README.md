@@ -26,21 +26,20 @@ In the scenarios, we have defined it in resource level.
 
 - Create API <br /> 
     ```
-        apictl add api -n petstore-api --from-file=swagger.yaml
-    ``` 
-    - Output:
-    ```
+        apictl add api -n petstore-api --from-file=swagger.yaml --override
+        
+    Output:
         creating configmap with swagger definition
         configmap/petstore-api-swagger created
         api.wso2.com/petstore-api created
-    ```
+    ``` 
+    Note: ***--override*** flag is used to you want to rebuild the API image even if it exists in the configured docker repository.
     
 - Get available API <br /> 
     ```
         apictl get apis
-    ```
-    - Output:
-    ```    
+    
+    Output:
         NAME          AGE
         petstore-api   5m
     ```
@@ -48,10 +47,8 @@ In the scenarios, we have defined it in resource level.
 - Get service details to invoke the API. (Please wait until the external-IP is populated in the corresponding service)
     ```
         apictl get services
-    ```
-    - Output:
     
-    ```
+    Output:
         NAME                 TYPE           CLUSTER-IP     EXTERNAL-IP       PORT(S)                         AGE
         petstore-api         LoadBalancer   10.83.14.186   35.188.53.193     9095:32264/TCP,9090:32540/TCP   2m42s
     ```
@@ -76,8 +73,7 @@ In the scenarios, we have defined it in resource level.
     - Following command will delete all the artifacts created with this API including pods, deployment and services.
     ```
         apictl delete api petstore-api
-    ```
-    -  Output:
-    ```
+    
+    Output:
         api.wso2.com "petstore-api" deleted
     ```

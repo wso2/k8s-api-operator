@@ -20,11 +20,15 @@ info:
   version: v1.0.0
   description: This API contains operations related to online shopping store.
 x-wso2-basePath: /storemep/{version}
-x-wso2-production-endpoints: products
+x-wso2-production-endpoints:
+  urls:
+    - http://products
 paths:
   /products:
     get:
-      x-wso2-production-endpoints: products
+      x-wso2-production-endpoints:
+        urls:
+          - http://products
       responses:
         "200":
           description: ""
@@ -37,7 +41,9 @@ paths:
           required: true
           schema:
             type: string
-      x-wso2-production-endpoints: products
+      x-wso2-production-endpoints:
+        urls:
+          - http://products
       responses:
         "200":
           description: ""
@@ -49,7 +55,9 @@ paths:
           required: true
           schema:
             type: string
-      x-wso2-production-endpoints: review
+      x-wso2-production-endpoints:
+        urls:
+          - http://review:8080
       responses:
         "200":
           description: ""
@@ -61,7 +69,9 @@ paths:
           required: true
           schema:
             type: string
-      x-wso2-production-endpoints: inventory
+      x-wso2-production-endpoints:
+        urls:
+          - http://inventory
       responses:
         "200":
           description: ""
@@ -72,7 +82,9 @@ paths:
           required: true
           schema:
             type: string
-      x-wso2-production-endpoints: inventory
+      x-wso2-production-endpoints:
+        urls:
+          - http://inventory
       requestBody:
         content:
           application/json:

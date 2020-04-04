@@ -22,7 +22,7 @@ info:
 x-wso2-basePath: /store/{version}
 x-wso2-production-endpoints:
   urls:
-  - http://products
+    - http://products
 paths:
   /products:
     get:

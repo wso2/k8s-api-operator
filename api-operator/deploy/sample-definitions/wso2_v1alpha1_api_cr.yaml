@@ -5,6 +5,10 @@ metadata:
   namespace: wso2-system
 spec:
   definition:
-    configmapName: test-publish
+    interceptors: {}
+    swaggerConfigmapNames:
+      - online-store-1-swagger
     type: swagger
+  mode: privateJet
+  override: true
   replicas: 1

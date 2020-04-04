@@ -41,7 +41,7 @@
 - If you have already deployed the operator you have to update operatorMode to "Route" and apply the changes using
   following command.
   ```
-  >> kubectl apply -f api-operator/controller-artifacts/controler_conf.yaml
+  >> apictl apply -f api-operator/controller-artifacts/controler_conf.yaml
   ```
   
 #### Deploying the artifacts

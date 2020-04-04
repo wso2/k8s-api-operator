@@ -12,46 +12,44 @@ This works in Istio permissive mode and Strict MTLS mode.
 
 - [Kubernetes v1.12 or above](https://Kubernetes.io/docs/setup/) <br>
 
-    - Minimum CPU : 6vCPU
-    - Minimum Memory : 8GB
+    - Minimum CPU : 8vCPU
+    - Minimum Memory : 12GB
     
 - [Istio v1.3.x or above](https://istio.io/docs/setup/platform-setup/)
 
 - An account in DockerHub or private docker registry
 
-- Download [k8s-api-operator-1.1.0-beta.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.1.0-beta/k8s-api-operator-1.1.0-beta.zip) and extract the zip
+- Download [k8s-api-operator-1.1.0.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.1.0/k8s-api-operator-1.1.0.zip) and extract the zip
 
     1. This zip contains the artifacts that required to deploy in Kubernetes.
-    2. Extract k8s-api-operator-1.1.0-beta.zip
+    2. Extract k8s-api-operator-1.1.0.zip
     
     ```
-    cd k8s-api-operator-1.1.0-beta
+    cd k8s-api-operator-1.1.0/scenarios/scenario-13/S02-APIM_for_Istio_Services_MTLS
     ```
  
-**_Note:_** You need to run all commands from within the ***k8s-api-operator-1.1.0-beta*** directory.
+**_Note:_** You need to run all commands from within the ```S02-APIM_for_Istio_Services_MTLS``` directory.
 
 <br />
 
 #### Step 1: Configure API Controller
 
-- Download API controller v3.1.0-customized for your operating system from the [github](https://github.com/wso2/K8s-api-operator/tree/v1.1.0-beta)
+- Download API controller v3.1.0 from the [API Manager Tooling web site](https://wso2.com/api-management/tooling/)
+    
+    - Under Dev-Ops Tooling section, you can download the tool based on your operating system.
 
 - Extract the API controller distribution and navigate inside the extracted folder using the command-line tool
 
 - Add the location of the extracted folder to your system's $PATH variable to be able to access the executable from anywhere.
 
-You can find available operations using the below command.
-```
->> apictl --help
-```
+- You can find available operations using the below command.
+    
+  ```
+  >> apictl --help
+  ```
+<br />
 
 #### Step 2: Install API Operator
-
-Set the environment variable `WSO2_API_OPERATOR_VERSION` with the latest API Operator version.
-
-```sh
->> export WSO2_API_OPERATOR_VERSION=v1.1.0-beta
-```
 
 - Execute the following command to install API Operator interactively and configure repository to push the microgateway image.
 - Select "Docker Hub" as the repository type.
@@ -59,68 +57,80 @@ Set the environment variable `WSO2_API_OPERATOR_VERSION` with the latest API Ope
 - Enter username and the password
 - Confirm configuration are correct with entering "Y"
 
-```sh
->> apictl install api-operator
-Choose registry type:
-1: Docker Hub (Or others, quay.io, HTTPS registry)
-2: Amazon ECR
-3: GCR
-4: HTTP Private Registry
-Choose a number: 1: 1
-Enter repository name (docker.io/john | quay.io/mark | 10.100.5.225:5000/jennifer): docker.io/jennifer
-Enter username: jennifer
-Enter password: *******
+    ```
+    >> apictl install api-operator
+    Choose registry type:
+    1: Docker Hub (Or others, quay.io, HTTPS registry)
+    2: Amazon ECR
+    3: GCR
+    4: HTTP Private Registry
+    Choose a number: 1: 1
+    Enter repository name (docker.io/john | quay.io/mark | 10.100.5.225:5000/jennifer): docker.io/jennifer
+    Enter username: jennifer
+    Enter password: *******
+    
+    Repository: docker.io/jennifer
+    Username  : jennifer
+    Confirm configurations: Y: Y
+    ```
 
-Repository: docker.io/jennifer
-Username  : jennifer
-Confirm configurations: Y: Y
-```
-
-Output:
-```sh
-customresourcedefinition.apiextensions.k8s.io/apis.wso2.com created
-customresourcedefinition.apiextensions.k8s.io/ratelimitings.wso2.com created
-...
-
-namespace/wso2-system created
-deployment.apps/api-operator created
-...
-
-[Setting to K8s Mode]
-```
+    Output:
+    ```
+    customresourcedefinition.apiextensions.k8s.io/apis.wso2.com created
+    customresourcedefinition.apiextensions.k8s.io/ratelimitings.wso2.com created
+    ...
+    
+    namespace/wso2-system created
+    deployment.apps/api-operator created
+    ...
+    
+    [Setting to K8s Mode]
+    ```
+<br />
 
 #### Step 3: Deploy Microservices
 
+- When you execute this command, it creates a namespace called micro and enable Istio sidecar injection for that namespace. Also this deploys 3 microservices.
+
+    ```
     >> apictl create -f microservices.yaml
-
-When you execute this command, it creates a namespace called micro and enable Istio sidecar injection for that namespace. Also this deploys 3 microservices.
-
+    
     >> apictl get pods -n micro
+  
     Output:
     NAME                         READY   STATUS    RESTARTS   AGE
     inventory-7dc5dfdc58-gnxqx   2/2     Running   0          9m
     products-8d478dd48-2kgdk     2/2     Running   0          9m
     review-677dd8fbd8-9ntth      2/2     Running   0          9m
-    
+    ```
+<br />
+
 #### Step 4: Deploy an API for the microservices
 
+- We are creating a namespace called wso2 and deploy our API there. In this namespace, we have not enabled Istio sidecar injection.
+   
+    ```
     >> apictl create ns wso2
-    >> apictl add api -n online-store-api --from-file=./swagger.yaml --namespace=wso2
+    >> apictl add api -n online-store-api-mlts --from-file=./swagger.yaml --namespace=wso2
     
-We are creating a namespace called wso2 and deploy our API there. In this namespace, we have not enabled Istio sidecar injection.
- 
     >> apictl get pods -n wso2
+  
     Output:
     NAME                                                        READY   STATUS      RESTARTS   AGE
-    online-store-api-5748695f7b-jxnpf                           1/1     Running     0          14m
-    online-store-api-kaniko-b5hqb                               0/1     Completed   0          14m
+    online-store-api-mlts-5748695f7b-jxnpf                           1/1     Running     0          14m
+    online-store-api-mlts-kaniko-b5hqb                               0/1     Completed   0          14m
+    ```
+<br />
 
 #### Step 5: Setup routing in Istio
 
-Due to Strict MTLS in Istio, we are deploying a gateway and a virtual service in Istio.
+- Due to Strict MTLS in Istio, we are deploying a gateway and a virtual service in Istio.
 
+    ```
     >> apictl create -f gateway-virtualservice.yaml
-   
+    ```
+<br />
+
 #### Step 6: Invoke the API
  
 - Retrieve the API service endpoint details
@@ -128,11 +138,11 @@ Due to Strict MTLS in Istio, we are deploying a gateway and a virtual service in
      The API service is exposed as the Load Balancer service type. You can get the API service endpoint details by using the following command.
  
      ```
-     >> kubectl get services -n wso2
+     >> apictl get services -n wso2
      
      Output:
      NAME                   TYPE           CLUSTER-IP     EXTERNAL-IP      PORT(S)                         AGE
-     online-store-api       LoadBalancer   10.83.9.142    35.232.188.134   9095:31055/TCP,9090:32718/TCP   57s
+     online-store-api-mlts  LoadBalancer   10.83.9.142    35.232.188.134   9095:31055/TCP,9090:32718/TCP   57s
      ```
  
  <details><summary>If you are using Minikube click here</summary>

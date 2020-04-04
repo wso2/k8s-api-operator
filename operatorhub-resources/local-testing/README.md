@@ -1,14 +1,26 @@
 ## Instructions to test the operator bundle locally
 
 #### Prerequisites
-- [Kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
 
-- [Kubernetes v1.12 or above](https://Kubernetes.io/docs/setup/)   
- - Minimum CPU and Memory for the K8s cluster: **2 vCPU, 8GB of Memory**
+- [Kubernetes v1.12 or above](https://Kubernetes.io/docs/setup/) <br>
+
+    - Minimum CPU : 6vCPU
+    - Minimum Memory : 6GB
 
 - An account in DockerHub or private docker registry
-- [API controller](https://github.com/wso2/product-apim-tooling/releases/) 
 
+- Download [k8s-api-operator-1.1.0.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.1.0/k8s-api-operator-1.1.0.zip) and extract the zip
+
+    1. This zip contains the artifacts that required to deploy in Kubernetes.
+    2. Extract k8s-api-operator-1.1.0.zip
+    
+    ```
+    cd k8s-api-operator-1.1.0
+    ```
+ 
+    **_Note:_** You need to run all commands from within the ***k8s-api-operator-1.1.0*** directory.
+
+<br />
 
 - Install OLM
 ```

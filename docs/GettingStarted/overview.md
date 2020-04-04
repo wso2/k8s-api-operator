@@ -21,10 +21,12 @@ metadata:
 spec:
   # Security - JWT
   type: JWT
-  issuer: https://localhost:9443/oauth2/token
-  audience: http://org.wso2.apimgt/gateway
-  # Create secret with certificate and add secret name
-  certificate: wso2am-secret
+  securityConfig:
+    - issuer: https://wso2apim:32001/oauth2/token
+      audience: http://org.wso2.apimgt/gateway
+      #create secret with certificate and add secret name
+      certificate: wso2am310-secret
+      validateSubscription: false
 ```
 
 ### Custom resource: RateLimiting
@@ -62,17 +64,22 @@ In shared and private-jet mode, the backend can be running in separate PODs, but
 apiVersion: wso2.com/v1alpha1
 kind: TargetEndpoint
 metadata:
-  name: helloworld-sidecar
+  name: products-privatejet
   labels:
-    app: app2
+    app: wso2
 spec:
   protocol: http
-  port: 8080
+  port: 80
+  targetPort: 9090
   deploy:
-    name: helloworldservice
-    dockerImage: lakwarus/helloworld:v1
-    count: 2
-  mode : sidecar
+    name: products-pj-service
+    dockerImage: pubudu/products:1.0.0
+    minReplicas: 2
+    maxReplicas: 3
+    requestCPU: "60m"
+    reqMemory: "32Mi"
+    cpuLimit: "120m"
+  mode: privateJet
 ```
 
 ### Custom resource: API
@@ -82,13 +89,16 @@ spec:
 apiVersion: wso2.com/v1alpha1
 kind: API
 metadata:
-  name: "${apiName}"
+  name: online-store
+  namespace: default
 spec:
   definition:
-    configmapName: "${configmapName}"
+    interceptors: {}
+    swaggerConfigmapNames:
+    - online-store-1-swagger
     type: swagger
-  replicas: ${replicas}
   mode: privateJet
+  replicas: 1
 ```
 
 Each of the above CRDs has corresponding custom controllers. Custom controllers are the “brains” behind the custom resources. 
@@ -118,7 +128,7 @@ The TargetEndpoint controller will store target endpoint metadata corresponding 
 
 
 API controller is quite complex compared to other controllers. It has two main tasks.  
-- Build an API microgateway container and push it to the Docker-Hub.
+- Build an API microgateway container and push it to the registry configured during the API operator installation.
 - Create Kubernetes artifacts and deploy them into Kubernetes clusters.
 
 When the API custom controller is triggered, it will receive a Swagger definition from the attached configMap and create a Kaniko job by attaching a multi-step Dockerfile along with the Swagger definition. This Dockerfile is using pre-build the Docker image that has the API microgateway toolkit. The microgateway toolkit will generate the API microgateway runtime with the corresponding swagger file passed. Finally Kaniko build create a new API microgateway docker image and push to the configured docker registry.

@@ -12,7 +12,7 @@ Use the AWS CLI command: [update-kubeconfig](https://docs.aws.amazon.com/cli/lat
 
 For the following case it is `my-esk-cluster` and configure `kubectl` as follows.
 
-![Amazon EKS cluster](../images/aws-eks-cluster.png)
+![Amazon EKS cluster](../../images/aws-eks-cluster.png)
 
 ```sh
 >> aws eks --region us-east-1 update-kubeconfig --name my-eks-cluster
@@ -21,10 +21,8 @@ For the following case it is `my-esk-cluster` and configure `kubectl` as follows
 Test your configuration.
 ```sh
 >> kubectl get svc
-```
 
 Output:
-```sh
 NAME         TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
 kubernetes   ClusterIP   10.100.0.1   <none>        443/TCP   1m
 ```
@@ -38,7 +36,7 @@ Verify that you have running Node Groups with following command. Otherwise launc
 
 You can use Amazon ECR as the registry or other registry type. Following [Install API Operator](#install-api-operator) section describes using an Amazon ECR registry type. It also works with other registry types.
 
-![Amazon ECR repo](../images/aws-ecr-repo.png)
+![Amazon ECR repo](../../images/aws-ecr-repo.png)
 
 ## Install API Operator
 
@@ -63,9 +61,8 @@ Repository     : 111222333444.dkr.ecr.us-east-1.amazonaws.com/my-ecr-repo
 Credential File: /Users/wso2/.aws/credentials
 Confirm configurations: Y:
 ```
-
-Output:
 ```sh
+Output:
 [Installing OLM]
 customresourcedefinition.apiextensions.k8s.io/clusterserviceversions.operators.coreos.com created
 ...
@@ -80,7 +77,7 @@ namespace/wso2-system created
 ```
 
 ## Try out
-Try out [sample scenarios](../GettingStarted/quick-start-guide.md#sample-scenarios) in the quick start guide.
+Try out [sample scenarios](../../GettingStarted/quick-start-guide.md#sample-scenarios) in the quick start guide.
 
 ## Clean up
 
@@ -95,8 +92,8 @@ Uninstall "api-operator" and all related resources: APIs, Securities, Rate Limit
 Are you sure: N: Y
 ```
 
-Output:
 ```sh
+Output:
 Deleting kubernetes resources for API Operator
 Removing namespace: wso2-system
 This operation will take some minutes...

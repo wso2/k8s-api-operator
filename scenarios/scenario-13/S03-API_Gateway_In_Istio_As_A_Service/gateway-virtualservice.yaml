@@ -43,6 +43,6 @@ spec:
   http:
    - route:
      - destination:
-        host: online-store-api
+        host: online-store-api-sc
         port:
           number: 9090

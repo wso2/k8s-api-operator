@@ -30,16 +30,16 @@ In this document, we will walk through on the following.
 
 - An account in DockerHub or private docker registry
 
-- Download [k8s-api-operator-1.1.0-beta.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.1.0-beta/k8s-api-operator-1.1.0-beta.zip) and extract the zip
+- Download [k8s-api-operator-1.1.0.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.1.0/k8s-api-operator-1.1.0.zip) and extract the zip
 
     1. This zip contains the artifacts that required to deploy in Kubernetes.
-    2. Extract k8s-api-operator-1.1.0-beta.zip
+    2. Extract k8s-api-operator-1.1.0.zip
     
     ```
-    cd k8s-api-operator-1.1.0-beta
+    cd k8s-api-operator-1.1.0
     ```
  
-**_Note:_** You need to run all commands from within the ***k8s-api-operator-1.1.0-beta*** directory.
+    **_Note:_** You need to run all commands from within the ***k8s-api-operator-1.1.0*** directory.
 
 <br />
 
@@ -64,23 +64,22 @@ In this document, we will walk through on the following.
     products   LoadBalancer   10.83.1.131   104.197.114.248   80:30475/TCP   27m
     ```
 
-<details><summary>If you are using Minikube click here</summary>
-<p>
-
-**_Note:_**  By default API operator requires the LoadBalancer service type which is not supported in Minikube by default. Here is how you can enable it on Minikube.
-
-- On Minikube, the LoadBalancer type makes the Service accessible through the minikube service command.
-
-    ```
-    >> minikube service <SERVICE_NAME> --url
-    >> minikube service products --url
-    ```
+    <details><summary>If you are using Minikube click here</summary>
+    <p>
     
-    The IP you receive from above output can be used as the "external-IP" in the following command.
-
-</p>
-</details>
-
+    **_Note:_**  By default API operator requires the LoadBalancer service type which is not supported in Minikube by default. Here is how you can enable it on Minikube.
+    
+    - On Minikube, the LoadBalancer type makes the Service accessible through the minikube service command.
+    
+        ```
+        >> minikube service <SERVICE_NAME> --url
+        >> minikube service products --url
+        ```
+        
+        The IP you receive from above output can be used as the "external-IP" in the following command.
+    
+    </p>
+    </details>
 -----
 
 <br>
@@ -103,25 +102,22 @@ In this document, we will walk through on the following.
 
 #### Step 2: Configure API Controller
 
-- Download API controller v3.1.0-customized for your operating system from the [github](https://github.com/wso2/K8s-api-operator/releases/tag/v1.1.0-beta)
+- Download API controller v3.1.0 from the [API Manager Tooling web site](https://wso2.com/api-management/tooling/)
+    
+    - Under Dev-Ops Tooling section, you can download the tool based on your operating system.
 
 - Extract the API controller distribution and navigate inside the extracted folder using the command-line tool
 
 - Add the location of the extracted folder to your system's $PATH variable to be able to access the executable from anywhere.
 
-You can find available operations using the below command.
-```
->> apictl --help
-```
+- You can find available operations using the below command.
+    
+  ```
+  >> apictl --help
+  ```
 <br />
 
 #### Step 3: Install API Operator
-
-Set the environment variable `WSO2_API_OPERATOR_VERSION` with the latest API Operator version.
-
-```sh
->> export WSO2_API_OPERATOR_VERSION=v1.1.0-beta
-```
 
 - Execute the following command to install API Operator interactively and configure repository to push the microgateway image.
 - Select "Docker Hub" as the repository type.
@@ -129,35 +125,35 @@ Set the environment variable `WSO2_API_OPERATOR_VERSION` with the latest API Ope
 - Enter username and the password
 - Confirm configuration are correct with entering "Y"
 
-```sh
->> apictl install api-operator
-Choose registry type:
-1: Docker Hub (Or others, quay.io, HTTPS registry)
-2: Amazon ECR
-3: GCR
-4: HTTP Private Registry
-Choose a number: 1: 1
-Enter repository name (docker.io/john | quay.io/mark | 10.100.5.225:5000/jennifer): docker.io/jennifer
-Enter username: jennifer
-Enter password: *******
-
-Repository: docker.io/jennifer
-Username  : jennifer
-Confirm configurations: Y: Y
-```
-
-Output:
-```sh
-customresourcedefinition.apiextensions.k8s.io/apis.wso2.com created
-customresourcedefinition.apiextensions.k8s.io/ratelimitings.wso2.com created
-...
-
-namespace/wso2-system created
-deployment.apps/api-operator created
-...
-
-[Setting to K8s Mode]
-```
+    ```sh
+    >> apictl install api-operator
+    Choose registry type:
+    1: Docker Hub (Or others, quay.io, HTTPS registry)
+    2: Amazon ECR
+    3: GCR
+    4: HTTP Private Registry
+    Choose a number: 1: 1
+    Enter repository name (docker.io/john | quay.io/mark | 10.100.5.225:5000/jennifer): docker.io/jennifer
+    Enter username: jennifer
+    Enter password: *******
+    
+    Repository: docker.io/jennifer
+    Username  : jennifer
+    Confirm configurations: Y: Y
+    ```
+    
+    Output:
+    ```sh
+    customresourcedefinition.apiextensions.k8s.io/apis.wso2.com created
+    customresourcedefinition.apiextensions.k8s.io/ratelimitings.wso2.com created
+    ...
+    
+    namespace/wso2-system created
+    deployment.apps/api-operator created
+    ...
+    
+    [Setting to K8s Mode]
+    ```
     
 <br />
 
@@ -225,8 +221,7 @@ deployment.apps/api-operator created
 
 #### Step 5: Expose the sample microservice as a managed API
 
-Let’s deploy an API for our microservice.
-The Open API definition of the API can be found in the scenario/scenario-1/products-swagger.yaml.
+Let’s deploy an API for our microservice. The Open API definition of the API can be found in the scenario/scenario-1/products-swagger.yaml.
 
 The endpoint of our microservice is referred in the API definition.
 
@@ -289,7 +284,7 @@ The endpoint of our microservice is referred in the API definition.
     online-store       LoadBalancer   10.83.9.142    35.232.188.134   9095:31055/TCP,9090:32718/TCP   57s
     ```
 
-You now have a microgateway deployed in Kubernetes that runs your API for the microservice.
+    You now have a microgateway deployed in Kubernetes that runs your API for the microservice.
 
 <br />
 
@@ -308,22 +303,22 @@ You now have a microgateway deployed in Kubernetes that runs your API for the mi
     online-store       LoadBalancer   10.83.9.142    35.232.188.134   9095:31055/TCP,9090:32718/TCP   57s
     ```
 
-<details><summary>If you are using Minikube click here</summary>
-<p>
-
-**_Note:_**  By default API operator requires the LoadBalancer service type which is not supported in Minikube by default. Here is how you can enable it on Minikube.
-
-- On Minikube, the LoadBalancer type makes the Service accessible through the minikube service command.
-
-    ```
-    >> minikube service <SERVICE_NAME> --url
-    >> minikube service online-store --url
-    ```
+    <details><summary>If you are using Minikube click here</summary>
+    <p>
     
-    The IP you receive from above output can be used as the "external-IP" in the following command.
-
-</p>
-</details>
+    **_Note:_**  By default API operator requires the LoadBalancer service type which is not supported in Minikube by default. Here is how you can enable it on Minikube.
+    
+    - On Minikube, the LoadBalancer type makes the Service accessible through the minikube service command.
+    
+        ```
+        >> minikube service <SERVICE_NAME> --url
+        >> minikube service online-store --url
+        ```
+        
+        The IP you receive from above output can be used as the "external-IP" in the following command.
+    
+    </p>
+    </details>
 
 -----
 
@@ -365,7 +360,7 @@ You now have a microgateway deployed in Kubernetes that runs your API for the mi
     >> curl -X GET "https://35.232.188.134:9095/store/v1.0.0/products/101" -H "Authorization:Bearer $TOKEN" -k
     ```
     
-**_Note:_** In a production-level scenario, there should be a way to discover the available services and obtain an access token in a secured manner. For this, we need to push this API to API Portal and get an OAuth 2.0 access token
+    **_Note:_** In a production-level scenario, there should be a way to discover the available services and obtain an access token in a secured manner. For this, we need to push this API to API Portal and get an OAuth 2.0 access token
 
 
 <br />
@@ -385,7 +380,7 @@ The following commands will help you to push the API to the API portal in Kubern
 - Add the API portal as an environment to the API controller using the following command.
 
     ```
-    >> apictl add-env -e k8s --registration https://wso2apim:32001/client-registration/v0.16/register --apim https://wso2apim:32003 --token https://wso2apim:32003/token --admin https://wso2apim:32001/api/am/admin/v0.16 --api_list https://wso2apim:32001/api/am/publisher/v1/apis --app_list https://wso2apim:32001/api/am/store/v1/applications
+    >> apictl add-env -e k8s --apim https://wso2apim:32001 --token https://wso2apim:32003/token
     
     Output:
     Successfully added environment 'k8s'
@@ -417,24 +412,26 @@ The following commands will help you to push the API to the API portal in Kubern
 
 #### Step 8: Generate an access token for the API
 
-By default the API is secured with JWT. Hence a valid JWT token is needed to invoke the API. You can obtain a JWT token using the API Controller command as below.
+- By default the API is secured with JWT. Hence a valid JWT token is needed to invoke the API. You can obtain a JWT token using the API Controller command as below.
+    
+    ``` 
+    >> apictl set --token-type JWT
+    
+    Output: 
+    Token type set to: JWT
+    ```
+- Generate access token for the API with the following command.
 
-``` 
->> apictl set --token-type JWT
-
-Output: 
-Token type set to: JWT
-```
-Generate access token for the API with the following command.
-```
->> apictl get-keys -n online-store -v v1.0.0 -e k8s --provider admin -k
-
-Output:
-API name:  OnlineStore & version:  v1.0.0 exists
-API  OnlineStore : v1.0.0 subscribed successfully.
-Access Token:  eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6IlpqUm1ZVE13TlRKak9XVTVNbUl6TWpnek5ESTNZMkl5TW1JeVkyRXpNamRoWmpWaU1qYzBaZz09In0.eyJhdWQiOiJodHRwOlwvXC9vcmcud3NvMi5hcGltZ3RcL2dhdGV3YXkiLCJzdWIiOiJhZG1pbkBjYXJib24uc3VwZXIiLCJhcHBsaWNhdGlvbiI6eyJvd25lciI6ImFkbWluIiwidGllciI6IlVubGltaXRlZCIsIm5hbWUiOiJkZWZhdWx0LWFwaWN0bC1hcHAiLCJpZCI6MiwidXVpZCI6bnVsbH0sInNjb3BlIjoiYW1fYXBwbGljYXRpb25fc2NvcGUgZGVmYXVsdCIsImlzcyI6Imh0dHBzOlwvXC93c28yYXBpbTozMjAwMVwvb2F1dGgyXC90b2tlbiIsInRpZXJJbmZvIjp7IlVubGltaXRlZCI6eyJzdG9wT25RdW90YVJlYWNoIjp0cnVlLCJzcGlrZUFycmVzdExpbWl0IjowLCJzcGlrZUFycmVzdFVuaXQiOm51bGx9fSwia2V5dHlwZSI6IlBST0RVQ1RJT04iLCJzdWJzY3JpYmVkQVBJcyI6W3sic3Vic2NyaWJlclRlbmFudERvbWFpbiI6ImNhcmJvbi5zdXBlciIsIm5hbWUiOiJPbmxpbmUtU3RvcmUiLCJjb250ZXh0IjoiXC9zdG9yZVwvdjEuMC4wXC92MS4wLjAiLCJwdWJsaXNoZXIiOiJhZG1pbiIsInZlcnNpb24iOiJ2MS4wLjAiLCJzdWJzY3JpcHRpb25UaWVyIjoiVW5saW1pdGVkIn1dLCJjb25zdW1lcktleSI6Im1Hd0lmUWZuZHdZTVZxT25JVW9Rczhqc1B0Y2EiLCJleHAiOjE1NzIyNjAyMjQsImlhdCI6MTU3MjI1NjYyNCwianRpIjoiNTNlYWJkYWEtY2IyZC00MTQ0LWEzYWUtZDNjNTIxMjgwYjM4In0.QU9rt4WBLcIOXzDkdiBpo_SAN_W4jpMlymPSgdhe4mf4FmdepA6hIXa_NXdzWyOST2XcHskWleL-9bhv4GecvDaCcMUwfSKOo_8DuphYhtv0BukpGpyfzK2SZDtABxxtdRUmNDcyXJiC5NU4laXlDGzUruI_LISjkeeCaK4gA93YQC3Nd0xe14uIO940UNsSiUuI5cZkeKlB9k5vKIzjN1-M-SJCvtDkusvdPTgkSHZL29ICsMQl9rTSRm6dL4xq9rcH7osD-o_amgurkm1RvNagzN0buku6y4tuEyisZvRUlNkQ2KRzX6E6VwNKHAFQ7CG95-k-QYvXDGDXYGNisw  
-```
-**_Note:_** You also have the option to generate an access token by logging into the devportal. 
+    ```
+    >> apictl get-keys -n online-store -v v1.0.0 -e k8s --provider admin -k
+    
+    Output:
+    API name:  OnlineStore & version:  v1.0.0 exists
+    API  OnlineStore : v1.0.0 subscribed successfully.
+    Access Token:  eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6IlpqUm1ZVE13TlRKak9XVTVNbUl6TWpnek5ESTNZMkl5TW1JeVkyRXpNamRoWmpWaU1qYzBaZz09In0.eyJhdWQiOiJodHRwOlwvXC9vcmcud3NvMi5hcGltZ3RcL2dhdGV3YXkiLCJzdWIiOiJhZG1pbkBjYXJib24uc3VwZXIiLCJhcHBsaWNhdGlvbiI6eyJvd25lciI6ImFkbWluIiwidGllciI6IlVubGltaXRlZCIsIm5hbWUiOiJkZWZhdWx0LWFwaWN0bC1hcHAiLCJpZCI6MiwidXVpZCI6bnVsbH0sInNjb3BlIjoiYW1fYXBwbGljYXRpb25fc2NvcGUgZGVmYXVsdCIsImlzcyI6Imh0dHBzOlwvXC93c28yYXBpbTozMjAwMVwvb2F1dGgyXC90b2tlbiIsInRpZXJJbmZvIjp7IlVubGltaXRlZCI6eyJzdG9wT25RdW90YVJlYWNoIjp0cnVlLCJzcGlrZUFycmVzdExpbWl0IjowLCJzcGlrZUFycmVzdFVuaXQiOm51bGx9fSwia2V5dHlwZSI6IlBST0RVQ1RJT04iLCJzdWJzY3JpYmVkQVBJcyI6W3sic3Vic2NyaWJlclRlbmFudERvbWFpbiI6ImNhcmJvbi5zdXBlciIsIm5hbWUiOiJPbmxpbmUtU3RvcmUiLCJjb250ZXh0IjoiXC9zdG9yZVwvdjEuMC4wXC92MS4wLjAiLCJwdWJsaXNoZXIiOiJhZG1pbiIsInZlcnNpb24iOiJ2MS4wLjAiLCJzdWJzY3JpcHRpb25UaWVyIjoiVW5saW1pdGVkIn1dLCJjb25zdW1lcktleSI6Im1Hd0lmUWZuZHdZTVZxT25JVW9Rczhqc1B0Y2EiLCJleHAiOjE1NzIyNjAyMjQsImlhdCI6MTU3MjI1NjYyNCwianRpIjoiNTNlYWJkYWEtY2IyZC00MTQ0LWEzYWUtZDNjNTIxMjgwYjM4In0.QU9rt4WBLcIOXzDkdiBpo_SAN_W4jpMlymPSgdhe4mf4FmdepA6hIXa_NXdzWyOST2XcHskWleL-9bhv4GecvDaCcMUwfSKOo_8DuphYhtv0BukpGpyfzK2SZDtABxxtdRUmNDcyXJiC5NU4laXlDGzUruI_LISjkeeCaK4gA93YQC3Nd0xe14uIO940UNsSiUuI5cZkeKlB9k5vKIzjN1-M-SJCvtDkusvdPTgkSHZL29ICsMQl9rTSRm6dL4xq9rcH7osD-o_amgurkm1RvNagzN0buku6y4tuEyisZvRUlNkQ2KRzX6E6VwNKHAFQ7CG95-k-QYvXDGDXYGNisw  
+    ```
+  
+    **_Note:_** You also have the option to generate an access token by logging into the devportal. 
 
 <br />
 
@@ -447,15 +444,12 @@ You can find the documentation [here](docs/Readme.md).
 
 Execute the following commands if you wish to clean up the Kubernetes cluster by removing all the applied artifacts and configurations related to API operator and API portal.
 
-```
+```sh
 >> apictl delete api online-store
->> apictl delete -f k8s-artifacts/api-portal
 >> apictl remove-env -e k8s
+>> apictl delete -f k8s-artifacts/wso2am-operator/api-portal/
 >> apictl uninstall api-operator
 ```
-
-When prompted type `Y` when uninstalling API Operator.
-  
 
 ### Sample Scenarios
 
