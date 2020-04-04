@@ -1,15 +1,19 @@
 apiVersion: wso2.com/v1alpha1
 kind: TargetEndpoint
 metadata:
-  name: petstore-swagger-io
-  namespace: wso2-system
+  name: products-privatejet
   labels:
     app: wso2
 spec:
-  protocol: https
-  port: 443
+  protocol: http
+  port: 80
+  targetPort: 9090
   deploy:
-    name: myservice
-    dockerImage: nginx:latest
-    count: 3
-  mode : privateJet
+    name: products-pj-service
+    dockerImage: pubudu/products:1.0.0
+    minReplicas: 2
+    maxReplicas: 3
+    requestCPU: "60m"
+    reqMemory: "32Mi"
+    cpuLimit: "120m"
+  mode: privateJet
