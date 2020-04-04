@@ -4,89 +4,113 @@
   associated with those APIs. The target endpoint kind provides the flexibility to deploy the backend services by specifying the 
   relevant docker images and parameters. 
 
-   #### Deploy endpoints using the target endpoint kind
+#### Deploy endpoints using the target endpoint kind
    
-    ##### i. Create a endpoint with target endpoint kind
+1. Create a endpoint with target endpoint kind
+   
+   The template for the target endpoint kind can be specified as follow
     
-    The template for the target endpoint kind can be specified as follow
-    
-   ```
-   apiVersion: <version>
+   ```yaml
+   apiVersion: <VERSION>
    kind: TargetEndpoint
    metadata:
-     name: <endpoint service name>
-     namespace: wso2-system
+     name: <ENDPOINT_SERVICE_NAME>
+     namespace: <NAMESPACE>
      labels:
        app: wso2
    spec:
-     protocol: <https or http>
-     port: <port>
-     targetPort: <target port>
+     hostname: <HOST_NAME>
+     protocol: <https_OR_http>
+     port: <PORT>
+     targetPort: <TARGET_PORT>
+     mode: <privateJet_OR_sidecar>
+     EndpointName: <ENDPOINT_NAME>
+     EndpointSecurity:
+       username: <USERNAME>
+       password: <PASSWORD>
+       type: <ENDPOINT_TYPE>
      deploy:
-       name: <endpoint name>
-       dockerImage: <docker-image>
-       count: <replica count>
-     mode : <privateJet or sidecar>
+       name: <DEPLOYMENT_NAME>
+       dockerImage: <DOCKER_IMAGE>
+       minReplicas: <MINIMUM_REPLICA_COUNT>
+       maxReplicas: <MAXIMUM_REPLICA_COUNT>
+       requestCPU: <REQUEST_CPU>
+       reqMemory: <REQUEST_MEMORY>
+       cpuLimit: <CPU_LIMIT>
+       memoryLimit: <MEMORY_LIMIT>
    ```
+   
    Sample definition of endpoint kind can be specified as follow
    
+    ```yaml
+    apiVersion: wso2.com/v1alpha1
+    kind: TargetEndpoint
+    metadata:
+      name: products-privatejet
+      labels:
+        app: wso2
+    spec:
+      protocol: http
+      port: 80
+      targetPort: 9090
+      deploy:
+        name: products-pj-service
+        dockerImage: pubudu/products:1.0.0
+        minReplicas: 2
+        maxReplicas: 3
+        requestCPU: "60m"
+        reqMemory: "32Mi"
+        cpuLimit: "120m"
+      mode: privateJet
     ```
-   apiVersion: wso2.com/v1alpha1
-   kind: TargetEndpoint
-   metadata:
-     name: simple-endpoint-service
-     namespace: wso2-system
-     labels:
-       app: wso2
-   spec:
-     protocol: https
-     targetPort: 9443
-     port: 443
-     deploy:
-       name: simple-endpoint
-       dockerImage: pubudu/review:1.0.0
-       count: 3
-     mode : privateJet
-    ```
-    ##### ii. Deploy the target endpoint
+
+1. Deploy the target endpoint
     The target endpoint definition can be deployed using the command line tool as follow
     
-    ```
-        apictl apply -f sample-endpoint-service.yaml
-    ```
+    ```sh
+    >> apictl apply -f sample-endpoint-service.yaml
+   
     - Output:
-    ```
-        targetendpoint.wso2.com/sample-endpoint-service created
+    targetendpoint.wso2.com/sample-endpoint-service created
     ```        
     
-    ##### iii. Target endpoint parameters
+1. Target endpoint parameters
     
     Target endpoint template which specified above contains several parameters which used to define specific functions.
     Here are the usages of the important parameters in the definition
     
-     ```
-       ...
-       metadata:
-         name: <endpoint service name>  // When endpoint is deployed, it will be associated with a service. 
-                                        // The name specified here will be used as the service name. This name also will be used to discover the target endpoint
-         namespace: wso2-system
-         labels:
-           app: wso2                    // The name space and label shouldn't be changed 
-       spec:
-         protocol: <https or http>      // Specify the protocol that service should be exposed
-         port: <port>                   // If the port and target port do not specified, depend on the protocol type
-         targetPort: <target port>      // port and target port will be assigned. https associated with port 443 and target port 443 and
-                                        // http associated with port 80 and target port 80     
-           deploy:                       
-           name: <endpoint name>        // name of the endpoint 
-           dockerImage: <docker-image>  // docker image name
-           count: <replica count>       // number of replicas that should be deployed
-         mode : <privateJet or sidecar> // Mode is very important paramets in the target endpoint kind. If the mode is set to privateJet
-                                        // target endpoint controller will create the endpoint deployment along with the service.
-                                        // In sidecar mode, target endpoint controller only add the endpoint definition but no deployment will be created 
-     ```
+   ```yaml
+   metadata:
+     name: <ENDPOINT_SERVICE_NAME>
+     namespace: <NAMESPACE>
+     labels:
+       app: wso2
+   spec:
+     hostname: <HOST_NAME>            // Name of the host
+     protocol: <https_OR_http>        // Specify the protocol that service should be exposed
+     port: <PORT>                     // If the port and target port do not specified, depend on the protocol type
+     targetPort: <TARGET_PORT>        // port and target port will be assigned. https associated with port 443 and target port 443 and
+                                      // http associated with port 80 and target port 80
+     mode: <privateJet_OR_sidecar>    // Mode is very important paramets in the target endpoint kind. If the mode is set to privateJet
+                                      // target endpoint controller will create the endpoint deployment along with the service.
+                                      // In sidecar mode, target endpoint controller only add the endpoint definition but no deployment will be created
+     EndpointName: <ENDPOINT_NAME>    // Name of the endpoint
+     EndpointSecurity:
+       username: <USERNAME>
+       password: <PASSWORD>
+       type: <ENDPOINT_TYPE>
+     deploy:
+       name: <DEPLOYMENT_NAME>
+       dockerImage: <DOCKER_IMAGE>
+       minReplicas: <MINIMUM_REPLICA_COUNT>    // Number of minimum replicas that should be deployed
+       maxReplicas: <MAXIMUM_REPLICA_COUNT>    // Number of maximum replicas that should be deployed
+       requestCPU: <REQUEST_CPU>
+       reqMemory: <REQUEST_MEMORY>
+       cpuLimit: <CPU_LIMIT>
+       memoryLimit: <MEMORY_LIMIT>
+   ```
     
-    ##### iv. How target endpoint works
+1. How target endpoint works
     
     Using apim operator provide greater flexibility to deploy APIs in Kurbenetes. Target endpoint can be deployed in two modes. Target endpoint
     default mode is set to privateJet which means target endpoint controller will create the deployment and service for the endpoint using the

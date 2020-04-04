@@ -8,8 +8,10 @@ Using the following command, you can add an API to the microservice.
 
 ```sh
 Format:
->> apictl add api -n <API_NAME> --from-file=<PATH_TO_OPEN_API_DEFINITION_1>
+>> apictl add api -n <API_NAME> --from-file=<PATH_TO_OPEN_API_DEFINITION>
+>> apictl add api -n <API_NAME> --from-file=<PATH_TO_API_PROJECT>
 ```
+***NOTE:*** Here ***API_PROJECT*** refers to a project initialized using `apictl init command`
 
 ```
 >> apictl add api -n online-store --from-file=scenarios/scenario-1/products_swagger.yaml
@@ -20,6 +22,18 @@ creating configmap with swagger definition
 configmap/online-store-1-swagger created
 creating API definition
 api.wso2.com/online-store created
+```
+
+You can also provide multiple open API definitions for a API
+
+```sh
+Format:
+>> apictl add api -n <API_NAME> --from-file=<PATH_TO_OPEN_API_DEFINITION_1> \
+        --from-file=<PATH_TO_OPEN_API_DEFINITION_2> \
+        ... --from-file=<PATH_TO_OPEN_API_DEFINITION_m> \
+        --from-file=<PATH_TO_API_PROJECT_1> \
+        --from-file=<PATH_TO_API_PROJECT_2> \
+        ... --from-file=<PATH_TO_API_PROJECT_n>
 ```
 
 Optional Parameters
@@ -39,14 +53,18 @@ Format:
     --version=<DEPLOY_VERSION>
 ```
 
+***NOTE:*** Flags `--mode` and `--version` only supports in multiple open API definitions mode. If these values are not provided default mode: `privateJet` and default version: `v1.0.0.` are used.
+
 #### Update an API
 
-Using the following command you can update the deployed API.
+Using the following command you can update the deployed API. As in the add API you can use multiple open API definitions.
 
 ```sh
 Format:
 >> apictl update api -n <API_NAME> --from-file=<PATH_TO_OPEN_API_DEFINITION_1>
+```
 
+```sh
 >> apictl update api -n online-store --from-file=scenarios/scenario-1/products_swagger.yaml
 
 Output:
@@ -94,24 +112,23 @@ Name:         online-store
 Namespace:    default
 Labels:       <none>
 Annotations:  kubectl.kubernetes.io/last-applied-configuration:
-                {"apiVersion":"wso2.com/v1alpha1","kind":"API","metadata":{"annotations":{},"creationTimestamp":null,"name":"online-store","namespace":"defaul...
+                {"apiVersion":"wso2.com/v1alpha1","kind":"API","metadata":{"annotations":{},"creationTimestamp":null,"name":"online-store","namespace":"de...
 API Version:  wso2.com/v1alpha1
 Kind:         API
 Metadata:
-  Creation Timestamp:  2019-10-27T12:18:00Z
-  Generation:          2
-  Resource Version:    585096
+  Creation Timestamp:  2020-04-04T01:12:57Z
+  Generation:          1
+  Resource Version:    13839
   Self Link:           /apis/wso2.com/v1alpha1/namespaces/default/apis/online-store
-  UID:                 d107e14d-f8b3-11e9-9a6a-42010a8001fc
+  UID:                 6b2775ae-7611-11ea-8395-42010a8000a7
 Spec:
   Definition:
-    Configmap Name:       online-store-swagger-up-20191028143610
-    Type:                 swagger
-  Interceptor Conf Name:
-  Mode:                   privateJet
-  Override:               false
-  Replicas:               1
-  Update Time Stamp:      20191028143610
-Status:
-Events:  <none>
+    Interceptors:
+    Swagger Configmap Names:
+      online-store-1-swagger
+    Type:    swagger
+  Mode:      privateJet
+  Override:  true
+  Replicas:  1
+Events:      <none>
 ```

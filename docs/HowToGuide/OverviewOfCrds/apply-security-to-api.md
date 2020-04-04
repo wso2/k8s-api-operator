@@ -2,74 +2,78 @@
 
 - APIs created with kubernetes apim operator can be secured by defining security with security kind. It supports basic, JWT and Oauth2 security types.
 
-   **Securing API with JWT authentication**
+#### Securing API with JWT authentication
    
-    i. Create a secret with the certificate
+1. Create a secret with the certificate
 
-   `
-   kubectl create secret generic <secret name> -n <namespace> --from-file=<path to cert>
-   `
-  
-   ii. Create a security with security kind. Include the name of the secret created in step (i) in certificate field
+   ```sh
+   >> kubectl create secret generic <SECRET_NAME> -n <NAMESPACE> --from-file=<PATH_TO_CERT>
    ```
-   apiVersion: <version>
+  
+1. Create a security with security kind. Include the name of the secret created in step (1) in certificate field
+   ```yaml
+   apiVersion: <VERSION>
    kind: Security
    metadata:
-     name: <security name>
+     name: <SECURITY_NAME>
    spec:
      type: JWT
-     certificate: <name of the secret created in step 1>
-     issuer: <issuer>
-     audience: <audience>
+     securityConfig:
+       - issuer: <ISSUER>
+         audience:  <AUDIENCE>
+         certificate: <NAME_OF_THE_SECRET_CREATED_IN_STEP_1>
    ```
-   **Securing API with Oauth2 authentication**
-   
-    i. Create a secret with the certificate of the API Portal
-   
-   `
-   kubectl create secret generic <secret name> -n <namespace> --from-file=<path to cert>
-   `
-   
-    ii. Create a secret with user credentials 
+
+#### Securing API with Oauth2 authentication
+
+1. Create a secret with the certificate
+   ```sh
+   >> kubectl create secret generic <SECRET_NAME> -n <NAMESPACE> --from-file=<PATH_TO_CERT>
    ```
+   
+1. Create a secret with user credentials 
+   ```yaml
    apiVersion: v1
    kind: Secret
    metadata:
-     name: <secret name>
+     name: <SECRET_NAME>
    type: Opaque
    data:
-     username: base64 encoded user name 
-     password: base64 encoded password
+     username: <BASE64_ENCODED_USER_NAME>
+     password: <BASE64_ENCODED_PASSWORD>
    ```  
-    iii. Create a security with security kind. Include the name of the secret created in step (i) in certificate field and name of the secret created in step (ii) in credentials field.
-   ```
-   apiVersion: <version>
+
+1. Create a security with security kind. Include the name of the secret created in step (1) in certificate field and name of the secret created in step (2) in credentials field.
+   ```yaml
+   apiVersion: <VERSION>
    kind: Security
    metadata:
-     name: <security name>
-     namespace: <namespace>
+     name: <SECURITY_NAME>
+     namespace: <NAMESPACE>
    spec:
      type: Oauth
-     certificate: <name of the secret created in step 1>
-     endpoint: <endpoint>
-     credentials: <name of the secret created in step 2>
+     securityConfig:
+       - certificate: <NAME_OF_THE_SECRET_CREATED_IN_STEP_1>
+         endpoint: <ENDPOINT>
+         credentials: <NAME_OF_THE_SECRET_CREATED_IN_STEP_2>
    ```
    
-   **Securing API with Basic authentication**
+#### Securing API with Basic authentication
    
-    i. Create a secret with user credentials 
-   ```
+1. Create a secret with user credentials 
+   ```yaml
    apiVersion: v1
    kind: Secret
    metadata:
-     name: <secret name>
+     name: <SECRET_NAME>
    type: Opaque
    data:
-     username: base64 encoded username 
-     password: base64 encoded password
+     username: <BASE64_ENCODED_USER_NAME>
+     password: <BASE64_ENCODED_PASSWORD>
    ```
-    ii. Create a security with security kind. Include the name of the secret created in step (i) in credentials field.
-   ```
+   
+1. Create a security with security kind. Include the name of the secret created in step (1) in credentials field.
+   ```yaml
    apiVersion: <version>
    kind: Security
    metadata:
@@ -77,24 +81,26 @@
      namespace: <namespace>
    spec:
      type: basic
-     credentials: <name of the secret created in step 1>
+     securityConfig:
+       - credentials: <NAME_OF_THE_SECRET_CREATED_IN_STEP_1>
    ``` 
-   **Defining the securities in swagger definition**
 
-    Security can be defined in swagger definition under security keyword in both API and resource levels. Define the property scopes for OAuth2 security scheme. 
+#### Defining the securities in swagger definition
 
-   **Defining security in API level**
+Security can be defined in swagger definition under security keyword in both API and resource levels. Define the property scopes for OAuth2 security scheme. 
+
+1. Defining security in API level**
    
-     ```
+     ```yaml
       security:
-          - petstorebasic: []  
-          - oauthtest: 
+          - petstorebasic: []
+          - oauthtest:
             - read
      ```
 
-   **Defining security in resource level**
+1. Defining security in resource level**
    
-     ```
+     ```yaml
       paths:
         "/pet/findByStatus":
           get:
@@ -106,4 +112,4 @@
      ```
 
 
-   sample security definitions are provided in [here](../../api-operator/deploy/sample-definitions/security_definitions.yaml)
+Sample security definitions are provided in [here](../../../api-operator/deploy/sample-definitions/security_definitions.yaml)
