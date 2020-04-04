@@ -118,14 +118,14 @@ In this swagger definition, the security schema of the "petstore" service has be
 
 - Deploy the  API <br /> 
     ```
-        apictl add api -n petstore-multiple-jwt --from-file=swagger.yaml
+        apictl add api -n petstore-multiple-jwt --from-file=swagger.yaml --override
     
     Output:
         creating configmap with swagger definition
         configmap/petstore-multiple-jwt-swagger created
         api.wso2.com/petstore-multiple-jwt created
     ```
-    
+    Note: ***--override*** flag is used to you want to rebuild the API image even if it exists in the configured docker repository.
 - Get available API <br /> 
     ```
         apictl get apis

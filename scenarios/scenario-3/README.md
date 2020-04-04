@@ -38,13 +38,14 @@
     - Following command with deploy the petstore service as a managed API in the k8s cluster.
     
     ```
-        apictl add api -n petstore-basic --from-file=swagger.yaml
+        apictl add api -n petstore-basic --from-file=swagger.yaml --override
     
     Output:
         creating configmap with swagger definition
         configmap/petstore-basic-swagger created
         api.wso2.com/petstore-basic created
     ```
+    Note: ***--override*** flag is used to you want to rebuild the API image even if it exists in the configured docker repository.
 - Check the API's service is deployed<br />
     ```
         apictl get services

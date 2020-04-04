@@ -31,14 +31,14 @@ In this swagger definition, the rate limiting policy has been mentioned as follo
 
 - Create API <br /> 
     ```
-        apictl add api -n petstore-rate --from-file=swagger.yaml
+        apictl add api -n petstore-rate --from-file=swagger.yaml --override
     
     Output:
         creating configmap with swagger definition
         configmap/petstore-rate-swagger created
         api.wso2.com/petstore-rate created
     ```
-    
+    Note: ***--override*** flag is used to you want to rebuild the API image even if it exists in the configured docker repository.
 - Get available API <br /> 
     ```
         apictl get apis
