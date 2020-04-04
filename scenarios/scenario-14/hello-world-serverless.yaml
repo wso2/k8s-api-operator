@@ -18,8 +18,9 @@ apiVersion: wso2.com/v1alpha1
 kind: TargetEndpoint
 metadata:
   name: hello-world-serverless
+  namespace: micro
   labels:
-    app: wso2
+    app: hello-world-serverless
 spec:
   protocol: http
   port: 80
