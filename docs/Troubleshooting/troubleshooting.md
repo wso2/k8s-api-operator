@@ -5,85 +5,74 @@
 
 - Following command will list the available pods in the "wso2-system" namespace.
 
-    ```$xslt
-    kubectl get pods -n wso2-system
-    ``` 
-- Output:
-    ```$xslt
+    ```sh
+    >> kubectl get pods -n wso2-system
+  
+    Output:
     NAME                             READY   STATUS    RESTARTS   AGE
     api-operator-59c665f477-9bw7l   1/1     Running   0          4h23m
      
     ```
 - Once you are able to see the api-operator pod up and running, you can check its logs using the below command.
     
-    ```$xslt
-    kubectl logs -f -n wso2-system <name of the api-operator pod>
+    ```sh
+    >> kubectl logs -f -n wso2-system <NAME_OF_THE_API-OPERATOR_POD>
     ```
 - Example: 
 
-    ```$xslt
-    kubectl logs -f -n wso2-system api-operator-59c665f477-9bw7l
+    ```sh
+    >> kubectl logs -f -n wso2-system api-operator-59c665f477-9bw7l
     ```
 - Once the above command is executed, it will show the logs in the API operator.
 
-#### Identifying Kaniko job related pod & errors
+#### Identifying Kaniko job related pod and errors
 
-- Kaniko job is responsible to create the API microgateway image and push it to the Docker-Hub.
-- If the API microgateway image belongs to a particular API definition is not available in the Docker-Hub, it will build the image using the Kaniko job.
+- Kaniko job is responsible to create the API microgateway image and push it to the registry configured during the API operator installation.
+- If the API microgateway image belongs to a particular API definition is not available in the docker repository, it will build the image using the Kaniko job.
 - If you are creating an API name "online-store", the Kaniko pod related to that would look like below. <br>
-    \<api-name>-kaniko-xxxxxx-xxxx
+    `<API_NAME>-kaniko-xxxxxx-xxxx`
 - Example:
       
-    online-store-kaniko-xxxxxx-xxxx (x denotes random alphanumeric values)
+    `online-store-kaniko-xxxxxx-xxxx` (x denotes random alphanumeric values)
 
-```$xslt
-kubectl get pods
-```
+    ```sh
+    >> kubectl get pods
+    
+    Output:
+    NAME                                   READY   STATUS    RESTARTS   AGE    
+    online-storee-kaniko-6dvb8             1/1     Running   0          5s
+    ```
 
-```$xslt
-NAME                                   READY   STATUS    RESTARTS   AGE    
-online-storee-kaniko-6dvb8             1/1     Running   0          5s
+- If it's in the running "status", it's working fine. If it says "Err", most possibly it can be due to configuration issue related to docker registry credentials or connection to the registry. Hence pushing the image may leads the kaniko pod to a erroneous state.
 
-```
-- If it's in the running "status", it's working fine. If it says "Err", most possibly it can be due to configuration issue related to Docker-Hub user. Hence pushing the image may leads the kaniko pod to a erroneous state.
-- In that case check the following, <br>
-    1. Check the if you have put the proper Docker-Hub username in "\<api-k8s-crd-home>/api-operator/controller-configs/controller_conf.yaml" 
-    - Check the following configuration in \<api-k8s-crd-home>/api-operator/controller-configs/controller_conf.yaml.
-    - Replace the \<username-docker-registry> with the proper Docker-Hub username.   
-        ```
-        #docker registry name which the mgw image to be pushed.  eg->  dockerRegistry: username
-        dockerRegistry: <username-docker-registry>
-        ```  
-        ```$xslt
-        kubectl apply -f <api-k8s-crd-home>/api-operator/controller-configs/controller_conf.yaml
-        ```
-    - Once it's modified, execute the following command to apply the changes in the cluster
-    2. Check if you have provided the Docker-Hub username and password in the docker_secret_template.file.
-    - Open the <api-k8s-crd-home>/api-operator/controller-configs/docker_secret_template.yaml file. 
-    - Check if you have entered the **base 64 encoded value of username and password** in the following section.
-        ```$xslt
-        data:
-          username: ENTER YOUR BASE64 ENCODED USERNAME
-          password: ENTER YOUR BASE64 ENCODED PASSWORD
-        ``` 
-        ```$xslt
-        kubectl apply -f <api-k8s-crd-home>/api-operator/controller-configs/docker_secret_template.yaml
-        ```
+- Find the logs in the Kaniko job for more information and get description about the pod that runs the Kaniko job.
+    ```sh
+    >> kubectl describe pod <POD_NAME_OF_KANIKO_JOB>
+    >> kubectl logs -f <POD_NAME_OF_KANIKO_JOB>
+    ```
+
+- If the error is related to authentication, reconfigure registry credentials using `apictl` tool. Go through the interactive session to reconfigure credentials.
+    ```sh
+    >> apictl change registry
+    ```
+
 #### How to check logs in API
 
 - Once the API is deploy in the Kubernetes cluster, the pod will be names in the following convention.
-  \<api-name>-xxxxx-xxxx (x is a alphanumeric value)
+
+    `<api-name>-xxxxx-xxxx` (x is a alphanumeric value)
+    
 - If you have deployed online-store API, the pod will be look like below.
-    ```$xslt
+    ```sh
     NAME                                   READY   STATUS      RESTARTS   AGE
     online-store-794cd7b66-lnnxd           1/1     Running     0          164m
     ```
+  
 - To check its log, execute the following command.
-    ```$xslt
-    kubectl logs -f online-store-794cd7b66-lnnxd
-    ```   
-    Sample logs of the API as below.
-    ```$xslt
+    ```sh
+    >> kubectl logs -f online-store-794cd7b66-lnnxd
+    
+    Sample logs:
     [ballerina/http] started HTTPS/WSS endpoint 0.0.0.0:9096
     [ballerina/http] started HTTPS/WSS endpoint 0.0.0.0:9095
     [ballerina/http] started HTTP/WS endpoint 0.0.0.0:9090
@@ -94,14 +83,22 @@ online-storee-kaniko-6dvb8             1/1     Running   0          5s
 #### How to enable debug logs for the API
 
 - If you want to analyze logs in depth, enable the debug logs.
-- For this, you need to add the following entry in the ***\<k8s-api-operator-home>/api-operator/deploy/controller-configs/mgw_conf_mustache.yaml***
-```$xslt
-[b7a.log]
-level="DEBUG"
-```
+- For this, you need to update the `logLevel` field of the configmap: `apim-config` in the file ***\<k8s-api-operator-home>/api-operator/deploy/controller-configs/controller_conf.yaml*** to "DEBUG".
+    ```yaml
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: apim-config
+      namespace: wso2-system
+    data:
+      #Log level of the managed API (microgateway). Available levels: INFO, DEBUG, TRACE
+      logLevel: "DEBUG"
+      ...
+    ```
+
 - Reapply this configuration separately using the following command.
-```$xslt
-kubectl apply -f <k8s-api-operator-home>/api-operator/controller-configs/mgw_conf_mustache.yaml
-```
+    ```sh
+    >> kubectl apply -f <k8s-api-operator-home>/api-operator/controller-configs/controller_conf.yaml
+    ```
 - Once you apply this, you need to build the API from scratch to reflect these changes to the already deployed APIs.
 

@@ -128,7 +128,7 @@ The TargetEndpoint controller will store target endpoint metadata corresponding 
 
 
 API controller is quite complex compared to other controllers. It has two main tasks.  
-- Build an API microgateway container and push it to the Docker-Hub.
+- Build an API microgateway container and push it to the registry configured during the API operator installation.
 - Create Kubernetes artifacts and deploy them into Kubernetes clusters.
 
 When the API custom controller is triggered, it will receive a Swagger definition from the attached configMap and create a Kaniko job by attaching a multi-step Dockerfile along with the Swagger definition. This Dockerfile is using pre-build the Docker image that has the API microgateway toolkit. The microgateway toolkit will generate the API microgateway runtime with the corresponding swagger file passed. Finally Kaniko build create a new API microgateway docker image and push to the configured docker registry.
