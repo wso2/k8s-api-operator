@@ -380,7 +380,7 @@ The following commands will help you to push the API to the API portal in Kubern
 - Add the API portal as an environment to the API controller using the following command.
 
     ```
-    >> apictl add-env -e k8s --apim https://wso2apim:32001 --token https://wso2apim:32001/oauth2/token
+    >> apictl add-env -e k8s --apim https://wso2apim:32001 --token https://wso2apim:32003/token
     
     Output:
     Successfully added environment 'k8s'
@@ -442,14 +442,14 @@ You can find the documentation [here](docs/Readme.md).
 
 ### Cleanup
 
-- Execute the following commands if you wish to clean up the Kubernetes cluster by removing all the applied artifacts and configurations related to API operator and API portal.
+Execute the following commands if you wish to clean up the Kubernetes cluster by removing all the applied artifacts and configurations related to API operator and API portal.
 
-    ```
-    >> apictl delete api online-store
-    >> apictl delete -f k8s-artifacts/api-portal
-    >> apictl remove-env -e k8s
-    >> apictl uninstall api-operator
-    ```
+```sh
+>> apictl delete api online-store
+>> apictl remove-env -e k8s
+>> apictl delete -f k8s-artifacts/wso2am-operator/api-portal/
+>> apictl uninstall api-operator
+```
 
 ### Sample Scenarios
 
