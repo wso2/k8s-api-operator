@@ -16,9 +16,8 @@
  - Deploy the sample rate-limiting CR using the following command.
     ```
         apictl apply -f five-req-policy.yaml
-    ```
-    - Output:
-    ```
+    
+    Output:
         ratelimiting.wso2.com/fivereqpolicy created
     ```
 
@@ -32,21 +31,19 @@ In this swagger definition, the rate limiting policy has been mentioned as follo
 
 - Create API <br /> 
     ```
-        apictl add api -n petstore-rate --from-file=swagger.yaml
-    ``` 
-    - Output:
-    ```
+        apictl add api -n petstore-rate --from-file=swagger.yaml --override
+    
+    Output:
         creating configmap with swagger definition
         configmap/petstore-rate-swagger created
         api.wso2.com/petstore-rate created
     ```
-    
+    Note: ***--override*** flag is used to you want to rebuild the API image even if it exists in the configured docker repository.
 - Get available API <br /> 
     ```
         apictl get apis
-    ```
-    - Output:
-    ```    
+    
+    Output:
         NAME          AGE
         petstore-rate   5m
     ```
@@ -54,10 +51,8 @@ In this swagger definition, the rate limiting policy has been mentioned as follo
 - Get service details to invoke the API. (Please wait until the external-IP is populated in the corresponding service)
     ```
         apictl get services
-    ```
-    - Output:
     
-    ```
+    Output:
         NAME            TYPE           CLUSTER-IP   EXTERNAL-IP       PORT(S)                         AGE
         petstore-rate   LoadBalancer   10.83.4.44   104.197.114.248   9095:30680/TCP,9090:30540/TCP   8m20s
     ```
@@ -86,9 +81,8 @@ In this swagger definition, the rate limiting policy has been mentioned as follo
     ```
         apictl delete api petstore-rate
         apictl delete ratelimitings fivereqpolicy
-    ```
-    -  Output:
-    ```
+    
+    Output:
         api.wso2.com "petstore-rate" deleted
         ratelimiting.wso2.com "fivereqpolicy" deleted
     ```
