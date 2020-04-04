@@ -29,7 +29,7 @@ In this swagger definition, the backend service of the "products" service and th
 
 - Create API <br /> 
     ```
-    >> apictl add api -n inventory-sc --from-file=swagger.yaml --override=true
+    >> apictl add api -n inventory-sc --from-file=swagger.yaml --override
 
     Output:
     Processing swagger 1: swagger.yaml

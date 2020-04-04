@@ -130,7 +130,7 @@ In this swagger definition, the backend service of the "hello-world-serverless" 
 - Create API <br /> 
 
     ```
-    >> apictl add api -n hello-world --from-file=swagger.yaml --override=true
+    >> apictl add api -n hello-world --from-file=swagger.yaml --override
     
     Output:
     creating configmap with swagger definition
