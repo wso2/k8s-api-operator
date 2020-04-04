@@ -42,11 +42,8 @@
 - Create API
     ```sh
     >> apictl add api -n petstore-multiple-api --from-file=pets-int --from-file=stores-int
-    ```
   
     Output:
-    
-    ```sh
     Processing swagger 1: pets-int
     creating configmap with swagger definition
     configmap/petstore-multiple-api-1-swagger created
@@ -59,24 +56,18 @@
     
 - Get available APIs
     ```
-    apictl get apis
-    ```
+    >> apictl get apis
   
     Output:
-    
-    ```    
     NAME                    AGE
     petstore-multiple-api   57s
     ```
 
 - Get service details to invoke the API. (Please wait until the external-IP is populated in the corresponding service)
     ```
-    apictl get services
-    ```
+    >> apictl get services
   
     Output:
-    
-    ```sh
     NAME                    TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)                         AGE
     petstore-multiple-api   LoadBalancer   10.106.24.198   localhost     9095:30029/TCP,9090:32027/TCP   2m14s  
     ```

@@ -14,15 +14,18 @@
  
  - Init the API project using CLI. This will Initialize a new API project in same directory.
  
-     ```
-     apictl init petstore-int --oas=swagger.yaml
+    ```
+    >> apictl init petstore-int --oas=swagger.yaml
     
     Output:    
     Initializing a new WSO2 API Manager project in ./product-apim-tooling/import-export-cli/build/target/apimcli/petstore-int
     Project initialized
     Open README file to learn more
-     ```
+    ```
  - Copy the _mgw-interceptor.jar_ file in scenario-15 into the libs folder in petstore-int/libs path.
+    ```sh
+    >> cp mgw-interceptor.jar petstore-int/libs 
+    ```
   
     ***Note:***  
     > In the above interceptor we have defined a function _interceptRequest_, which validates whether the request has the header "X-API-KEY" and a function _interceptResponse_ send a custom json message if the response contains the key "error". You can find more information [here.](https://docs.wso2.com/display/MG310/Message+Transformation#0057f1e771984fca9b6964fe0e1e1937)
@@ -39,7 +42,7 @@
 - Create the API
 
     ```
-    apictl add api -n petstore-java-int --from-file=petstore-int
+    >> apictl add api -n petstore-java-int --from-file=petstore-int
     
     Output:
     Processing swagger 1: petstore-int
@@ -53,7 +56,7 @@
 - Get service details to invoke the API. (Please wait until the external-IP is populated in the corresponding service)
 
     ```
-    apictl get services
+    >> apictl get services
     
     Output:
     NAME            TYPE           CLUSTER-IP   EXTERNAL-IP       PORT(S)                         AGE
@@ -90,6 +93,7 @@
     ```json
     {"id":55, "category":{"id":55, "name":"string"}, "name":"SRC_TIME_SIZE", "photoUrls":["string"], "tags":[{"id":55, "name":"string"}], "status":"available"}
     ```
+    **Note:** If the response message is "Pet not found" try with different pet id.
 
 - Delete the API
 
