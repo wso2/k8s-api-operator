@@ -19,16 +19,10 @@
      labels:
        app: wso2
    spec:
-     hostname: <HOST_NAME>
      protocol: <https_OR_http>
      port: <PORT>
      targetPort: <TARGET_PORT>
      mode: <privateJet_OR_sidecar>
-     EndpointName: <ENDPOINT_NAME>
-     EndpointSecurity:
-       username: <USERNAME>
-       password: <PASSWORD>
-       type: <ENDPOINT_TYPE>
      deploy:
        name: <DEPLOYMENT_NAME>
        dockerImage: <DOCKER_IMAGE>
@@ -80,34 +74,23 @@
     Here are the usages of the important parameters in the definition
     
    ```yaml
-   metadata:
-     name: <ENDPOINT_SERVICE_NAME>
-     namespace: <NAMESPACE>
-     labels:
-       app: wso2
    spec:
-     hostname: <HOST_NAME>            // Name of the host
      protocol: <https_OR_http>        // Specify the protocol that service should be exposed
      port: <PORT>                     // If the port and target port do not specified, depend on the protocol type
-     targetPort: <TARGET_PORT>        // port and target port will be assigned. https associated with port 443 and target port 443 and
+     targetPort: <TARGET_PORT>        // Port and target port will be assigned. https associated with port 443 and target port 443 and
                                       // http associated with port 80 and target port 80
      mode: <privateJet_OR_sidecar>    // Mode is very important paramets in the target endpoint kind. If the mode is set to privateJet
-                                      // target endpoint controller will create the endpoint deployment along with the service.
+                                      // Target endpoint controller will create the endpoint deployment along with the service.
                                       // In sidecar mode, target endpoint controller only add the endpoint definition but no deployment will be created
-     EndpointName: <ENDPOINT_NAME>    // Name of the endpoint
-     EndpointSecurity:
-       username: <USERNAME>
-       password: <PASSWORD>
-       type: <ENDPOINT_TYPE>
      deploy:
-       name: <DEPLOYMENT_NAME>
-       dockerImage: <DOCKER_IMAGE>
+       name: <DEPLOYMENT_NAME>        // Name of the deployment
+       dockerImage: <DOCKER_IMAGE>    // Docker image to deploy
        minReplicas: <MINIMUM_REPLICA_COUNT>    // Number of minimum replicas that should be deployed
        maxReplicas: <MAXIMUM_REPLICA_COUNT>    // Number of maximum replicas that should be deployed
-       requestCPU: <REQUEST_CPU>
-       reqMemory: <REQUEST_MEMORY>
-       cpuLimit: <CPU_LIMIT>
-       memoryLimit: <MEMORY_LIMIT>
+       requestCPU: <REQUEST_CPU>      // Minimum CPU required to deploy the pod
+       reqMemory: <REQUEST_MEMORY>    // Minimum memory required to deploy the pod
+       cpuLimit: <CPU_LIMIT>          // Maximum CPU value for the pod can survive
+       memoryLimit: <MEMORY_LIMIT>    // Maximum memory value for the pod can survive
    ```
     
 1. How target endpoint works
@@ -129,5 +112,5 @@
     At the time of the API is deployed, api-operator will identify the endpoint service and create the target endpoint deployment along with the
     service. The deployed API will act as a sidecar to the deployed endpoint.
 
-   - Sample security definitions are provided in `<k8s-api-operator-home>/api-operator/deploy/sample-definitions/wso2_v1alpha1_targetendpoint_cr.yaml`
+   - Sample target endpoint definitions are provided in `<k8s-api-operator-home>/api-operator/deploy/sample-definitions/wso2_v1alpha1_targetendpoint_cr.yaml`
    - Sample scenarios using the target endpoint provided in `<k8s-api-operator-home>/scenarios/scenario-7` and `<k8s-api-operator-home>/scenarios/scenario-8`
