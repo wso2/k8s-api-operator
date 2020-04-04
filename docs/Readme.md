@@ -19,6 +19,8 @@ You can find the content you need to be working with the API operator in this do
         1. [Working with Amazon Web Services](HowToGuide/WorkingWithDockerRegistries/working-with-aws.md)
         1. [Working with Google Container Registry](HowToGuide/WorkingWithDockerRegistries/working-with-gcr.md)
         1. [Working HTTP/HTTPS Private Registry](HowToGuide/WorkingWithDockerRegistries/working-with-http-https-repository.md)
+        1. [Reconfigure Registry](HowToGuide/WorkingWithDockerRegistries/reconfigure-registry.md)
+    1. [Install API Operator in CI/CD](HowToGuide/install-api-operator-in-cicd.md)
     1. [Working With Additional Kaniko Flags](HowToGuide/working-with-kaniko-additional-flags.md)
 1. [Troubleshooting Guide](Troubleshooting/troubleshooting.md)
 

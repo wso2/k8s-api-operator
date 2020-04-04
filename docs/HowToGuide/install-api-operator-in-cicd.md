@@ -1,4 +1,4 @@
-### Install API Operator in CI/CD
+# Install API Operator in CI/CD
 
 `apictl` tool enable you to install api-operator and configure registry in interactive mode and non-interactive mode as well. For CI/CD automation you can use the non-interactive feature based on the registry type.
 
@@ -15,7 +15,7 @@ Flags:
 
 For offline installation use the `--from-file` flag to point the operator configs downloaded from the [release](https://github.com/wso2/k8s-api-operator/releases). The flag `--from-file` can be used with any registry type.
 
-#### 1. Docker Hub or HTTPS registry
+## 1. Docker Hub or HTTPS registry
 
 ```sh
 Format:
@@ -34,7 +34,7 @@ HTTPS registry:
 >> apictl install api-operator --registry-type=DOCKER_HUB --repository=10.100.5.225:5000/wso2 --username=jennifer --password=*******
 ```
 
-#### 2. Amazon ECR
+## 2. Amazon ECR
 
 ```sh
 Format:
@@ -44,7 +44,7 @@ Example:
 >> apictl install api-operator --registry-type=AMAZON_ECR --repository=111222333444.dkr.ecr.us-east-1.amazonaws.com/my-ecr-repo --key-file=/Users/wso2/.aws/credentials
 ```
 
-#### 3. GCR
+## 3. GCR
 
 ```sh
 Format:
@@ -54,7 +54,7 @@ Example:
 >> apictl install api-operator --registry-type=GCR --key-file=/path/to/gcr/service/account/key/file.json
 ```
 
-#### 4. HTTP private registry
+## 4. HTTP private registry
 
 ```sh
 Format:
