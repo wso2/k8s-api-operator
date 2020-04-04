@@ -5,7 +5,7 @@
  ***Important:***
 > Follow the main README and deploy the api-operator and configuration files. Make sure to set the analyticsEnabled to "true" and deploy analytics secret with credentials to analytics server and certificate, if you want to check analytics.
 
-##### Deploying the artifacts
+#### Deploying the artifacts
 
 - Navigate to scenarios/scenario-16 directory.
 - Prepared petstore swagger definitions `pets_swagger.yaml` and `stores_swagger.yaml` can be found within this directory.
@@ -13,15 +13,16 @@
     
     Base path in `pets_swagger.yaml` file
     ```
-    x-wso2-basePath: /pet/v1
+    x-wso2-basePath: /pet/{version}
     ```
   
     Base path in `stores_swagger.yaml` file
     ```
-    x-wso2-basePath: /store/v1
+    x-wso2-basePath: /store/{version}
     ```
 
 - Init API projects using CLI. This will Initialize a new API project in same directory.
+
     ```sh
     >> apictl init pets-int --oas=pets_swagger.yaml
     
@@ -40,13 +41,11 @@
     ```
 
 - Create API
+
     ```sh
     >> apictl add api -n petstore-multiple-api --from-file=pets-int --from-file=stores-int
-    ```
-  
+
     Output:
-    
-    ```sh
     Processing swagger 1: pets-int
     creating configmap with swagger definition
     configmap/petstore-multiple-api-1-swagger created
@@ -56,27 +55,32 @@
     creating API definition
     api.wso2.com/petstore-multiple-api created
     ```
+  
+    **Optional Parameters**
+    
+    ```
+    --mode=privatejet   Overrides the deploying mode. Available modes: privateJet, sidecar
+    --versio=2.0.0        Used for docker image versioning. Default value is v1.0.0
+
+    >> apictl add api -n "api_name" --from-file=pets-int --from-file=stores-int --mode=privatejet --version=2.0.0
+    ```
     
 - Get available APIs
+
     ```
-    apictl get apis
-    ```
-  
-    Output:
-    
-    ```    
+    >> apictl get apis
+
+    Output:   
     NAME                    AGE
     petstore-multiple-api   57s
     ```
 
 - Get service details to invoke the API. (Please wait until the external-IP is populated in the corresponding service)
-    ```
-    apictl get services
-    ```
-  
-    Output:
     
-    ```sh
+    ```
+    >> apictl get services
+
+    Output:
     NAME                    TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)                         AGE
     petstore-multiple-api   LoadBalancer   10.106.24.198   localhost     9095:30029/TCP,9090:32027/TCP   2m14s  
     ```
@@ -91,7 +95,7 @@
     **Invoke Pets API**
     
     ```sh
-    curl -X GET "https://<external IP of LB service>:9095/pet/v1/pet/1" -H "accept: application/json" -H "Authorization:Bearer $TOKEN" -k
+    >> curl -X GET "https://<external IP of LB service>:9095/pet/v1/pet/1" -H "accept: application/json" -H "Authorization:Bearer $TOKEN" -k
     ```
   
     If the output message is "Pet not found" try with different pet id.
@@ -105,7 +109,7 @@
     **Invoke Stores API**
     
     ```sh
-    curl -X GET "https://<external IP of LB service>:9095/store/v1/store/inventory" -H "accept: application/json" -H "Authorization:Bearer $TOKEN" -k
+    >> curl -X GET "https://<external IP of LB service>:9095/store/v1/store/inventory" -H "accept: application/json" -H "Authorization:Bearer $TOKEN" -k
     ```
   
     Output:
@@ -119,11 +123,8 @@
     Following command will delete all the artifacts created with this API including pods, deployment and services.
     
     ```sh
-    apictl delete api petstore-multiple-api
-    ```
-  
+    >> apictl delete api petstore-multiple-api
+
     Output:
-    
-    ```
     api.wso2.com "petstore-multiple-api" deleted
     ```

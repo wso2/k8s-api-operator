@@ -1,6 +1,6 @@
 ## Scenario 15 - Apply Java interceptors to an API
 
-- This scenario describes how to apply interceptors written in java as .jar files to carry out transformations and mediations on the requests and responses.
+- This scenario describes how to apply interceptors written in Java as .jar files to carry out transformations and mediations on the requests and responses.
 - First, we need to implement custom request interceptors and response interceptors. We have provided sample .jar file in scenario-15. If you want to learn more about implementing custom java interceptors you can refer the document [adding interceptors.](https://docs.wso2.com/display/MG310/Message+Transformation)
 - Then we need to Initialize a new API project and add the .jar files in libs folder.
 - We need to refer the interceptors in swagger definition in order to apply them on the requests and responses.
@@ -10,36 +10,39 @@
 > Follow the main README and deploy the api-operator and configuration files. Make sure to set the analyticsEnabled to "true" and deploy analytics secret with credentials to analytics server and certificate, if you want to check analytics.
 
 
- ##### Deploying the artifacts
+#### Deploying the artifacts
  
- - Init the API project using CLI. This will Initialize a new API project in same directory.
- 
-     ```
-     apictl init petstore-int --oas=swagger.yaml
+- Init the API project using CLI. This will Initialize a new API project in same directory.
+
+    ```
+    >> apictl init petstore-int --oas=swagger.yaml
     
     Output:    
     Initializing a new WSO2 API Manager project in ./product-apim-tooling/import-export-cli/build/target/apimcli/petstore-int
     Project initialized
     Open README file to learn more
-     ```
- - Copy the _mgw-interceptor.jar_ file in scenario-15 into the libs folder in petstore-int/libs path.
-  
+    ```
+- Copy the _mgw-interceptor.jar_ file in scenario-15 into the libs folder in petstore-int/libs path.
+
+    ```
+    >> cp mgw-interceptor.jar petstore-int/libs/
+    ```
+
     ***Note:***  
     > In the above interceptor we have defined a function _interceptRequest_, which validates whether the request has the header "X-API-KEY" and a function _interceptResponse_ send a custom json message if the response contains the key "error". You can find more information [here.](https://docs.wso2.com/display/MG310/Message+Transformation#0057f1e771984fca9b6964fe0e1e1937)
 
 - Java Interceptors can be added to a particular resource or to the whole API as needed. We use OpenAPI extensions to refer interceptors in swagger definition.
-     - java interceptor consists with class  _org.wso2.micro.gateway.interceptor.SampleInterceptor_ which intercept the request and response flows. This will refer in the swagger definition as follow.
-     
-        ```
-        x-wso2-request-interceptor: java:org.wso2.micro.gateway.interceptor.SampleInterceptor
-        x-wso2-response-interceptor: java:org.wso2.micro.gateway.interceptor.SampleInterceptor
-        ```
-- Execute the following to expose pet-store as an API.
-
+- Java interceptor consists with class  _org.wso2.micro.gateway.interceptor.SampleInterceptor_ which intercept the request and response flows. This will refer in the swagger definition as follow.
+ 
+    ```
+    x-wso2-request-interceptor: java:org.wso2.micro.gateway.interceptor.SampleInterceptor
+    x-wso2-response-interceptor: java:org.wso2.micro.gateway.interceptor.SampleInterceptor
+    ```
+ 
 - Create the API
 
     ```
-    apictl add api -n petstore-java-int --from-file=petstore-int
+    >> apictl add api -n petstore-java-int --from-file=petstore-int
     
     Output:
     Processing swagger 1: petstore-int
@@ -53,7 +56,7 @@
 - Get service details to invoke the API. (Please wait until the external-IP is populated in the corresponding service)
 
     ```
-    apictl get services
+    >> apictl get services
     
     Output:
     NAME            TYPE           CLUSTER-IP   EXTERNAL-IP       PORT(S)                         AGE
@@ -70,7 +73,7 @@
     ```
    
     ```
-    curl -X GET "https://<External_IP>:9095/petstore/v1/pet/55"  -H "accept: application/json" -H "Authorization:Bearer $TOKEN" -k
+    >> curl -X GET "https://<External_IP>:9095/petstore/v1/pet/55"  -H "accept: application/json" -H "Authorization:Bearer $TOKEN" -k
     ```
     
     - Once you execute the above command, it will call to the managed API (petstore-int), which then call its endpoint(https://petstore.swagger.io/v2). Since the request header did not contain "X-API-KEY", you would be able to see the error response as below.
@@ -82,7 +85,7 @@
     - Then invoke the API with an "X-API-KEY" header as follows.
     
      ```
-     curl -X GET "https://<External_IP>:9095/petstore/v1/pet/55" -H "accept: application/json" -H "Authorization:Bearer $TOKEN" -H "X-API-KEY: 6fa741de1bdd1d91830ba" -k
+     >> curl -X GET "https://<External_IP>:9095/petstore/v1/pet/55" -H "accept: application/json" -H "Authorization:Bearer $TOKEN" -H "X-API-KEY: 6fa741de1bdd1d91830ba" -k
      ```
             
     - Once you execute the above command, you will get the success response message as follows.
@@ -94,11 +97,9 @@
 - Delete the API
 
     ```
-    apictl delete api petstore-java-int
-    ``` 
-  
-  - Output
-   ```
+    >> apictl delete api petstore-java-int
+    
+    Output:
     api.wso2.com "petstore-java-int" deleted
-   ```
+    ```
   
