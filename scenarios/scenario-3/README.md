@@ -17,17 +17,15 @@
     - In this scenario, we are using username "admin" and password "admin".
     ```$xslt
         apictl apply -f secret-basic.yaml
-    ```
-    - Output:
-    ```$xslt
+    
+    Output:
         secret/secret-basic created
     ```
 - Deploying "Security" custom resource in the k8s cluster.<br /> 
     ```$xslt
         apictl apply -f petstore-basic.yaml
-    ```
-    - Output:
-    ```$xslt
+    
+    Output:
         security.wso2.com/petstorebasic created
     ```
     
@@ -40,21 +38,19 @@
     - Following command with deploy the petstore service as a managed API in the k8s cluster.
     
     ```
-        apictl add api -n petstore-basic --from-file=swagger.yaml
-    ```
-    - Output:
-    ```$xslt
+        apictl add api -n petstore-basic --from-file=swagger.yaml --override
+    
+    Output:
         creating configmap with swagger definition
         configmap/petstore-basic-swagger created
         api.wso2.com/petstore-basic created
     ```
+    Note: ***--override*** flag is used to you want to rebuild the API image even if it exists in the configured docker repository.
 - Check the API's service is deployed<br />
     ```
         apictl get services
-    ```
-    - Sample Output:
     
-    ```
+    Output:
         NAME             TYPE           CLUSTER-IP    EXTERNAL-IP     PORT(S)                         AGE
         petstore-basic   LoadBalancer   10.83.12.78   34.69.182.133   9095:30251/TCP,9090:30985/TCP   113s
     ```
@@ -82,8 +78,7 @@
 
     ```
         apictl delete api petstore-basic
-    ```
-    -  Output:
-    ```
+    
+    Output:
         api.wso2.com "petstore-basic" deleted
     ```

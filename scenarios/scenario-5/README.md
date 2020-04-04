@@ -26,9 +26,7 @@
 - Deploy Kubernetes secret of the public cert of the key manager server and OAuth2 Security custom resource.
     ```$xslt
         apictl apply -f oauth-security.yaml
-    ```
-    - Output:
-    ```$xslt
+    Output:
         security.wso2.com/petstoreoauth created
         secret/wso2am310-secret created
     ```
@@ -46,21 +44,20 @@ In this swagger definition, the security schema of the "petstore" service has be
 
 - Deploy the  API <br /> 
     ```
-        apictl add api -n petstore-oauth --from-file=swagger.yaml
-    ``` 
-    - Output:
-    ```
+        apictl add api -n petstore-oauth --from-file=swagger.yaml --override
+    
+    Output:
         creating configmap with swagger definition
         configmap/petstore-oauth-swagger created
         api.wso2.com/petstore-oauth created
     ```
-    
+    Note: ***--override*** flag is used to you want to rebuild the API image even if it exists in the configured docker repository.
+
 - Get available API <br /> 
     ```
         apictl get apis
-    ```
-    - Output:
-    ```    
+    
+    Output:
         NAME             AGE
         petstore-oauth   3m
     ```
@@ -69,14 +66,13 @@ In this swagger definition, the security schema of the "petstore" service has be
     - Publish the API in WSO2 API Manager deployment.
         - Add the APIM deployment as an environment to the apictl
             ```$xslt
-                apictl add-env -e k8s --registration https://wso2apim:32001/client-registration/v0.16/register --apim https://wso2apim:32001 --token https://wso2apim:32003/token --admin https://wso2apim:32001/api/am/admin/v0.16 --api_list https://wso2apim:32001/api/am/publisher/v1/apis --app_list https://wso2apim:32001/api/am/store/v1/applications
+                apictl add-env -e k8s --apim https://wso2apim:32001 --token https://wso2apim:32001/oauth2/token
             ```
         - Create the API project using swagger file with setting the initial state to `PUBLISHED`.
             ```$xslt
                 apictl init petstore-oauth --oas=swagger.yaml --initial-state=PUBLISHED
-            ```
-            - Output:
-            ```$xslt
+            
+            Output:
                 Initializing a new WSO2 API Manager project in /home/wso2/k8s-api-operator/scenarios/scenario-5/petstore-oauth
                 Project initialized
                 Open README file to learn more
@@ -85,9 +81,8 @@ In this swagger definition, the security schema of the "petstore" service has be
         - Import the API to API Manager deployment
             ```$xslt
                 apictl import-api -f petstore-oauth -e k8s -k
-            ```
-            - Output:
-            ```$xslt
+            
+            Output:
                 Login to k8s
                 Username:admin
                 Password:
@@ -102,18 +97,15 @@ In this swagger definition, the security schema of the "petstore" service has be
         - Obtain OAuth2 access token
             ```$xslt
                 apictl set --token-type oauth
-            ```
-            - Output: 
-            ```$xslt
+            Output: 
                 Token type set to:  oauth
             ```
             - Subscribe the API to to default application and get an access token using the following command.
                 
             ```    
                 apictl get-keys -n Petstore-Oauth -v v1 -r admin -k -e k8s
-            ```
-            - Output: 
-            ```
+            
+            Output: 
                 API name:  Petstore-Oauth & version:  v1 exists
                 API  Petstore-Oauth : v1 subscribed successfully.
                 Access Token:  a68e6467-023e-3670-909c-11752449997e
@@ -123,10 +115,8 @@ In this swagger definition, the security schema of the "petstore" service has be
     - Get service details to invoke the API. (Please wait until the external-IP is populated in the corresponding service)
         ```
             apictl get services
-        ```
-        - Output:
         
-        ```
+        Output:  
             NAME             TYPE           CLUSTER-IP     EXTERNAL-IP     PORT(S)                         AGE
             petstore-oauth   LoadBalancer   10.83.10.125   35.188.53.193   9095:32465/TCP,9090:30163/TCP   4m39s
         ```
@@ -146,8 +136,7 @@ In this swagger definition, the security schema of the "petstore" service has be
     - Following command will delete all the artifacts created with this API including pods, deployment and services.
     ```
         apictl delete api petstore-oauth
-    ```
-    -  Output:
-    ```
+    
+    Output:
         api.wso2.com "petstore-oauth" deleted
     ```
