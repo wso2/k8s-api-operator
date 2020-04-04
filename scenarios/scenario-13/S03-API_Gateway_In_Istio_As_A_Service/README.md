@@ -34,16 +34,20 @@ This works in Istio permissive mode and Strict MTLS mode.
 
 #### Step 1: Configure API Controller
 
-- Download API controller v3.1.0-customized for your operating system from the [github](https://github.com/wso2/K8s-api-operator/tree/v1.1.0)
+- Download API controller v3.1.0 from the [API Manager Tooling web site](https://wso2.com/api-management/tooling/)
+    
+    - Under Dev-Ops Tooling section, you can download the tool based on your operating system.
 
 - Extract the API controller distribution and navigate inside the extracted folder using the command-line tool
 
 - Add the location of the extracted folder to your system's $PATH variable to be able to access the executable from anywhere.
 
-You can find available operations using the below command.
-```
->> apictl --help
-```
+- You can find available operations using the below command.
+    
+  ```
+  >> apictl --help
+  ```
+<br />
 
 #### Step 2: Install API Operator
 
@@ -82,8 +86,9 @@ You can find available operations using the below command.
     
     [Setting to K8s Mode]
     ```
+<br />
 
-#### Step 3: Deploy the product microservices
+#### Step 3: Deploy Microservices
 
 - When you execute this command, it creates a namespace called micro and enable Istio sidecar injection for that namespace. Also this deploys 3 microservices.
 
@@ -99,6 +104,7 @@ You can find available operations using the below command.
     products-8d478dd48-2kgdk     2/2     Running   0          9m
     review-677dd8fbd8-9ntth      2/2     Running   0          9m
     ```
+<br />
 
 #### Step 4: Deploy an API for the microservices
 
@@ -115,6 +121,7 @@ You can find available operations using the below command.
     online-store-api-sc-5748695f7b-jxnpf                           2/2     Running     0          14m
     online-store-api-sc-kaniko-b5hqb                               0/1     Completed   0          14m
     ```
+<br />
 
 #### Step 5: Setup routing in Istio
 
@@ -123,6 +130,7 @@ You can find available operations using the below command.
     ```
     >> apictl create -f gateway-virtualservice.yaml
     ```
+<br />
 
 #### Step 6: Invoke the API
 
@@ -161,4 +169,4 @@ You can find available operations using the below command.
      >> curl -X GET "http://api.wso2.com/storemep/v1.0.0/review/101" -H "Authorization:Bearer $TOKEN"
      ```
 
-**Note:** In the microgateway, only 1 API is exposed in this sample. Like in the example, you can deploy multiple microservices in Istio. Then you can expose those microservices via the API microgateway.
+    **Note:** In the microgateway, only 1 API is exposed in this sample. Like in the example, you can deploy multiple microservices in Istio. Then you can expose those microservices via the API microgateway.

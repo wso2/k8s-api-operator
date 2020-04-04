@@ -102,7 +102,9 @@ In this document, we will walk through on the following.
 
 #### Step 2: Configure API Controller
 
-- Download API controller v3.1.0-customized for your operating system from the [github](https://github.com/wso2/K8s-api-operator/releases/tag/v1.1.0)
+- Download API controller v3.1.0 from the [API Manager Tooling web site](https://wso2.com/api-management/tooling/)
+    
+    - Under Dev-Ops Tooling section, you can download the tool based on your operating system.
 
 - Extract the API controller distribution and navigate inside the extracted folder using the command-line tool
 

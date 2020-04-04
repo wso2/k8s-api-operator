@@ -34,16 +34,20 @@ This works in Istio permissive mode and Strict MTLS mode.
 
 #### Step 1: Configure API Controller
 
-- Download API controller v3.1.0-customized for your operating system from the [github](https://github.com/wso2/K8s-api-operator/tree/v1.1.0)
+- Download API controller v3.1.0 from the [API Manager Tooling web site](https://wso2.com/api-management/tooling/)
+    
+    - Under Dev-Ops Tooling section, you can download the tool based on your operating system.
 
 - Extract the API controller distribution and navigate inside the extracted folder using the command-line tool
 
 - Add the location of the extracted folder to your system's $PATH variable to be able to access the executable from anywhere.
 
-    You can find available operations using the below command.
-    ```
-    >> apictl --help
-    ```
+- You can find available operations using the below command.
+    
+  ```
+  >> apictl --help
+  ```
+<br />
 
 #### Step 2: Install API Operator
 
@@ -53,7 +57,7 @@ This works in Istio permissive mode and Strict MTLS mode.
 - Enter username and the password
 - Confirm configuration are correct with entering "Y"
 
-    ```sh
+    ```
     >> apictl install api-operator
     Choose registry type:
     1: Docker Hub (Or others, quay.io, HTTPS registry)
@@ -71,7 +75,7 @@ This works in Istio permissive mode and Strict MTLS mode.
     ```
 
     Output:
-    ```sh
+    ```
     customresourcedefinition.apiextensions.k8s.io/apis.wso2.com created
     customresourcedefinition.apiextensions.k8s.io/ratelimitings.wso2.com created
     ...
@@ -82,6 +86,7 @@ This works in Istio permissive mode and Strict MTLS mode.
     
     [Setting to K8s Mode]
     ```
+<br />
 
 #### Step 3: Deploy Microservices
 
@@ -98,6 +103,7 @@ This works in Istio permissive mode and Strict MTLS mode.
     products-8d478dd48-2kgdk     2/2     Running   0          9m
     review-677dd8fbd8-9ntth      2/2     Running   0          9m
     ```
+<br />
 
 #### Step 4: Deploy an API for the microservices
 
@@ -114,6 +120,7 @@ This works in Istio permissive mode and Strict MTLS mode.
     online-store-api-mlts-5748695f7b-jxnpf                           1/1     Running     0          14m
     online-store-api-mlts-kaniko-b5hqb                               0/1     Completed   0          14m
     ```
+<br />
 
 #### Step 5: Setup routing in Istio
 
@@ -122,7 +129,8 @@ This works in Istio permissive mode and Strict MTLS mode.
     ```
     >> apictl create -f gateway-virtualservice.yaml
     ```
-    
+<br />
+
 #### Step 6: Invoke the API
  
 - Retrieve the API service endpoint details
