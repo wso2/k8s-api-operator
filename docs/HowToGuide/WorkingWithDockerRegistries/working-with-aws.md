@@ -21,10 +21,8 @@ For the following case it is `my-esk-cluster` and configure `kubectl` as follows
 Test your configuration.
 ```sh
 >> kubectl get svc
-```
 
 Output:
-```sh
 NAME         TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
 kubernetes   ClusterIP   10.100.0.1   <none>        443/TCP   1m
 ```
@@ -63,9 +61,8 @@ Repository     : 111222333444.dkr.ecr.us-east-1.amazonaws.com/my-ecr-repo
 Credential File: /Users/wso2/.aws/credentials
 Confirm configurations: Y:
 ```
-
-Output:
 ```sh
+Output:
 [Installing OLM]
 customresourcedefinition.apiextensions.k8s.io/clusterserviceversions.operators.coreos.com created
 ...
@@ -95,8 +92,8 @@ Uninstall "api-operator" and all related resources: APIs, Securities, Rate Limit
 Are you sure: N: Y
 ```
 
-Output:
 ```sh
+Output:
 Deleting kubernetes resources for API Operator
 Removing namespace: wso2-system
 This operation will take some minutes...

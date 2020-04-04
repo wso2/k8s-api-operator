@@ -27,8 +27,8 @@ GCR service account key json file: /path/to/gcr/service/account/key/file.json
 Confirm configurations: Y:
 ```
 
-Output:
 ```sh
+Output:
 [Installing OLM]
 customresourcedefinition.apiextensions.k8s.io/clusterserviceversions.operators.coreos.com created
 ...
@@ -40,4 +40,32 @@ namespace/wso2-system created
 ...
 
 [Setting to K8s Mode]
+```
+
+## Try out
+Try out [sample scenarios](../../GettingStarted/quick-start-guide.md#sample-scenarios) in the quick start guide.
+
+## Clean up
+
+- Delete images created by operator in GCR repository.
+- Uninstall the operator
+
+```sh
+>> apictl uninstall api-operator
+
+Uninstall "api-operator" and all related resources: APIs, Securities, Rate Limitings and Target Endpoints
+[WARNING] Remove the namespace: wso2-system
+Are you sure: N: Y
+```
+
+```sh
+Output:
+Deleting kubernetes resources for API Operator
+Removing namespace: wso2-system
+This operation will take some minutes...
+namespace "wso2-system" deleted
+customresourcedefinition.apiextensions.k8s.io "apis.wso2.com" deleted
+customresourcedefinition.apiextensions.k8s.io "securities.wso2.com" deleted
+customresourcedefinition.apiextensions.k8s.io "ratelimitings.wso2.com" deleted
+customresourcedefinition.apiextensions.k8s.io "targetendpoints.wso2.com" deleted
 ```
