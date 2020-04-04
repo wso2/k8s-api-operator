@@ -815,13 +815,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 		// if kaniko job is succeeded, edit the deployment
 		if kubeJob.Status.Succeeded > 0 {
-			// Kaniko completed pushing the image and `isImageExists` becomes true. But kaniko job exists
-			// delete the completed kaniko job if it exists
-			errDeleteJob := deleteCompletedJobs(instance.Namespace)
-			if errDeleteJob != nil {
-				log.Error(errDeleteJob, "error deleting completed jobs")
-			}
-
 			if genArtifacts {
 				reqLogger.Info("Job completed successfully", "Job.Namespace", job.Namespace, "Job.Name", job.Name)
 				if deperr != nil && errors.IsNotFound(deperr) {
@@ -891,12 +884,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	} else if imageExist && !instance.Spec.Override {
 		log.Info("Image already exist, hence skipping the kaniko job")
-
-		// delete completed kaniko job
-		errDeleteJob := deleteCompletedJobs(instance.Namespace)
-		if errDeleteJob != nil {
-			log.Error(errDeleteJob, "error deleting completed jobs")
-		}
 
 		if genArtifacts {
 			log.Info("generating kubernetes artifacts")
@@ -975,12 +962,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 		if kubeJob.Status.Succeeded > 0 {
 			reqLogger.Info("Job completed successfully", "Job.Namespace", job.Namespace, "Job.Name", job.Name)
-			// delete completed kaniko job
-			// this delete only happens in override scenario
-			errDeleteJob := deleteCompletedJobs(instance.Namespace)
-			if errDeleteJob != nil {
-				log.Error(errDeleteJob, "error deleting completed jobs")
-			}
 
 			if genArtifacts {
 				if deperr != nil && errors.IsNotFound(deperr) {
