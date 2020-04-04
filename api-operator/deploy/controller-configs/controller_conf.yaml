@@ -21,9 +21,9 @@ metadata:
   namespace: wso2-system
 data:
   #mgw toolkit image to initialize/setup the micro gw project
-  mgwToolkitImg: wso2am/wso2micro-gw-toolkit:3.1.0-rc2
+  mgwToolkitImg: wso2am/wso2micro-gw-toolkit:3.1.0
   #mgw runtime image to use in the mgw executable
-  mgwRuntimeImg: wso2/wso2micro-gw:3.1.0-rc2
+  mgwRuntimeImg: wso2/wso2micro-gw:3.1.0
   #kaniko image for the kaniko pod which builds the mgw api runtime and pushes to the registry
   kanikoImg: gcr.io/kaniko-project/executor:v0.18.0
   #Maximum number of replicas for the Horizontal Pod Auto-scale. Default->  hpaMaxReplicas: "5"
@@ -39,11 +39,11 @@ data:
   #Max Memory usage limit a pod can use.   Default->  resourceLimitMemory: "512Mi"
   resourceLimitMemory: "512Mi"
 
-  resourceRequestCPUTarget: "1000m"
+  resourceRequestCPUTarget: "500m"
   #Required Memory usage pods can use for TargetEndPoint.   Default->  resourceRequestMemory: "512Mi"
   resourceRequestMemoryTarget: "512Mi"
   #Max CPU usage limit a pod can use for TargetEndPoint.   Default->  resourceLimitCPU: "2000m"
-  resourceLimitCPUTarget: "2000m"
+  resourceLimitCPUTarget: "500m"
   #Max Memory usage limit a pod can use for TargetEndPoint.   Default->  resourceLimitMemory: "512Mi"
   resourceLimitMemoryTarget: "512Mi"
   #Configure readiness probe initial delay for API pod
@@ -57,16 +57,9 @@ data:
   #Stop at docker image creation or continue to deploy kubernetes artifact.
   #Default->  generatekubernbetesartifactsformgw: "true"
   generatekubernbetesartifactsformgw: "true"
-  #Available modes - ingress, default and clusterIP
+  #Available modes - ingress, default , route and clusterIP
   operatorMode: "default"
-  #Ingress resource name
-  ingressResourceName: "api-operator-ingress"
-  #Define whether ingress to use http or https endpoint of operator deployment
-  ingressTransportMode: "https"
-  #Define the hostname of the ingress
-  ingressHostName : "mgw.ingress.wso2.com"
-  #Define the secret name for TLS certificate
-  #tlsSecretName: ""
+
 
 ---
 apiVersion: v1
@@ -130,12 +123,15 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: openshift-configs
+  name: route-configs
   namespace: wso2-system
 data:
+  route.properties: |
+    openshift.io/host.generated: false
   routeName: "api-operator-route"
   #Define whether Route to use http or https endpoint of operator deployment
   routeTransportMode: "http"
   #Define the hostname of the Route
   routeHost : "mgw.route.wso2.com"
-
+  # TLS termination - passthrough, edge, reencrypt
+  tlsTermination: ""

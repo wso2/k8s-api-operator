@@ -230,7 +230,7 @@ func (r *ReconcileTargetEndpoint) Reconcile(request reconcile.Request) (reconcil
 func (r *ReconcileTargetEndpoint) newDeploymentForCR(m *wso2v1alpha1.TargetEndpoint, resourceReqCPU string, resourceReqMemory string,
 	resourceLimitCPU string, resourceLimitMemory string, minReplicas int32) *appsv1.Deployment {
 
-	replicas := minReplicas
+	replicas := int32(minReplicas)
 
 	req := corev1.ResourceList{
 		corev1.ResourceCPU:    resource.MustParse(resourceReqCPU),
@@ -309,7 +309,6 @@ func (r *ReconcileTargetEndpoint) newKnativeDeploymentForCR(m *wso2v1alpha1.Targ
 									Image: m.Spec.Deploy.DockerImage,
 									Name:  m.Spec.Deploy.Name,
 									Ports: []corev1.ContainerPort{{
-										Name: m.Spec.Protocol + "-" + portKey,
 										ContainerPort: m.Spec.Port,
 									}},
 								},

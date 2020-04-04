@@ -26,22 +26,20 @@ spec:
     plural: ratelimitings
     singular: ratelimiting
   scope: Namespaced
+  subresources:
+    status: {}
   validation:
     openAPIV3Schema:
       properties:
         apiVersion:
-          description: >-
-            APIVersion defines the versioned schema of this representation of an
-            object. Servers should convert recognized schemas to the latest
-            internal value, and may reject unrecognized values. More info:
-            https://git.k8s.io/community/contributors/devel/api-conventions.md#resources
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
           type: string
         kind:
-          description: >-
-            Kind is a string value representing the REST resource this object
-            represents. Servers may infer this from the endpoint the client
-            submits requests to. Cannot be updated. In CamelCase. More info:
-            https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
           type: string
         metadata:
           type: object
@@ -54,8 +52,8 @@ spec:
                 dataUnit:
                   type: string
               required:
-                - dataAmount
-                - dataUnit
+              - dataAmount
+              - dataUnit
               type: object
             conditions:
               properties:
@@ -66,8 +64,8 @@ spec:
                     headerValue:
                       type: string
                   required:
-                    - headerName
-                    - headerValue
+                  - headerName
+                  - headerValue
                   type: object
                 ipCondition:
                   properties:
@@ -82,15 +80,15 @@ spec:
                     type:
                       type: string
                   required:
-                    - type
-                    - specificIp
-                    - negation
-                    - startIp
-                    - endIp
+                  - type
+                  - specificIp
+                  - negation
+                  - startIp
+                  - endIp
                   type: object
               required:
-                - headerCondition
-                - ipCondition
+              - headerCondition
+              - ipCondition
               type: object
             description:
               type: string
@@ -100,7 +98,7 @@ spec:
                   format: int64
                   type: integer
               required:
-                - limit
+              - limit
               type: object
             stopOnQuotaReach:
               type: boolean
@@ -112,13 +110,13 @@ spec:
               format: int64
               type: integer
           required:
-            - type
-            - timeUnit
-            - unitTime
-            - requestCount
+          - type
+          - timeUnit
+          - unitTime
+          - requestCount
           type: object
   version: v1alpha1
   versions:
-    - name: v1alpha1
-      served: true
-      storage: true
+  - name: v1alpha1
+    served: true
+    storage: true

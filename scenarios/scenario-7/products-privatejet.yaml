@@ -26,7 +26,7 @@ spec:
   targetPort: 9090
   deploy:
     name: products-pj-service
-    dockerImage: pubudu/inventory:1.0.0
+    dockerImage: pubudu/products:1.0.0
     minReplicas: 2
     maxReplicas: 3
     requestCPU: "60m"

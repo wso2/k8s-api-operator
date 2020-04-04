@@ -56,6 +56,18 @@
             <useDefaultExcludes>true</useDefaultExcludes>
         </fileSet>
         <fileSet>
+            <directory>../api-operator/deploy/controller-artifacts</directory>
+            <outputDirectory>/api-operator/operatorhub-controller-configs/</outputDirectory>
+            <includes>
+                <include>namespace.yaml</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>../api-operator/deploy/controller-configs</directory>
+            <outputDirectory>/api-operator/operatorhub-controller-configs/</outputDirectory>
+            <useDefaultExcludes>true</useDefaultExcludes>
+        </fileSet>
+        <fileSet>
             <useDefaultExcludes>true</useDefaultExcludes>
             <outputDirectory>/k8s-artifacts</outputDirectory>
             <directory>../k8s-artifacts</directory>
