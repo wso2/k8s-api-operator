@@ -33,7 +33,7 @@ spec:
       containers:
         - name: api-operator
           # Replace this with the built image name
-          image: dinushad/apioperator-testing:v1
+          image: wso2/k8s-api-operator:1.1.0
           command:
           - api-operator
           imagePullPolicy: Always
