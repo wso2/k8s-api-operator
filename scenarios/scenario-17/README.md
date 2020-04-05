@@ -161,7 +161,7 @@ In the approach, it has the following flow and it uses only https protocol in th
  - Create a tls secret using that TLS certificate.
  
     ```
-    apictl create secret tls tls-secret --key tls.key --cert tls.crt -n wso2-system
+    >> apictl create secret tls tls-secret --key tls.key --cert tls.crt -n wso2-system
     
     Output:
     secret/tls-secret created

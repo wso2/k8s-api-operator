@@ -164,7 +164,7 @@ In this document, we will walk through on the following.
 - Install the WSO2AM Operator in Kubernetes.
 
     ```
-    >> apictl install wso2am-operator -f https://bit.ly/2X1ICQr
+    >> apictl install wso2am-operator
     
     namespace/wso2-system created
     serviceaccount/wso2am-pattern-1-svc-account created

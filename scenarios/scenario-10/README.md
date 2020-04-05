@@ -138,10 +138,8 @@
 
     ```sh
     >> apictl delete api petstore-int
-    ``` 
-  
-  - Output
-    ```sh
+    
+    Output:
     api.wso2.com "petstore-int" deleted
     ``` 
   
