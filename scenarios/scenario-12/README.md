@@ -34,13 +34,13 @@
  - Prepared petstore basic swagger definition can be found within this directory.
  - Rate limiting policies to be applied on the API, should be mentioned in the swagger file with the "***x-wso2-throttling-tier***" extension.
 In this swagger definition, the rate limiting policy has been mentioned as follows.
-    ```
+    ```sh
     x-wso2-throttling-tier: fourreqpolicy
     ```
  - Execute the following to expose pet-store as an API.
 
  - Create API with 2 replicas <br /> 
-    ``` sh
+    ```sh
     >> apictl add api -n petstore-dist-rate --from-file=swagger.yaml --replicas=2
   
     Output:
@@ -95,9 +95,8 @@ In this swagger definition, the rate limiting policy has been mentioned as follo
 2. **When distributed throttling is enabled**
 
     - To enable distributed rate limiting we need a central traffic management system. We will use the API Portal as the central traffic management system here.
-
-     ***Important:***
-    > Deploy the API Portal if you have not already deployed it. Refer the [Install the API portal and security token service](../../README.md#step-4-install-the-api-portal-and-security-token-service).
+        ***Important:***
+        > Deploy the API Portal if you have not already deployed it. Refer the [Install the API portal and security token service](../../README.md#step-4-install-the-api-portal-and-security-token-service).
 
     - When distributed throttling is enabled, the API Microgateway upon recieving a request, checks against the local counter and if throttling limit  has not exceeded it publishes the events via a stream to a central traffic management solution. This is done over HTTP. The  central traffic management solution then  executes throttle policies against the events streams. When a particular request is throttled, the  central traffic management solution sends the details of the throttled out event to a JMS topic. Each API Microgateway node is subscribed to this JMS topic, and updates the local counter when the JMS topic is updated.  Hence the API Microgateway nodes gets notified of the throttle decisions through JMS messages.
 
@@ -108,7 +107,7 @@ In this swagger definition, the rate limiting policy has been mentioned as follo
         enabledGlobalTMEventPublishing: "true"
         #The central traffic management solution URL (related to distributed ratelimiting)
         #Format: hostname_of_API_Portal:Default_port
-        throttleEndpoint: "wso2apim.wso2:32001"
+        throttleEndpoint: "wso2apim.wso2:9443"
         #Message broker connection URL (related to distributed ratelimiting and token revocation)
         #Format: hostname_of_API_Portal:JMS_port
         jmsConnectionProvider: "wso2apim.wso2:5672"
@@ -140,7 +139,7 @@ In this swagger definition, the rate limiting policy has been mentioned as follo
     - Invoke the API as you did in the earlier case and observe that now only 4 requests are allowed per minute, and the 5th request is throttled out
 
 - Delete the  API <br /> 
-    - Following command will delete all the artifacts created with this API including pods, deployment and services.
+    Following command will delete all the artifacts created with this API including pods, deployment and services.
     ```sh
     >> apictl delete api petstore-dist-rate
     >> apictl delete -f k8s-artifacts/api-portal/wso2-namespace.yaml
