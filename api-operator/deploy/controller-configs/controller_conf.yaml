@@ -79,7 +79,7 @@ data:
   enabledGlobalTMEventPublishing: "false"
   #The central traffic management solution URL (related to distributed ratelimiting)
   #Format: hostname_of_API_Portal:Default_port
-  throttleEndpoint: "wso2apim.wso2:32001"
+  throttleEndpoint: "wso2apim.wso2:9443"
   #Message broker connection URL (related to distributed ratelimiting and token revocation)
   #Format: hostname_of_API_Portal:JMS_port
   jmsConnectionProvider: "wso2apim.wso2:5672"

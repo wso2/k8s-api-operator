@@ -93,6 +93,7 @@
     ```json
     {"id":55, "category":{"id":55, "name":"string"}, "name":"SRC_TIME_SIZE", "photoUrls":["string"], "tags":[{"id":55, "name":"string"}], "status":"available"}
     ```
+    **Note:** If the response message is "Pet not found" try with different pet id.
 
 - Delete the API
 
