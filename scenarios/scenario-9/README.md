@@ -121,7 +121,7 @@ Backend endpoint of the API should be mentioned in the swagger file with the "x-
 
 - Deploy the API <br /> 
     ```
-    >> apictl add api -n online-store-api --from-file=swagger.yaml --override=true
+    >> apictl add api -n online-store-api --from-file=swagger.yaml --override
     
     Output:
     Processing swagger 1: swagger.yaml
