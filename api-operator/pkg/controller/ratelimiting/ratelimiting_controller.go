@@ -179,9 +179,7 @@ func (r *ReconcileRateLimiting) Reconcile(request reconcile.Request) (reconcile.
 	unitTime := instance.Spec.UnitTime
 	timeUnit := instance.Spec.TimeUnit
 	policyobj := Policy{Count: count, UnitTime: unitTime, TimeUnit: timeUnit}
-	newPolObj := map[string]Policy{
-		name: policyobj,
-	}
+
 	oldStruct := PolicyYaml{}
 	unmarshalEr := yaml.Unmarshal([]byte(olddata), &oldStruct)
 
@@ -196,18 +194,18 @@ func (r *ReconcileRateLimiting) Reconcile(request reconcile.Request) (reconcile.
 	var newSub []map[string]Policy
 	var newApp []map[string]Policy
 
-	if policyType == resourceConst && !IsPolicyExist(oldRes, name) {
-		newRes = append(oldRes, newPolObj)
+	if policyType == resourceConst {
+		newRes = *(getUpdatedPolicy(oldRes, name, policyobj))
 		newSub = oldSub
 		newApp = oldApp
-	} else if policyType == subscriptionConst && !IsPolicyExist(oldSub, name) {
+	} else if policyType == subscriptionConst {
 		newRes = oldRes
-		newSub = append(oldSub, newPolObj)
+		newSub = *(getUpdatedPolicy(oldSub, name, policyobj))
 		newApp = oldApp
-	} else if policyType == applicationConst && !IsPolicyExist(oldApp, name) {
+	} else if policyType == applicationConst {
 		newRes = oldRes
 		newSub = oldSub
-		newApp = append(oldApp, newPolObj)
+		newApp = *(getUpdatedPolicy(oldApp, name, policyobj))
 	}
 
 	outbyte, yamler := yaml.Marshal(&PolicyYaml{ResourcePolicies: newRes, SubscriptionPolicies: newSub, ApplicationPolicies: newApp})
@@ -253,17 +251,24 @@ func CreatePolicyConfigMap(output string, operatorOwner []metav1.OwnerReference,
 	}, nil
 }
 
-//IsPolicyExist checks if the policy already exists in the existing policy map
-func IsPolicyExist(policyArrayMap []map[string]Policy, name string) bool {
-
-	oldPolicies := policyArrayMap[0]
-	if policy, exist := oldPolicies[name]; exist {
-		fmt.Println("Key found value is: ", policy)
-		return true
-	} else {
-		fmt.Println("Key not found")
-		return false
+// getUpdatedPolicy returns the updated policy array with given new policy
+func getUpdatedPolicy(policyArrayMap []map[string]Policy, name string, newPolicy Policy) *[]map[string]Policy {
+	updatePolicyArr := policyArrayMap
+	newPolObj := map[string]Policy{
+		name: newPolicy,
 	}
+
+	for i, policy := range policyArrayMap {
+		if _, exist := policy[name]; exist {
+			// apply change if it is exists
+			updatePolicyArr[i] = newPolObj
+			return &updatePolicyArr
+		}
+	}
+
+	// add new if it is not exists
+	updatePolicyArr = append(updatePolicyArr, newPolObj)
+	return &updatePolicyArr
 }
 
 // CreateDefault creates the structure of policy yaml with default policies
