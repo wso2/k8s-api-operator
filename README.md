@@ -48,7 +48,7 @@ In this document, we will walk through on the following.
 
 - Let’s deploy a sample microservice in K8s which lists the details of products. This will deploy a pod and service for the sample service.
 
-    ```
+    ```sh
     >> kubectl apply -f scenarios/scenario-1/products_dep.yaml
     service/products created
     deployment.apps/products-deployment created
@@ -56,7 +56,7 @@ In this document, we will walk through on the following.
 
     The following command will give you the details of the microservice.
 
-    ```
+    ```sh
     >> kubectl get services products
   
     Output:
@@ -71,7 +71,7 @@ In this document, we will walk through on the following.
     
     - On Minikube, the LoadBalancer type makes the Service accessible through the minikube service command.
     
-        ```
+        ```sh
         >> minikube service <SERVICE_NAME> --url
         >> minikube service products --url
         ```
@@ -85,14 +85,14 @@ In this document, we will walk through on the following.
 <br>
 
 - To test the microservice, execute the following commands.
-    ```
+    ```sh
     >> curl -X GET http://<EXTERNAL-IP>:80/products
          
     Output:
     {"products":[{"name":"Apples", "id":101, "price":"$1.49 / lb"}, {"name":"Macaroni & Cheese", "id":151, "price":"$7.69"}, {"name":"ABC Smart TV", "id":301, "price":"$399.99"}, {"name":"Motor Oil", "id":401, "price":"$22.88"}, {"name":"Floral Sleeveless Blouse", "id":501, "price":"$21.50"}]}
     ```
    
-    ```
+    ```sh
     >> curl -X GET http://<EXTERNAL-IP>:80/products/101
          
     Output:
@@ -112,7 +112,7 @@ In this document, we will walk through on the following.
 
 - You can find available operations using the below command.
     
-  ```
+  ```sh
   >> apictl --help
   ```
 <br />
@@ -163,7 +163,7 @@ In this document, we will walk through on the following.
 
 - Install the WSO2AM Operator in Kubernetes.
 
-    ```
+    ```sh
     >> apictl install wso2am-operator
     
     namespace/wso2-system created
@@ -176,7 +176,7 @@ In this document, we will walk through on the following.
 
 - Install API Portal and security token service under a namespace called "wso2"
 
-    ```
+    ```sh
     >> apictl apply -f k8s-artifacts/wso2am-operator/api-portal/
     
     Output:
@@ -187,7 +187,7 @@ In this document, we will walk through on the following.
 
 - Access API Portal and security token service
 
-    ```
+    ```sh
     >> apictl get pods -n wso2
     
     Output:
@@ -227,8 +227,8 @@ The endpoint of our microservice is referred in the API definition.
 
 - Deploy the API using the following command
 
-    ```
-    >> apictl add api -n "api_name" --from-file="location to the Open API definition"
+    ```sh
+    >> apictl add api -n <API_NAME> --from-file=<LOCATION_TO_THE_OPEN_API_DEFINITION>
     
     >> apictl add api -n online-store --from-file=scenarios/scenario-1/products_swagger.yaml
     
@@ -240,12 +240,12 @@ The endpoint of our microservice is referred in the API definition.
 
     Optional Parameters
     
-    ```
+    ```sh
     --replicas=3          Number of replicas
     --namespace=wso2      Namespace to deploy the API
     --override            Overwrite the docker image creation for already created docker image
     
-    >> apictl add api -n "api_name" --from-file="location to the api swagger definition" --replicas="number of replicas" --namespace="desired namespace"
+    >> apictl add api -n <API_NAME> --from-file=<LOCATION_TO_THE_OPEN_API_DEFINITION> --replicas=<NUMBER_OF_REPLICAS> --namespace=<DESIRED_NAMESPACE>
     ```
 
     **_Note:_** Namespace and replicas are optional parameters. If they are not provided, the default namespace will be used and 1 replica will be created. 
@@ -258,7 +258,7 @@ The endpoint of our microservice is referred in the API definition.
 
     If you list down the pods immediately after the add API command you will only see the pod related to Kaniko job. Once it is completed you will see the deployed API. If you are on Minikube, this might take several minutes.
 
-    ```
+    ```sh
     >> apictl get pods 
     
     Output:
@@ -268,7 +268,7 @@ The endpoint of our microservice is referred in the API definition.
 
     If you execute the same command after sometime you will see the managed API has been deployed after the Kaniko job.
 
-    ```
+    ```sh
     >> apictl get pods 
     
     Output:
@@ -295,7 +295,7 @@ The endpoint of our microservice is referred in the API definition.
 
     The API service is exposed as the Load Balancer service type. You can get the API service endpoint details by using the following command.
 
-    ```
+    ```sh
     >> apictl get services
     
     Output:
@@ -310,7 +310,7 @@ The endpoint of our microservice is referred in the API definition.
     
     - On Minikube, the LoadBalancer type makes the Service accessible through the minikube service command.
     
-        ```
+        ```sh
         >> minikube service <SERVICE_NAME> --url
         >> minikube service online-store --url
         ```
@@ -325,13 +325,13 @@ The endpoint of our microservice is referred in the API definition.
 - Invoke the API as a regular microservice
 
     Let’s observe what happens if you try to invoke the API as a regular microservice.
-    ```
+    ```sh
     >> curl -X GET "https://<EXTERNAL-IP>:9095/store/v1.0.0/products" -k
     ```
     
     You will get an error as below.
     
-    ```
+    ```json
     {"fault":{"code":900902, "message":"Missing Credentials", "description":"Missing Credentials. Make sure your API invocation call has a header: \"Authorization\""}}
     ```
     
@@ -341,12 +341,12 @@ The endpoint of our microservice is referred in the API definition.
 
     You can find a sample token below.
     
-    ```
+    ```sh
    TOKEN=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6Ik5UZG1aak00WkRrM05qWTBZemM1TW1abU9EZ3dNVEUzTVdZd05ERTVNV1JsWkRnNE56YzRaQT09In0.eyJhdWQiOiJodHRwOlwvXC9vcmcud3NvMi5hcGltZ3RcL2dhdGV3YXkiLCJzdWIiOiJhZG1pbkBjYXJib24uc3VwZXIiLCJhcHBsaWNhdGlvbiI6eyJvd25lciI6ImFkbWluIiwidGllciI6IjEwUGVyTWluIiwibmFtZSI6InNhbXBsZS1jcmQtYXBwbGljYXRpb24iLCJpZCI6NCwidXVpZCI6bnVsbH0sInNjb3BlIjoiYW1fYXBwbGljYXRpb25fc2NvcGUgZGVmYXVsdCIsImlzcyI6Imh0dHBzOlwvXC93c28yYXBpbTozMjAwMVwvb2F1dGgyXC90b2tlbiIsInRpZXJJbmZvIjp7fSwia2V5dHlwZSI6IlBST0RVQ1RJT04iLCJzdWJzY3JpYmVkQVBJcyI6W10sImNvbnN1bWVyS2V5IjoieF8xal83MW11dXZCb01SRjFLZnVLdThNOVVRYSIsImV4cCI6MzczMTQ5Mjg2MSwiaWF0IjoxNTg0MDA5MjE0LCJqdGkiOiJkYTA5Mjg2Yy03OGEzLTQ4YjgtYmFiNy1hYWZiYzhiMTUxNTQifQ.MKmGDwh855NrZ2wOvXO7TwFbCtsgsOFuoZW4DBVIbJ1KQ2F6TgTgBbtzBUvrYGPslEExMemhepfvvlYv8Gd6MMo3GVH4aO8AKyc8gHmeIQ8MQtXGn7u9N00ZW3_9JWaQkU-OYEDsLHvKKHzO0t2umaskSyCS2UkAS4wIT_szZ5sm-O-ez4nKGeJmESiV-1EchFjOhLpEH4p9wIj3MlKnZrIcJByRKK9ZGaHBqxwwYuJtMCDNa2wFAPMOh-45eabIUdo1KUO3gZLVcME93aza1t1jzL9mFsx0LGaXIxB7klrDuBCAdG9Yi3O7-3WUF74QaS2tmCxW36JhhOJ5DdacfQ
     ```
     Copy and paste the above token in the command line. Now you can invoke the API using the cURL command as below.
     
-    ```
+    ```sh
     Format: 
     
     >> curl -X GET "https://<EXTERNAL-IP>:9095/<API-context>/<API-resource>"  -H "Authorization:Bearer $TOKEN" -k
@@ -354,7 +354,7 @@ The endpoint of our microservice is referred in the API definition.
 
     Example commands:
     
-    ```
+    ```sh
     >> curl -X GET "https://35.232.188.134:9095/store/v1.0.0/products" -H "Authorization:Bearer $TOKEN" -k
     
     >> curl -X GET "https://35.232.188.134:9095/store/v1.0.0/products/101" -H "Authorization:Bearer $TOKEN" -k
@@ -379,7 +379,7 @@ The following commands will help you to push the API to the API portal in Kubern
 
 - Add the API portal as an environment to the API controller using the following command.
 
-    ```
+    ```sh
     >> apictl add-env -e k8s --apim https://wso2apim:32001 --token https://wso2apim:32001/oauth2/token
     
     Output:
@@ -388,7 +388,7 @@ The following commands will help you to push the API to the API portal in Kubern
 
 - Initialize the API project using API Controller
 
-    ```
+    ```sh
     >> apictl init online-store --oas=./scenarios/scenario-1/products_swagger.yaml --initial-state=PUBLISHED
     
     Output:
@@ -402,7 +402,7 @@ The following commands will help you to push the API to the API portal in Kubern
     For testing purpose use ***admin*** as username and password when prompted.
     </br>
     
-    ```
+    ```sh
     >> apictl import-api -f online-store/ -e k8s -k
     
     Output:
@@ -414,7 +414,7 @@ The following commands will help you to push the API to the API portal in Kubern
 
 - By default the API is secured with JWT. Hence a valid JWT token is needed to invoke the API. You can obtain a JWT token using the API Controller command as below.
     
-    ``` 
+    ```sh
     >> apictl set --token-type JWT
     
     Output: 
@@ -422,7 +422,7 @@ The following commands will help you to push the API to the API portal in Kubern
     ```
 - Generate access token for the API with the following command.
 
-    ```
+    ```sh
     >> apictl get-keys -n online-store -v v1.0.0 -e k8s --provider admin -k
     
     Output:
