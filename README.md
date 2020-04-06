@@ -50,6 +50,8 @@ In this document, we will walk through on the following.
 
     ```sh
     >> kubectl apply -f scenarios/scenario-1/products_dep.yaml
+  
+    Output:
     service/products created
     deployment.apps/products-deployment created
     ```
