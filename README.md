@@ -376,7 +376,7 @@ To make the API discoverable for other users and get the access tokens, we need 
 - Subscribe the API to the application
 - Generate a JWT access token 
 
-The following commands will help you to push the API to the API portal in Kubernetes. Commands of the API Controller can be found [here](https://github.com/wso2/product-apim-tooling/blob/v3.0.0-rc/import-export-cli/docs/apictl.md) 
+The following commands will help you to push the API to the API portal in Kubernetes. Commands of the API Controller can be found [here](https://github.com/wso2/product-apim-tooling/blob/v3.1.0/import-export-cli/docs/apictl.md) 
 
 
 - Add the API portal as an environment to the API controller using the following command.
