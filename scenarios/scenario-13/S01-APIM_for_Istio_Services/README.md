@@ -28,7 +28,7 @@ This works only in Istio permissive mode.
     cd k8s-api-operator-1.1.0/scenarios/scenario-13/S01-APIM_for_Istio_Services/
     ```
  
-**_Note:_** You need to run all commands from within the ```S01-APIM_for_Istio_Services``` directory.
+    **_Note:_** You need to run all commands from within the ```S01-APIM_for_Istio_Services``` directory.
 
 <br />
 

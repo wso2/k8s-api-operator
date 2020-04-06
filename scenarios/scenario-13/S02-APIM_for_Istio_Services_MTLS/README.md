@@ -28,7 +28,7 @@ This works in Istio permissive mode and Strict MTLS mode.
     cd k8s-api-operator-1.1.0/scenarios/scenario-13/S02-APIM_for_Istio_Services_MTLS
     ```
  
-**_Note:_** You need to run all commands from within the ```S02-APIM_for_Istio_Services_MTLS``` directory.
+    **_Note:_** You need to run all commands from within the ```S02-APIM_for_Istio_Services_MTLS``` directory.
 
 <br />
 
