@@ -76,7 +76,7 @@ curl -sL https://github.com/operator-framework/operator-lifecycle-manager/releas
 
 #### Step 1: Configure API Controller
 
-- Download API controller v3.1.0 from the [API Manager Tooling web site](https://wso2.com/api-management/tooling/)
+- Download API controller v3.1.0 or the latest v3.1.x from the [API Manager Tooling web site](https://wso2.com/api-management/tooling/)
     
     - Under Dev-Ops Tooling section, you can download the tool based on your operating system.
 
