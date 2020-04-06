@@ -228,7 +228,7 @@ The endpoint of our microservice is referred in the API definition.
 - Deploy the API using the following command
 
     ```
-    >> apictl add api -n "api_name" --from-file="location to the Open API definition"
+    >> apictl add api -n <API_NAME> --from-file=<LOCATION_TO_THE_OPEN_API_DEFINITION>
     
     >> apictl add api -n online-store --from-file=scenarios/scenario-1/products_swagger.yaml
     
@@ -245,7 +245,7 @@ The endpoint of our microservice is referred in the API definition.
     --namespace=wso2      Namespace to deploy the API
     --override            Overwrite the docker image creation for already created docker image
     
-    >> apictl add api -n "api_name" --from-file="location to the api swagger definition" --replicas="number of replicas" --namespace="desired namespace"
+    >> apictl add api -n <API_NAME> --from-file=<LOCATION_TO_THE_OPEN_API_DEFINITION> --replicas=<NUMBER_OF_REPLICAS> --namespace=<DESIRED_NAMESPACE>
     ```
 
     **_Note:_** Namespace and replicas are optional parameters. If they are not provided, the default namespace will be used and 1 replica will be created. 

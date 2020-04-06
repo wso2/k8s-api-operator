@@ -62,7 +62,7 @@
     --mode=privatejet   Overrides the deploying mode. Available modes: privateJet, sidecar
     --versio=2.0.0        Used for docker image versioning. Default value is v1.0.0
 
-    >> apictl add api -n "api_name" --from-file=pets-int --from-file=stores-int --mode=privatejet --version=2.0.0
+    >> apictl add api -n petstore-multiple-api --from-file=pets-int --from-file=stores-int --mode=privatejet --version=2.0.0
     ```
     
 - Get available APIs
