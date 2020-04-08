@@ -43,38 +43,31 @@ kubectl apply -f install.yaml
 ### Checking the resources deployed
 
 ```
-ramesha:workingdir ramesha$ kubectl get catalogsource -n marketplace
+>> kubectl get catalogsource -n marketplace
 NAME                           NAME                           TYPE   PUBLISHER   AGE
-rameshakaru-operators                                         grpc               18s
+wso2am-operators                                              grpc               18s
 upstream-community-operators   Upstream Community Operators   grpc   Red Hat     43s
-ramesha:workingdir ramesha$ 
-ramesha:workingdir ramesha$ 
-ramesha:workingdir ramesha$ 
-ramesha:workingdir ramesha$ kubectl get opsrc rameshakaru-operators -o=custom-columns=NAME:.metadata.name,PACKAGES:.status.packages -n marketplace
+ 
+>> kubectl get opsrc wso2am-operators -o=custom-columns=NAME:.metadata.name,PACKAGES:.status.packages -n marketplace
 NAME                    PACKAGES
-rameshakaru-operators   api-operator
-ramesha:workingdir ramesha$ 
-ramesha:workingdir ramesha$ 
-ramesha:workingdir ramesha$ kubectl get clusterserviceversion -n marketplace
+wso2am-operators   api-operator
+ 
+>> kubectl get clusterserviceversion -n marketplace
 NAME                   DISPLAY                       VERSION   REPLACES   PHASE
-api-operator.v1.0.1   API Operator for Kubernetes   1.0.1                Succeeded
-ramesha:workingdir ramesha$ 
-ramesha:workingdir ramesha$ 
-ramesha:workingdir ramesha$ kubectl get deployment -n marketplace
+api-operator.v1.1.0   API Operator for Kubernetes     1.1.0              Succeeded
+
+>> kubectl get deployment -n marketplace
 NAME                           READY   UP-TO-DATE   AVAILABLE   AGE
-api-operator                  1/1     1            1           58s
+api-operator                   1/1     1            1           58s
 marketplace-operator           1/1     1            1           2m17s
-rameshakaru-operators          1/1     1            1           75s
+wso2am-operators               1/1     1            1           75s
 upstream-community-operators   1/1     1            1           100s
-ramesha:workingdir ramesha$ 
-ramesha:workingdir ramesha$ 
-ramesha:workingdir ramesha$ 
-ramesha:workingdir ramesha$ 
-ramesha:workingdir ramesha$ kubectl get pods -n marketplace
+
+>> kubectl get pods -n marketplace
 NAME                                           READY   STATUS    RESTARTS   AGE
-api-operator-5db6d6cd67-zkqz4                 1/1     Running   0          73s
+api-operator-5db6d6cd67-zkqz4                  1/1     Running   0          73s
 marketplace-operator-7cc57c5747-v2zgs          1/1     Running   0          2m32s
-rameshakaru-operators-66b65df899-fwbs2         1/1     Running   0          90s
+wso2am-operators-66b65df899-fwbs2              1/1     Running   0          90s
 upstream-community-operators-5897c5d54-kqcwr   1/1     Running   0          115s
 
 ```
@@ -82,7 +75,7 @@ api-operator is deployed and is running in marketplace namespace.
 
 ## How to preview the operator
 
-Go to  https://operatorhub.io/preview and upload [csv file](api-operator/1.0.1/api-operator.v1.0.1.clusterserviceversion.yaml)
+Go to  https://operatorhub.io/preview and upload [csv file](api-operator/1.1.0/api-operator.v1.1.0.clusterserviceversion.yaml)
 
 ### Operator bundle
 
