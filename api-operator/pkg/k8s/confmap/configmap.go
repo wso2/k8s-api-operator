@@ -77,7 +77,7 @@ func UpdateOwner(client *client.Client, owner []metav1.OwnerReference, configMap
 }
 
 // New returns a new configmap object with given namespacedName and data map
-func New(namespacedName types.NamespacedName, dataMap *map[string]string, owner []metav1.OwnerReference) *corev1.ConfigMap {
+func New(namespacedName types.NamespacedName, dataMap *map[string]string, binaryData *map[string][]byte, owner []metav1.OwnerReference) *corev1.ConfigMap {
 
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -85,7 +85,8 @@ func New(namespacedName types.NamespacedName, dataMap *map[string]string, owner 
 			Namespace:       namespacedName.Namespace,
 			OwnerReferences: owner,
 		},
-		Data: *dataMap,
+		Data:       *dataMap,
+		BinaryData: *binaryData,
 	}
 }
 
@@ -98,11 +99,7 @@ func Copy(client *client.Client, fromNsName, toNsName types.NamespacedName) erro
 		return fromErr
 	}
 
-	toCnf := &corev1.ConfigMap{}
-	toCnf.Data = fromCnf.Data
-	toCnf.BinaryData = fromCnf.BinaryData
-	toCnf.Namespace = toNsName.Namespace
-	toCnf.Name = toNsName.Name
-
+	logger.Info("coping configmap", "from", fromNsName, "to", toNsName)
+	toCnf := New(toNsName, &fromCnf.Data, &fromCnf.BinaryData, fromCnf.OwnerReferences)
 	return Apply(client, toCnf)
 }
