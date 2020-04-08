@@ -21,9 +21,88 @@ metadata:
   namespace: placeholder
   annotations:
     alm-examples: >-
-      [{"apiVersion":"wso2.com/v1alpha1","kind":"API","metadata":{"name":"petstore"},"spec":{"definition":{"configmapName":"petstore-swagger","type":"swagger"},"interceptorConfName":"","mode":"privateJet","override":true,"replicas":1,"updateTimeStamp":""}},{"apiVersion":"wso2.com/v1alpha1","kind":"API","metadata":{"name":"test-api-publisher","namespace":"wso2-system"},"spec":{"definition":{"configmapName":"test-publish","type":"swagger"},"replicas":1}},{"apiVersion":"wso2.com/v1alpha1","kind":"Security","metadata":{"name":"jwt-security"},"spec":{"type":"JWT","issuer":"https://localhost:9443/jwt/token","audience":"https://localhost:9443/jwt/token","certificate":"wso2am300-secret"}},{"apiVersion":"wso2.com/v1alpha1","kind":"RateLimiting","metadata":{"name":"app1"},"spec":{"type":"application","description":"Allow
-      4 requests per
-      minute","timeUnit":"min","unitTime":1,"requestCount":{"limit":4}}},{"apiVersion":"wso2.com/v1alpha1","kind":"TargetEndpoint","metadata":{"name":"helloworld-sidecar","labels":{"app":"app2"}},"spec":{"protocol":"http","port":8080,"deploy":{"name":"helloworldservice","dockerImage":"lakwarus/helloworld:v1","count":2},"mode":"sidecar"}}]
+      [
+      {
+        "apiVersion": "wso2.com/v1alpha1",
+        "kind": "API",
+        "metadata": {
+          "name": "petstore"
+        },
+        "spec": {
+          "definition": {
+            "interceptors": {
+            },
+            "swaggerConfigmapNames": [
+              "petstore-swagger"
+            ],
+            "type": "swagger"
+          },
+          "mode": "privateJet",
+          "override": true,
+          "replicas": 1,
+          "updateTimeStamp": ""
+        }
+      },
+      {
+        "apiVersion": "wso2.com/v1alpha1",
+        "kind": "Security",
+        "metadata": {
+          "name": "petstorejwt"
+        },
+        "spec": {
+          "type": "JWT",
+          "securityConfig": [
+            {
+              "issuer": "https://wso2apim:32001/oauth2/token",
+              "audience": "http://org.wso2.apimgt/gateway",
+              "certificate": "wso2am310-secret",
+              "validateSubscription": false
+            }
+          ]
+        }
+      },
+      {
+        "apiVersion": "wso2.com/v1alpha1",
+        "kind": "RateLimiting",
+        "metadata": {
+          "name": "fivereqpolicy"
+        },
+        "spec": {
+          "type": "advance",
+          "description": "Allow 5 requests per minute",
+          "timeUnit": "min",
+          "unitTime": 1,
+          "requestCount": {
+            "limit": 5
+          }
+        }
+      },
+      {
+        "apiVersion": "wso2.com/v1alpha1",
+        "kind": "TargetEndpoint",
+        "metadata": {
+          "name": "products-privatejet",
+          "labels": {
+            "app": "wso2"
+          }
+        },
+        "spec": {
+          "protocol": "http",
+          "port": 80,
+          "targetPort": 9090,
+          "deploy": {
+            "name": "products-pj-service",
+            "dockerImage": "pubudu/products:1.0.0",
+            "minReplicas": 2,
+            "maxReplicas": 3,
+            "requestCPU": "60m",
+            "reqMemory": "32Mi",
+            "cpuLimit": "120m"
+          },
+          "mode": "privateJet"
+        }
+      }
+      ]
     categories: 'Developer Tools, Integration & Delivery, Cloud Provider'
     certified: 'false'
     description: >-
@@ -232,6 +311,7 @@ spec:
         Find more samples in [K8s API Operator github repository](https://github.com/wso2/k8s-api-operator/tree/v1.1.0/scenarios)
 
   maturity: stable
+  replaces: api-operator.v1.0.1
   version: 1.1.0
   minKubeVersion: 1.12.0
   keywords:
