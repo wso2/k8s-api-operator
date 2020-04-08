@@ -50,6 +50,7 @@ const (
 	ingressConfigs       = "ingress-configs"
 	openShiftConfigs     = "route-configs"
 	dockerRegConfigs     = "docker-registry-config"
+	kanikoArgsConfigs    = "kaniko-arguments"
 	ingressProperties    = "ingress.properties"
 	routeProperties      = "route.properties"
 	policyFileConst      = "policies.yaml"
@@ -141,7 +142,7 @@ const (
 	apiVersionKey  = "apps/v1"
 	versionField   = "{version}"
 
-	edge          = "edge"
-	reencrypt     = "reencrypt"
-	passthrough   = "passthrough"
+	edge        = "edge"
+	reencrypt   = "reencrypt"
+	passthrough = "passthrough"
 )
