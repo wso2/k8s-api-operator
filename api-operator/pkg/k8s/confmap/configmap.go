@@ -28,6 +28,43 @@ func Get(client *client.Client, namespacedName types.NamespacedName) (*corev1.Co
 	return confMap, nil
 }
 
+// Create creates the given configmap in the k8s cluster
+func Create(client *client.Client, confMap *corev1.ConfigMap) error {
+	createErr := (*client).Create(context.TODO(), confMap)
+	if createErr != nil {
+		logger.Error(createErr, "error creating configmap", "namespace", confMap.Namespace, "name", confMap.Name)
+	}
+
+	return createErr
+}
+
+// Update updates the given configmap in the k8s cluster
+func Update(client *client.Client, confMap *corev1.ConfigMap) error {
+	updateErr := (*client).Update(context.TODO(), confMap)
+	if updateErr != nil {
+		logger.Error(updateErr, "error updating configmap", "namespace", confMap.Namespace, "name", confMap.Name)
+	}
+
+	return updateErr
+}
+
+// Apply creates configmap if not found and updates if found
+func Apply(client *client.Client, confMap *corev1.ConfigMap) error {
+	// get configmap
+	namespaceName := types.NamespacedName{Namespace: confMap.Namespace, Name: confMap.Name}
+	err := (*client).Get(context.TODO(), namespaceName, confMap)
+
+	if err != nil && errors.IsNotFound(err) {
+		return Create(client, confMap)
+	} else if err != nil {
+		logger.Error(err, "error getting configmap", "configmap", namespaceName)
+		return err
+	}
+
+	// configmap already exists and update it
+	return Update(client, confMap)
+}
+
 // UpdateOwner updates the config map with the owner reference
 func UpdateOwner(client *client.Client, owner []metav1.OwnerReference, configMap *corev1.ConfigMap) error {
 	configMap.OwnerReferences = owner
@@ -50,4 +87,22 @@ func New(namespacedName types.NamespacedName, dataMap *map[string]string, owner 
 		},
 		Data: *dataMap,
 	}
+}
+
+// Copy copies config map from given namespacedName to destination namespacedName
+func Copy(client *client.Client, fromNsName, toNsName types.NamespacedName) error {
+	// Get configmap
+	fromCnf, fromErr := Get(client, fromNsName)
+	if fromErr != nil {
+		logger.Error(fromErr, "error coping configmap", "configmap", fromNsName)
+		return fromErr
+	}
+
+	toCnf := &corev1.ConfigMap{}
+	toCnf.Data = fromCnf.Data
+	toCnf.BinaryData = fromCnf.BinaryData
+	toCnf.Namespace = toNsName.Namespace
+	toCnf.Name = toNsName.Name
+
+	return Apply(client, toCnf)
 }
