@@ -415,7 +415,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		formattedSwaggerCmName := swaggerCmName + "-mgw"
 		//create configmap with modified swagger
 		swaggerDataMgw := map[string]string{swaggerDataFile: formattedSwagger}
-		swaggerConfMapMgw := confmap.New(types.NamespacedName{Namespace: userNameSpace, Name: formattedSwaggerCmName}, &swaggerDataMgw, owner)
+		swaggerConfMapMgw := confmap.New(types.NamespacedName{Namespace: userNameSpace, Name: formattedSwaggerCmName}, &swaggerDataMgw, nil, owner)
 		log.Info("Creating swagger configmap for mgw", "name", formattedSwaggerCmName, "namespace", userNameSpace)
 
 		_, errGetConf := confmap.Get(&r.client, types.NamespacedName{Namespace: userNameSpace, Name: formattedSwaggerCmName})
@@ -480,7 +480,9 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 						defaultCertName = cert
 						defaultCertvalue = value
 					}
-					newDefaultSecret := createSecret(securityDefault.Spec.SecurityConfig[0].Certificate, defaultCertName, string(defaultCertvalue), userNameSpace, owner)
+
+					defCertData := map[string][]byte{defaultCertName: defaultCertvalue}
+					newDefaultSecret := secret.New(types.NamespacedName{Namespace: userNameSpace, Name: securityDefault.Spec.SecurityConfig[0].Certificate}, &defCertData, nil, owner)
 					errCreateSec := r.client.Create(context.TODO(), newDefaultSecret)
 					if errCreateSec != nil {
 						log.Error(errCreateSec, "error creating secret for default security in user namespace")
@@ -1129,21 +1131,6 @@ func createHorizontalPodAutoscaler(dep *appsv1.Deployment, r *ReconcileAPI, owne
 	return nil
 }
 
-// createSecret creates a config file with the given data
-func createSecret(secretName string, key string, value string, ns string, owner []metav1.OwnerReference) *corev1.Secret {
-
-	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:            secretName,
-			Namespace:       ns,
-			OwnerReferences: owner,
-		},
-		Data: map[string][]byte{
-			key: []byte(value),
-		},
-	}
-}
-
 //Swagger handling
 func mgwSwaggerLoader(swaggerDataMap map[string]string) (*openapi3.Swagger, string, error) {
 	var swaggerData string
@@ -1696,7 +1683,7 @@ func dockerfileHandler(r *ReconcileAPI, certList map[string]string, existcert bo
 	data := builder.String()
 	if err != nil && errors.IsNotFound(err) {
 		dockerDataMap := map[string]string{"Dockerfile": data}
-		dockerConfMap := confmap.New(types.NamespacedName{Namespace: cr.Namespace, Name: cr.Name + "-" + dockerFile}, &dockerDataMap, owner)
+		dockerConfMap := confmap.New(types.NamespacedName{Namespace: cr.Namespace, Name: cr.Name + "-" + dockerFile}, &dockerDataMap, nil, owner)
 
 		errorMap := r.client.Create(context.TODO(), dockerConfMap)
 		if errorMap != nil {
@@ -1727,7 +1714,7 @@ func policyHandler(r *ReconcileAPI, operatorOwner []metav1.OwnerReference, userN
 
 		defaultval := ratelimiting.CreateDefault()
 		policyDataMap := map[string]string{policyFileConst: defaultval}
-		policyConfMap := confmap.New(types.NamespacedName{Namespace: userNameSpace, Name: policyConfigmap}, &policyDataMap, operatorOwner)
+		policyConfMap := confmap.New(types.NamespacedName{Namespace: userNameSpace, Name: policyConfigmap}, &policyDataMap, nil, operatorOwner)
 
 		err = r.client.Create(context.TODO(), policyConfMap)
 		if err != nil {
@@ -2199,7 +2186,7 @@ func getVolumes(apiName string, swaggerCmNames []string) ([]corev1.VolumeMount, 
 func analyticsVolumeHandler(analyticsCertSecretName string, r *ReconcileAPI, jobVolumeMount []corev1.VolumeMount,
 	jobVolume []corev1.Volume, userNameSpace string, operatorOwner []metav1.OwnerReference) ([]corev1.VolumeMount, []corev1.Volume, string, error) {
 	var fileName string
-	var value string
+	var fileValue []byte
 	analyticsCertSecret := &corev1.Secret{}
 	//checks if the certificate exists in the user namepspace
 	errCertNs := r.client.Get(context.TODO(), types.NamespacedName{Name: analyticsCertSecretName, Namespace: userNameSpace}, analyticsCertSecret)
@@ -2213,9 +2200,9 @@ func analyticsVolumeHandler(analyticsCertSecretName string, r *ReconcileAPI, job
 		}
 		for pem, val := range analyticsCertSecret.Data {
 			fileName = pem
-			value = string(val)
+			fileValue = val
 		}
-		newSecret := createSecret(analyticsCertSecretName, fileName, value, userNameSpace, operatorOwner)
+		newSecret := secret.New(types.NamespacedName{Namespace: userNameSpace, Name: analyticsCertSecretName}, &map[string][]byte{fileName: fileValue}, nil, operatorOwner)
 		err := r.client.Create(context.TODO(), newSecret)
 		if err != nil {
 			log.Error(err, "Error in copying analytics cert to user namespace")
