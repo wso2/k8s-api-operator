@@ -10,7 +10,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
-var logger = log.Log.WithName("configmap")
+var logger = log.Log.WithName("k8s configmap")
 
 // Get returns a k8s Config Map with given namespacedName
 func Get(client *client.Client, namespacedName types.NamespacedName) (*corev1.ConfigMap, error) {
@@ -18,10 +18,10 @@ func Get(client *client.Client, namespacedName types.NamespacedName) (*corev1.Co
 	err := (*client).Get(context.TODO(), namespacedName, confMap)
 
 	if err != nil && errors.IsNotFound(err) {
-		logger.Info("configmap is not found", "namespace", namespacedName.Namespace, "name", namespacedName.Name)
+		logger.Info("configmap is not found", "configmap", namespacedName)
 		return confMap, err
 	} else if err != nil {
-		logger.Error(err, "error getting configmap", "namespace", namespacedName.Namespace, "name", namespacedName.Name)
+		logger.Error(err, "error getting configmap", "configmap", namespacedName)
 		return confMap, err
 	}
 

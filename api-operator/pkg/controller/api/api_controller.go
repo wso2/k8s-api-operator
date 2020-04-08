@@ -24,6 +24,7 @@ import (
 	"github.com/golang/glog"
 	v1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/serving/v1alpha1"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s/confmap"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s/secret"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/registry"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/registry/utils"
 	"k8s.io/api/extensions/v1beta1"
@@ -611,7 +612,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			analyticsSecretName := analyticsConf.Data[analyticsSecretConst]
 
 			// gets the data from analytics secret
-			analyticsData, err := getSecretData(r, analyticsSecretName)
+			analyticsSecret, err := secret.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: analyticsSecretName})
+			analyticsData := analyticsSecret.Data
 
 			if err == nil && analyticsData != nil && analyticsData[usernameConst] != nil &&
 				analyticsData[passwordConst] != nil && analyticsData[certConst] != nil {
@@ -1041,29 +1043,6 @@ func copyConfigVolumes(r *ReconcileAPI, namespace string) error {
 	}
 
 	return nil
-}
-
-// gets the data from analytics secret
-func getSecretData(r *ReconcileAPI, analyticsSecretName string) (map[string][]byte, error) {
-	var analyticsData map[string][]byte
-	// Check if this secret exists
-	analyticsSecret := &corev1.Secret{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: analyticsSecretName, Namespace: wso2NameSpaceConst}, analyticsSecret)
-
-	if err != nil && errors.IsNotFound(err) {
-		log.Info("Analytics Secret is not found")
-		return analyticsData, err
-
-	} else if err != nil {
-		log.Error(err, "error ")
-		return analyticsData, err
-
-	}
-
-	analyticsData = analyticsSecret.Data
-	log.Info("Analytics Secret exists")
-	return analyticsData, nil
-
 }
 
 //Handles microgateway conf create and update
