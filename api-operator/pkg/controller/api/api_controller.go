@@ -296,10 +296,10 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	// make volumes empty
 	jobVolumeMount, jobVolume = []corev1.VolumeMount{}, []corev1.Volume{}
 
-	// Check if the configmaps mentioned in the crd object exist
 	swaggerCmNames := instance.Spec.Definition.SwaggerConfigmapNames
 	for _, swaggerCmName := range swaggerCmNames {
-		apiConfigMap, err := confmap.Get(&r.client, types.NamespacedName{Namespace: userNameSpace, Name: swaggerCmName})
+		// Check if the configmaps mentioned in the crd object exist
+		swaggerConfMap, err := confmap.Get(&r.client, types.NamespacedName{Namespace: userNameSpace, Name: swaggerCmName})
 		if err != nil {
 			if errors.IsNotFound(err) {
 				// Swagger configmap is not found, could have been deleted after reconcile request.
@@ -312,11 +312,10 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		}
 
 		// update owner reference to the swagger configmap and update it
-		_ = confmap.UpdateOwner(&r.client, owner, apiConfigMap)
+		_ = confmap.UpdateOwner(&r.client, owner, swaggerConfMap)
 
 		//Fetch swagger data from configmap, reads and modifies swagger
-		swaggerDataMap := apiConfigMap.Data
-		swagger, swaggerDataFile, err := mgwSwaggerLoader(swaggerDataMap)
+		swagger, swaggerDataFile, err := mgwSwaggerLoader(swaggerConfMap.Data)
 		// randomize file name to make it unique
 		swaggerDataFile = getRandFileName(swaggerDataFile)
 
@@ -1033,7 +1032,9 @@ func copyConfigVolumes(r *ReconcileAPI, namespace string) error {
 		}
 		if volume.ConfigMap != nil {
 			name := volume.ConfigMap.Name
-			if err := copyConfigMap(r, name, wso2NameSpaceConst, name, namespace); err != nil {
+			fromNsName := types.NamespacedName{Namespace: wso2NameSpaceConst, Name: name}
+			toNsName := types.NamespacedName{Namespace: namespace, Name: name}
+			if err := confmap.Copy(&r.client, fromNsName, toNsName); err != nil {
 				return err
 			}
 		}
