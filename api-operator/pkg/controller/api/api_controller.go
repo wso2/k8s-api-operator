@@ -244,13 +244,13 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	userNameSpace := instance.Namespace
 
 	//get configurations file for the controller
-	controlConf, errConf := confmap.Get(r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: controllerConfName})
+	controlConf, errConf := confmap.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: controllerConfName})
 	//get ingress configs
-	controlIngressConf, errIngressConf := confmap.Get(r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: ingressConfigs})
+	controlIngressConf, errIngressConf := confmap.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: ingressConfigs})
 	//get openshift configs
-	controlOpenshiftConf, errOpenshiftConf := confmap.Get(r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: openShiftConfigs})
+	controlOpenshiftConf, errOpenshiftConf := confmap.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: openShiftConfigs})
 	//get docker registry configs
-	dockerRegistryConf, errRegConf := confmap.Get(r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: dockerRegConfigs})
+	dockerRegistryConf, errRegConf := confmap.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: dockerRegConfigs})
 
 	confErrs := []error{errConf, errIngressConf, errRegConf, errOpenshiftConf}
 	for _, err := range confErrs {
@@ -299,23 +299,20 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	// Check if the configmaps mentioned in the crd object exist
 	swaggerCmNames := instance.Spec.Definition.SwaggerConfigmapNames
 	for _, swaggerCmName := range swaggerCmNames {
-		apiConfigMap, err := confmap.Get(r.client, types.NamespacedName{Namespace: userNameSpace, Name: swaggerCmName})
+		apiConfigMap, err := confmap.Get(&r.client, types.NamespacedName{Namespace: userNameSpace, Name: swaggerCmName})
 		if err != nil {
 			if errors.IsNotFound(err) {
 				// Swagger configmap is not found, could have been deleted after reconcile request.
 				// Return and requeue
-				log.Error(err, "Swagger configmap is not found")
+				log.Error(err, "Swagger configmap is not found in the API", "namespace", userNameSpace, "name", instance.Name)
 				return reconcile.Result{}, err
 			}
 			// Error reading the object - requeue the request.
 			return reconcile.Result{}, err
 		}
 
-		//add owner reference to the swagger configmap and update it
-		errUpdateApiConf := updateConfMapWithOwner(r, owner, apiConfigMap)
-		if errUpdateApiConf != nil {
-			log.Error(errUpdateApiConf, "error in updating swagger config map with owner reference")
-		}
+		// update owner reference to the swagger configmap and update it
+		_ = confmap.UpdateOwner(&r.client, owner, apiConfigMap)
 
 		//Fetch swagger data from configmap, reads and modifies swagger
 		swaggerDataMap := apiConfigMap.Data
@@ -417,13 +414,14 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		formattedSwagger := string(prettyJSON.Bytes())
 		formattedSwaggerCmName := swaggerCmName + "-mgw"
 		//create configmap with modified swagger
-		swaggerConfMap := createConfigMap(formattedSwaggerCmName, swaggerDataFile, formattedSwagger, userNameSpace, owner)
+		swaggerDataMgw := map[string]string{swaggerDataFile: formattedSwagger}
+		swaggerConfMapMgw := confmap.New(types.NamespacedName{Namespace: userNameSpace, Name: formattedSwaggerCmName}, &swaggerDataMgw, owner)
 		log.Info("Creating swagger configmap for mgw", "name", formattedSwaggerCmName, "namespace", userNameSpace)
 
-		_, errGetConf := confmap.Get(r.client, types.NamespacedName{Namespace: userNameSpace, Name: formattedSwaggerCmName})
+		_, errGetConf := confmap.Get(&r.client, types.NamespacedName{Namespace: userNameSpace, Name: formattedSwaggerCmName})
 		if errGetConf != nil && errors.IsNotFound(errGetConf) {
 			log.Info("swagger-mgw is not found. Hence creating new configmap")
-			errCrtConf := r.client.Create(context.TODO(), swaggerConfMap)
+			errCrtConf := r.client.Create(context.TODO(), swaggerConfMapMgw)
 			if errCrtConf != nil {
 				log.Error(errCrtConf, "Error creating mgw swagger configmap")
 			}
@@ -432,7 +430,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		} else {
 			if instance.Spec.UpdateTimeStamp != "" {
 				log.Info("updating swagger-mgw since timestamp value is given")
-				updateEr := r.client.Update(context.TODO(), swaggerConfMap)
+				updateEr := r.client.Update(context.TODO(), swaggerConfMapMgw)
 				if updateEr != nil {
 					log.Error(updateEr, "Error in updating configmap with updated swagger definition")
 				}
@@ -600,7 +598,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	log.Info("image exist? " + strconv.FormatBool(imageExist))
 
 	// gets analytics configuration
-	analyticsConf, analyticsEr := confmap.Get(r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: analyticsConfName})
+	analyticsConf, analyticsEr := confmap.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: analyticsConfName})
 	if analyticsEr != nil {
 		log.Info("Disabling analytics since the analytics configuration related config map not found.")
 		analyticsEnabled = "false"
@@ -657,7 +655,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	//Get data from apim configmap
-	apimConfig, apimEr := confmap.Get(r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: apimConfName})
+	apimConfig, apimEr := confmap.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: apimConfName})
 	httpPortVal := httpPortValConst
 	httpsPortVal := httpsPortValConst
 	if apimEr == nil {
@@ -686,7 +684,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	//Retrieving configmap related to micro-gateway configuration mustache/template
-	confTemplate, confErr := confmap.Get(r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: mgwConfMustache})
+	confTemplate, confErr := confmap.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: mgwConfMustache})
 	if confErr != nil {
 		log.Error(err, "error in retrieving the config map ")
 	}
@@ -778,7 +776,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	targetAvgUtilizationCPU := int32(intValueUtilCPU)
 	minReplicas := int32(instance.Spec.Replicas)
 
-	kanikoArgs, err = confmap.Get(r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: kanikoArgsConfigs})
+	kanikoArgs, err = confmap.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: kanikoArgsConfigs})
 	if err != nil && errors.IsNotFound(err) {
 		log.Info("No kaniko-arguments config map is available in wso2-system namespace")
 	}
@@ -1149,21 +1147,6 @@ func createHorizontalPodAutoscaler(dep *appsv1.Deployment, r *ReconcileAPI, owne
 		log.Info("HPA for deployment " + dep.Name + " is already exist")
 	}
 	return nil
-}
-
-// createConfigMap creates a config file with the given data
-func createConfigMap(apiConfigMapRef string, key string, value string, ns string, owner []metav1.OwnerReference) *corev1.ConfigMap {
-
-	return &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:            apiConfigMapRef,
-			Namespace:       ns,
-			OwnerReferences: owner,
-		},
-		Data: map[string]string{
-			key: value,
-		},
-	}
 }
 
 // createSecret creates a config file with the given data
@@ -1696,7 +1679,7 @@ func dockerfileHandler(r *ReconcileAPI, certList map[string]string, existcert bo
 	owner []metav1.OwnerReference, cr *wso2v1alpha1.API, existInterceptors bool, existJavaInterceptors bool) (*corev1.ConfigMap, error) {
 	var dockerTemplate string
 	truststorePass := getTruststorePassword(r)
-	dockerTemplateConfigmap, err := confmap.Get(r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: dockerFileTemplate})
+	dockerTemplateConfigmap, err := confmap.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: dockerFileTemplate})
 	if err != nil && errors.IsNotFound(err) {
 		log.Error(err, "docker template configmap not found")
 		return nil, err
@@ -1729,16 +1712,17 @@ func dockerfileHandler(r *ReconcileAPI, certList map[string]string, existcert bo
 		return nil, err
 	}
 
-	dockerfileConfmap, err := confmap.Get(r.client, types.NamespacedName{Namespace: cr.Namespace, Name: cr.Name + "-" + dockerFile})
+	dockerfileConfmap, err := confmap.Get(&r.client, types.NamespacedName{Namespace: cr.Namespace, Name: cr.Name + "-" + dockerFile})
 	data := builder.String()
 	if err != nil && errors.IsNotFound(err) {
-		dockerConf := createConfigMap(cr.Name+"-"+dockerFile, "Dockerfile", data, cr.Namespace, owner)
+		dockerDataMap := map[string]string{"Dockerfile": data}
+		dockerConfMap := confmap.New(types.NamespacedName{Namespace: cr.Namespace, Name: cr.Name + "-" + dockerFile}, &dockerDataMap, owner)
 
-		errorMap := r.client.Create(context.TODO(), dockerConf)
+		errorMap := r.client.Create(context.TODO(), dockerConfMap)
 		if errorMap != nil {
 			return dockerfileConfmap, errorMap
 		}
-		return dockerConf, nil
+		return dockerConfMap, nil
 	} else if err != nil {
 		return dockerfileConfmap, err
 	}
@@ -1762,9 +1746,10 @@ func policyHandler(r *ReconcileAPI, operatorOwner []metav1.OwnerReference, userN
 		log.Info("Creating a config map with default policies", "Namespace", userNameSpace, "Name", policyConfigmap)
 
 		defaultval := ratelimiting.CreateDefault()
-		confmap := createConfigMap(policyConfigmap, policyFileConst, defaultval, userNameSpace, operatorOwner)
+		policyDataMap := map[string]string{policyFileConst: defaultval}
+		policyConfMap := confmap.New(types.NamespacedName{Namespace: userNameSpace, Name: policyConfigmap}, &policyDataMap, operatorOwner)
 
-		err = r.client.Create(context.TODO(), confmap)
+		err = r.client.Create(context.TODO(), policyConfMap)
 		if err != nil {
 			log.Error(err, "error ")
 			return err
@@ -1939,7 +1924,7 @@ func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, htt
 	log.Info(fmt.Sprintf("Creating ingress resource with name: %v", ingressName))
 	log.WithValues("Ingress metadata. Transport mode", transportMode, "Ingress name", ingressName,
 		"Ingress hostname ", ingressHostName)
-	annotationMap, err := confmap.Get(r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: ingressConfigs})
+	annotationMap, err := confmap.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: ingressConfigs})
 	var port int32
 
 	if httpConst == transportMode {
@@ -2058,7 +2043,7 @@ func createorUpdateMgwRouteResource(r *ReconcileAPI, cr *wso2v1alpha1.API, httpP
 	log.WithValues("Route metadata. Transport mode", transportMode, "Route name", routeName,
 		"Ingress hostname ", routesHostname)
 
-	annotationMap, err := confmap.Get(r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: openShiftConfigs})
+	annotationMap, err := confmap.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: openShiftConfigs})
 	var port int32
 
 	if httpConst == transportMode {
@@ -2658,16 +2643,6 @@ func deleteCompletedJobs(namespace string) error {
 	return nil
 }
 
-//update configmaps with OwnerReference
-func updateConfMapWithOwner(r *ReconcileAPI, owner []metav1.OwnerReference, configMap *corev1.ConfigMap) error {
-	configMap.OwnerReferences = owner
-	errorUpdateinterceptConf := r.client.Update(context.TODO(), configMap)
-	if errorUpdateinterceptConf != nil {
-		return errorUpdateinterceptConf
-	}
-	return nil
-}
-
 //Hanldling interceptors to modify request and response flows
 func interceptorHandler(r *ReconcileAPI, instance *wso2v1alpha1.API, owner []metav1.OwnerReference,
 	jobVolumeMount []corev1.VolumeMount, jobVolume []corev1.Volume, userNameSpace string) (bool, bool, []corev1.VolumeMount, []corev1.Volume, error, error) {
@@ -2679,7 +2654,7 @@ func interceptorHandler(r *ReconcileAPI, instance *wso2v1alpha1.API, owner []met
 	//handle bal interceptors
 	balConfigs := instance.Spec.Definition.Interceptors.Ballerina
 	for i, balConfig := range balConfigs {
-		interceptorConfigmap, err := confmap.Get(r.client, types.NamespacedName{Namespace: userNameSpace, Name: balConfig})
+		interceptorConfigmap, err := confmap.Get(&r.client, types.NamespacedName{Namespace: userNameSpace, Name: balConfig})
 		if err != nil {
 			if errors.IsNotFound(err) {
 				// Interceptors are not defined
@@ -2713,11 +2688,7 @@ func interceptorHandler(r *ReconcileAPI, instance *wso2v1alpha1.API, owner []met
 			})
 			//update configmap with owner reference
 			log.Info("updating interceptors configmap with owner reference")
-			errorUpdateinterceptConf := updateConfMapWithOwner(r, owner, interceptorConfigmap)
-			if errorUpdateinterceptConf != nil {
-				log.Error(errorUpdateinterceptConf,
-					"error in updating interceptors config map with owner reference")
-			}
+			_ = confmap.UpdateOwner(&r.client, owner, interceptorConfigmap)
 			exsistBalInterceptors = true
 			errBalInterceptor = nil
 		}
@@ -2728,7 +2699,7 @@ func interceptorHandler(r *ReconcileAPI, instance *wso2v1alpha1.API, owner []met
 	if len(confNames) > 0 {
 		log.Info("java interceptor configmaps specified in API spec")
 		for i, configmapName := range confNames {
-			javaConfigmap, err := confmap.Get(r.client, types.NamespacedName{Namespace: userNameSpace, Name: configmapName})
+			javaConfigmap, err := confmap.Get(&r.client, types.NamespacedName{Namespace: userNameSpace, Name: configmapName})
 			if err != nil {
 				if errors.IsNotFound(err) {
 					// Interceptor is not defined
@@ -2759,11 +2730,7 @@ func interceptorHandler(r *ReconcileAPI, instance *wso2v1alpha1.API, owner []met
 			}
 			//update configmap with owner reference
 			log.Info("updating java interceptor configmap" + configmapName + " with owner reference")
-			errorUpdateinterceptConf := updateConfMapWithOwner(r, owner, javaConfigmap)
-			if errorUpdateinterceptConf != nil {
-				log.Error(errorUpdateinterceptConf,
-					"error in updating java-interceptor configmap"+configmapName+" with owner reference")
-			}
+			_ = confmap.UpdateOwner(&r.client, owner, javaConfigmap)
 		}
 		return exsistBalInterceptors, true, jobVolumeMount, jobVolume, errBalInterceptor, nil
 	}
