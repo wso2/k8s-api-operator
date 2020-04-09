@@ -24,6 +24,7 @@ import (
 	"github.com/golang/glog"
 	v1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/serving/v1alpha1"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s/confmap"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s/ownerref"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s/secret"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/registry"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/registry/utils"
@@ -237,7 +238,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		return reconcile.Result{}, err
 	}
 
-	owner := getOwnerDetails(instance)
+	owner := ownerref.NewArrayFrom(instance.TypeMeta, instance.ObjectMeta)
 	operatorOwner, ownerErr := getOperatorOwner(r)
 	if ownerErr != nil {
 		reqLogger.Info("Operator was not found in the " + wso2NameSpaceConst + " namespace. No owner will be set for the artifacts")
@@ -520,7 +521,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 				}
 				//copying default security to user namespace
 				log.Info("copying default security to " + userNameSpace)
-				newDefaultSecurity := copyDefaultSecurity(securityDefault, userNameSpace, owner)
+				newDefaultSecurity := copyDefaultSecurity(securityDefault, userNameSpace, *owner)
 				errCreateSecurity := r.client.Create(context.TODO(), newDefaultSecurity)
 				if errCreateSecurity != nil {
 					log.Error(errCreateSecurity, "error creating secret for default security in user namespace")
@@ -755,13 +756,13 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	getResourceLimitMemory := controlConfigData[resourceLimitMemory]
 
 	analyticsEnabledBool, _ := strconv.ParseBool(analyticsEnabled)
-	dep := createMgwDeployment(instance, controlConf, analyticsEnabledBool, r, userNameSpace, owner,
+	dep := createMgwDeployment(instance, controlConf, analyticsEnabledBool, r, userNameSpace, *owner,
 		getResourceReqCPU, getResourceReqMemory, getResourceLimitCPU, getResourceLimitMemory, containerList,
 		int32(httpPortVal), int32(httpsPortVal))
 	depFound := &appsv1.Deployment{}
 	deperr := r.client.Get(context.TODO(), types.NamespacedName{Name: dep.Name, Namespace: dep.Namespace}, depFound)
 
-	svc := createMgwLBService(r, instance, userNameSpace, owner, int32(httpPortVal), int32(httpsPortVal), operatorMode)
+	svc := createMgwLBService(r, instance, userNameSpace, *owner, int32(httpPortVal), int32(httpsPortVal), operatorMode)
 	svcFound := &corev1.Service{}
 	svcErr := r.client.Get(context.TODO(), types.NamespacedName{Name: svc.Name, Namespace: svc.Namespace}, svcFound)
 
@@ -1030,7 +1031,9 @@ func copyConfigVolumes(r *ReconcileAPI, namespace string) error {
 	for _, volume := range config.Volumes {
 		if volume.Secret != nil {
 			name := volume.Secret.SecretName
-			if err := copySecret(r, name, wso2NameSpaceConst, name, namespace); err != nil {
+			fromNsName := types.NamespacedName{Namespace: wso2NameSpaceConst, Name: name}
+			toNsName := types.NamespacedName{Namespace: namespace, Name: name}
+			if err := secret.Copy(&r.client, fromNsName, toNsName); err != nil {
 				return err
 			}
 		}
@@ -1047,7 +1050,7 @@ func copyConfigVolumes(r *ReconcileAPI, namespace string) error {
 	return nil
 }
 
-func createHorizontalPodAutoscaler(dep *appsv1.Deployment, r *ReconcileAPI, owner []metav1.OwnerReference,
+func createHorizontalPodAutoscaler(dep *appsv1.Deployment, r *ReconcileAPI, owner *[]metav1.OwnerReference,
 	minReplicas int32, maxReplicas int32, targetAverageUtilizationCPU int32) error {
 
 	targetResource := v2beta1.CrossVersionObjectReference{
@@ -1069,7 +1072,7 @@ func createHorizontalPodAutoscaler(dep *appsv1.Deployment, r *ReconcileAPI, owne
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            dep.Name + "-hpa",
 			Namespace:       dep.Namespace,
-			OwnerReferences: owner,
+			OwnerReferences: *owner,
 		},
 		Spec: v2beta1.HorizontalPodAutoscalerSpec{
 			MinReplicas:    &minReplicas,
@@ -1609,7 +1612,7 @@ func createMgwDeployment(cr *wso2v1alpha1.API, conf *corev1.ConfigMap, analytics
 
 //Handles dockerfile configmap creation
 func dockerfileHandler(r *ReconcileAPI, certList map[string]string, existcert bool, conf map[string]string,
-	owner []metav1.OwnerReference, cr *wso2v1alpha1.API, existInterceptors bool, existJavaInterceptors bool) (*corev1.ConfigMap, error) {
+	owner *[]metav1.OwnerReference, cr *wso2v1alpha1.API, existInterceptors bool, existJavaInterceptors bool) (*corev1.ConfigMap, error) {
 	var dockerTemplate string
 	truststorePass := getTruststorePassword(r)
 	dockerTemplateConfigmap, err := confmap.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: dockerFileTemplate})
@@ -1669,7 +1672,7 @@ func dockerfileHandler(r *ReconcileAPI, certList map[string]string, existcert bo
 	return dockerfileConfmap, err
 }
 
-func policyHandler(r *ReconcileAPI, operatorOwner []metav1.OwnerReference, userNameSpace string) error {
+func policyHandler(r *ReconcileAPI, operatorOwner *[]metav1.OwnerReference, userNameSpace string) error {
 	//Check if policy configmap is available
 	foundmapc := &corev1.ConfigMap{}
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: policyConfigmap, Namespace: userNameSpace}, foundmapc)
@@ -1740,7 +1743,7 @@ func isImageExist(r *ReconcileAPI, secretName string, namespace string) (bool, e
 
 //Schedule Kaniko Job to generate micro-gw image
 func scheduleKanikoJob(cr *wso2v1alpha1.API, conf *corev1.ConfigMap, jobVolumeMount []corev1.VolumeMount,
-	jobVolume []corev1.Volume, timeStamp string, owner []metav1.OwnerReference) *batchv1.Job {
+	jobVolume []corev1.Volume, timeStamp string, owner *[]metav1.OwnerReference) *batchv1.Job {
 	roolValue := int64(0)
 	regConfig := registry.GetConfig()
 	kanikoJobName := cr.Name + "-kaniko"
@@ -1765,7 +1768,7 @@ func scheduleKanikoJob(cr *wso2v1alpha1.API, conf *corev1.ConfigMap, jobVolumeMo
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            kanikoJobName,
 			Namespace:       cr.Namespace,
-			OwnerReferences: owner,
+			OwnerReferences: *owner,
 		},
 		Spec: batchv1.JobSpec{
 			Template: corev1.PodTemplateSpec{
@@ -1841,7 +1844,7 @@ func createMgwLBService(r *ReconcileAPI, cr *wso2v1alpha1.API, nameSpace string,
 // Creating an Ingress resource to expose mgw
 // Supports for multiple apiBasePaths when there are multiple swaggers for one API CRD
 func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, httpPortVal int32, httpsPortVal int32,
-	apiBasePathMap map[string]string, controllerConfig *corev1.ConfigMap, owner []metav1.OwnerReference) error {
+	apiBasePathMap map[string]string, controllerConfig *corev1.ConfigMap, owner *[]metav1.OwnerReference) error {
 
 	controlConfigData := controllerConfig.Data
 	transportMode := controlConfigData[ingressTransportMode]
@@ -1907,7 +1910,7 @@ func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, htt
 			Namespace:       namespace, // goes into backend full name
 			Name:            ingressName,
 			Annotations:     ingressAnnotationMap,
-			OwnerReferences: owner,
+			OwnerReferences: *owner,
 		},
 		Spec: v1beta1.IngressSpec{
 			Rules: []v1beta1.IngressRule{
@@ -1947,7 +1950,7 @@ func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, htt
 // Creating a Route resource to expose microgateway
 // Supports for multiple apiBasePaths when there are multiple swaggers for one API CRD
 func createorUpdateMgwRouteResource(r *ReconcileAPI, cr *wso2v1alpha1.API, httpPortVal int32, httpsPortVal int32,
-	apiBasePathMap map[string]string, controllerConfig *corev1.ConfigMap, owner []metav1.OwnerReference) error {
+	apiBasePathMap map[string]string, controllerConfig *corev1.ConfigMap, owner *[]metav1.OwnerReference) error {
 
 	controlConfigData := controllerConfig.Data
 	routePrefix := controlConfigData[routeName]
@@ -2020,7 +2023,7 @@ func createorUpdateMgwRouteResource(r *ReconcileAPI, cr *wso2v1alpha1.API, httpP
 			ObjectMeta: metav1.ObjectMeta{
 				Name:            routeNewName,
 				Namespace:       namespace,
-				OwnerReferences: owner,
+				OwnerReferences: *owner,
 				Annotations:     routeAnnotationMap,
 			},
 			Spec: routv1.RouteSpec{
@@ -2150,7 +2153,7 @@ func getVolumes(apiName string, swaggerCmNames []string) ([]corev1.VolumeMount, 
 
 // Handles the mounting of analytics certificate
 func analyticsVolumeHandler(analyticsCertSecretName string, r *ReconcileAPI, jobVolumeMount []corev1.VolumeMount,
-	jobVolume []corev1.Volume, userNameSpace string, operatorOwner []metav1.OwnerReference) ([]corev1.VolumeMount, []corev1.Volume, string, error) {
+	jobVolume []corev1.Volume, userNameSpace string, operatorOwner *[]metav1.OwnerReference) ([]corev1.VolumeMount, []corev1.Volume, string, error) {
 	var fileName string
 	var fileValue []byte
 	analyticsCertSecret := &corev1.Secret{}
@@ -2284,40 +2287,16 @@ func getTruststorePassword(r *ReconcileAPI) string {
 	return password
 }
 
-//gets the details of the api crd object for owner reference
-func getOwnerDetails(cr *wso2v1alpha1.API) []metav1.OwnerReference {
-	setOwner := true
-	return []metav1.OwnerReference{
-		{
-			APIVersion:         cr.APIVersion,
-			Kind:               cr.Kind,
-			Name:               cr.Name,
-			UID:                cr.UID,
-			Controller:         &setOwner,
-			BlockOwnerDeletion: &setOwner,
-		},
-	}
-}
-
 //gets the details of the operator for owner reference
-func getOperatorOwner(r *ReconcileAPI) ([]metav1.OwnerReference, error) {
+func getOperatorOwner(r *ReconcileAPI) (*[]metav1.OwnerReference, error) {
 	depFound := &appsv1.Deployment{}
-	setOwner := true
 	deperr := r.client.Get(context.TODO(), types.NamespacedName{Name: "api-operator", Namespace: wso2NameSpaceConst}, depFound)
 	if deperr != nil {
 		noOwner := []metav1.OwnerReference{}
-		return noOwner, deperr
+		return &noOwner, deperr
 	}
-	return []metav1.OwnerReference{
-		{
-			APIVersion:         depFound.APIVersion,
-			Kind:               depFound.Kind,
-			Name:               depFound.Name,
-			UID:                depFound.UID,
-			Controller:         &setOwner,
-			BlockOwnerDeletion: &setOwner,
-		},
-	}, nil
+
+	return ownerref.NewArrayFrom(depFound.TypeMeta, depFound.ObjectMeta), nil
 }
 
 func getSecurityDefinedInSwagger(swagger *openapi3.Swagger) (map[string][]string, bool, int, error) {
@@ -2575,7 +2554,7 @@ func deleteCompletedJobs(namespace string) error {
 }
 
 //Hanldling interceptors to modify request and response flows
-func interceptorHandler(r *ReconcileAPI, instance *wso2v1alpha1.API, owner []metav1.OwnerReference,
+func interceptorHandler(r *ReconcileAPI, instance *wso2v1alpha1.API, owner *[]metav1.OwnerReference,
 	jobVolumeMount []corev1.VolumeMount, jobVolume []corev1.Volume, userNameSpace string) (bool, bool, []corev1.VolumeMount, []corev1.Volume, error, error) {
 
 	//values to return

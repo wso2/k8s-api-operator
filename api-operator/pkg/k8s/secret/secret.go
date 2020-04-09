@@ -21,7 +21,7 @@ func Get(client *client.Client, namespacedName types.NamespacedName) (*corev1.Se
 		logger.Info("secret is not found", "secret", namespacedName)
 		return secret, err
 	} else if err != nil {
-		logger.Error(err, "error getting configmap", "secret", namespacedName)
+		logger.Error(err, "error getting secret", "secret", namespacedName)
 		return secret, err
 	}
 
@@ -66,15 +66,38 @@ func Apply(client *client.Client, secret *corev1.Secret) error {
 }
 
 // New returns a new secret object with given namespacedName and data map
-func New(namespacedName types.NamespacedName, data *map[string][]byte, stringData *map[string]string, owner []metav1.OwnerReference) *corev1.Secret {
+func New(namespacedName types.NamespacedName, data *map[string][]byte, stringData *map[string]string, owner *[]metav1.OwnerReference) *corev1.Secret {
 
-	return &corev1.Secret{
+	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:            namespacedName.Name,
-			Namespace:       namespacedName.Namespace,
-			OwnerReferences: owner,
+			Name:      namespacedName.Name,
+			Namespace: namespacedName.Namespace,
 		},
-		Data:       *data,
-		StringData: *stringData,
 	}
+
+	if owner != nil {
+		secret.OwnerReferences = *owner
+	}
+	if data != nil {
+		secret.Data = *data
+	}
+	if stringData != nil {
+		secret.StringData = *stringData
+	}
+
+	return secret
+}
+
+// Copy copies secret from given namespacedName to destination namespacedName
+func Copy(client *client.Client, fromNsName, toNsName types.NamespacedName) error {
+	// Get secret
+	fromCnf, fromErr := Get(client, fromNsName)
+	if fromErr != nil {
+		logger.Error(fromErr, "error coping secret", "secret", fromNsName)
+		return fromErr
+	}
+
+	logger.Info("coping secret", "from", fromNsName, "to", toNsName)
+	toCnf := New(toNsName, &fromCnf.Data, &fromCnf.StringData, &fromCnf.OwnerReferences)
+	return Apply(client, toCnf)
 }
