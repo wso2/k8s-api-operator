@@ -737,12 +737,12 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 	//creating k8s secret from the rendered mgw-conf file
 	output := builder.String()
-	errCreateSecret := createMGWSecret(r, output, owner, instance)
-	if errCreateSecret != nil {
-		log.Error(errCreateSecret, "Error in creating micro-gateway conf secret")
-	} else {
-		log.Info("Successfully created secret")
-	}
+
+	// create mgwSecret in the k8s cluster
+	mgwNsName := types.NamespacedName{Namespace: instance.Namespace, Name: instance.Name + "-" + mgwConfSecretConst}
+	mgwData := map[string][]byte{mgwConfConst: []byte(output)}
+	mgwSecret := secret.New(mgwNsName, &mgwData, nil, owner)
+	_ = secret.Apply(&r.client, mgwSecret)
 
 	generateK8sArtifactsForMgw := controlConfigData[generatekubernbetesartifactsformgw]
 	genArtifacts, errGenArtifacts := strconv.ParseBool(generateK8sArtifactsForMgw)
@@ -1045,40 +1045,6 @@ func copyConfigVolumes(r *ReconcileAPI, namespace string) error {
 	}
 
 	return nil
-}
-
-//Handles microgateway conf create and update
-func createMGWSecret(r *ReconcileAPI, confData string, owner []metav1.OwnerReference, cr *wso2v1alpha1.API) error {
-	var apimSecret *corev1.Secret
-
-	apimSecret = &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:            cr.Name + "-" + mgwConfSecretConst,
-			Namespace:       cr.Namespace,
-			OwnerReferences: owner,
-		},
-	}
-
-	apimSecret.Data = map[string][]byte{
-		mgwConfConst: []byte(confData),
-	}
-
-	// Check if mgw-conf secret exists
-	checkSecret := &corev1.Secret{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: cr.Name + "-" + mgwConfSecretConst, Namespace: cr.Namespace}, checkSecret)
-
-	if err != nil && errors.IsNotFound(err) {
-		log.Info("Creating mgw-conf secret ")
-		errSecret := r.client.Create(context.TODO(), apimSecret)
-		return errSecret
-	} else if err != nil {
-		log.Error(err, "error in mgw-conf creation")
-		return err
-	} else {
-		log.Info("Updating mgw-conf secret")
-		errSecret := r.client.Update(context.TODO(), apimSecret)
-		return errSecret
-	}
 }
 
 func createHorizontalPodAutoscaler(dep *appsv1.Deployment, r *ReconcileAPI, owner []metav1.OwnerReference,
