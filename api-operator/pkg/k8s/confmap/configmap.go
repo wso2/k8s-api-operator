@@ -66,8 +66,8 @@ func Apply(client *client.Client, confMap *corev1.ConfigMap) error {
 }
 
 // UpdateOwner updates the config map with the owner reference
-func UpdateOwner(client *client.Client, owner []metav1.OwnerReference, configMap *corev1.ConfigMap) error {
-	configMap.OwnerReferences = owner
+func UpdateOwner(client *client.Client, owner *[]metav1.OwnerReference, configMap *corev1.ConfigMap) error {
+	configMap.OwnerReferences = *owner
 
 	err := (*client).Update(context.TODO(), configMap)
 	if err != nil {
@@ -77,17 +77,25 @@ func UpdateOwner(client *client.Client, owner []metav1.OwnerReference, configMap
 }
 
 // New returns a new configmap object with given namespacedName and data map
-func New(namespacedName types.NamespacedName, dataMap *map[string]string, binaryData *map[string][]byte, owner []metav1.OwnerReference) *corev1.ConfigMap {
-
-	return &corev1.ConfigMap{
+func New(namespacedName types.NamespacedName, dataMap *map[string]string, binaryData *map[string][]byte, owner *[]metav1.OwnerReference) *corev1.ConfigMap {
+	confMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:            namespacedName.Name,
-			Namespace:       namespacedName.Namespace,
-			OwnerReferences: owner,
+			Name:      namespacedName.Name,
+			Namespace: namespacedName.Namespace,
 		},
-		Data:       *dataMap,
-		BinaryData: *binaryData,
 	}
+
+	if owner != nil {
+		confMap.OwnerReferences = *owner
+	}
+	if dataMap != nil {
+		confMap.Data = *dataMap
+	}
+	if binaryData != nil {
+		confMap.BinaryData = *binaryData
+	}
+
+	return confMap
 }
 
 // Copy copies config map from given namespacedName to destination namespacedName
@@ -100,6 +108,6 @@ func Copy(client *client.Client, fromNsName, toNsName types.NamespacedName) erro
 	}
 
 	logger.Info("coping configmap", "from", fromNsName, "to", toNsName)
-	toCnf := New(toNsName, &fromCnf.Data, &fromCnf.BinaryData, fromCnf.OwnerReferences)
+	toCnf := New(toNsName, &fromCnf.Data, &fromCnf.BinaryData, &fromCnf.OwnerReferences)
 	return Apply(client, toCnf)
 }
