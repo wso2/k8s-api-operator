@@ -26,7 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
-var logger = log.Log.WithName("k8s configmap")
+var logger = log.Log.WithName("k8s utils")
 
 // Get populates the given k8s object with k8s cluster object values in the given namespacedName
 func Get(client *client.Client, namespacedName types.NamespacedName, obj runtime.Object) error {
@@ -39,7 +39,6 @@ func Get(client *client.Client, namespacedName types.NamespacedName, obj runtime
 		logger.Error(err, "error getting k8s object", "object", obj)
 		return err
 	}
-
 	logger.Info("getting k8s object is success", "object", obj)
 	return nil
 }

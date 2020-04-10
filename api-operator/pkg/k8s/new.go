@@ -22,8 +22,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-// GetNewConfMap returns a new configmap object with given namespacedName and data map
-func GetNewConfMap(namespacedName types.NamespacedName, dataMap *map[string]string, binaryData *map[string][]byte, owner *[]metav1.OwnerReference) *corev1.ConfigMap {
+// NewConfMap returns a new configmap object with given namespacedName and data map
+func NewConfMap(namespacedName types.NamespacedName, dataMap *map[string]string, binaryData *map[string][]byte, owner *[]metav1.OwnerReference) *corev1.ConfigMap {
 	confMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      namespacedName.Name,
@@ -48,9 +48,8 @@ func GetNewConfMap(namespacedName types.NamespacedName, dataMap *map[string]stri
 	return confMap
 }
 
-// GetNewSecret returns a new secret object with given namespacedName and data map
-func GetNewSecret(namespacedName types.NamespacedName, data *map[string][]byte, stringData *map[string]string, owner *[]metav1.OwnerReference) *corev1.Secret {
-
+// NewSecret returns a new secret object with given namespacedName and data map
+func NewSecret(namespacedName types.NamespacedName, data *map[string][]byte, stringData *map[string]string, owner *[]metav1.OwnerReference) *corev1.Secret {
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      namespacedName.Name,
@@ -71,8 +70,8 @@ func GetNewSecret(namespacedName types.NamespacedName, data *map[string][]byte, 
 	return secret
 }
 
-// GetNewOwnerRef returns an array with a new owner reference object of given meta data
-func GetNewOwnerRef(typeMeta metav1.TypeMeta, objectMeta metav1.ObjectMeta) *[]metav1.OwnerReference {
+// NewOwnerRef returns an array with a new owner reference object of given meta data
+func NewOwnerRef(typeMeta metav1.TypeMeta, objectMeta metav1.ObjectMeta) *[]metav1.OwnerReference {
 	setOwner := true
 	return &[]metav1.OwnerReference{
 		{
