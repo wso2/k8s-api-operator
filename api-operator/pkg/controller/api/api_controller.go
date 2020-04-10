@@ -236,7 +236,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		return reconcile.Result{}, err
 	}
 
-	owner := k8s.GetNewOwnerRef(instance.TypeMeta, instance.ObjectMeta)
+	owner := k8s.NewOwnerRef(instance.TypeMeta, instance.ObjectMeta)
 	operatorOwner, ownerErr := getOperatorOwner(r)
 	if ownerErr != nil {
 		reqLogger.Info("Operator was not found in the " + wso2NameSpaceConst + " namespace. No owner will be set for the artifacts")
@@ -418,7 +418,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		formattedSwaggerCmName := swaggerCmName + "-mgw"
 		//create configmap with modified swagger
 		swaggerDataMgw := map[string]string{swaggerDataFile: formattedSwagger}
-		swaggerConfMapMgw := k8s.GetNewConfMap(types.NamespacedName{Namespace: userNameSpace, Name: formattedSwaggerCmName}, &swaggerDataMgw, nil, owner)
+		swaggerConfMapMgw := k8s.NewConfMap(types.NamespacedName{Namespace: userNameSpace, Name: formattedSwaggerCmName}, &swaggerDataMgw, nil, owner)
 		log.Info("Creating swagger configmap for mgw", "name", formattedSwaggerCmName, "namespace", userNameSpace)
 
 		mgwSwaggerConfMap := &corev1.ConfigMap{}
@@ -483,7 +483,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 					}
 
 					defCertData := map[string][]byte{defaultCertName: defaultCertvalue}
-					newDefaultSecret := k8s.GetNewSecret(types.NamespacedName{Namespace: userNameSpace, Name: securityDefault.Spec.SecurityConfig[0].Certificate}, &defCertData, nil, owner)
+					newDefaultSecret := k8s.NewSecret(types.NamespacedName{Namespace: userNameSpace, Name: securityDefault.Spec.SecurityConfig[0].Certificate}, &defCertData, nil, owner)
 					errCreateSec := r.client.Create(context.TODO(), newDefaultSecret)
 					if errCreateSec != nil {
 						log.Error(errCreateSec, "error creating secret for default security in user namespace")
@@ -746,7 +746,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	// create mgwSecret in the k8s cluster
 	mgwNsName := types.NamespacedName{Namespace: instance.Namespace, Name: instance.Name + "-" + mgwConfSecretConst}
 	mgwData := map[string][]byte{mgwConfConst: []byte(output)}
-	mgwSecret := k8s.GetNewSecret(mgwNsName, &mgwData, nil, owner)
+	mgwSecret := k8s.NewSecret(mgwNsName, &mgwData, nil, owner)
 	_ = k8s.Apply(&r.client, mgwSecret)
 
 	generateK8sArtifactsForMgw := controlConfigData[generatekubernbetesartifactsformgw]
@@ -1668,7 +1668,7 @@ func dockerfileHandler(r *ReconcileAPI, certList map[string]string, existcert bo
 	data := builder.String()
 	if err != nil && errors.IsNotFound(err) {
 		dockerDataMap := map[string]string{"Dockerfile": data}
-		dockerConfMap := k8s.GetNewConfMap(types.NamespacedName{Namespace: cr.Namespace, Name: cr.Name + "-" + dockerFile}, &dockerDataMap, nil, owner)
+		dockerConfMap := k8s.NewConfMap(types.NamespacedName{Namespace: cr.Namespace, Name: cr.Name + "-" + dockerFile}, &dockerDataMap, nil, owner)
 
 		errorMap := r.client.Create(context.TODO(), dockerConfMap)
 		if errorMap != nil {
@@ -1699,7 +1699,7 @@ func policyHandler(r *ReconcileAPI, operatorOwner *[]metav1.OwnerReference, user
 
 		defaultval := ratelimiting.CreateDefault()
 		policyDataMap := map[string]string{policyFileConst: defaultval}
-		policyConfMap := k8s.GetNewConfMap(types.NamespacedName{Namespace: userNameSpace, Name: policyConfigmap}, &policyDataMap, nil, operatorOwner)
+		policyConfMap := k8s.NewConfMap(types.NamespacedName{Namespace: userNameSpace, Name: policyConfigmap}, &policyDataMap, nil, operatorOwner)
 
 		err = r.client.Create(context.TODO(), policyConfMap)
 		if err != nil {
@@ -2189,7 +2189,7 @@ func analyticsVolumeHandler(analyticsCertSecretName string, r *ReconcileAPI, job
 			fileName = pem
 			fileValue = val
 		}
-		newSecret := k8s.GetNewSecret(types.NamespacedName{Namespace: userNameSpace, Name: analyticsCertSecretName}, &map[string][]byte{fileName: fileValue}, nil, operatorOwner)
+		newSecret := k8s.NewSecret(types.NamespacedName{Namespace: userNameSpace, Name: analyticsCertSecretName}, &map[string][]byte{fileName: fileValue}, nil, operatorOwner)
 		err := r.client.Create(context.TODO(), newSecret)
 		if err != nil {
 			log.Error(err, "Error in copying analytics cert to user namespace")
@@ -2314,7 +2314,7 @@ func getOperatorOwner(r *ReconcileAPI) (*[]metav1.OwnerReference, error) {
 		return &noOwner, deperr
 	}
 
-	return k8s.GetNewOwnerRef(depFound.TypeMeta, depFound.ObjectMeta), nil
+	return k8s.NewOwnerRef(depFound.TypeMeta, depFound.ObjectMeta), nil
 }
 
 func getSecurityDefinedInSwagger(swagger *openapi3.Swagger) (map[string][]string, bool, int, error) {
