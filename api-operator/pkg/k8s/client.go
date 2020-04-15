@@ -26,20 +26,21 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
-var logger = log.Log.WithName("k8s utils")
+var logCnt = log.Log.WithName("k8s.client")
 
 // Get populates the given k8s object with k8s cluster object values in the given namespacedName
 func Get(client *client.Client, namespacedName types.NamespacedName, obj runtime.Object) error {
+	kind := obj.GetObjectKind().GroupVersionKind().Kind
 	err := (*client).Get(context.TODO(), namespacedName, obj)
 
 	if err != nil && errors.IsNotFound(err) {
-		logger.Info("k8s object is not found", "object", obj)
+		logCnt.Info("K8s object is not found", "kind", kind, "key", namespacedName)
 		return err
 	} else if err != nil {
-		logger.Error(err, "error getting k8s object", "object", obj)
+		logCnt.Error(err, "Error getting k8s object", "kind", kind, "key", namespacedName)
 		return err
 	}
-	logger.Info("getting k8s object is success", "object", obj)
+	logCnt.Info("Getting k8s object is success", "object", obj)
 	return nil
 }
 
@@ -48,9 +49,9 @@ func Create(client *client.Client, obj runtime.Object) error {
 	kind := obj.GetObjectKind().GroupVersionKind().Kind
 	err := (*client).Create(context.TODO(), obj)
 	if err != nil {
-		logger.Error(err, "error creating k8s object", "object", obj)
+		logCnt.Error(err, "Error creating k8s object", "object", obj)
 	}
-	logger.Info("creating k8s object is success", "kind", kind, "object", obj)
+	logCnt.Info("Creating k8s object is success", "kind", kind, "object", obj)
 	return err
 }
 
@@ -59,9 +60,9 @@ func Update(client *client.Client, obj runtime.Object) error {
 	kind := obj.GetObjectKind().GroupVersionKind().Kind
 	updateErr := (*client).Update(context.TODO(), obj)
 	if updateErr != nil {
-		logger.Error(updateErr, "error updating configmap", "object", obj)
+		logCnt.Error(updateErr, "Error updating k8s object", "object", obj)
 	}
-	logger.Info("updating k8s object is success", "kind", kind, "object", obj)
+	logCnt.Info("Updating k8s object is success", "kind", kind, "object", obj)
 	return updateErr
 }
 
@@ -71,12 +72,12 @@ func Apply(client *client.Client, obj runtime.Object) error {
 	objMeta := obj.(metav1.Object)
 	namespaceName := types.NamespacedName{Namespace: objMeta.GetNamespace(), Name: objMeta.GetName()}
 	kind := obj.GetObjectKind().GroupVersionKind().Kind
-	err := (*client).Get(context.TODO(), namespaceName, obj)
 
+	err := (*client).Get(context.TODO(), namespaceName, obj)
 	if err != nil && errors.IsNotFound(err) {
 		return Create(client, obj)
 	} else if err != nil {
-		logger.Error(err, "error applying k8s object while getting it from cluster", "kind", kind, "object", obj)
+		logCnt.Error(err, "Error applying k8s object while getting it from cluster", "kind", kind, "object", obj)
 		return err
 	}
 
@@ -91,7 +92,7 @@ func UpdateOwner(client *client.Client, owner *[]metav1.OwnerReference, obj runt
 
 	err := (*client).Update(context.TODO(), obj)
 	if err != nil {
-		logger.Error(err, "error updating owner reference of k8s object", "kind", kind, "object", obj)
+		logCnt.Error(err, "Error updating owner reference of k8s object", "kind", kind, "object", obj)
 	}
 	return err
 }

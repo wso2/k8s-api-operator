@@ -22,19 +22,22 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-// NewConfMap returns a new configmap object with given namespacedName and data map
-func NewConfMap(namespacedName types.NamespacedName, dataMap *map[string]string, binaryData *map[string][]byte, owner *[]metav1.OwnerReference) *corev1.ConfigMap {
-	confMap := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      namespacedName.Name,
-			Namespace: namespacedName.Namespace,
-		},
+func NewConfMap() *corev1.ConfigMap {
+	return &corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ConfigMap",
 			APIVersion: "v1",
 		},
 	}
+}
 
+// NewConfMapWith returns a new configmap object with given namespacedName and data map
+func NewConfMapWith(namespacedName types.NamespacedName, dataMap *map[string]string, binaryData *map[string][]byte, owner *[]metav1.OwnerReference) *corev1.ConfigMap {
+	confMap := NewConfMap()
+	confMap.ObjectMeta = metav1.ObjectMeta{
+		Name:      namespacedName.Name,
+		Namespace: namespacedName.Namespace,
+	}
 	if owner != nil {
 		confMap.OwnerReferences = *owner
 	}
@@ -48,15 +51,22 @@ func NewConfMap(namespacedName types.NamespacedName, dataMap *map[string]string,
 	return confMap
 }
 
-// NewSecret returns a new secret object with given namespacedName and data map
-func NewSecret(namespacedName types.NamespacedName, data *map[string][]byte, stringData *map[string]string, owner *[]metav1.OwnerReference) *corev1.Secret {
-	secret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      namespacedName.Name,
-			Namespace: namespacedName.Namespace,
+func NewSecret() *corev1.Secret {
+	return &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: "v1",
 		},
 	}
+}
 
+// NewSecretWith returns a new secret object with given namespacedName and data map
+func NewSecretWith(namespacedName types.NamespacedName, data *map[string][]byte, stringData *map[string]string, owner *[]metav1.OwnerReference) *corev1.Secret {
+	secret := NewSecret()
+	secret.ObjectMeta = metav1.ObjectMeta{
+		Name:      namespacedName.Name,
+		Namespace: namespacedName.Namespace,
+	}
 	if owner != nil {
 		secret.OwnerReferences = *owner
 	}
