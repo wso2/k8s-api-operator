@@ -69,9 +69,6 @@ const (
 	analyticsAlias = "wso2analytics"
 
 	defaultSecurity                     = "default-security-jwt"
-	endpointExtension                   = "x-wso2-production-endpoints"
-	apiBasePathExtention                = "x-wso2-basePath"
-	deploymentMode                      = "x-wso2-mode"
 	securityExtension                   = "security"
 	certPath                            = "/usr/wso2/certs/"
 	mgwConfMustache                     = "mgw-conf-mustache"
@@ -117,7 +114,6 @@ const (
 	pathsExtension          = "paths"
 	sidecar                 = "sidecar"
 	privateJet              = "privateJet"
-	serverless              = "serverless"
 	verifyHostNameVal       = "false"
 	apiCrdDefaultVersion    = "v1.0.0"
 
