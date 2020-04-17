@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package api
+package mgw
 
 var (
 
@@ -27,14 +27,14 @@ var (
 	truststorePassword string = "ballerina"
 
 	//keymanager
-	keymanagerServerurl string = "https://wso2apim.wso2:32001"
+	KeymanagerServerurl string = "https://wso2apim.wso2:32001"
 	keymanagerUsername  string = "admin"
 	keymanagerPassword  string = "admin"
 
 	//jwtTokenConfig
-	issuer           string = "https://wso2apim.wso2:32001/oauth2/token"
+	Issuer           string = "https://wso2apim.wso2:32001/oauth2/token"
 	audience         string = "http://org.wso2.apimgt/gateway"
-	certificateAlias string = "wso2apim310"
+	CertificateAlias string = "wso2apim310"
 
 	//analytics
 	analyticsEnabled          string = "false"
