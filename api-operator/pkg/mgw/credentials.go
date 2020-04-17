@@ -37,18 +37,18 @@ func SetCredentials(client *client.Client, securityType string, namespacedName t
 	}
 	if securityType == "Basic" {
 
-		basicUsername = userName
+		Configs.BasicUsername = userName
 		_, err := sha1Hash.Write([]byte(password))
 		if err != nil {
 			logger.Info("error in encoding password")
 			return err
 		}
 		//convert encoded password to a hex string
-		basicPassword = hex.EncodeToString(sha1Hash.Sum(nil))
+		Configs.BasicPassword = hex.EncodeToString(sha1Hash.Sum(nil))
 	}
 	if securityType == "Oauth" {
-		keymanagerUsername = userName
-		keymanagerPassword = string(password)
+		Configs.KeymanagerUsername = userName
+		Configs.KeymanagerPassword = string(password)
 	}
 	return nil
 }

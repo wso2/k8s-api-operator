@@ -16,56 +16,172 @@
 
 package mgw
 
-var (
+type Configuration struct {
+	// transport listener Configurations
+	HttpPort           string
+	HttpsPort          string
+	KeystorePath       string
+	KeystorePassword   string
+	TruststorePath     string
+	TruststorePassword string
 
-	// Transport listener Configurations
-	httpPort           string = "9090"
-	httpsPort          string = "9095"
-	keystorePath       string = "${mgw-runtime.home}/runtime/bre/security/ballerinaKeystore.p12"
-	keystorePassword   string = "ballerina"
-	truststorePath     string = "${mgw-runtime.home}/runtime/bre/security/ballerinaTruststore.p12"
-	truststorePassword string = "ballerina"
+	// key manager
+	KeymanagerServerurl string
+	KeymanagerUsername  string
+	KeymanagerPassword  string
 
-	//keymanager
-	KeymanagerServerurl string = "https://wso2apim.wso2:32001"
-	keymanagerUsername  string = "admin"
-	keymanagerPassword  string = "admin"
+	// jwtTokenConfig
+	JwtConfigs *[]JwtTokenConfig
 
-	//jwtTokenConfig
-	Issuer           string = "https://wso2apim.wso2:32001/oauth2/token"
-	audience         string = "http://org.wso2.apimgt/gateway"
-	CertificateAlias string = "wso2apim310"
+	// analytics
+	AnalyticsEnabled          string
+	AnalyticsUsername         string
+	AnalyticsPassword         string
+	UploadingTimeSpanInMillis string
+	RotatingPeriod            string
+	UploadFiles               string
+	Hostname                  string // TODO: rnk: make this "analyticsHostname" and "analyticsPort"
+	Port                      string
 
-	//analytics
-	analyticsEnabled          string = "false"
-	analyticsUsername         string = "admin"
-	analyticsPassword         string = "admin"
-	uploadingTimeSpanInMillis string = "600000"
-	rotatingPeriod            string = "600000"
-	uploadFiles               string = "true"
-	hostname                  string = "wso2apim.wso2"
-	port                      string = "32001"
+	// throttlingConfig
+	EnabledGlobalTMEventPublishing string
+	JmsConnectionProvider          string
+	ThrottleEndpoint               string
 
-	//throttlingConfig
-	enabledGlobalTMEventPublishing string = "false"
-	jmsConnectionProvider          string = "wso2apim.wso2:5672"
-	throttleEndpoint               string = "wso2apim.wso2:32001"
+	// token revocation
+	EnableRealtimeMessageRetrieval string
 
-	//token revocation
-	enableRealtimeMessageRetrieval string = "false"
-
-	//validation
-	enableRequestValidation  string = "false"
-	enableResponseValidation string = "false"
+	// validation
+	EnableRequestValidation  string
+	EnableResponseValidation string
 
 	//basic authentication
-	basicUsername string = "admin"
-	basicPassword string = "d033e22ae348aeb5660fc2140aec35850c4da997"
+	BasicUsername string
+	BasicPassword string
 
 	// HTTP client hostname verification
-	verifyHostname string = "true"
+	VerifyHostname string
 
 	//log level
-	// TODO delete this, removed in micro-gateway 3.1.0
-	logLevel string = "INFO"
-)
+	LogLevel string
+}
+
+type JwtTokenConfig struct {
+	CertificateAlias     string
+	Issuer               string
+	Audience             string
+	ValidateSubscription bool
+}
+
+// mgw configs with default values
+var Configs = &Configuration{
+	// transport listener Configurations
+	HttpPort:           "9090",
+	HttpsPort:          "9095",
+	KeystorePath:       "${mgw-runtime.home}/runtime/bre/security/ballerinaKeystore.p12",
+	KeystorePassword:   "ballerina",
+	TruststorePath:     "${mgw-runtime.home}/runtime/bre/security/ballerinaTruststore.p12",
+	TruststorePassword: "ballerina",
+
+	// key manager
+	KeymanagerServerurl: "https://wso2apim.wso2:32001",
+	KeymanagerUsername:  "admin",
+	KeymanagerPassword:  "admin",
+
+	// jwtTokenConfig
+	JwtConfigs: &[]JwtTokenConfig{
+		{
+			CertificateAlias:     "wso2apim310",
+			Issuer:               "https://wso2apim.wso2:32001/oauth2/token",
+			Audience:             "http://org.wso2.apimgt/gateway",
+			ValidateSubscription: false,
+		},
+	},
+
+	// analytics
+	AnalyticsEnabled:          "false",
+	AnalyticsUsername:         "admin",
+	AnalyticsPassword:         "admin",
+	UploadingTimeSpanInMillis: "600000",
+	RotatingPeriod:            "600000",
+	UploadFiles:               "true",
+	Hostname:                  "wso2apim.wso2",
+	Port:                      "32001",
+
+	// throttlingConfig
+	EnabledGlobalTMEventPublishing: "false",
+	JmsConnectionProvider:          "wso2apim.wso2:5672",
+	ThrottleEndpoint:               "wso2apim.wso2:32001",
+
+	// token revocation
+	EnableRealtimeMessageRetrieval: "false",
+
+	// validation
+	EnableRequestValidation:  "false",
+	EnableResponseValidation: "false",
+
+	//basic authentication
+	BasicUsername: "admin",
+	BasicPassword: "d033e22ae348aeb5660fc2140aec35850c4da997",
+
+	// HTTP client hostname verification
+	VerifyHostname: "true",
+
+	//log level
+	LogLevel: "INFO",
+}
+
+// TODO: rnk: remove this after finish refactor
+//var (
+//
+//	// Transport listener Configurations
+//	httpPort           string = "9090"
+//	httpsPort          string = "9095"
+//	keystorePath       string = "${mgw-runtime.home}/runtime/bre/security/ballerinaKeystore.p12"
+//	keystorePassword   string = "ballerina"
+//	truststorePath     string = "${mgw-runtime.home}/runtime/bre/security/ballerinaTruststore.p12"
+//	truststorePassword string = "ballerina"
+//
+//	//keymanager
+//	KeymanagerServerurl string = "https://wso2apim.wso2:32001"
+//	keymanagerUsername  string = "admin"
+//	keymanagerPassword  string = "admin"
+//
+//	//jwtTokenConfig
+//	Issuer           string = "https://wso2apim.wso2:32001/oauth2/token"
+//	audience         string = "http://org.wso2.apimgt/gateway"
+//	CertificateAlias string = "wso2apim310"
+//
+//	//analytics
+//	analyticsEnabled          string = "false"
+//	analyticsUsername         string = "admin"
+//	analyticsPassword         string = "admin"
+//	uploadingTimeSpanInMillis string = "600000"
+//	rotatingPeriod            string = "600000"
+//	uploadFiles               string = "true"
+//	hostname                  string = "wso2apim.wso2"
+//	port                      string = "32001"
+//
+//	//throttlingConfig
+//	enabledGlobalTMEventPublishing string = "false"
+//	jmsConnectionProvider          string = "wso2apim.wso2:5672"
+//	throttleEndpoint               string = "wso2apim.wso2:32001"
+//
+//	//token revocation
+//	enableRealtimeMessageRetrieval string = "false"
+//
+//	//validation
+//	enableRequestValidation  string = "false"
+//	enableResponseValidation string = "false"
+//
+//	//basic authentication
+//	basicUsername string = "admin"
+//	basicPassword string = "d033e22ae348aeb5660fc2140aec35850c4da997"
+//
+//	// HTTP client hostname verification
+//	verifyHostname string = "true"
+//
+//	//log level
+//	// TODO delete this, removed in micro-gateway 3.1.0
+//	logLevel string = "INFO"
+//)

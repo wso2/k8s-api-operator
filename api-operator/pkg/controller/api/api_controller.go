@@ -86,37 +86,6 @@ type securitySchemeStruct struct {
 	Flows        *authorizationCode `json:"flows,omitempty"`
 }
 
-type MGWConf struct {
-	KeystorePath                   string
-	KeystorePassword               string
-	TruststorePath                 string
-	TruststorePassword             string
-	KeymanagerServerurl            string
-	KeymanagerUsername             string
-	KeymanagerPassword             string
-	JwtConfigs                     []SecurityTypeJWT
-	EnabledGlobalTMEventPublishing string
-	JmsConnectionProvider          string
-	ThrottleEndpoint               string
-	EnableRealtimeMessageRetrieval string
-	EnableRequestValidation        string
-	EnableResponseValidation       string
-	LogLevel                       string
-	HttpPort                       string
-	HttpsPort                      string
-	BasicUsername                  string
-	BasicPassword                  string
-	AnalyticsEnabled               string
-	AnalyticsUsername              string
-	AnalyticsPassword              string
-	UploadingTimeSpanInMillis      string
-	RotatingPeriod                 string
-	UploadFiles                    string
-	VerifyHostname                 string
-	Hostname                       string
-	Port                           string
-}
-
 type SecurityTypeJWT struct {
 	CertificateAlias     string
 	Issuer               string
@@ -130,11 +99,6 @@ type scopeSet struct {
 	AuthorizationUrl string            `json:"authorizationUrl"`
 	TokenUrl         string            `json:"tokenUrl"`
 	Scopes           map[string]string `json:"scopes,omitempty"`
-}
-
-var portMap = map[string]string{
-	"http":  "80",
-	"https": "443",
 }
 
 // Add creates a new API Controller and adds it to the Manager. The Manager will set fields on the Controller
@@ -206,9 +170,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	var existJavaInterceptors = false      // keep to track the existence of java interceptors
 
 	apiBasePathMap := make(map[string]string) // API base paths with versions
-
-	//get multiple jwt issuer details
-	jwtConfigs := []security.SecurityTypeJWT{}
 
 	// Fetch the API instance
 	instance := &wso2v1alpha1.API{}
@@ -361,7 +322,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		}
 		certList = updatedCertList
 		existCert = existSecurityCerts
-		jwtConfigs = jwtConfArray
+		mgw.Configs.JwtConfigs = jwtConfArray
 
 		//adding security scheme to swagger
 		if len(securityDefinition) > 0 {
@@ -391,7 +352,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		if !isDefinedSecurity && resourceLevelSec == 0 {
 			log.Info("Use default security")
 
-			certExists, err := security.Default(&r.client, apiNamespace, certList, &jwtConfArray, &jobVolumeMount, &jobVolume, owner)
+			certExists, err := security.Default(&r.client, apiNamespace, certList, &jobVolumeMount, &jobVolume, owner)
 			if err != nil {
 				return reconcile.Result{}, err
 			}
@@ -428,14 +389,14 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	analyticsEr := k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: analyticsConfName}, analyticsConf)
 	if analyticsEr != nil {
 		log.Info("Disabling analytics since the analytics configuration related config map not found.")
-		mgw.analyticsEnabled = "false"
+		mgw.Configs.AnalyticsEnabled = "false"
 	} else {
 		if analyticsConf.Data[analyticsEnabledConst] == "true" {
-			mgw.uploadingTimeSpanInMillis = analyticsConf.Data[uploadingTimeSpanInMillisConst]
-			mgw.rotatingPeriod = analyticsConf.Data[rotatingPeriodConst]
-			mgw.uploadFiles = analyticsConf.Data[uploadFilesConst]
-			mgw.hostname = analyticsConf.Data[hostnameConst]
-			mgw.port = analyticsConf.Data[portConst]
+			mgw.Configs.UploadingTimeSpanInMillis = analyticsConf.Data[uploadingTimeSpanInMillisConst]
+			mgw.Configs.RotatingPeriod = analyticsConf.Data[rotatingPeriodConst]
+			mgw.Configs.UploadFiles = analyticsConf.Data[uploadFilesConst]
+			mgw.Configs.Hostname = analyticsConf.Data[hostnameConst]
+			mgw.Configs.Port = analyticsConf.Data[portConst]
 			analyticsSecretName := analyticsConf.Data[analyticsSecretConst]
 
 			// gets the data from analytics secret
@@ -445,8 +406,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 			if err == nil && analyticsData != nil && analyticsData[usernameConst] != nil &&
 				analyticsData[passwordConst] != nil && analyticsData[certConst] != nil {
-				mgw.analyticsUsername = string(analyticsData[usernameConst])
-				mgw.analyticsPassword = string(analyticsData[passwordConst])
+				mgw.Configs.AnalyticsUsername = string(analyticsData[usernameConst])
+				mgw.Configs.AnalyticsPassword = string(analyticsData[passwordConst])
 				analyticsCertSecretName := string(analyticsData[certConst])
 
 				log.Info("Finding analytics cert secret " + analyticsCertSecretName)
@@ -457,7 +418,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 					jobVolumeMount = jobVolumeMountTemp
 					jobVolume = jobVolumeTemp
 					existCert = true
-					mgw.analyticsEnabled = "true"
+					mgw.Configs.AnalyticsEnabled = "true"
 					certList[analyticsAlias] = analyticsCertLocation + fileName
 				}
 			}
@@ -489,28 +450,28 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	httpPortVal := httpPortValConst
 	httpsPortVal := httpsPortValConst
 	if apimEr == nil {
-		mgw.verifyHostname = apimConfig.Data[verifyHostnameConst]
-		mgw.enabledGlobalTMEventPublishing = apimConfig.Data[enabledGlobalTMEventPublishingConst]
-		mgw.jmsConnectionProvider = apimConfig.Data[jmsConnectionProviderConst]
-		mgw.throttleEndpoint = apimConfig.Data[throttleEndpointConst]
-		mgw.enableRealtimeMessageRetrieval = apimConfig.Data[enableRealtimeMessageRetrievalConst]
-		mgw.enableRequestValidation = apimConfig.Data[enableRequestValidationConst]
-		mgw.enableResponseValidation = apimConfig.Data[enableResponseValidationConst]
-		mgw.logLevel = apimConfig.Data[logLevelConst]
-		mgw.httpPort = apimConfig.Data[httpPortConst]
-		mgw.httpsPort = apimConfig.Data[httpsPortConst]
-		httpPortVal, err = strconv.Atoi(mgw.httpPort)
+		mgw.Configs.VerifyHostname = apimConfig.Data[verifyHostnameConst]
+		mgw.Configs.EnabledGlobalTMEventPublishing = apimConfig.Data[enabledGlobalTMEventPublishingConst]
+		mgw.Configs.JmsConnectionProvider = apimConfig.Data[jmsConnectionProviderConst]
+		mgw.Configs.ThrottleEndpoint = apimConfig.Data[throttleEndpointConst]
+		mgw.Configs.EnableRealtimeMessageRetrieval = apimConfig.Data[enableRealtimeMessageRetrievalConst]
+		mgw.Configs.EnableRequestValidation = apimConfig.Data[enableRequestValidationConst]
+		mgw.Configs.EnableResponseValidation = apimConfig.Data[enableResponseValidationConst]
+		mgw.Configs.LogLevel = apimConfig.Data[logLevelConst]
+		mgw.Configs.HttpPort = apimConfig.Data[httpPortConst]
+		mgw.Configs.HttpsPort = apimConfig.Data[httpsPortConst]
+		httpPortVal, err = strconv.Atoi(mgw.Configs.HttpPort)
 		if err != nil {
 			log.Error(err, "Valid http port was not provided. Default port will be used")
 			httpPortVal = httpPortValConst
 		}
-		httpsPortVal, err = strconv.Atoi(mgw.httpsPort)
+		httpsPortVal, err = strconv.Atoi(mgw.Configs.HttpsPort)
 		if err != nil {
 			log.Error(err, "Valid https port was not provided. Default port will be used")
 			httpsPortVal = httpsPortValConst
 		}
 	} else {
-		mgw.verifyHostname = verifyHostNameVal
+		mgw.Configs.VerifyHostname = verifyHostNameVal
 	}
 
 	//Retrieving configmap related to micro-gateway configuration mustache/template
@@ -522,44 +483,13 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	//retrieve micro-gw-conf from the configmap
 	confTemp := confTemplate.Data[mgwConfGoTmpl]
 
-	mgwConfValues := &MGWConf{
-		KeystorePath:                   mgw.keystorePath,
-		KeystorePassword:               mgw.keystorePassword,
-		TruststorePath:                 mgw.truststorePath,
-		TruststorePassword:             mgw.truststorePassword,
-		KeymanagerServerurl:            mgw.keymanagerServerurl,
-		KeymanagerUsername:             mgw.keymanagerUsername,
-		KeymanagerPassword:             mgw.keymanagerPassword,
-		JwtConfigs:                     jwtConfigs,
-		EnabledGlobalTMEventPublishing: mgw.enabledGlobalTMEventPublishing,
-		JmsConnectionProvider:          mgw.jmsConnectionProvider,
-		ThrottleEndpoint:               mgw.throttleEndpoint,
-		EnableRealtimeMessageRetrieval: mgw.enableRealtimeMessageRetrieval,
-		EnableRequestValidation:        mgw.enableRequestValidation,
-		EnableResponseValidation:       mgw.enableRequestValidation,
-		LogLevel:                       mgw.logLevel,
-		HttpPort:                       mgw.httpPort,
-		HttpsPort:                      mgw.httpsPort,
-		BasicUsername:                  mgw.basicUsername,
-		BasicPassword:                  mgw.basicPassword,
-		AnalyticsEnabled:               mgw.analyticsEnabled,
-		AnalyticsUsername:              mgw.analyticsUsername,
-		AnalyticsPassword:              mgw.analyticsPassword,
-		UploadingTimeSpanInMillis:      mgw.uploadingTimeSpanInMillis,
-		RotatingPeriod:                 mgw.rotatingPeriod,
-		UploadFiles:                    mgw.uploadFiles,
-		VerifyHostname:                 mgw.verifyHostname,
-		Hostname:                       mgw.hostname,
-		Port:                           mgw.port,
-	}
-
 	//generate mgw conf from the template
 	mgwConftmpl, err := template.New("").Parse(confTemp)
 	if err != nil {
 		log.Error(err, "error in rendering mgw conf with template")
 	}
 	builder := &strings.Builder{}
-	err = mgwConftmpl.Execute(builder, mgwConfValues)
+	err = mgwConftmpl.Execute(builder, mgw.Configs)
 	if err != nil {
 		log.Error(err, "error in generating Dockerfile")
 	}
@@ -582,7 +512,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	getResourceLimitCPU := controlConfigData[resourceLimitCPU]
 	getResourceLimitMemory := controlConfigData[resourceLimitMemory]
 
-	analyticsEnabledBool, _ := strconv.ParseBool(mgw.analyticsEnabled)
+	analyticsEnabledBool, _ := strconv.ParseBool(mgw.Configs.AnalyticsEnabled)
 	dep := createMgwDeployment(instance, controlConf, analyticsEnabledBool, r, apiNamespace, *owner,
 		getResourceReqCPU, getResourceReqMemory, getResourceLimitCPU, getResourceLimitMemory, containerList,
 		int32(httpPortVal), int32(httpsPortVal))
