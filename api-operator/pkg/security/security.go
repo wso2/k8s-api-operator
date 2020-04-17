@@ -31,14 +31,7 @@ type scopeSet struct {
 	Scopes           map[string]string `json:"scopes,omitempty"`
 }
 
-type SecurityTypeJWT struct {
-	CertificateAlias     string
-	Issuer               string
-	Audience             string
-	ValidateSubscription bool
-}
-
-func Handle(client *client.Client, securityMap map[string][]string, userNameSpace string, secSchemeDefined bool, certList map[string]string, jobVolumeMount *[]corev1.VolumeMount, jobVolume *[]corev1.Volume) (map[string]securitySchemeStruct, bool, map[string]string, []SecurityTypeJWT, error) {
+func Handle(client *client.Client, securityMap map[string][]string, userNameSpace string, secSchemeDefined bool, certList map[string]string, jobVolumeMount *[]corev1.VolumeMount, jobVolume *[]corev1.Volume) (map[string]securitySchemeStruct, bool, map[string]string, *[]mgw.JwtTokenConfig, error) {
 
 	var alias string
 	//keep to track the existence of certificates
@@ -49,21 +42,21 @@ func Handle(client *client.Client, securityMap map[string][]string, userNameSpac
 
 	var certificateName string
 
-	jwtConfArray := []SecurityTypeJWT{}
+	jwtConfArray := []mgw.JwtTokenConfig{}
 	securityInstance := &wso2v1alpha1.Security{}
 	var certificateSecret = k8s.NewSecret()
 	for secName, scopeList := range securityMap {
 		//retrieve security instances
 		errGetSec := k8s.Get(client, types.NamespacedName{Name: secName, Namespace: userNameSpace}, securityInstance)
 		if errGetSec != nil && errors.IsNotFound(errGetSec) {
-			return securityDefinition, existSecCert, certList, jwtConfArray, errGetSec
+			return securityDefinition, existSecCert, certList, &jwtConfArray, errGetSec
 		}
 		if strings.EqualFold(securityInstance.Spec.Type, SecurityOauth) {
 			for _, securityConf := range securityInstance.Spec.SecurityConfig {
 				errc := k8s.Get(client, types.NamespacedName{Name: securityConf.Certificate, Namespace: userNameSpace}, certificateSecret)
 				if errc != nil && errors.IsNotFound(errc) {
 					logger.Info("defined certificate is not found")
-					return securityDefinition, existSecCert, certList, jwtConfArray, errc
+					return securityDefinition, existSecCert, certList, &jwtConfArray, errc
 				} else {
 					logger.Info("defined certificate successfully retrieved")
 				}
@@ -77,7 +70,7 @@ func Handle(client *client.Client, securityMap map[string][]string, userNameSpac
 				//add cert path and alias as key value pairs
 				certList[alias] = volume.CertPath + certificateSecret.Name + "/" + certificateName
 				//get the keymanager server URL from the security kind
-				mgw.KeymanagerServerurl = securityConf.Endpoint
+				mgw.Configs.KeymanagerServerurl = securityConf.Endpoint
 				//fetch credentials from the secret created
 				errGetCredentials := mgw.SetCredentials(client, SecurityOauth, types.NamespacedName{Namespace: userNameSpace, Name: securityConf.Credentials})
 				if errGetCredentials != nil {
@@ -109,11 +102,11 @@ func Handle(client *client.Client, securityMap map[string][]string, userNameSpac
 		if strings.EqualFold(securityInstance.Spec.Type, securityJWT) {
 			logger.Info("retrieving data for security type JWT")
 			for _, securityConf := range securityInstance.Spec.SecurityConfig {
-				jwtConf := SecurityTypeJWT{}
+				jwtConf := mgw.JwtTokenConfig{}
 				errc := k8s.Get(client, types.NamespacedName{Name: securityConf.Certificate, Namespace: userNameSpace}, certificateSecret)
 				if errc != nil && errors.IsNotFound(errc) {
 					logger.Info("defined certificate is not found")
-					return securityDefinition, existSecCert, certList, jwtConfArray, errc
+					return securityDefinition, existSecCert, certList, &jwtConfArray, errc
 				} else {
 					logger.Info("defined certificate successfully retrieved")
 				}
@@ -137,7 +130,7 @@ func Handle(client *client.Client, securityMap map[string][]string, userNameSpac
 					jwtConf.Audience = securityConf.Audience
 				}
 
-				logger.Info("certificate issuer", "issuer", mgw.Issuer)
+				logger.Info("certificate issuer", "issuer", jwtConf.Issuer)
 				jwtConfArray = append(jwtConfArray, jwtConf)
 			}
 		}
@@ -163,5 +156,5 @@ func Handle(client *client.Client, securityMap map[string][]string, userNameSpac
 			}
 		}
 	}
-	return securityDefinition, existSecCert, certList, jwtConfArray, nil
+	return securityDefinition, existSecCert, certList, &jwtConfArray, nil
 }

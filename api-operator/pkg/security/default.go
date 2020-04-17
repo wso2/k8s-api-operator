@@ -12,10 +12,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func Default(client *client.Client, apiNamespace string, certList map[string]string, jwtConfigs *[]SecurityTypeJWT, jobVolumeMount *[]corev1.VolumeMount, jobVolume *[]corev1.Volume, owner *[]metav1.OwnerReference) (bool, error) {
+func Default(client *client.Client, apiNamespace string, certList map[string]string, jobVolumeMount *[]corev1.VolumeMount, jobVolume *[]corev1.Volume, owner *[]metav1.OwnerReference) (bool, error) {
 	existCert := false
 	var certName string
-	defaultSecConf := SecurityTypeJWT{}
+	defaultSecConf := mgw.JwtTokenConfig{}
 	//copy default sec in wso2-system to user namespace
 	securityDefault := &wso2v1alpha1.Security{}
 	//check default security already exist in user namespace
@@ -114,7 +114,6 @@ func Default(client *client.Client, apiNamespace string, certList map[string]str
 			}
 			//add cert path and alias as key value pairs
 			certList[alias] = volume.CertPath + defaultCertUsrNs.Name + "/" + certName
-			mgw.CertificateAlias = alias
 			defaultSecConf.CertificateAlias = alias
 			defaultSecConf.ValidateSubscription = securityDefault.Spec.SecurityConfig[0].ValidateSubscription
 		}
@@ -125,8 +124,9 @@ func Default(client *client.Client, apiNamespace string, certList map[string]str
 			defaultSecConf.Audience = securityDefault.Spec.SecurityConfig[0].Audience
 		}
 	}
-	*jwtConfigs = append(*jwtConfigs, defaultSecConf)
 
+	// append JwtConfigs
+	*mgw.Configs.JwtConfigs = append(*mgw.Configs.JwtConfigs, defaultSecConf)
 	return existCert, nil
 }
 
