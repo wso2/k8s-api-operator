@@ -22,8 +22,8 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/golang/glog"
-	"github.com/sirupsen/logrus"
 	v1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/serving/v1alpha1"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/registry"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/registry/utils"
 	"k8s.io/api/extensions/v1beta1"
@@ -67,7 +67,7 @@ import (
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/controller/ratelimiting"
 )
 
-var log = logf.Log.WithName("controller_api")
+var log = logf.Log.WithName("api.controller")
 
 //XMGWProductionEndpoints represents the structure of endpoint
 type XMGWProductionEndpoints struct {
@@ -236,7 +236,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		return reconcile.Result{}, err
 	}
 
-	owner := getOwnerDetails(instance)
+	owner := k8s.NewOwnerRef(instance.TypeMeta, instance.ObjectMeta)
 	operatorOwner, ownerErr := getOperatorOwner(r)
 	if ownerErr != nil {
 		reqLogger.Info("Operator was not found in the " + wso2NameSpaceConst + " namespace. No owner will be set for the artifacts")
@@ -244,13 +244,17 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	userNameSpace := instance.Namespace
 
 	//get configurations file for the controller
-	controlConf, errConf := getConfigmap(r, controllerConfName, wso2NameSpaceConst)
+	controlConf := k8s.NewConfMap()
+	errConf := k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: controllerConfName}, controlConf)
 	//get ingress configs
-	controlIngressConf, errIngressConf := getConfigmap(r, ingressConfigs, wso2NameSpaceConst)
+	controlIngressConf := k8s.NewConfMap()
+	errIngressConf := k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: ingressConfigs}, controlIngressConf)
 	//get openshift configs
-	controlOpenshiftConf, errOpenshiftConf := getConfigmap(r, openShiftConfigs, wso2NameSpaceConst)
+	controlOpenshiftConf := k8s.NewConfMap()
+	errOpenshiftConf := k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: openShiftConfigs}, controlOpenshiftConf)
 	//get docker registry configs
-	dockerRegistryConf, errRegConf := getConfigmap(r, dockerRegConfigs, wso2NameSpaceConst)
+	dockerRegistryConf := k8s.NewConfMap()
+	errRegConf := k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: dockerRegConfigs}, dockerRegistryConf)
 
 	confErrs := []error{errConf, errIngressConf, errRegConf, errOpenshiftConf}
 	for _, err := range confErrs {
@@ -296,30 +300,26 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	// make volumes empty
 	jobVolumeMount, jobVolume = []corev1.VolumeMount{}, []corev1.Volume{}
 
-	// Check if the configmaps mentioned in the crd object exist
 	swaggerCmNames := instance.Spec.Definition.SwaggerConfigmapNames
 	for _, swaggerCmName := range swaggerCmNames {
-		apiConfigMap, err := getConfigmap(r, swaggerCmName, userNameSpace)
+		// Check if the configmaps mentioned in the crd object exist
+		swaggerConfMap := k8s.NewConfMap()
+		err := k8s.Get(&r.client, types.NamespacedName{Namespace: userNameSpace, Name: swaggerCmName}, swaggerConfMap)
 		if err != nil {
 			if errors.IsNotFound(err) {
 				// Swagger configmap is not found, could have been deleted after reconcile request.
 				// Return and requeue
-				log.Error(err, "Swagger configmap is not found")
 				return reconcile.Result{}, err
 			}
 			// Error reading the object - requeue the request.
 			return reconcile.Result{}, err
 		}
 
-		//add owner reference to the swagger configmap and update it
-		errUpdateApiConf := updateConfMapWithOwner(r, owner, apiConfigMap)
-		if errUpdateApiConf != nil {
-			log.Error(errUpdateApiConf, "error in updating swagger config map with owner reference")
-		}
+		// update owner reference to the swagger configmap and update it
+		_ = k8s.UpdateOwner(&r.client, owner, swaggerConfMap)
 
 		//Fetch swagger data from configmap, reads and modifies swagger
-		swaggerDataMap := apiConfigMap.Data
-		swagger, swaggerDataFile, err := mgwSwaggerLoader(swaggerDataMap)
+		swagger, swaggerDataFile, err := mgwSwaggerLoader(swaggerConfMap.Data)
 		// randomize file name to make it unique
 		swaggerDataFile = getRandFileName(swaggerDataFile)
 
@@ -417,22 +417,21 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		formattedSwagger := string(prettyJSON.Bytes())
 		formattedSwaggerCmName := swaggerCmName + "-mgw"
 		//create configmap with modified swagger
-		swaggerConfMap := createConfigMap(formattedSwaggerCmName, swaggerDataFile, formattedSwagger, userNameSpace, owner)
+		swaggerDataMgw := map[string]string{swaggerDataFile: formattedSwagger}
+		swaggerConfMapMgw := k8s.NewConfMapWith(types.NamespacedName{Namespace: userNameSpace, Name: formattedSwaggerCmName}, &swaggerDataMgw, nil, owner)
 		log.Info("Creating swagger configmap for mgw", "name", formattedSwaggerCmName, "namespace", userNameSpace)
 
-		_, errGetConf := getConfigmap(r, formattedSwaggerCmName, userNameSpace)
+		mgwSwaggerConfMap := k8s.NewConfMap()
+		errGetConf := k8s.Get(&r.client, types.NamespacedName{Namespace: userNameSpace, Name: formattedSwaggerCmName}, mgwSwaggerConfMap)
 		if errGetConf != nil && errors.IsNotFound(errGetConf) {
 			log.Info("swagger-mgw is not found. Hence creating new configmap")
-			errCrtConf := r.client.Create(context.TODO(), swaggerConfMap)
-			if errCrtConf != nil {
-				log.Error(errCrtConf, "Error creating mgw swagger configmap")
-			}
+			_ = k8s.Create(&r.client, swaggerConfMapMgw)
 		} else if errGetConf != nil {
 			log.Error(errGetConf, "error getting swagger-mgw")
 		} else {
 			if instance.Spec.UpdateTimeStamp != "" {
 				log.Info("updating swagger-mgw since timestamp value is given")
-				updateEr := r.client.Update(context.TODO(), swaggerConfMap)
+				updateEr := r.client.Update(context.TODO(), swaggerConfMapMgw)
 				if updateEr != nil {
 					log.Error(updateEr, "Error in updating configmap with updated swagger definition")
 				}
@@ -461,31 +460,26 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 					log.Error(errSec, "error in getting default security from "+wso2NameSpaceConst)
 					return reconcile.Result{}, errSec
 				}
-				var defaultCert = &corev1.Secret{}
+				var defaultCert = k8s.NewSecret()
 				//check default certificate exists in user namespace
-				errCertUserns := r.client.Get(context.TODO(), types.NamespacedName{Name: securityDefault.Spec.SecurityConfig[0].Certificate, Namespace: userNameSpace}, defaultCert)
+				errCertUserns := k8s.Get(&r.client, types.NamespacedName{Name: securityDefault.Spec.SecurityConfig[0].Certificate, Namespace: userNameSpace}, defaultCert)
 				if errCertUserns != nil && errors.IsNotFound(errCertUserns) {
-					log.Info("default certificate is not found in " + userNameSpace + "namespace")
-					log.Info("retrieve default certificate from " + wso2NameSpaceConst)
-					var defaultCertName string
-					var defaultCertvalue []byte
-					errc := r.client.Get(context.TODO(), types.NamespacedName{Name: securityDefault.Spec.SecurityConfig[0].Certificate, Namespace: wso2NameSpaceConst}, defaultCert)
-					if errc != nil && errors.IsNotFound(errc) {
-						reqLogger.Info("defined certificate is not found in " + wso2NameSpaceConst)
-						return reconcile.Result{}, errc
-					} else if errc != nil {
-						log.Error(errc, "error in getting default cert from "+wso2NameSpaceConst)
+					errc := k8s.Get(&r.client, types.NamespacedName{Name: securityDefault.Spec.SecurityConfig[0].Certificate, Namespace: wso2NameSpaceConst}, defaultCert)
+					if errc != nil {
 						return reconcile.Result{}, errc
 					}
 					//copying default cert as a secret to user namespace
+					var defaultCertName string
+					var defaultCertvalue []byte
 					for cert, value := range defaultCert.Data {
 						defaultCertName = cert
 						defaultCertvalue = value
 					}
-					newDefaultSecret := createSecret(securityDefault.Spec.SecurityConfig[0].Certificate, defaultCertName, string(defaultCertvalue), userNameSpace, owner)
-					errCreateSec := r.client.Create(context.TODO(), newDefaultSecret)
+					defCertData := map[string][]byte{defaultCertName: defaultCertvalue}
+					newDefaultSecret := k8s.NewSecretWith(types.NamespacedName{Namespace: userNameSpace, Name: securityDefault.Spec.SecurityConfig[0].Certificate}, &defCertData, nil, owner)
+					errCreateSec := k8s.Create(&r.client, newDefaultSecret)
+
 					if errCreateSec != nil {
-						log.Error(errCreateSec, "error creating secret for default security in user namespace")
 						return reconcile.Result{}, errCreateSec
 					} else {
 						//mount certs
@@ -520,7 +514,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 				}
 				//copying default security to user namespace
 				log.Info("copying default security to " + userNameSpace)
-				newDefaultSecurity := copyDefaultSecurity(securityDefault, userNameSpace, owner)
+				newDefaultSecurity := copyDefaultSecurity(securityDefault, userNameSpace, *owner)
 				errCreateSecurity := r.client.Create(context.TODO(), newDefaultSecurity)
 				if errCreateSecurity != nil {
 					log.Error(errCreateSecurity, "error creating secret for default security in user namespace")
@@ -540,13 +534,9 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			} else {
 				log.Info("default security exists in " + userNameSpace + " namespace")
 				//check default cert exist in usernamespace
-				var defaultCertUsrNs = &corev1.Secret{}
-				errCertUserns := r.client.Get(context.TODO(), types.NamespacedName{Name: securityDefault.Spec.SecurityConfig[0].Certificate, Namespace: userNameSpace}, defaultCertUsrNs)
-				if errCertUserns != nil && errors.IsNotFound(errCertUserns) {
-					log.Error(errCertUserns, "default certificate is not found in user namespace")
-					return reconcile.Result{}, errCertUserns
-				} else if errCertUserns != nil {
-					log.Error(errCertUserns, "error retrieving default certificate in user namespace")
+				var defaultCertUsrNs = k8s.NewSecret()
+				errCertUserns := k8s.Get(&r.client, types.NamespacedName{Name: securityDefault.Spec.SecurityConfig[0].Certificate, Namespace: userNameSpace}, defaultCertUsrNs)
+				if errCertUserns != nil {
 					return reconcile.Result{}, errCertUserns
 				} else {
 					//mount certs
@@ -600,7 +590,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	log.Info("image exist? " + strconv.FormatBool(imageExist))
 
 	// gets analytics configuration
-	analyticsConf, analyticsEr := getConfigmap(r, analyticsConfName, wso2NameSpaceConst)
+	analyticsConf := k8s.NewConfMap()
+	analyticsEr := k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: analyticsConfName}, analyticsConf)
 	if analyticsEr != nil {
 		log.Info("Disabling analytics since the analytics configuration related config map not found.")
 		analyticsEnabled = "false"
@@ -614,7 +605,9 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			analyticsSecretName := analyticsConf.Data[analyticsSecretConst]
 
 			// gets the data from analytics secret
-			analyticsData, err := getSecretData(r, analyticsSecretName)
+			analyticsSecret := k8s.NewSecret()
+			err := k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: analyticsSecretName}, analyticsSecret)
+			analyticsData := analyticsSecret.Data
 
 			if err == nil && analyticsData != nil && analyticsData[usernameConst] != nil &&
 				analyticsData[passwordConst] != nil && analyticsData[certConst] != nil {
@@ -657,7 +650,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	//Get data from apim configmap
-	apimConfig, apimEr := getConfigmap(r, apimConfName, wso2NameSpaceConst)
+	apimConfig := k8s.NewConfMap()
+	apimEr := k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: apimConfName}, apimConfig)
 	httpPortVal := httpPortValConst
 	httpsPortVal := httpsPortValConst
 	if apimEr == nil {
@@ -686,7 +680,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	//Retrieving configmap related to micro-gateway configuration mustache/template
-	confTemplate, confErr := getConfigmap(r, mgwConfMustache, wso2NameSpaceConst)
+	confTemplate := k8s.NewConfMap()
+	confErr := k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: mgwConfMustache}, confTemplate)
 	if confErr != nil {
 		log.Error(err, "error in retrieving the config map ")
 	}
@@ -736,12 +731,12 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 	//creating k8s secret from the rendered mgw-conf file
 	output := builder.String()
-	errCreateSecret := createMGWSecret(r, output, owner, instance)
-	if errCreateSecret != nil {
-		log.Error(errCreateSecret, "Error in creating micro-gateway conf secret")
-	} else {
-		log.Info("Successfully created secret")
-	}
+
+	// create mgwSecret in the k8s cluster
+	mgwNsName := types.NamespacedName{Namespace: instance.Namespace, Name: instance.Name + "-" + mgwConfSecretConst}
+	mgwData := map[string][]byte{mgwConfConst: []byte(output)}
+	mgwSecret := k8s.NewSecretWith(mgwNsName, &mgwData, nil, owner)
+	_ = k8s.Apply(&r.client, mgwSecret)
 
 	generateK8sArtifactsForMgw := controlConfigData[generatekubernbetesartifactsformgw]
 	genArtifacts, errGenArtifacts := strconv.ParseBool(generateK8sArtifactsForMgw)
@@ -754,13 +749,13 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	getResourceLimitMemory := controlConfigData[resourceLimitMemory]
 
 	analyticsEnabledBool, _ := strconv.ParseBool(analyticsEnabled)
-	dep := createMgwDeployment(instance, controlConf, analyticsEnabledBool, r, userNameSpace, owner,
+	dep := createMgwDeployment(instance, controlConf, analyticsEnabledBool, r, userNameSpace, *owner,
 		getResourceReqCPU, getResourceReqMemory, getResourceLimitCPU, getResourceLimitMemory, containerList,
 		int32(httpPortVal), int32(httpsPortVal))
 	depFound := &appsv1.Deployment{}
 	deperr := r.client.Get(context.TODO(), types.NamespacedName{Name: dep.Name, Namespace: dep.Namespace}, depFound)
 
-	svc := createMgwLBService(r, instance, userNameSpace, owner, int32(httpPortVal), int32(httpsPortVal), operatorMode)
+	svc := createMgwLBService(r, instance, userNameSpace, *owner, int32(httpPortVal), int32(httpsPortVal), operatorMode)
 	svcFound := &corev1.Service{}
 	svcErr := r.client.Get(context.TODO(), types.NamespacedName{Name: svc.Name, Namespace: svc.Namespace}, svcFound)
 
@@ -778,7 +773,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	targetAvgUtilizationCPU := int32(intValueUtilCPU)
 	minReplicas := int32(instance.Spec.Replicas)
 
-	kanikoArgs, err = getConfigmap(r, "kaniko-arguments", "wso2-system")
+	err = k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: kanikoArgsConfigs}, kanikoArgs)
 	if err != nil && errors.IsNotFound(err) {
 		log.Info("No kaniko-arguments config map is available in wso2-system namespace")
 	}
@@ -1027,81 +1022,38 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 func copyConfigVolumes(r *ReconcileAPI, namespace string) error {
 	config := registry.GetConfig()
 	for _, volume := range config.Volumes {
+		var fromObj runtime.Object
+		var name string
+
 		if volume.Secret != nil {
-			name := volume.Secret.SecretName
-			if err := copySecret(r, name, wso2NameSpaceConst, name, namespace); err != nil {
-				return err
-			}
+			name = volume.Secret.SecretName
+			fromObj = k8s.NewSecret()
 		}
 		if volume.ConfigMap != nil {
-			name := volume.ConfigMap.Name
-			if err := copyConfigMap(r, name, wso2NameSpaceConst, name, namespace); err != nil {
-				return err
-			}
+			name = volume.ConfigMap.Name
+			fromObj = k8s.NewConfMap()
+		}
+
+		fromNsName := types.NamespacedName{Namespace: wso2NameSpaceConst, Name: name}
+		if err := k8s.Get(&r.client, fromNsName, fromObj); err != nil {
+			return err
+		}
+
+		toObj := fromObj
+		toObj.(metav1.Object).SetNamespace(namespace)
+		toObjMeta := toObj.(metav1.Object)
+		toObjMeta.SetResourceVersion("")
+		//newObjMeta := metav1.ObjectMeta{Namespace:namespace, Name:name}
+
+		if err := k8s.Apply(&r.client, toObj); err != nil {
+			return err
 		}
 	}
 
 	return nil
 }
 
-// gets the data from analytics secret
-func getSecretData(r *ReconcileAPI, analyticsSecretName string) (map[string][]byte, error) {
-	var analyticsData map[string][]byte
-	// Check if this secret exists
-	analyticsSecret := &corev1.Secret{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: analyticsSecretName, Namespace: wso2NameSpaceConst}, analyticsSecret)
-
-	if err != nil && errors.IsNotFound(err) {
-		log.Info("Analytics Secret is not found")
-		return analyticsData, err
-
-	} else if err != nil {
-		log.Error(err, "error ")
-		return analyticsData, err
-
-	}
-
-	analyticsData = analyticsSecret.Data
-	log.Info("Analytics Secret exists")
-	return analyticsData, nil
-
-}
-
-//Handles microgateway conf create and update
-func createMGWSecret(r *ReconcileAPI, confData string, owner []metav1.OwnerReference, cr *wso2v1alpha1.API) error {
-	var apimSecret *corev1.Secret
-
-	apimSecret = &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:            cr.Name + "-" + mgwConfSecretConst,
-			Namespace:       cr.Namespace,
-			OwnerReferences: owner,
-		},
-	}
-
-	apimSecret.Data = map[string][]byte{
-		mgwConfConst: []byte(confData),
-	}
-
-	// Check if mgw-conf secret exists
-	checkSecret := &corev1.Secret{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: cr.Name + "-" + mgwConfSecretConst, Namespace: cr.Namespace}, checkSecret)
-
-	if err != nil && errors.IsNotFound(err) {
-		log.Info("Creating mgw-conf secret ")
-		errSecret := r.client.Create(context.TODO(), apimSecret)
-		return errSecret
-	} else if err != nil {
-		log.Error(err, "error in mgw-conf creation")
-		return err
-	} else {
-		log.Info("Updating mgw-conf secret")
-		errSecret := r.client.Update(context.TODO(), apimSecret)
-		return errSecret
-	}
-}
-
-func createHorizontalPodAutoscaler(dep *appsv1.Deployment, r *ReconcileAPI, owner []metav1.OwnerReference,
+func createHorizontalPodAutoscaler(dep *appsv1.Deployment, r *ReconcileAPI, owner *[]metav1.OwnerReference,
 	minReplicas int32, maxReplicas int32, targetAverageUtilizationCPU int32) error {
 
 	targetResource := v2beta1.CrossVersionObjectReference{
@@ -1123,7 +1075,7 @@ func createHorizontalPodAutoscaler(dep *appsv1.Deployment, r *ReconcileAPI, owne
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            dep.Name + "-hpa",
 			Namespace:       dep.Namespace,
-			OwnerReferences: owner,
+			OwnerReferences: *owner,
 		},
 		Spec: v2beta1.HorizontalPodAutoscalerSpec{
 			MinReplicas:    &minReplicas,
@@ -1149,62 +1101,6 @@ func createHorizontalPodAutoscaler(dep *appsv1.Deployment, r *ReconcileAPI, owne
 		log.Info("HPA for deployment " + dep.Name + " is already exist")
 	}
 	return nil
-}
-
-//get configmap
-func getConfigmap(r *ReconcileAPI, mapName string, ns string) (*corev1.ConfigMap, error) {
-	apiConfigMap := &corev1.ConfigMap{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: mapName, Namespace: ns}, apiConfigMap)
-
-	if mapName == apimConfName {
-		if err != nil && errors.IsNotFound(err) {
-			logrus.Warnf("missing APIM configurations ", err)
-			return nil, err
-
-		} else if err != nil {
-			log.Error(err, "error getting APIM configmap", "configmap name", mapName)
-			return apiConfigMap, err
-		}
-	} else {
-		if err != nil && errors.IsNotFound(err) {
-			log.Error(err, "Specified configmap is not found", "configmap name", mapName)
-			return apiConfigMap, err
-		} else if err != nil {
-			log.Error(err, "error getting configmap", "configmap name", mapName)
-			return apiConfigMap, err
-		}
-	}
-	return apiConfigMap, nil
-}
-
-// createConfigMap creates a config file with the given data
-func createConfigMap(apiConfigMapRef string, key string, value string, ns string, owner []metav1.OwnerReference) *corev1.ConfigMap {
-
-	return &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:            apiConfigMapRef,
-			Namespace:       ns,
-			OwnerReferences: owner,
-		},
-		Data: map[string]string{
-			key: value,
-		},
-	}
-}
-
-// createSecret creates a config file with the given data
-func createSecret(secretName string, key string, value string, ns string, owner []metav1.OwnerReference) *corev1.Secret {
-
-	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:            secretName,
-			Namespace:       ns,
-			OwnerReferences: owner,
-		},
-		Data: map[string][]byte{
-			key: []byte(value),
-		},
-	}
 }
 
 //Swagger handling
@@ -1572,11 +1468,9 @@ func getCredentials(r *ReconcileAPI, name string, securityType string, userNameS
 	var password []byte
 
 	//get the secret included credentials
-	credentialSecret := &corev1.Secret{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: userNameSpace}, credentialSecret)
-
+	credentialSecret := k8s.NewSecret()
+	err := k8s.Get(&r.client, types.NamespacedName{Name: name, Namespace: userNameSpace}, credentialSecret)
 	if err != nil && errors.IsNotFound(err) {
-		log.Info("secret not found")
 		return err
 	}
 
@@ -1719,10 +1613,11 @@ func createMgwDeployment(cr *wso2v1alpha1.API, conf *corev1.ConfigMap, analytics
 
 //Handles dockerfile configmap creation
 func dockerfileHandler(r *ReconcileAPI, certList map[string]string, existcert bool, conf map[string]string,
-	owner []metav1.OwnerReference, cr *wso2v1alpha1.API, existInterceptors bool, existJavaInterceptors bool) (*corev1.ConfigMap, error) {
+	owner *[]metav1.OwnerReference, cr *wso2v1alpha1.API, existInterceptors bool, existJavaInterceptors bool) (*corev1.ConfigMap, error) {
 	var dockerTemplate string
 	truststorePass := getTruststorePassword(r)
-	dockerTemplateConfigmap, err := getConfigmap(r, dockerFileTemplate, wso2NameSpaceConst)
+	dockerTemplateConfigmap := k8s.NewConfMap()
+	err := k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: dockerFileTemplate}, dockerTemplateConfigmap)
 	if err != nil && errors.IsNotFound(err) {
 		log.Error(err, "docker template configmap not found")
 		return nil, err
@@ -1755,16 +1650,18 @@ func dockerfileHandler(r *ReconcileAPI, certList map[string]string, existcert bo
 		return nil, err
 	}
 
-	dockerfileConfmap, err := getConfigmap(r, cr.Name+"-"+dockerFile, cr.Namespace)
+	dockerfileConfmap := k8s.NewConfMap()
+	err = k8s.Get(&r.client, types.NamespacedName{Namespace: cr.Namespace, Name: cr.Name + "-" + dockerFile}, dockerfileConfmap)
 	data := builder.String()
 	if err != nil && errors.IsNotFound(err) {
-		dockerConf := createConfigMap(cr.Name+"-"+dockerFile, "Dockerfile", data, cr.Namespace, owner)
+		dockerDataMap := map[string]string{"Dockerfile": data}
+		dockerConfMap := k8s.NewConfMapWith(types.NamespacedName{Namespace: cr.Namespace, Name: cr.Name + "-" + dockerFile}, &dockerDataMap, nil, owner)
 
-		errorMap := r.client.Create(context.TODO(), dockerConf)
+		errorMap := r.client.Create(context.TODO(), dockerConfMap)
 		if errorMap != nil {
 			return dockerfileConfmap, errorMap
 		}
-		return dockerConf, nil
+		return dockerConfMap, nil
 	} else if err != nil {
 		return dockerfileConfmap, err
 	}
@@ -1778,25 +1675,25 @@ func dockerfileHandler(r *ReconcileAPI, certList map[string]string, existcert bo
 	return dockerfileConfmap, err
 }
 
-func policyHandler(r *ReconcileAPI, operatorOwner []metav1.OwnerReference, userNameSpace string) error {
+func policyHandler(r *ReconcileAPI, operatorOwner *[]metav1.OwnerReference, userNameSpace string) error {
 	//Check if policy configmap is available
-	foundmapc := &corev1.ConfigMap{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: policyConfigmap, Namespace: userNameSpace}, foundmapc)
+	foundmapc := k8s.NewConfMap()
+	err := k8s.Get(&r.client, types.NamespacedName{Name: policyConfigmap, Namespace: userNameSpace}, foundmapc)
 
 	if err != nil && errors.IsNotFound(err) {
 		//create new map with default policies in user namespace if a map is not found
 		log.Info("Creating a config map with default policies", "Namespace", userNameSpace, "Name", policyConfigmap)
 
 		defaultval := ratelimiting.CreateDefault()
-		confmap := createConfigMap(policyConfigmap, policyFileConst, defaultval, userNameSpace, operatorOwner)
+		policyDataMap := map[string]string{policyFileConst: defaultval}
+		policyConfMap := k8s.NewConfMapWith(types.NamespacedName{Namespace: userNameSpace, Name: policyConfigmap}, &policyDataMap, nil, operatorOwner)
 
-		err = r.client.Create(context.TODO(), confmap)
+		err = r.client.Create(context.TODO(), policyConfMap)
 		if err != nil {
 			log.Error(err, "error ")
 			return err
 		}
 	} else if err != nil {
-		log.Error(err, "error ")
 		return err
 	}
 	return nil
@@ -1817,13 +1714,12 @@ func isImageExist(r *ReconcileAPI, secretName string, namespace string) (bool, e
 	}
 
 	// checks if the secret is available
-	dockerConfigSecret := &corev1.Secret{}
+	log.Info("Getting Docker credentials secret")
+	dockerConfigSecret := k8s.NewSecret()
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: secretName, Namespace: namespace}, dockerConfigSecret)
-	if err != nil && errors.IsNotFound(err) {
+	if err == nil && errors.IsNotFound(err) {
 		log.Info("Docker credentials secret is not found", "secret-name", secretName, "namespace", namespace)
 	} else if err != nil {
-		log.Error(err, "Error while getting docker credentials secret", "secret-name", secretName, "namespace", namespace)
-	} else {
 		authsJsonString := dockerConfigSecret.Data[utils.DockerConfigKeyConst]
 		auths := Auth{}
 		err := json.Unmarshal([]byte(authsJsonString), &auths)
@@ -1848,7 +1744,7 @@ func isImageExist(r *ReconcileAPI, secretName string, namespace string) (bool, e
 
 //Schedule Kaniko Job to generate micro-gw image
 func scheduleKanikoJob(cr *wso2v1alpha1.API, conf *corev1.ConfigMap, jobVolumeMount []corev1.VolumeMount,
-	jobVolume []corev1.Volume, timeStamp string, owner []metav1.OwnerReference) *batchv1.Job {
+	jobVolume []corev1.Volume, timeStamp string, owner *[]metav1.OwnerReference) *batchv1.Job {
 	roolValue := int64(0)
 	regConfig := registry.GetConfig()
 	kanikoJobName := cr.Name + "-kaniko"
@@ -1873,7 +1769,7 @@ func scheduleKanikoJob(cr *wso2v1alpha1.API, conf *corev1.ConfigMap, jobVolumeMo
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            kanikoJobName,
 			Namespace:       cr.Namespace,
-			OwnerReferences: owner,
+			OwnerReferences: *owner,
 		},
 		Spec: batchv1.JobSpec{
 			Template: corev1.PodTemplateSpec{
@@ -1949,7 +1845,7 @@ func createMgwLBService(r *ReconcileAPI, cr *wso2v1alpha1.API, nameSpace string,
 // Creating an Ingress resource to expose mgw
 // Supports for multiple apiBasePaths when there are multiple swaggers for one API CRD
 func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, httpPortVal int32, httpsPortVal int32,
-	apiBasePathMap map[string]string, controllerConfig *corev1.ConfigMap, owner []metav1.OwnerReference) error {
+	apiBasePathMap map[string]string, controllerConfig *corev1.ConfigMap, owner *[]metav1.OwnerReference) error {
 
 	controlConfigData := controllerConfig.Data
 	transportMode := controlConfigData[ingressTransportMode]
@@ -1965,7 +1861,8 @@ func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, htt
 	log.Info(fmt.Sprintf("Creating ingress resource with name: %v", ingressName))
 	log.WithValues("Ingress metadata. Transport mode", transportMode, "Ingress name", ingressName,
 		"Ingress hostname ", ingressHostName)
-	annotationMap, err := getConfigmap(r, ingressConfigs, wso2NameSpaceConst)
+	annotationMap := k8s.NewConfMap()
+	err := k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: ingressConfigs}, annotationMap)
 	var port int32
 
 	if httpConst == transportMode {
@@ -2015,7 +1912,7 @@ func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, htt
 			Namespace:       namespace, // goes into backend full name
 			Name:            ingressName,
 			Annotations:     ingressAnnotationMap,
-			OwnerReferences: owner,
+			OwnerReferences: *owner,
 		},
 		Spec: v1beta1.IngressSpec{
 			Rules: []v1beta1.IngressRule{
@@ -2055,7 +1952,7 @@ func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, htt
 // Creating a Route resource to expose microgateway
 // Supports for multiple apiBasePaths when there are multiple swaggers for one API CRD
 func createorUpdateMgwRouteResource(r *ReconcileAPI, cr *wso2v1alpha1.API, httpPortVal int32, httpsPortVal int32,
-	apiBasePathMap map[string]string, controllerConfig *corev1.ConfigMap, owner []metav1.OwnerReference) error {
+	apiBasePathMap map[string]string, controllerConfig *corev1.ConfigMap, owner *[]metav1.OwnerReference) error {
 
 	controlConfigData := controllerConfig.Data
 	routePrefix := controlConfigData[routeName]
@@ -2084,7 +1981,8 @@ func createorUpdateMgwRouteResource(r *ReconcileAPI, cr *wso2v1alpha1.API, httpP
 	log.WithValues("Route metadata. Transport mode", transportMode, "Route name", routeName,
 		"Ingress hostname ", routesHostname)
 
-	annotationMap, err := getConfigmap(r, openShiftConfigs, wso2NameSpaceConst)
+	annotationMap := k8s.NewConfMap()
+	err := k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: openShiftConfigs}, annotationMap)
 	var port int32
 
 	if httpConst == transportMode {
@@ -2128,7 +2026,7 @@ func createorUpdateMgwRouteResource(r *ReconcileAPI, cr *wso2v1alpha1.API, httpP
 			ObjectMeta: metav1.ObjectMeta{
 				Name:            routeNewName,
 				Namespace:       namespace,
-				OwnerReferences: owner,
+				OwnerReferences: *owner,
 				Annotations:     routeAnnotationMap,
 			},
 			Spec: routv1.RouteSpec{
@@ -2258,25 +2156,25 @@ func getVolumes(apiName string, swaggerCmNames []string) ([]corev1.VolumeMount, 
 
 // Handles the mounting of analytics certificate
 func analyticsVolumeHandler(analyticsCertSecretName string, r *ReconcileAPI, jobVolumeMount []corev1.VolumeMount,
-	jobVolume []corev1.Volume, userNameSpace string, operatorOwner []metav1.OwnerReference) ([]corev1.VolumeMount, []corev1.Volume, string, error) {
+	jobVolume []corev1.Volume, userNameSpace string, operatorOwner *[]metav1.OwnerReference) ([]corev1.VolumeMount, []corev1.Volume, string, error) {
 	var fileName string
-	var value string
-	analyticsCertSecret := &corev1.Secret{}
-	//checks if the certificate exists in the user namepspace
-	errCertNs := r.client.Get(context.TODO(), types.NamespacedName{Name: analyticsCertSecretName, Namespace: userNameSpace}, analyticsCertSecret)
+	var fileValue []byte
+	analyticsCertSecret := k8s.NewSecret()
+	// checks if the certificate exists in the namespace of the API
+	errCertNs := k8s.Get(&r.client, types.NamespacedName{Name: analyticsCertSecretName, Namespace: userNameSpace}, analyticsCertSecret)
 
 	if errCertNs != nil {
 		log.Info("Error in getting certificate secret specified in analytics from the user namespace. Finding it in " + wso2NameSpaceConst)
-		errCert := r.client.Get(context.TODO(), types.NamespacedName{Name: analyticsCertSecretName, Namespace: wso2NameSpaceConst}, analyticsCertSecret)
+		errCert := k8s.Get(&r.client, types.NamespacedName{Name: analyticsCertSecretName, Namespace: wso2NameSpaceConst}, analyticsCertSecret)
 		if errCert != nil {
 			log.Error(errCert, "Error in getting certificate secret specified in analytics from "+wso2NameSpaceConst)
 			return jobVolumeMount, jobVolume, fileName, errCert
 		}
 		for pem, val := range analyticsCertSecret.Data {
 			fileName = pem
-			value = string(val)
+			fileValue = val
 		}
-		newSecret := createSecret(analyticsCertSecretName, fileName, value, userNameSpace, operatorOwner)
+		newSecret := k8s.NewSecretWith(types.NamespacedName{Namespace: userNameSpace, Name: analyticsCertSecretName}, &map[string][]byte{fileName: fileValue}, nil, operatorOwner)
 		err := r.client.Create(context.TODO(), newSecret)
 		if err != nil {
 			log.Error(err, "Error in copying analytics cert to user namespace")
@@ -2352,11 +2250,10 @@ func getAnalyticsPVClaim(r *ReconcileAPI, deployVolumeMount []corev1.VolumeMount
 }
 
 func getTruststorePassword(r *ReconcileAPI) string {
-
 	var password string
 	//get secret if available
-	secret := &corev1.Secret{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: truststoreSecretName, Namespace: wso2NameSpaceConst},
+	secret := k8s.NewSecret()
+	err := k8s.Get(&r.client, types.NamespacedName{Name: truststoreSecretName, Namespace: wso2NameSpaceConst},
 		secret)
 	if err != nil && errors.IsNotFound(err) {
 		encodedpassword := encodedTrustsorePassword
@@ -2392,40 +2289,16 @@ func getTruststorePassword(r *ReconcileAPI) string {
 	return password
 }
 
-//gets the details of the api crd object for owner reference
-func getOwnerDetails(cr *wso2v1alpha1.API) []metav1.OwnerReference {
-	setOwner := true
-	return []metav1.OwnerReference{
-		{
-			APIVersion:         cr.APIVersion,
-			Kind:               cr.Kind,
-			Name:               cr.Name,
-			UID:                cr.UID,
-			Controller:         &setOwner,
-			BlockOwnerDeletion: &setOwner,
-		},
-	}
-}
-
 //gets the details of the operator for owner reference
-func getOperatorOwner(r *ReconcileAPI) ([]metav1.OwnerReference, error) {
+func getOperatorOwner(r *ReconcileAPI) (*[]metav1.OwnerReference, error) {
 	depFound := &appsv1.Deployment{}
-	setOwner := true
 	deperr := r.client.Get(context.TODO(), types.NamespacedName{Name: "api-operator", Namespace: wso2NameSpaceConst}, depFound)
 	if deperr != nil {
 		noOwner := []metav1.OwnerReference{}
-		return noOwner, deperr
+		return &noOwner, deperr
 	}
-	return []metav1.OwnerReference{
-		{
-			APIVersion:         depFound.APIVersion,
-			Kind:               depFound.Kind,
-			Name:               depFound.Name,
-			UID:                depFound.UID,
-			Controller:         &setOwner,
-			BlockOwnerDeletion: &setOwner,
-		},
-	}, nil
+
+	return k8s.NewOwnerRef(depFound.TypeMeta, depFound.ObjectMeta), nil
 }
 
 func getSecurityDefinedInSwagger(swagger *openapi3.Swagger) (map[string][]string, bool, int, error) {
@@ -2500,7 +2373,7 @@ func handleSecurity(r *ReconcileAPI, securityMap map[string][]string, userNameSp
 
 	jwtConfArray := []SecurityTypeJWT{}
 	securityInstance := &wso2v1alpha1.Security{}
-	var certificateSecret = &corev1.Secret{}
+	var certificateSecret = k8s.NewSecret()
 	for secName, scopeList := range securityMap {
 		//retrieve security instances
 		errGetSec := r.client.Get(context.TODO(), types.NamespacedName{Name: secName, Namespace: userNameSpace}, securityInstance)
@@ -2510,7 +2383,7 @@ func handleSecurity(r *ReconcileAPI, securityMap map[string][]string, userNameSp
 		}
 		if strings.EqualFold(securityInstance.Spec.Type, securityOauth) {
 			for _, securityConf := range securityInstance.Spec.SecurityConfig {
-				errc := r.client.Get(context.TODO(), types.NamespacedName{Name: securityConf.Certificate, Namespace: userNameSpace}, certificateSecret)
+				errc := k8s.Get(&r.client, types.NamespacedName{Name: securityConf.Certificate, Namespace: userNameSpace}, certificateSecret)
 				if errc != nil && errors.IsNotFound(errc) {
 					log.Info("defined certificate is not found")
 					return securityDefinition, existSecCert, certList, jobVolumeMount, jobVolume, jwtConfArray, errc
@@ -2682,18 +2555,8 @@ func deleteCompletedJobs(namespace string) error {
 	return nil
 }
 
-//update configmaps with OwnerReference
-func updateConfMapWithOwner(r *ReconcileAPI, owner []metav1.OwnerReference, configMap *corev1.ConfigMap) error {
-	configMap.OwnerReferences = owner
-	errorUpdateinterceptConf := r.client.Update(context.TODO(), configMap)
-	if errorUpdateinterceptConf != nil {
-		return errorUpdateinterceptConf
-	}
-	return nil
-}
-
 //Hanldling interceptors to modify request and response flows
-func interceptorHandler(r *ReconcileAPI, instance *wso2v1alpha1.API, owner []metav1.OwnerReference,
+func interceptorHandler(r *ReconcileAPI, instance *wso2v1alpha1.API, owner *[]metav1.OwnerReference,
 	jobVolumeMount []corev1.VolumeMount, jobVolume []corev1.Volume, userNameSpace string) (bool, bool, []corev1.VolumeMount, []corev1.Volume, error, error) {
 
 	//values to return
@@ -2703,7 +2566,8 @@ func interceptorHandler(r *ReconcileAPI, instance *wso2v1alpha1.API, owner []met
 	//handle bal interceptors
 	balConfigs := instance.Spec.Definition.Interceptors.Ballerina
 	for i, balConfig := range balConfigs {
-		interceptorConfigmap, err := getConfigmap(r, balConfig, userNameSpace)
+		interceptorConfigmap := k8s.NewConfMap()
+		err := k8s.Get(&r.client, types.NamespacedName{Namespace: userNameSpace, Name: balConfig}, interceptorConfigmap)
 		if err != nil {
 			if errors.IsNotFound(err) {
 				// Interceptors are not defined
@@ -2737,10 +2601,7 @@ func interceptorHandler(r *ReconcileAPI, instance *wso2v1alpha1.API, owner []met
 			})
 			//update configmap with owner reference
 			log.Info("updating interceptors configmap with owner reference")
-			errorUpdateinterceptConf := updateConfMapWithOwner(r, owner, interceptorConfigmap)
-			if errorUpdateinterceptConf != nil {
-				log.Error(errorUpdateinterceptConf, "error in updating interceptors config map with owner reference")
-			}
+			_ = k8s.UpdateOwner(&r.client, owner, interceptorConfigmap)
 			exsistBalInterceptors = true
 			errBalInterceptor = nil
 		}
@@ -2751,7 +2612,8 @@ func interceptorHandler(r *ReconcileAPI, instance *wso2v1alpha1.API, owner []met
 	if len(confNames) > 0 {
 		log.Info("java interceptor configmaps specified in API spec")
 		for i, configmapName := range confNames {
-			javaConfigmap, err := getConfigmap(r, configmapName, userNameSpace)
+			javaConfigmap := k8s.NewConfMap()
+			err := k8s.Get(&r.client, types.NamespacedName{Namespace: userNameSpace, Name: configmapName}, javaConfigmap)
 			if err != nil {
 				if errors.IsNotFound(err) {
 					// Interceptor is not defined
@@ -2782,10 +2644,7 @@ func interceptorHandler(r *ReconcileAPI, instance *wso2v1alpha1.API, owner []met
 			}
 			//update configmap with owner reference
 			log.Info("updating java interceptor configmap" + configmapName + " with owner reference")
-			errorUpdateinterceptConf := updateConfMapWithOwner(r, owner, javaConfigmap)
-			if errorUpdateinterceptConf != nil {
-				log.Error(errorUpdateinterceptConf, "error in updating java-interceptor configmap"+configmapName+" with owner reference")
-			}
+			_ = k8s.UpdateOwner(&r.client, owner, javaConfigmap)
 		}
 		return exsistBalInterceptors, true, jobVolumeMount, jobVolume, errBalInterceptor, nil
 	}
