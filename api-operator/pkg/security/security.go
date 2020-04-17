@@ -1,0 +1,167 @@
+package security
+
+import (
+	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/mgw"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/volume"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	"strings"
+)
+
+var logger = log.Log.WithName("security")
+
+type securitySchemeStruct struct {
+	SecurityType string             `json:"type"`
+	Scheme       string             `json:"scheme,omitempty"`
+	Flows        *authorizationCode `json:"flows,omitempty"`
+}
+
+type authorizationCode struct {
+	AuthorizationCode scopeSet `json:"authorizationCode,omitempty"`
+}
+
+type scopeSet struct {
+	AuthorizationUrl string            `json:"authorizationUrl"`
+	TokenUrl         string            `json:"tokenUrl"`
+	Scopes           map[string]string `json:"scopes,omitempty"`
+}
+
+type SecurityTypeJWT struct {
+	CertificateAlias     string
+	Issuer               string
+	Audience             string
+	ValidateSubscription bool
+}
+
+func Handle(client *client.Client, securityMap map[string][]string, userNameSpace string, secSchemeDefined bool, certList map[string]string, jobVolumeMount *[]corev1.VolumeMount, jobVolume *[]corev1.Volume) (map[string]securitySchemeStruct, bool, map[string]string, []SecurityTypeJWT, error) {
+
+	var alias string
+	//keep to track the existence of certificates
+	var existSecCert bool
+
+	var securityDefinition = make(map[string]securitySchemeStruct)
+	//to add multiple certs with alias
+
+	var certificateName string
+
+	jwtConfArray := []SecurityTypeJWT{}
+	securityInstance := &wso2v1alpha1.Security{}
+	var certificateSecret = k8s.NewSecret()
+	for secName, scopeList := range securityMap {
+		//retrieve security instances
+		errGetSec := k8s.Get(client, types.NamespacedName{Name: secName, Namespace: userNameSpace}, securityInstance)
+		if errGetSec != nil && errors.IsNotFound(errGetSec) {
+			return securityDefinition, existSecCert, certList, jwtConfArray, errGetSec
+		}
+		if strings.EqualFold(securityInstance.Spec.Type, SecurityOauth) {
+			for _, securityConf := range securityInstance.Spec.SecurityConfig {
+				errc := k8s.Get(client, types.NamespacedName{Name: securityConf.Certificate, Namespace: userNameSpace}, certificateSecret)
+				if errc != nil && errors.IsNotFound(errc) {
+					logger.Info("defined certificate is not found")
+					return securityDefinition, existSecCert, certList, jwtConfArray, errc
+				} else {
+					logger.Info("defined certificate successfully retrieved")
+				}
+				//mount certs
+				volume.AddCert(certificateSecret, jobVolumeMount, jobVolume)
+				alias = certificateSecret.Name + volume.CertAlias
+				existSecCert = true
+				for k := range certificateSecret.Data {
+					certificateName = k
+				}
+				//add cert path and alias as key value pairs
+				certList[alias] = volume.CertPath + certificateSecret.Name + "/" + certificateName
+				//get the keymanager server URL from the security kind
+				mgw.KeymanagerServerurl = securityConf.Endpoint
+				//fetch credentials from the secret created
+				errGetCredentials := mgw.SetCredentials(client, SecurityOauth, types.NamespacedName{Namespace: userNameSpace, Name: securityConf.Credentials})
+				if errGetCredentials != nil {
+					logger.Error(errGetCredentials, "Error occurred when retrieving credentials for Oauth")
+				} else {
+					logger.Info("Credentials successfully retrieved for security " + secName)
+				}
+				if !secSchemeDefined {
+					//add scopes
+					scopes := map[string]string{}
+					for _, scopeValue := range scopeList {
+						scopes[scopeValue] = "grant " + scopeValue + " access"
+					}
+					//creating security scheme
+					scheme := securitySchemeStruct{
+						SecurityType: oauthSecurityType,
+						Flows: &authorizationCode{
+							scopeSet{
+								authorizationUrl,
+								tokenUrl,
+								scopes,
+							},
+						},
+					}
+					securityDefinition[secName] = scheme
+				}
+			}
+		}
+		if strings.EqualFold(securityInstance.Spec.Type, securityJWT) {
+			logger.Info("retrieving data for security type JWT")
+			for _, securityConf := range securityInstance.Spec.SecurityConfig {
+				jwtConf := SecurityTypeJWT{}
+				errc := k8s.Get(client, types.NamespacedName{Name: securityConf.Certificate, Namespace: userNameSpace}, certificateSecret)
+				if errc != nil && errors.IsNotFound(errc) {
+					logger.Info("defined certificate is not found")
+					return securityDefinition, existSecCert, certList, jwtConfArray, errc
+				} else {
+					logger.Info("defined certificate successfully retrieved")
+				}
+				//mount certs
+				volume.AddCert(certificateSecret, jobVolumeMount, jobVolume)
+				alias = certificateSecret.Name + volume.CertAlias
+				existSecCert = true
+				for k := range certificateSecret.Data {
+					certificateName = k
+				}
+				//add cert path and alias as key value pairs
+				certList[alias] = volume.CertPath + certificateSecret.Name + "/" + certificateName
+				logger.Info("certificate alias", alias)
+				jwtConf.CertificateAlias = alias
+				jwtConf.ValidateSubscription = securityConf.ValidateSubscription
+
+				if securityConf.Issuer != "" {
+					jwtConf.Issuer = securityConf.Issuer
+				}
+				if securityConf.Audience != "" {
+					jwtConf.Audience = securityConf.Audience
+				}
+
+				logger.Info("certificate issuer", "issuer", mgw.Issuer)
+				jwtConfArray = append(jwtConfArray, jwtConf)
+			}
+		}
+		if strings.EqualFold(securityInstance.Spec.Type, basicSecurityAndScheme) {
+			// "existCert = false" for this scenario and do not change the global "existCert" value
+			// i.e. if global "existCert" is true, even though the scenario for this swagger is false keep that value as true
+
+			//fetch credentials from the secret created
+			errGetCredentials := mgw.SetCredentials(client, "Basic",
+				types.NamespacedName{Namespace: userNameSpace, Name: securityInstance.Spec.SecurityConfig[0].Credentials})
+			if errGetCredentials != nil {
+				logger.Error(errGetCredentials, "Error occurred when retrieving credentials for Basic")
+			} else {
+				logger.Info("Credentials successfully retrieved for security " + secName)
+			}
+			//creating security scheme
+			if !secSchemeDefined {
+				scheme := securitySchemeStruct{
+					SecurityType: basicSecurityType,
+					Scheme:       basicSecurityAndScheme,
+				}
+				securityDefinition[secName] = scheme
+			}
+		}
+	}
+	return securityDefinition, existSecCert, certList, jwtConfArray, nil
+}

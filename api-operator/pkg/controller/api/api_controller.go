@@ -18,15 +18,15 @@ package api
 
 import (
 	"context"
-	"crypto/sha1"
-	"encoding/hex"
 	"fmt"
 	"github.com/golang/glog"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/deploy"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/mgw"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/registry"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/registry/utils"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/security"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/str"
 	swagger "github.com/wso2/k8s-api-operator/api-operator/pkg/swagger"
 	"k8s.io/api/extensions/v1beta1"
@@ -58,10 +58,8 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	"bytes"
 	b64 "encoding/base64"
 	"encoding/json"
-	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/controller/ratelimiting"
 )
 
@@ -202,17 +200,16 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	var jobVolumeMount []corev1.VolumeMount // Volume mounts for Kaniko Job
 	var apiVersion string                   // API version - for the tag of final MGW docker image
 
-	var alias string
-	var existCert = false             // keep to track the existence of certificates
-	var existBalInterceptors = false  // keep to track the existence of interceptors
-	var existJavaInterceptors = false // keep to track the existence of java interceptors
-	var certName string
+	var certList = make(map[string]string) // to add multiple certs with alias
+	var existCert = false                  // keep to track the existence of certificates
+	var existBalInterceptors = false       // keep to track the existence of interceptors
+	var existJavaInterceptors = false      // keep to track the existence of java interceptors
 
 	apiBasePathMap := make(map[string]string) // API base paths with versions
 
 	//get multiple jwt issuer details
-	jwtConfigs := []SecurityTypeJWT{}
-	var certList = make(map[string]string) // to add multiple certs with alias
+	jwtConfigs := []security.SecurityTypeJWT{}
+
 	// Fetch the API instance
 	instance := &wso2v1alpha1.API{}
 
@@ -351,39 +348,27 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 		reqLogger.Info("getting security instance")
 		//check security scheme already exist
-		_, secSchemeDefined := swaggerOriginal.Extensions[securitySchemeExtension]
+		_, secSchemeDefined := swaggerOriginal.Extensions[swagger.SecuritySchemeExtension]
 
-		securityMap, isDefinedSecurity, resourceLevelSec, securityErr := getSecurityDefinedInSwagger(swaggerOriginal)
+		securityMap, isDefinedSecurity, resourceLevelSec, securityErr := swagger.GetSecurityMap(swaggerOriginal)
 		if securityErr != nil {
 			return reconcile.Result{}, securityErr
 		}
 
-		securityDefinition, existSecurityCerts, updatedCertList, volumemountTemp, volumeTemp, jwtConfArray, errsec := handleSecurity(r, securityMap, apiNamespace, instance, secSchemeDefined, certList, jobVolumeMount, jobVolume)
-		if errsec != nil {
-			return reconcile.Result{}, errsec
+		securityDefinition, existSecurityCerts, updatedCertList, jwtConfArray, errSec := security.Handle(&r.client, securityMap, apiNamespace, secSchemeDefined, certList, &jobVolumeMount, &jobVolume)
+		if errSec != nil {
+			return reconcile.Result{}, errSec
 		}
 		certList = updatedCertList
 		existCert = existSecurityCerts
-		jobVolumeMount = volumemountTemp
-		jobVolume = volumeTemp
 		jwtConfigs = jwtConfArray
 
 		//adding security scheme to swagger
 		if len(securityDefinition) > 0 {
-			swaggerOriginal.Components.Extensions[securitySchemeExtension] = securityDefinition
-		}
-		//reformatting swagger
-		var prettyJSON bytes.Buffer
-		final, err := swaggerOriginal.MarshalJSON()
-		if err != nil {
-			log.Error(err, "swagger marshal error")
-		}
-		errIndent := json.Indent(&prettyJSON, final, "", "  ")
-		if errIndent != nil {
-			log.Error(errIndent, "Error in pretty json")
+			swaggerOriginal.Components.Extensions[swagger.SecuritySchemeExtension] = securityDefinition
 		}
 
-		formattedSwagger := string(prettyJSON.Bytes())
+		formattedSwagger := swagger.PrettyString(swaggerOriginal)
 		formattedSwaggerCmName := swaggerCmName + "-mgw"
 		//create configmap with modified swagger
 		swaggerDataMgw := map[string]string{swaggerFileName: formattedSwagger}
@@ -395,142 +380,22 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		if errGetConf != nil && errors.IsNotFound(errGetConf) {
 			log.Info("swagger-mgw is not found. Hence creating new configmap")
 			_ = k8s.Create(&r.client, swaggerConfMapMgw)
-		} else if errGetConf != nil {
-			log.Error(errGetConf, "error getting swagger-mgw")
-		} else {
+		} else if errGetConf == nil {
 			if instance.Spec.UpdateTimeStamp != "" {
-				log.Info("updating swagger-mgw since timestamp value is given")
-				updateEr := r.client.Update(context.TODO(), swaggerConfMapMgw)
-				if updateEr != nil {
-					log.Error(updateEr, "Error in updating configmap with updated swagger definition")
-				}
+				log.Info("Updating swagger-mgw since timestamp value is given")
+				_ = k8s.Update(&r.client, swaggerConfMapMgw)
 			}
 		}
 
-		if isDefinedSecurity == false && resourceLevelSec == 0 {
-			log.Info("use default security")
-			//var certName string
-			defaultSecConf := SecurityTypeJWT{}
-			//use default security
-			//copy default sec in wso2-system to user namespace
-			securityDefault := &wso2v1alpha1.Security{}
-			//check default security already exist in user namespace
-			errGetSec := r.client.Get(context.TODO(), types.NamespacedName{Name: defaultSecurity, Namespace: apiNamespace}, securityDefault)
+		// Default security
+		if !isDefinedSecurity && resourceLevelSec == 0 {
+			log.Info("Use default security")
 
-			if errGetSec != nil && errors.IsNotFound(errGetSec) {
-				log.Info("default security not found in " + apiNamespace + " namespace")
-				log.Info("retrieve default-security from " + wso2NameSpaceConst)
-				//retrieve default-security from wso2-system namespace
-				errSec := r.client.Get(context.TODO(), types.NamespacedName{Name: defaultSecurity, Namespace: wso2NameSpaceConst}, securityDefault)
-				if errSec != nil && errors.IsNotFound(errSec) {
-					reqLogger.Info("default security instance is not found in " + wso2NameSpaceConst)
-					return reconcile.Result{}, errSec
-				} else if errSec != nil {
-					log.Error(errSec, "error in getting default security from "+wso2NameSpaceConst)
-					return reconcile.Result{}, errSec
-				}
-				var defaultCert = k8s.NewSecret()
-				//check default certificate exists in user namespace
-				errCertUserns := k8s.Get(&r.client, types.NamespacedName{Name: securityDefault.Spec.SecurityConfig[0].Certificate, Namespace: apiNamespace}, defaultCert)
-				if errCertUserns != nil && errors.IsNotFound(errCertUserns) {
-					errc := k8s.Get(&r.client, types.NamespacedName{Name: securityDefault.Spec.SecurityConfig[0].Certificate, Namespace: wso2NameSpaceConst}, defaultCert)
-					if errc != nil {
-						return reconcile.Result{}, errc
-					}
-					//copying default cert as a secret to user namespace
-					var defaultCertName string
-					var defaultCertvalue []byte
-					for cert, value := range defaultCert.Data {
-						defaultCertName = cert
-						defaultCertvalue = value
-					}
-					defCertData := map[string][]byte{defaultCertName: defaultCertvalue}
-					newDefaultSecret := k8s.NewSecretWith(types.NamespacedName{Namespace: apiNamespace, Name: securityDefault.Spec.SecurityConfig[0].Certificate}, &defCertData, nil, owner)
-					errCreateSec := k8s.Create(&r.client, newDefaultSecret)
-
-					if errCreateSec != nil {
-						return reconcile.Result{}, errCreateSec
-					} else {
-						//mount certs
-						volumemountTemp, volumeTemp := certMoutHandler(r, newDefaultSecret, jobVolumeMount, jobVolume)
-						jobVolumeMount = volumemountTemp
-						jobVolume = volumeTemp
-						alias = newDefaultSecret.Name + certAlias
-						existCert = true
-						for k := range newDefaultSecret.Data {
-							certName = k
-						}
-						//add cert path and alias as key value pairs
-						certList[alias] = certPath + newDefaultSecret.Name + "/" + certName
-						defaultSecConf.CertificateAlias = alias
-					}
-				} else if errCertUserns != nil {
-					log.Error(errCertUserns, "error in getting default certificate from "+apiNamespace+"namespace")
-					return reconcile.Result{}, errCertUserns
-				} else {
-					//mount certs
-					volumemountTemp, volumeTemp := certMoutHandler(r, defaultCert, jobVolumeMount, jobVolume)
-					jobVolumeMount = volumemountTemp
-					jobVolume = volumeTemp
-					alias = defaultCert.Name + certAlias
-					existCert = true
-					for k := range defaultCert.Data {
-						certName = k
-					}
-					//add cert path and alias as key value pairs
-					certList[alias] = certPath + defaultCert.Name + "/" + certName
-					defaultSecConf.CertificateAlias = alias
-				}
-				//copying default security to user namespace
-				log.Info("copying default security to " + apiNamespace)
-				newDefaultSecurity := copyDefaultSecurity(securityDefault, apiNamespace, *owner)
-				errCreateSecurity := r.client.Create(context.TODO(), newDefaultSecurity)
-				if errCreateSecurity != nil {
-					log.Error(errCreateSecurity, "error creating secret for default security in user namespace")
-					return reconcile.Result{}, errCreateSecurity
-				}
-				log.Info("default security successfully copied to " + apiNamespace + " namespace")
-				if newDefaultSecurity.Spec.SecurityConfig[0].Issuer != "" {
-					defaultSecConf.Issuer = newDefaultSecurity.Spec.SecurityConfig[0].Issuer
-				}
-				if newDefaultSecurity.Spec.SecurityConfig[0].Audience != "" {
-					defaultSecConf.Audience = newDefaultSecurity.Spec.SecurityConfig[0].Audience
-				}
-				defaultSecConf.ValidateSubscription = newDefaultSecurity.Spec.SecurityConfig[0].ValidateSubscription
-			} else if errGetSec != nil {
-				log.Error(errGetSec, "error getting default security from user namespace")
-				return reconcile.Result{}, errGetSec
-			} else {
-				log.Info("default security exists in " + apiNamespace + " namespace")
-				//check default cert exist in usernamespace
-				var defaultCertUsrNs = k8s.NewSecret()
-				errCertUserns := k8s.Get(&r.client, types.NamespacedName{Name: securityDefault.Spec.SecurityConfig[0].Certificate, Namespace: apiNamespace}, defaultCertUsrNs)
-				if errCertUserns != nil {
-					return reconcile.Result{}, errCertUserns
-				} else {
-					//mount certs
-					volumemountTemp, volumeTemp := certMoutHandler(r, defaultCertUsrNs, jobVolumeMount, jobVolume)
-					jobVolumeMount = volumemountTemp
-					jobVolume = volumeTemp
-					alias = defaultCertUsrNs.Name + certAlias
-					existCert = true
-					for k := range defaultCertUsrNs.Data {
-						certName = k
-					}
-					//add cert path and alias as key value pairs
-					certList[alias] = certPath + defaultCertUsrNs.Name + "/" + certName
-					certificateAlias = alias
-					defaultSecConf.CertificateAlias = alias
-					defaultSecConf.ValidateSubscription = securityDefault.Spec.SecurityConfig[0].ValidateSubscription
-				}
-				if securityDefault.Spec.SecurityConfig[0].Issuer != "" {
-					defaultSecConf.Issuer = securityDefault.Spec.SecurityConfig[0].Issuer
-				}
-				if securityDefault.Spec.SecurityConfig[0].Audience != "" {
-					defaultSecConf.Audience = securityDefault.Spec.SecurityConfig[0].Audience
-				}
+			certExists, err := security.Default(&r.client, apiNamespace, certList, &jwtConfArray, &jobVolumeMount, &jobVolume, owner)
+			if err != nil {
+				return reconcile.Result{}, err
 			}
-			jwtConfigs = append(jwtConfigs, defaultSecConf)
+			existCert = existCert || certExists
 		}
 	}
 
@@ -563,14 +428,14 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	analyticsEr := k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: analyticsConfName}, analyticsConf)
 	if analyticsEr != nil {
 		log.Info("Disabling analytics since the analytics configuration related config map not found.")
-		analyticsEnabled = "false"
+		mgw.analyticsEnabled = "false"
 	} else {
 		if analyticsConf.Data[analyticsEnabledConst] == "true" {
-			uploadingTimeSpanInMillis = analyticsConf.Data[uploadingTimeSpanInMillisConst]
-			rotatingPeriod = analyticsConf.Data[rotatingPeriodConst]
-			uploadFiles = analyticsConf.Data[uploadFilesConst]
-			hostname = analyticsConf.Data[hostnameConst]
-			port = analyticsConf.Data[portConst]
+			mgw.uploadingTimeSpanInMillis = analyticsConf.Data[uploadingTimeSpanInMillisConst]
+			mgw.rotatingPeriod = analyticsConf.Data[rotatingPeriodConst]
+			mgw.uploadFiles = analyticsConf.Data[uploadFilesConst]
+			mgw.hostname = analyticsConf.Data[hostnameConst]
+			mgw.port = analyticsConf.Data[portConst]
 			analyticsSecretName := analyticsConf.Data[analyticsSecretConst]
 
 			// gets the data from analytics secret
@@ -580,8 +445,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 			if err == nil && analyticsData != nil && analyticsData[usernameConst] != nil &&
 				analyticsData[passwordConst] != nil && analyticsData[certConst] != nil {
-				analyticsUsername = string(analyticsData[usernameConst])
-				analyticsPassword = string(analyticsData[passwordConst])
+				mgw.analyticsUsername = string(analyticsData[usernameConst])
+				mgw.analyticsPassword = string(analyticsData[passwordConst])
 				analyticsCertSecretName := string(analyticsData[certConst])
 
 				log.Info("Finding analytics cert secret " + analyticsCertSecretName)
@@ -592,7 +457,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 					jobVolumeMount = jobVolumeMountTemp
 					jobVolume = jobVolumeTemp
 					existCert = true
-					analyticsEnabled = "true"
+					mgw.analyticsEnabled = "true"
 					certList[analyticsAlias] = analyticsCertLocation + fileName
 				}
 			}
@@ -624,28 +489,28 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	httpPortVal := httpPortValConst
 	httpsPortVal := httpsPortValConst
 	if apimEr == nil {
-		verifyHostname = apimConfig.Data[verifyHostnameConst]
-		enabledGlobalTMEventPublishing = apimConfig.Data[enabledGlobalTMEventPublishingConst]
-		jmsConnectionProvider = apimConfig.Data[jmsConnectionProviderConst]
-		throttleEndpoint = apimConfig.Data[throttleEndpointConst]
-		enableRealtimeMessageRetrieval = apimConfig.Data[enableRealtimeMessageRetrievalConst]
-		enableRequestValidation = apimConfig.Data[enableRequestValidationConst]
-		enableResponseValidation = apimConfig.Data[enableResponseValidationConst]
-		logLevel = apimConfig.Data[logLevelConst]
-		httpPort = apimConfig.Data[httpPortConst]
-		httpsPort = apimConfig.Data[httpsPortConst]
-		httpPortVal, err = strconv.Atoi(httpPort)
+		mgw.verifyHostname = apimConfig.Data[verifyHostnameConst]
+		mgw.enabledGlobalTMEventPublishing = apimConfig.Data[enabledGlobalTMEventPublishingConst]
+		mgw.jmsConnectionProvider = apimConfig.Data[jmsConnectionProviderConst]
+		mgw.throttleEndpoint = apimConfig.Data[throttleEndpointConst]
+		mgw.enableRealtimeMessageRetrieval = apimConfig.Data[enableRealtimeMessageRetrievalConst]
+		mgw.enableRequestValidation = apimConfig.Data[enableRequestValidationConst]
+		mgw.enableResponseValidation = apimConfig.Data[enableResponseValidationConst]
+		mgw.logLevel = apimConfig.Data[logLevelConst]
+		mgw.httpPort = apimConfig.Data[httpPortConst]
+		mgw.httpsPort = apimConfig.Data[httpsPortConst]
+		httpPortVal, err = strconv.Atoi(mgw.httpPort)
 		if err != nil {
 			log.Error(err, "Valid http port was not provided. Default port will be used")
 			httpPortVal = httpPortValConst
 		}
-		httpsPortVal, err = strconv.Atoi(httpsPort)
+		httpsPortVal, err = strconv.Atoi(mgw.httpsPort)
 		if err != nil {
 			log.Error(err, "Valid https port was not provided. Default port will be used")
 			httpsPortVal = httpsPortValConst
 		}
 	} else {
-		verifyHostname = verifyHostNameVal
+		mgw.verifyHostname = verifyHostNameVal
 	}
 
 	//Retrieving configmap related to micro-gateway configuration mustache/template
@@ -658,34 +523,34 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	confTemp := confTemplate.Data[mgwConfGoTmpl]
 
 	mgwConfValues := &MGWConf{
-		KeystorePath:                   keystorePath,
-		KeystorePassword:               keystorePassword,
-		TruststorePath:                 truststorePath,
-		TruststorePassword:             truststorePassword,
-		KeymanagerServerurl:            keymanagerServerurl,
-		KeymanagerUsername:             keymanagerUsername,
-		KeymanagerPassword:             keymanagerPassword,
+		KeystorePath:                   mgw.keystorePath,
+		KeystorePassword:               mgw.keystorePassword,
+		TruststorePath:                 mgw.truststorePath,
+		TruststorePassword:             mgw.truststorePassword,
+		KeymanagerServerurl:            mgw.keymanagerServerurl,
+		KeymanagerUsername:             mgw.keymanagerUsername,
+		KeymanagerPassword:             mgw.keymanagerPassword,
 		JwtConfigs:                     jwtConfigs,
-		EnabledGlobalTMEventPublishing: enabledGlobalTMEventPublishing,
-		JmsConnectionProvider:          jmsConnectionProvider,
-		ThrottleEndpoint:               throttleEndpoint,
-		EnableRealtimeMessageRetrieval: enableRealtimeMessageRetrieval,
-		EnableRequestValidation:        enableRequestValidation,
-		EnableResponseValidation:       enableRequestValidation,
-		LogLevel:                       logLevel,
-		HttpPort:                       httpPort,
-		HttpsPort:                      httpsPort,
-		BasicUsername:                  basicUsername,
-		BasicPassword:                  basicPassword,
-		AnalyticsEnabled:               analyticsEnabled,
-		AnalyticsUsername:              analyticsUsername,
-		AnalyticsPassword:              analyticsPassword,
-		UploadingTimeSpanInMillis:      uploadingTimeSpanInMillis,
-		RotatingPeriod:                 rotatingPeriod,
-		UploadFiles:                    uploadFiles,
-		VerifyHostname:                 verifyHostname,
-		Hostname:                       hostname,
-		Port:                           port,
+		EnabledGlobalTMEventPublishing: mgw.enabledGlobalTMEventPublishing,
+		JmsConnectionProvider:          mgw.jmsConnectionProvider,
+		ThrottleEndpoint:               mgw.throttleEndpoint,
+		EnableRealtimeMessageRetrieval: mgw.enableRealtimeMessageRetrieval,
+		EnableRequestValidation:        mgw.enableRequestValidation,
+		EnableResponseValidation:       mgw.enableRequestValidation,
+		LogLevel:                       mgw.logLevel,
+		HttpPort:                       mgw.httpPort,
+		HttpsPort:                      mgw.httpsPort,
+		BasicUsername:                  mgw.basicUsername,
+		BasicPassword:                  mgw.basicPassword,
+		AnalyticsEnabled:               mgw.analyticsEnabled,
+		AnalyticsUsername:              mgw.analyticsUsername,
+		AnalyticsPassword:              mgw.analyticsPassword,
+		UploadingTimeSpanInMillis:      mgw.uploadingTimeSpanInMillis,
+		RotatingPeriod:                 mgw.rotatingPeriod,
+		UploadFiles:                    mgw.uploadFiles,
+		VerifyHostname:                 mgw.verifyHostname,
+		Hostname:                       mgw.hostname,
+		Port:                           mgw.port,
 	}
 
 	//generate mgw conf from the template
@@ -717,7 +582,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	getResourceLimitCPU := controlConfigData[resourceLimitCPU]
 	getResourceLimitMemory := controlConfigData[resourceLimitMemory]
 
-	analyticsEnabledBool, _ := strconv.ParseBool(analyticsEnabled)
+	analyticsEnabledBool, _ := strconv.ParseBool(mgw.analyticsEnabled)
 	dep := createMgwDeployment(instance, controlConf, analyticsEnabledBool, r, apiNamespace, *owner,
 		getResourceReqCPU, getResourceReqMemory, getResourceLimitCPU, getResourceLimitMemory, containerList,
 		int32(httpPortVal), int32(httpsPortVal))
@@ -1068,47 +933,6 @@ func createHorizontalPodAutoscaler(dep *appsv1.Deployment, r *ReconcileAPI, owne
 		return hpaErr
 	} else {
 		log.Info("HPA for deployment " + dep.Name + " is already exist")
-	}
-	return nil
-}
-
-func getCredentials(r *ReconcileAPI, name string, securityType string, userNameSpace string) error {
-
-	hasher := sha1.New()
-	var usrname string
-	var password []byte
-
-	//get the secret included credentials
-	credentialSecret := k8s.NewSecret()
-	err := k8s.Get(&r.client, types.NamespacedName{Name: name, Namespace: userNameSpace}, credentialSecret)
-	if err != nil && errors.IsNotFound(err) {
-		return err
-	}
-
-	//get the username and the password
-	for k, v := range credentialSecret.Data {
-		if strings.EqualFold(k, "username") {
-			usrname = string(v)
-		}
-		if strings.EqualFold(k, "password") {
-			password = v
-		}
-
-	}
-	if securityType == "Basic" {
-
-		basicUsername = usrname
-		_, err := hasher.Write([]byte(password))
-		if err != nil {
-			log.Info("error in encoding password")
-			return err
-		}
-		//convert encoded password to a uppercase hex string
-		basicPassword = hex.EncodeToString(hasher.Sum(nil))
-	}
-	if securityType == "Oauth" {
-		keymanagerUsername = usrname
-		keymanagerPassword = string(password)
 	}
 	return nil
 }
@@ -1813,32 +1637,6 @@ func analyticsVolumeHandler(analyticsCertSecretName string, r *ReconcileAPI, job
 	return jobVolumeMount, jobVolume, fileName, nil
 }
 
-func certMoutHandler(r *ReconcileAPI, cert *corev1.Secret, jobVolumeMount []corev1.VolumeMount, jobVolume []corev1.Volume) ([]corev1.VolumeMount, []corev1.Volume) {
-	name := certConfig + "-" + cert.Name
-	// check volume already exists
-	for _, volume := range jobVolume {
-		if volume.Name == name {
-			return jobVolumeMount, jobVolume
-		}
-	}
-
-	jobVolumeMount = append(jobVolumeMount, corev1.VolumeMount{
-		Name:      name,
-		MountPath: certPath + cert.Name,
-		ReadOnly:  true,
-	})
-
-	jobVolume = append(jobVolume, corev1.Volume{
-		Name: name,
-		VolumeSource: corev1.VolumeSource{
-			Secret: &corev1.SecretVolumeSource{
-				SecretName: cert.Name,
-			},
-		},
-	})
-	return jobVolumeMount, jobVolume
-}
-
 //Mounts an emptydir volume to be used when analytics is enabled
 func getAnalyticsPVClaim(r *ReconcileAPI, deployVolumeMount []corev1.VolumeMount, deployVolume []corev1.Volume) ([]corev1.VolumeMount, []corev1.Volume, error) {
 
@@ -1910,221 +1708,6 @@ func getOperatorOwner(r *ReconcileAPI) (*[]metav1.OwnerReference, error) {
 	}
 
 	return k8s.NewOwnerRef(depFound.TypeMeta, depFound.ObjectMeta), nil
-}
-
-func getSecurityDefinedInSwagger(swagger *openapi3.Swagger) (map[string][]string, bool, int, error) {
-
-	//get all the securities defined in swagger
-	var securityMap = make(map[string][]string)
-	var securityDef path
-	//get API level security
-	apiLevelSecurity, isDefined := swagger.Extensions[securityExtension]
-	var APILevelSecurity []map[string][]string
-	if isDefined {
-		log.Info("API level security is defined")
-		rawmsg := apiLevelSecurity.(json.RawMessage)
-		errsec := json.Unmarshal(rawmsg, &APILevelSecurity)
-		if errsec != nil {
-			log.Error(errsec, "error unmarshaling API level security ")
-			return securityMap, isDefined, len(securityDef.Security), errsec
-		}
-		for _, value := range APILevelSecurity {
-			for secName, val := range value {
-				securityMap[secName] = val
-			}
-		}
-	} else {
-		log.Info("API Level security is not defined")
-	}
-	//get resource level security
-	resLevelSecurity, resSecIsDefined := swagger.Extensions[pathsExtension]
-	var resSecurityMap map[string]map[string]path
-
-	if resSecIsDefined {
-		rawmsg := resLevelSecurity.(json.RawMessage)
-		errrSec := json.Unmarshal(rawmsg, &resSecurityMap)
-		if errrSec != nil {
-			log.Error(errrSec, "error unmarshall into resource level security")
-			return securityMap, isDefined, len(securityDef.Security), errrSec
-		}
-		for _, path := range resSecurityMap {
-			for _, sec := range path {
-				securityDef = sec
-
-			}
-		}
-	}
-	if len(securityDef.Security) > 0 {
-		log.Info("Resource level security is defined")
-		for _, obj := range resSecurityMap {
-			for _, obj := range obj {
-				for _, value := range obj.Security {
-					for secName, val := range value {
-						securityMap[secName] = val
-					}
-				}
-			}
-		}
-	} else {
-		log.Info("Resource level security is not defiend")
-	}
-	return securityMap, isDefined, len(securityDef.Security), nil
-}
-
-func handleSecurity(r *ReconcileAPI, securityMap map[string][]string, userNameSpace string, instance *wso2v1alpha1.API, secSchemeDefined bool, certList map[string]string, jobVolumeMount []corev1.VolumeMount, jobVolume []corev1.Volume) (map[string]securitySchemeStruct, bool, map[string]string, []corev1.VolumeMount, []corev1.Volume, []SecurityTypeJWT, error) {
-
-	var alias string
-	//keep to track the existence of certificates
-	var existSecCert bool
-
-	var securityDefinition = make(map[string]securitySchemeStruct)
-	//to add multiple certs with alias
-
-	var certificateName string
-
-	jwtConfArray := []SecurityTypeJWT{}
-	securityInstance := &wso2v1alpha1.Security{}
-	var certificateSecret = k8s.NewSecret()
-	for secName, scopeList := range securityMap {
-		//retrieve security instances
-		errGetSec := r.client.Get(context.TODO(), types.NamespacedName{Name: secName, Namespace: userNameSpace}, securityInstance)
-		if errGetSec != nil && errors.IsNotFound(errGetSec) {
-			log.Info("defined security instance " + secName + " is not found")
-			return securityDefinition, existSecCert, certList, jobVolumeMount, jobVolume, jwtConfArray, errGetSec
-		}
-		if strings.EqualFold(securityInstance.Spec.Type, securityOauth) {
-			for _, securityConf := range securityInstance.Spec.SecurityConfig {
-				errc := k8s.Get(&r.client, types.NamespacedName{Name: securityConf.Certificate, Namespace: userNameSpace}, certificateSecret)
-				if errc != nil && errors.IsNotFound(errc) {
-					log.Info("defined certificate is not found")
-					return securityDefinition, existSecCert, certList, jobVolumeMount, jobVolume, jwtConfArray, errc
-				} else {
-					log.Info("defined certificate successfully retrieved")
-				}
-				//mount certs
-				volumemountTemp, volumeTemp := certMoutHandler(r, certificateSecret, jobVolumeMount, jobVolume)
-				jobVolumeMount = volumemountTemp
-				jobVolume = volumeTemp
-				alias = certificateSecret.Name + certAlias
-				existSecCert = true
-				for k := range certificateSecret.Data {
-					certificateName = k
-				}
-				//add cert path and alias as key value pairs
-				certList[alias] = certPath + certificateSecret.Name + "/" + certificateName
-				//get the keymanager server URL from the security kind
-				keymanagerServerurl = securityConf.Endpoint
-				//fetch credentials from the secret created
-				errGetCredentials := getCredentials(r, securityConf.Credentials, securityOauth, userNameSpace)
-				if errGetCredentials != nil {
-					log.Error(errGetCredentials, "Error occurred when retrieving credentials for Oauth")
-				} else {
-					log.Info("Credentials successfully retrieved for security " + secName)
-				}
-				if !secSchemeDefined {
-					//add scopes
-					scopes := map[string]string{}
-					for _, scopeValue := range scopeList {
-						scopes[scopeValue] = "grant " + scopeValue + " access"
-					}
-					//creating security scheme
-					scheme := securitySchemeStruct{
-						SecurityType: oauthSecurityType,
-						Flows: &authorizationCode{
-							scopeSet{
-								authorizationUrl,
-								tokenUrl,
-								scopes,
-							},
-						},
-					}
-					securityDefinition[secName] = scheme
-				}
-			}
-		}
-		if strings.EqualFold(securityInstance.Spec.Type, securityJWT) {
-			log.Info("retrieving data for security type JWT")
-			for _, securityConf := range securityInstance.Spec.SecurityConfig {
-				jwtConf := SecurityTypeJWT{}
-				errc := r.client.Get(context.TODO(), types.NamespacedName{Name: securityConf.Certificate, Namespace: userNameSpace}, certificateSecret)
-				if errc != nil && errors.IsNotFound(errc) {
-					log.Info("defined certificate is not found")
-					return securityDefinition, existSecCert, certList, jobVolumeMount, jobVolume, jwtConfArray, errc
-				} else {
-					log.Info("defined certificate successfully retrieved")
-				}
-				//mount certs
-				volumemountTemp, volumeTemp := certMoutHandler(r, certificateSecret, jobVolumeMount, jobVolume)
-				jobVolumeMount = volumemountTemp
-				jobVolume = volumeTemp
-				alias = certificateSecret.Name + certAlias
-				existSecCert = true
-				for k := range certificateSecret.Data {
-					certificateName = k
-				}
-				//add cert path and alias as key value pairs
-				certList[alias] = certPath + certificateSecret.Name + "/" + certificateName
-				log.Info("certificate alias", alias)
-				jwtConf.CertificateAlias = alias
-				jwtConf.ValidateSubscription = securityConf.ValidateSubscription
-
-				if securityConf.Issuer != "" {
-					jwtConf.Issuer = securityConf.Issuer
-				}
-				if securityConf.Audience != "" {
-					jwtConf.Audience = securityConf.Audience
-				}
-
-				log.Info("certificate issuer", issuer)
-				jwtConfArray = append(jwtConfArray, jwtConf)
-			}
-		}
-		if strings.EqualFold(securityInstance.Spec.Type, basicSecurityAndScheme) {
-			// "existCert = false" for this scenario and do not change the global "existCert" value
-			// i.e. if global "existCert" is true, even though the scenario for this swagger is false keep that value as true
-
-			//fetch credentials from the secret created
-			errGetCredentials := getCredentials(r, securityInstance.Spec.SecurityConfig[0].Credentials, "Basic", userNameSpace)
-			if errGetCredentials != nil {
-				log.Error(errGetCredentials, "Error occurred when retrieving credentials for Basic")
-			} else {
-				log.Info("Credentials successfully retrieved for security " + secName)
-			}
-			//creating security scheme
-			if !secSchemeDefined {
-				scheme := securitySchemeStruct{
-					SecurityType: basicSecurityType,
-					Scheme:       basicSecurityAndScheme,
-				}
-				securityDefinition[secName] = scheme
-			}
-		}
-	}
-	return securityDefinition, existSecCert, certList, jobVolumeMount, jobVolume, jwtConfArray, nil
-}
-
-func copyDefaultSecurity(securityDefault *wso2v1alpha1.Security, userNameSpace string, owner []metav1.OwnerReference) *wso2v1alpha1.Security {
-
-	securityConf := wso2v1alpha1.SecurityConfig{
-		Certificate: securityDefault.Spec.SecurityConfig[0].Certificate,
-		Audience:    securityDefault.Spec.SecurityConfig[0].Audience,
-		Issuer:      securityDefault.Spec.SecurityConfig[0].Issuer,
-	}
-
-	securityConfArray := []wso2v1alpha1.SecurityConfig{}
-
-	securityConfArray = append(securityConfArray, securityConf)
-	return &wso2v1alpha1.Security{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:            defaultSecurity,
-			Namespace:       userNameSpace,
-			OwnerReferences: owner,
-		},
-		Spec: wso2v1alpha1.SecuritySpec{
-			Type:           securityDefault.Spec.Type,
-			SecurityConfig: securityConfArray,
-		},
-	}
 }
 
 func deleteCompletedJobs(namespace string) error {
