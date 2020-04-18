@@ -2504,7 +2504,7 @@ func handleSecurity(r *ReconcileAPI, securityMap map[string][]string, userNameSp
 	for secName, scopeList := range securityMap {
 		//retrieve security instances
 		errGetSec := r.client.Get(context.TODO(), types.NamespacedName{Name: secName, Namespace: userNameSpace},
-		securityInstance)
+			securityInstance)
 		if errGetSec != nil && errors.IsNotFound(errGetSec) {
 			log.Info("defined security instance " + secName + " is not found")
 			return securityDefinition, existSecCert, certList, jobVolumeMount, jobVolume, jwtConfArray, errGetSec
@@ -2665,10 +2665,8 @@ func deleteCompletedJobs(namespace string) error {
 	if len(getListOfJobs.Items) != 0 {
 		for _, kanikoJob := range getListOfJobs.Items {
 			if kanikoJob.Status.Succeeded > 0 {
-				log.Info("Job "+kanikoJob.Name+" completed successfully", "Job.Namespace",
-					kanikoJob.Namespace, "Job.Name", kanikoJob.Name)
-				log.Info("Deleting job "+kanikoJob.Name, "Job.Namespace", kanikoJob.Namespace,
-					"Job.Name", kanikoJob.Name)
+				log.Info("Job "+kanikoJob.Name+" completed successfully", "Job.Namespace", kanikoJob.Namespace, "Job.Name", kanikoJob.Name)
+				log.Info("Deleting job "+kanikoJob.Name, "Job.Namespace", kanikoJob.Namespace, "Job.Name", kanikoJob.Name)
 				//deleting completed jobs
 				errDelete := clientset.BatchV1().Jobs(kanikoJob.Namespace).Delete(kanikoJob.Name, &deleteOptions)
 				if errDelete != nil {
