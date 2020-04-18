@@ -2503,8 +2503,7 @@ func handleSecurity(r *ReconcileAPI, securityMap map[string][]string, userNameSp
 	var certificateSecret = &corev1.Secret{}
 	for secName, scopeList := range securityMap {
 		//retrieve security instances
-		errGetSec := r.client.Get(context.TODO(), types.NamespacedName{Name: secName, Namespace: userNameSpace},
-			securityInstance)
+		errGetSec := r.client.Get(context.TODO(), types.NamespacedName{Name: secName, Namespace: userNameSpace}, securityInstance)
 		if errGetSec != nil && errors.IsNotFound(errGetSec) {
 			log.Info("defined security instance " + secName + " is not found")
 			return securityDefinition, existSecCert, certList, jobVolumeMount, jobVolume, jwtConfArray, errGetSec
