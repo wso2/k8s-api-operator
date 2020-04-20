@@ -40,8 +40,8 @@ type Configuration struct {
 	UploadingTimeSpanInMillis string
 	RotatingPeriod            string
 	UploadFiles               string
-	Hostname                  string // TODO: rnk: make this "analyticsHostname" and "analyticsPort"
-	Port                      string
+	AnalyticsHostname         string
+	AnalyticsPort             string
 
 	// throttlingConfig
 	EnabledGlobalTMEventPublishing string
@@ -105,8 +105,8 @@ var Configs = &Configuration{
 	UploadingTimeSpanInMillis: "600000",
 	RotatingPeriod:            "600000",
 	UploadFiles:               "true",
-	Hostname:                  "wso2apim.wso2",
-	Port:                      "32001",
+	AnalyticsHostname:         "wso2apim.wso2",
+	AnalyticsPort:             "32001",
 
 	// throttlingConfig
 	EnabledGlobalTMEventPublishing: "false",
