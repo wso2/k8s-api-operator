@@ -2,10 +2,10 @@
 
 **Building the image**
 
-The api-operator was built using the operator-sdk CLI tool. you can follow the [user guide][operator_sdk_user_guide] of operator-sdk CLI tool for 
+The api-operator was built using the operator-sdk CLI tool. You can follow the [user guide][operator_sdk_user_guide] of operator-sdk CLI tool for 
 more information. 
 
-you should build the image when changes are added to the project. The steps to build the image are listed below. 
+You should build the image when changes are added to the project. The steps to build the image are listed below. 
 
 1.  After modifying the *_types.go files run the following command to update the generated code for that resource type
     ```

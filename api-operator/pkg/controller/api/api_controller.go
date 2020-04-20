@@ -2359,7 +2359,7 @@ func getTruststorePassword(r *ReconcileAPI) string {
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: truststoreSecretName, Namespace: wso2NameSpaceConst},
 		secret)
 	if err != nil && errors.IsNotFound(err) {
-		encodedpassword := encodedTrustsorePassword
+		encodedpassword := encodedTruststorePassword
 		//decode and get the password to append to the dockerfile
 		decodedpass, err := b64.StdEncoding.DecodeString(encodedpassword)
 		if err != nil {
@@ -2379,7 +2379,7 @@ func getTruststorePassword(r *ReconcileAPI) string {
 			truststoreSecretData: []byte(encodedpassword),
 		}
 		errsecret := r.client.Create(context.TODO(), truststoresecret)
-		log.Error(errsecret, "error in creating trustore password")
+		log.Error(errsecret, "error in creating truststore password")
 		return password
 	}
 	//get password from the secret
@@ -2510,7 +2510,8 @@ func handleSecurity(r *ReconcileAPI, securityMap map[string][]string, userNameSp
 		}
 		if strings.EqualFold(securityInstance.Spec.Type, securityOauth) {
 			for _, securityConf := range securityInstance.Spec.SecurityConfig {
-				errc := r.client.Get(context.TODO(), types.NamespacedName{Name: securityConf.Certificate, Namespace: userNameSpace}, certificateSecret)
+				errc := r.client.Get(context.TODO(),
+					types.NamespacedName{Name: securityConf.Certificate, Namespace: userNameSpace}, certificateSecret)
 				if errc != nil && errors.IsNotFound(errc) {
 					log.Info("defined certificate is not found")
 					return securityDefinition, existSecCert, certList, jobVolumeMount, jobVolume, jwtConfArray, errc
@@ -2671,7 +2672,8 @@ func deleteCompletedJobs(namespace string) error {
 					log.Error(errDelete, "error while deleting "+kanikoJob.Name+" job")
 					return errDelete
 				} else {
-					log.Info("successfully deleted job "+kanikoJob.Name, "Job.Namespace", kanikoJob.Namespace, "Job.Name", kanikoJob.Name)
+					log.Info("successfully deleted job "+kanikoJob.Name, "Job.Namespace",
+						kanikoJob.Namespace, "Job.Name", kanikoJob.Name)
 				}
 			}
 		}
@@ -2739,7 +2741,8 @@ func interceptorHandler(r *ReconcileAPI, instance *wso2v1alpha1.API, owner []met
 			log.Info("updating interceptors configmap with owner reference")
 			errorUpdateinterceptConf := updateConfMapWithOwner(r, owner, interceptorConfigmap)
 			if errorUpdateinterceptConf != nil {
-				log.Error(errorUpdateinterceptConf, "error in updating interceptors config map with owner reference")
+				log.Error(errorUpdateinterceptConf,
+					"error in updating interceptors config map with owner reference")
 			}
 			exsistBalInterceptors = true
 			errBalInterceptor = nil
@@ -2784,7 +2787,8 @@ func interceptorHandler(r *ReconcileAPI, instance *wso2v1alpha1.API, owner []met
 			log.Info("updating java interceptor configmap" + configmapName + " with owner reference")
 			errorUpdateinterceptConf := updateConfMapWithOwner(r, owner, javaConfigmap)
 			if errorUpdateinterceptConf != nil {
-				log.Error(errorUpdateinterceptConf, "error in updating java-interceptor configmap"+configmapName+" with owner reference")
+				log.Error(errorUpdateinterceptConf,
+					"error in updating java-interceptor configmap"+configmapName+" with owner reference")
 			}
 		}
 		return exsistBalInterceptors, true, jobVolumeMount, jobVolume, errBalInterceptor, nil

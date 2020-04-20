@@ -76,7 +76,7 @@ const (
 	mgwConfMustache                     = "mgw-conf-mustache"
 	mgwConfGoTmpl                       = "mgwConf.gotmpl"
 	certConfig                          = "apim-certs"
-	encodedTrustsorePassword            = "YmFsbGVyaW5h"
+	encodedTruststorePassword            = "YmFsbGVyaW5h"
 	truststoreSecretName                = "truststorepass"
 	truststoreSecretData                = "password"
 	apimConfName                        = "apim-config"
