@@ -5,16 +5,13 @@ import (
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/mgw"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/volume"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func Default(client *client.Client, apiNamespace string, certList map[string]string, jobVolumeMount *[]corev1.VolumeMount, jobVolume *[]corev1.Volume, owner *[]metav1.OwnerReference) (bool, error) {
-	existCert := false
-	var certName string
+func Default(client *client.Client, apiNamespace string, owner *[]metav1.OwnerReference) error {
 	defaultSecConf := mgw.JwtTokenConfig{}
 	//copy default sec in wso2-system to user namespace
 	securityDefault := &wso2v1alpha1.Security{}
@@ -27,7 +24,7 @@ func Default(client *client.Client, apiNamespace string, certList map[string]str
 		errSec := k8s.Get(client, types.NamespacedName{Name: defaultSecurity, Namespace: wso2NameSpaceConst}, securityDefault)
 		if errSec != nil {
 			logger.Error(errSec, "Error getting default security", "namespace", wso2NameSpaceConst)
-			return false, errSec
+			return errSec
 		}
 
 		var defaultCert = k8s.NewSecret()
@@ -36,7 +33,7 @@ func Default(client *client.Client, apiNamespace string, certList map[string]str
 		if err != nil && errors.IsNotFound(err) {
 			errCert := k8s.Get(client, types.NamespacedName{Name: securityDefault.Spec.SecurityConfig[0].Certificate, Namespace: wso2NameSpaceConst}, defaultCert)
 			if errCert != nil {
-				return false, errCert
+				return errCert
 			}
 			//copying default cert as a secret to user namespace
 			var defaultCertName string
@@ -50,32 +47,18 @@ func Default(client *client.Client, apiNamespace string, certList map[string]str
 			errCreateSec := k8s.Create(client, newDefaultSecret)
 
 			if errCreateSec != nil {
-				return false, errCreateSec
+				return errCreateSec
 			} else {
 				//mount certs
-				volume.AddCert(newDefaultSecret, jobVolumeMount, jobVolume)
-				alias := newDefaultSecret.Name + volume.CertAlias
-				existCert = true
-				for k := range newDefaultSecret.Data {
-					certName = k
-				}
-				//add cert path and alias as key value pairs
-				certList[alias] = volume.CertPath + newDefaultSecret.Name + "/" + certName
+				alias := volume.AddCert(newDefaultSecret, "security")
 				defaultSecConf.CertificateAlias = alias
 			}
 		} else if err != nil {
 			logger.Error(err, "Error getting default certificate", "from namespace", apiNamespace)
-			return existCert, err
+			return err
 		} else {
 			//mount certs
-			volume.AddCert(defaultCert, jobVolumeMount, jobVolume)
-			alias := defaultCert.Name + volume.CertAlias
-			existCert = true
-			for k := range defaultCert.Data {
-				certName = k
-			}
-			//add cert path and alias as key value pairs
-			certList[alias] = volume.CertPath + defaultCert.Name + "/" + certName
+			alias := volume.AddCert(defaultCert, "security")
 			defaultSecConf.CertificateAlias = alias
 		}
 		//copying default security to user namespace
@@ -84,7 +67,7 @@ func Default(client *client.Client, apiNamespace string, certList map[string]str
 		errCreateSecurity := k8s.Create(client, newDefaultSecurity)
 		if errCreateSecurity != nil {
 			logger.Error(errCreateSecurity, "error creating secret for default security in user namespace")
-			return existCert, errCreateSecurity
+			return errCreateSecurity
 		}
 		logger.Info("default security successfully copied to " + apiNamespace + " namespace")
 		if newDefaultSecurity.Spec.SecurityConfig[0].Issuer != "" {
@@ -96,24 +79,17 @@ func Default(client *client.Client, apiNamespace string, certList map[string]str
 		defaultSecConf.ValidateSubscription = newDefaultSecurity.Spec.SecurityConfig[0].ValidateSubscription
 	} else if errGetSec != nil {
 		logger.Error(errGetSec, "error getting default security from user namespace")
-		return existCert, errGetSec
+		return errGetSec
 	} else {
 		logger.Info("Default security exists in the namespace", "namespace", apiNamespace)
 		// check default cert exist in api namespace
 		var defaultCertUsrNs = k8s.NewSecret()
 		err := k8s.Get(client, types.NamespacedName{Name: securityDefault.Spec.SecurityConfig[0].Certificate, Namespace: apiNamespace}, defaultCertUsrNs)
 		if err != nil {
-			return existCert, err
+			return err
 		} else {
 			//mount certs
-			volume.AddCert(defaultCertUsrNs, jobVolumeMount, jobVolume)
-			alias := defaultCertUsrNs.Name + volume.CertAlias
-			existCert = true
-			for k := range defaultCertUsrNs.Data {
-				certName = k
-			}
-			//add cert path and alias as key value pairs
-			certList[alias] = volume.CertPath + defaultCertUsrNs.Name + "/" + certName
+			alias := volume.AddCert(defaultCertUsrNs, "security")
 			defaultSecConf.CertificateAlias = alias
 			defaultSecConf.ValidateSubscription = securityDefault.Spec.SecurityConfig[0].ValidateSubscription
 		}
@@ -127,7 +103,7 @@ func Default(client *client.Client, apiNamespace string, certList map[string]str
 
 	// append JwtConfigs
 	*mgw.Configs.JwtConfigs = append(*mgw.Configs.JwtConfigs, defaultSecConf)
-	return existCert, nil
+	return nil
 }
 
 func copyDefaultSecurity(securityDefault *wso2v1alpha1.Security, userNameSpace string, owner []metav1.OwnerReference) *wso2v1alpha1.Security {

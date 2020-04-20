@@ -1,4 +1,4 @@
-package deploy
+package volume
 
 import (
 	"errors"
@@ -12,7 +12,7 @@ import (
 
 var logger = log.Log.WithName("deploy")
 
-func SidecarContainers(client *client.Client, apiNamespace string, endpointNames *map[string]string) (*[]corev1.Container, error) {
+func AddSidecarContainers(client *client.Client, apiNamespace string, endpointNames *map[string]string) error {
 	containerList := make([]corev1.Container, 0, len(*endpointNames))
 	isAdded := make(map[string]bool)
 
@@ -41,10 +41,11 @@ func SidecarContainers(client *client.Client, apiNamespace string, endpointNames
 				}
 
 				logger.Error(err, "Failed to deploy the sidecar endpoint", "endpoint name", endpointName)
-				return nil, err
+				return err
 			}
 		}
 	}
 
-	return &containerList, nil
+	addContainers(&containerList)
+	return nil
 }
