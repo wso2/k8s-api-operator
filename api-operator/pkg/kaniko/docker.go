@@ -5,14 +5,13 @@ import (
 	"fmt"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/maps"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/str"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/volume"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
-	"strings"
-	"text/template"
 )
 
 var logDocker = log.Log.WithName("kaniko.docker")
@@ -69,7 +68,7 @@ func HandleDockerFile(client *client.Client, userNamespace, apiName string, owne
 	// get file name in configmap
 	fileName, err := maps.OneKey(dockerFileConfMap.Data)
 	if err != nil {
-		logDocker.Error(err, "Error retrieving docker template data", "configmap_data", dockerFileConfMap.Data)
+		logDocker.Error(err, "Error retrieving docker template filename", "configmap_data", dockerFileConfMap.Data)
 		return err
 	}
 
@@ -79,7 +78,7 @@ func HandleDockerFile(client *client.Client, userNamespace, apiName string, owne
 	}
 
 	// get rendered docker file
-	renderedDocFile, err := renderedDockerFile(dockerFileConfMap.Data[fileName])
+	renderedDocFile, err := str.RenderTemplate(dockerFileConfMap.Data[fileName], DocFileProp)
 	if err != nil {
 		return err
 	}
@@ -98,24 +97,6 @@ func HandleDockerFile(client *client.Client, userNamespace, apiName string, owne
 	volume.AddVolume(vol, mount)
 
 	return nil
-}
-
-// renderedDockerFile returns the rendered docker file using the properties in DocFileProp
-func renderedDockerFile(docFileText string) (string, error) {
-	docFileTemplate, err := template.New("").Parse(docFileText)
-	if err != nil {
-		logDocker.Error(err, "Error in generating template with docker file")
-		return "", err
-	}
-
-	strBuilder := &strings.Builder{}
-	err = docFileTemplate.Execute(strBuilder, *DocFileProp)
-	if err != nil {
-		logDocker.Error(err, "Error rendering dockerfile from template", "template", docFileText, "properties", *DocFileProp)
-		return "", err
-	}
-
-	return strBuilder.String(), nil
 }
 
 // setTruststorePassword sets the truststore password in docker file properties DocFileProp

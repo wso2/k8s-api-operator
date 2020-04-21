@@ -56,7 +56,7 @@ func Handle(client *client.Client, securityMap map[string][]string, userNameSpac
 				_ = cert.Add(certificateSecret, "security")
 
 				//get the keymanager server URL from the security kind
-				mgw.Configs.KeymanagerServerurl = securityConf.Endpoint
+				mgw.Configs.KeymanagerServerUrl = securityConf.Endpoint
 				//fetch credentials from the secret created
 				errGetCredentials := mgw.SetCredentials(client, SecurityOauth, types.NamespacedName{Namespace: userNameSpace, Name: securityConf.Credentials})
 				if errGetCredentials != nil {

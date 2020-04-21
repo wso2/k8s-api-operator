@@ -6,7 +6,7 @@ import (
 )
 
 func OneKey(m interface{}) (string, error) {
-	if reflect.TypeOf(m).String() != "map" {
+	if reflect.TypeOf(m).Kind().String() != "map" {
 		err := errors.New("type of the argument is not a map")
 		return "", err
 	}
