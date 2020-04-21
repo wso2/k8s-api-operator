@@ -34,13 +34,11 @@ import (
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/volume"
 	"k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"strconv"
 	"strings"
-	"text/template"
-
-	"k8s.io/apimachinery/pkg/util/intstr"
 
 	routv1 "github.com/openshift/api/route/v1"
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
@@ -388,45 +386,25 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	// handling Kaniko docker file
-	log.Info("rendering the docker file for Kaniko job and adding volumes to the Kaniko job")
+	log.Info("Rendering the dockerfile for Kaniko job and adding volumes to the Kaniko job")
 	if err := kaniko.HandleDockerFile(&r.client, userNamespace, instance.Name, owner); err != nil {
 		log.Error(err, "Error rendering the docker file for Kaniko job and adding volumes to the Kaniko job")
 		return reconcile.Result{}, err
 	}
 
-	// sets the MGW configs from APIM configmap
-	log.Info("sets the MGW configs from APIM configmap")
+	// setting the MGW configs from APIM configmap
+	log.Info("Setting the MGW configs from APIM configmap")
 	if err := mgw.SetApimConfigs(&r.client); err != nil {
+		log.Error(err, "Error Setting the MGW configs from APIM configmap")
 		return reconcile.Result{}, err
 	}
 
-	// Retrieving configmap related to micro-gateway configuration mustache/template
-	confTemplate := k8s.NewConfMap()
-	confErr := k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: mgwConfMustache}, confTemplate)
-	if confErr != nil {
-		log.Error(err, "error in retrieving the config map ")
+	// rendering MGW config file
+	log.Info("Rendering and adding the MGW configuration file to cluster")
+	if err := mgw.ApplyConfFile(&r.client, userNamespace, instance.Name, owner); err != nil {
+		log.Error(err, "Error rendering and adding the MGW configuration file to cluster")
+		return reconcile.Result{}, err
 	}
-	//retrieve micro-gw-conf from the configmap
-	confTemp := confTemplate.Data[mgwConfGoTmpl]
-
-	//generate mgw conf from the template
-	mgwConftmpl, err := template.New("").Parse(confTemp)
-	if err != nil {
-		log.Error(err, "error in rendering mgw conf with template")
-	}
-	builder := &strings.Builder{}
-	err = mgwConftmpl.Execute(builder, mgw.Configs)
-	if err != nil {
-		log.Error(err, "error in generating Dockerfile")
-	}
-	//creating k8s secret from the rendered mgw-conf file
-	output := builder.String()
-
-	// create mgwSecret in the k8s cluster
-	mgwNsName := types.NamespacedName{Namespace: instance.Namespace, Name: instance.Name + "-" + mgwConfSecretConst}
-	mgwData := map[string][]byte{mgwConfConst: []byte(output)}
-	mgwSecret := k8s.NewSecretWith(mgwNsName, &mgwData, nil, owner)
-	_ = k8s.Apply(&r.client, mgwSecret)
 
 	generateK8sArtifactsForMgw := controlConfigData[generatekubernbetesartifactsformgw]
 	genArtifacts, errGenArtifacts := strconv.ParseBool(generateK8sArtifactsForMgw)

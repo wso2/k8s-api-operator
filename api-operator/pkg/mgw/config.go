@@ -18,7 +18,9 @@ package mgw
 
 import (
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/str"
 	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strconv"
@@ -26,7 +28,12 @@ import (
 
 const (
 	apimConfName       = "apim-config"
+	mgwConfMustache    = "mgw-conf-mustache"
 	wso2NameSpaceConst = "wso2-system"
+
+	mgwConfGoTmpl      = "mgwConf.gotmpl"
+	mgwConfSecretConst = "mgw-conf"
+	mgwConfConst       = "micro-gw.conf"
 
 	httpPortValConst  = 9090
 	httpsPortValConst = 9095
@@ -55,9 +62,9 @@ type Configuration struct {
 	TruststorePassword string
 
 	// key manager
-	KeymanagerServerUrl string
-	KeymanagerUsername  string
-	KeymanagerPassword  string
+	KeyManagerServerUrl string
+	KeyManagerUsername  string
+	KeyManagerPassword  string
 
 	// jwtTokenConfig
 	JwtConfigs *[]JwtTokenConfig
@@ -113,9 +120,9 @@ var Configs = &Configuration{
 	TruststorePassword: "ballerina",
 
 	// key manager
-	KeymanagerServerUrl: "https://wso2apim.wso2:32001",
-	KeymanagerUsername:  "admin",
-	KeymanagerPassword:  "admin",
+	KeyManagerServerUrl: "https://wso2apim.wso2:32001",
+	KeyManagerUsername:  "admin",
+	KeyManagerPassword:  "admin",
 
 	// jwtTokenConfig
 	JwtConfigs: &[]JwtTokenConfig{
@@ -199,6 +206,31 @@ func SetApimConfigs(client *client.Client) error {
 	}
 
 	return nil
+}
+
+// ApplyConfFile render and add the MGW configuration file to cluster
+func ApplyConfFile(client *client.Client, userNamespace, apiName string, owner *[]metav1.OwnerReference) error {
+	// retrieving the MGW template configmap
+	templateConfMap := k8s.NewConfMap()
+	errConf := k8s.Get(client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: mgwConfMustache}, templateConfMap)
+	if errConf != nil {
+		logger.Error(errConf, "Error retrieving the MGW template configmap")
+		return errConf
+	}
+
+	// render final micro-gw-conf file
+	templateText := templateConfMap.Data[mgwConfGoTmpl]
+	finalConf, errRender := str.RenderTemplate(templateText, Configs)
+	if errRender != nil {
+		logger.Error(errRender, "Error rendering the MGW configuration file")
+		return errRender
+	}
+
+	// create MGW config file as a secret in the k8s cluster
+	confNsName := types.NamespacedName{Namespace: userNamespace, Name: apiName + "-" + mgwConfSecretConst}
+	confData := map[string][]byte{mgwConfConst: []byte(finalConf)}
+	confSecret := k8s.NewSecretWith(confNsName, &confData, nil, owner)
+	return k8s.Apply(client, confSecret)
 }
 
 // TODO: rnk: remove this after finish refactor
