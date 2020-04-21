@@ -388,43 +388,19 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	// handling Kaniko docker file
-	log.Info("Rendering the docker file for Kaniko job and adding volumes to the Kaniko job")
+	log.Info("rendering the docker file for Kaniko job and adding volumes to the Kaniko job")
 	if err := kaniko.HandleDockerFile(&r.client, userNamespace, instance.Name, owner); err != nil {
 		log.Error(err, "Error rendering the docker file for Kaniko job and adding volumes to the Kaniko job")
 		return reconcile.Result{}, err
 	}
 
-	//Get data from apim configmap
-	apimConfig := k8s.NewConfMap()
-	apimEr := k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: apimConfName}, apimConfig)
-	httpPortVal := httpPortValConst
-	httpsPortVal := httpsPortValConst
-	if apimEr == nil {
-		mgw.Configs.VerifyHostname = apimConfig.Data[verifyHostnameConst]
-		mgw.Configs.EnabledGlobalTMEventPublishing = apimConfig.Data[enabledGlobalTMEventPublishingConst]
-		mgw.Configs.JmsConnectionProvider = apimConfig.Data[jmsConnectionProviderConst]
-		mgw.Configs.ThrottleEndpoint = apimConfig.Data[throttleEndpointConst]
-		mgw.Configs.EnableRealtimeMessageRetrieval = apimConfig.Data[enableRealtimeMessageRetrievalConst]
-		mgw.Configs.EnableRequestValidation = apimConfig.Data[enableRequestValidationConst]
-		mgw.Configs.EnableResponseValidation = apimConfig.Data[enableResponseValidationConst]
-		mgw.Configs.LogLevel = apimConfig.Data[logLevelConst]
-		mgw.Configs.HttpPort = apimConfig.Data[httpPortConst]
-		mgw.Configs.HttpsPort = apimConfig.Data[httpsPortConst]
-		httpPortVal, err = strconv.Atoi(mgw.Configs.HttpPort)
-		if err != nil {
-			log.Error(err, "Valid http port was not provided. Default port will be used")
-			httpPortVal = httpPortValConst
-		}
-		httpsPortVal, err = strconv.Atoi(mgw.Configs.HttpsPort)
-		if err != nil {
-			log.Error(err, "Valid https port was not provided. Default port will be used")
-			httpsPortVal = httpsPortValConst
-		}
-	} else {
-		mgw.Configs.VerifyHostname = verifyHostNameVal
+	// sets the MGW configs from APIM configmap
+	log.Info("sets the MGW configs from APIM configmap")
+	if err := mgw.SetApimConfigs(&r.client); err != nil {
+		return reconcile.Result{}, err
 	}
 
-	//Retrieving configmap related to micro-gateway configuration mustache/template
+	// Retrieving configmap related to micro-gateway configuration mustache/template
 	confTemplate := k8s.NewConfMap()
 	confErr := k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: mgwConfMustache}, confTemplate)
 	if confErr != nil {
@@ -465,11 +441,11 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	analyticsEnabledBool, _ := strconv.ParseBool(mgw.Configs.AnalyticsEnabled)
 	dep := createMgwDeployment(instance, controlConf, analyticsEnabledBool, r, userNamespace, *owner,
 		getResourceReqCPU, getResourceReqMemory, getResourceLimitCPU, getResourceLimitMemory, *volume.ContainerList,
-		int32(httpPortVal), int32(httpsPortVal))
+		mgw.Configs.HttpPort, mgw.Configs.HttpsPort)
 	depFound := &appsv1.Deployment{}
 	deperr := r.client.Get(context.TODO(), types.NamespacedName{Name: dep.Name, Namespace: dep.Namespace}, depFound)
 
-	svc := createMgwLBService(r, instance, userNamespace, *owner, int32(httpPortVal), int32(httpsPortVal), operatorMode)
+	svc := createMgwLBService(r, instance, userNamespace, *owner, mgw.Configs.HttpPort, mgw.Configs.HttpsPort, operatorMode)
 	svcFound := &corev1.Service{}
 	svcErr := r.client.Get(context.TODO(), types.NamespacedName{Name: svc.Name, Namespace: svc.Namespace}, svcFound)
 
@@ -565,15 +541,15 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 				reqLogger.Info("Operator mode is set to " + operatorMode)
 				if strings.EqualFold(operatorMode, ingressMode) {
-					ingErr := createorUpdateMgwIngressResource(r, instance, int32(httpPortVal), int32(httpsPortVal),
+					ingErr := createorUpdateMgwIngressResource(r, instance, mgw.Configs.HttpPort, mgw.Configs.HttpsPort,
 						apiBasePathMap, controlIngressConf, owner)
 					if ingErr != nil {
 						return reconcile.Result{}, ingErr
 					}
 				}
 				if strings.EqualFold(operatorMode, routeMode) {
-					rutErr := createorUpdateMgwRouteResource(r, instance, int32(httpPortVal),
-						int32(httpsPortVal), apiBasePathMap, controlOpenshiftConf, owner)
+					rutErr := createorUpdateMgwRouteResource(r, instance, mgw.Configs.HttpPort,
+						mgw.Configs.HttpsPort, apiBasePathMap, controlOpenshiftConf, owner)
 					if rutErr != nil {
 						return reconcile.Result{}, rutErr
 					}
@@ -628,15 +604,15 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 			reqLogger.Info("Operator mode is set to " + operatorMode)
 			if strings.EqualFold(operatorMode, ingressMode) {
-				ingErr := createorUpdateMgwIngressResource(r, instance, int32(httpPortVal), int32(httpsPortVal),
+				ingErr := createorUpdateMgwIngressResource(r, instance, mgw.Configs.HttpPort, mgw.Configs.HttpsPort,
 					apiBasePathMap, controlIngressConf, owner)
 				if ingErr != nil {
 					return reconcile.Result{}, ingErr
 				}
 			}
 			if strings.EqualFold(operatorMode, routeMode) {
-				rutErr := createorUpdateMgwRouteResource(r, instance, int32(httpPortVal),
-					int32(httpsPortVal), apiBasePathMap, controlOpenshiftConf, owner)
+				rutErr := createorUpdateMgwRouteResource(r, instance, mgw.Configs.HttpPort,
+					mgw.Configs.HttpsPort, apiBasePathMap, controlOpenshiftConf, owner)
 				if rutErr != nil {
 					return reconcile.Result{}, rutErr
 				}
@@ -704,15 +680,14 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 				reqLogger.Info("Operator mode is set to " + operatorMode)
 				if strings.EqualFold(operatorMode, ingressMode) {
-					ingErr := createorUpdateMgwIngressResource(r, instance, int32(httpPortVal),
-						int32(httpsPortVal), apiBasePathMap, controlIngressConf, owner)
+					ingErr := createorUpdateMgwIngressResource(r, instance, mgw.Configs.HttpPort,
+						mgw.Configs.HttpsPort, apiBasePathMap, controlIngressConf, owner)
 					if ingErr != nil {
 						return reconcile.Result{}, ingErr
 					}
 				}
 				if strings.EqualFold(operatorMode, routeMode) {
-					rutErr := createorUpdateMgwRouteResource(r, instance, int32(httpPortVal),
-						int32(httpsPortVal), apiBasePathMap, controlOpenshiftConf, owner)
+					rutErr := createorUpdateMgwRouteResource(r, instance, mgw.Configs.HttpPort, mgw.Configs.HttpsPort, apiBasePathMap, controlOpenshiftConf, owner)
 					if rutErr != nil {
 						return reconcile.Result{}, rutErr
 					}

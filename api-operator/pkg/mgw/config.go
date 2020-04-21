@@ -16,17 +16,46 @@
 
 package mgw
 
+import (
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"strconv"
+)
+
+const (
+	apimConfName       = "apim-config"
+	wso2NameSpaceConst = "wso2-system"
+
+	httpPortValConst  = 9090
+	httpsPortValConst = 9095
+)
+
+const (
+	verifyHostnameConst                 = "verifyHostname"
+	enabledGlobalTMEventPublishingConst = "enabledGlobalTMEventPublishing"
+	jmsConnectionProviderConst          = "jmsConnectionProvider"
+	throttleEndpointConst               = "throttleEndpoint"
+	enableRealtimeMessageRetrievalConst = "enableRealtimeMessageRetrieval"
+	enableRequestValidationConst        = "enableRequestValidation"
+	enableResponseValidationConst       = "enableResponseValidation"
+	logLevelConst                       = "logLevel"
+	httpPortConst                       = "httpPort"
+	httpsPortConst                      = "httpsPort"
+)
+
 type Configuration struct {
 	// transport listener Configurations
-	HttpPort           string
-	HttpsPort          string
+	HttpPort           int32
+	HttpsPort          int32
 	KeystorePath       string
 	KeystorePassword   string
 	TruststorePath     string
 	TruststorePassword string
 
 	// key manager
-	KeymanagerServerurl string
+	KeymanagerServerUrl string
 	KeymanagerUsername  string
 	KeymanagerPassword  string
 
@@ -76,15 +105,15 @@ type JwtTokenConfig struct {
 // mgw configs with default values
 var Configs = &Configuration{
 	// transport listener Configurations
-	HttpPort:           "9090",
-	HttpsPort:          "9095",
+	HttpPort:           9090,
+	HttpsPort:          9095,
 	KeystorePath:       "${mgw-runtime.home}/runtime/bre/security/ballerinaKeystore.p12",
 	KeystorePassword:   "ballerina",
 	TruststorePath:     "${mgw-runtime.home}/runtime/bre/security/ballerinaTruststore.p12",
 	TruststorePassword: "ballerina",
 
 	// key manager
-	KeymanagerServerurl: "https://wso2apim.wso2:32001",
+	KeymanagerServerUrl: "https://wso2apim.wso2:32001",
 	KeymanagerUsername:  "admin",
 	KeymanagerPassword:  "admin",
 
@@ -129,6 +158,47 @@ var Configs = &Configuration{
 
 	//log level
 	LogLevel: "INFO",
+}
+
+// SetApimConfigs sets the MGW configs from APIM configmap
+func SetApimConfigs(client *client.Client) error {
+	// get data from APIM configmap
+	apimConfig := k8s.NewConfMap()
+	errApim := k8s.Get(client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: apimConfName}, apimConfig)
+
+	if errApim != nil {
+		if errors.IsNotFound(errApim) {
+			logger.Info("APIM config is not found. Continue with default configs")
+		} else {
+			logger.Error(errApim, "Error retrieving APIM configs")
+			return errApim
+		}
+	}
+
+	Configs.VerifyHostname = apimConfig.Data[verifyHostnameConst]
+	Configs.EnabledGlobalTMEventPublishing = apimConfig.Data[enabledGlobalTMEventPublishingConst]
+	Configs.JmsConnectionProvider = apimConfig.Data[jmsConnectionProviderConst]
+	Configs.ThrottleEndpoint = apimConfig.Data[throttleEndpointConst]
+	Configs.EnableRealtimeMessageRetrieval = apimConfig.Data[enableRealtimeMessageRetrievalConst]
+	Configs.EnableRequestValidation = apimConfig.Data[enableRequestValidationConst]
+	Configs.EnableResponseValidation = apimConfig.Data[enableResponseValidationConst]
+	Configs.LogLevel = apimConfig.Data[logLevelConst]
+	httpPort, err := strconv.Atoi(apimConfig.Data[httpPortConst])
+	if err != nil {
+		logger.Error(err, "Provided http port is not valid. Using the default port")
+		Configs.HttpPort = httpPortValConst
+	} else {
+		Configs.HttpPort = int32(httpPort)
+	}
+	httpsPort, err := strconv.Atoi(apimConfig.Data[httpsPortConst])
+	if err != nil {
+		logger.Error(err, "Provided https port is not valid. Using the default port")
+		Configs.HttpsPort = httpsPortValConst
+	} else {
+		Configs.HttpsPort = int32(httpsPort)
+	}
+
+	return nil
 }
 
 // TODO: rnk: remove this after finish refactor

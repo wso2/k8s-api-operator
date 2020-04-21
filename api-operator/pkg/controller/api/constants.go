@@ -52,26 +52,15 @@ const (
 	routeHost            = "routeHost"
 	routeTransportMode   = "routeTransportMode"
 	tlsTermination       = "tlsTermination"
-	verifyHostnameConst  = "verifyHostname"
 
 	defaultSecurity = "default-security-jwt"
 	certPath        = "/usr/wso2/certs/"
 	mgwConfMustache = "mgw-conf-mustache"
 	mgwConfGoTmpl   = "mgwConf.gotmpl"
 
-	apimConfName                        = "apim-config"
-	enabledGlobalTMEventPublishingConst = "enabledGlobalTMEventPublishing"
-	jmsConnectionProviderConst          = "jmsConnectionProvider"
-	throttleEndpointConst               = "throttleEndpoint"
-	logLevelConst                       = "logLevel"
-	portConst                           = "port"
-	httpConst                           = "http"
-	httpsConst                          = "https"
-	httpPortConst                       = "httpPort"
-	httpsPortConst                      = "httpsPort"
-	enableRealtimeMessageRetrievalConst = "enableRealtimeMessageRetrieval"
-	enableRequestValidationConst        = "enableRequestValidation"
-	enableResponseValidationConst       = "enableResponseValidation"
+	portConst  = "port"
+	httpConst  = "http"
+	httpsConst = "https"
 
 	operatorModeConst = "operatorMode"
 	ingressMode       = "Ingress"
@@ -104,9 +93,6 @@ const (
 	resourceLimitCPU                   = "resourceLimitCPU"
 	resourceLimitMemory                = "resourceLimitMemory"
 	generatekubernbetesartifactsformgw = "generatekubernbetesartifactsformgw"
-
-	httpPortValConst  = 9090
-	httpsPortValConst = 9095
 
 	deploymentKind = "Deployment"
 	serviceKind    = "Service"
