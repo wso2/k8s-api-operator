@@ -2,9 +2,9 @@ package security
 
 import (
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/cert"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/mgw"
-	"github.com/wso2/k8s-api-operator/api-operator/pkg/volume"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -50,7 +50,7 @@ func Default(client *client.Client, apiNamespace string, owner *[]metav1.OwnerRe
 				return errCreateSec
 			} else {
 				//mount certs
-				alias := volume.AddCert(newDefaultSecret, "security")
+				alias := cert.Add(newDefaultSecret, "security")
 				defaultSecConf.CertificateAlias = alias
 			}
 		} else if err != nil {
@@ -58,7 +58,7 @@ func Default(client *client.Client, apiNamespace string, owner *[]metav1.OwnerRe
 			return err
 		} else {
 			//mount certs
-			alias := volume.AddCert(defaultCert, "security")
+			alias := cert.Add(defaultCert, "security")
 			defaultSecConf.CertificateAlias = alias
 		}
 		//copying default security to user namespace
@@ -89,7 +89,7 @@ func Default(client *client.Client, apiNamespace string, owner *[]metav1.OwnerRe
 			return err
 		} else {
 			//mount certs
-			alias := volume.AddCert(defaultCertUsrNs, "security")
+			alias := cert.Add(defaultCertUsrNs, "security")
 			defaultSecConf.CertificateAlias = alias
 			defaultSecConf.ValidateSubscription = securityDefault.Spec.SecurityConfig[0].ValidateSubscription
 		}

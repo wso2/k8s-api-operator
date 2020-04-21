@@ -2,9 +2,9 @@ package security
 
 import (
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/cert"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/mgw"
-	"github.com/wso2/k8s-api-operator/api-operator/pkg/volume"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -53,7 +53,7 @@ func Handle(client *client.Client, securityMap map[string][]string, userNameSpac
 					logger.Info("defined certificate successfully retrieved")
 				}
 				//mount certs
-				_ = volume.AddCert(certificateSecret, "security")
+				_ = cert.Add(certificateSecret, "security")
 
 				//get the keymanager server URL from the security kind
 				mgw.Configs.KeymanagerServerurl = securityConf.Endpoint
@@ -97,7 +97,7 @@ func Handle(client *client.Client, securityMap map[string][]string, userNameSpac
 					logger.Info("defined certificate successfully retrieved")
 				}
 				//mount certs
-				alias := volume.AddCert(certificateSecret, "security")
+				alias := cert.Add(certificateSecret, "security")
 				jwtConf.CertificateAlias = alias
 				jwtConf.ValidateSubscription = securityConf.ValidateSubscription
 

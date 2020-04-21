@@ -6,9 +6,6 @@ import (
 )
 
 const (
-	dockerFile         = "dockerfile"
-	dockerFileLocation = "/usr/wso2/dockerfile/"
-
 	policyConfigmap    = "policy-configmap"
 	policyYamlLocation = "/usr/wso2/policy/"
 
@@ -39,8 +36,6 @@ func InitJobVolumes() {
 }
 
 func AddDefaultKanikoVolumes(apiName string, swaggerCmNames []string) (*[]corev1.Volume, *[]corev1.VolumeMount) {
-	// docker file
-	dockerFileVol, dockerFileMount := ConfigMapVolume(apiName+"-"+dockerFile, dockerFileLocation)
 	// policy
 	policyVol, policyMount := ConfigMapVolume(policyConfigmap, policyYamlLocation)
 	// MGW conf file
@@ -55,9 +50,9 @@ func AddDefaultKanikoVolumes(apiName string, swaggerCmNames []string) (*[]corev1
 		swaggerMounts = append(swaggerMounts, *mount)
 	}
 
-	vols := []corev1.Volume{*dockerFileVol, *policyVol, *mgwConfVol}
+	vols := []corev1.Volume{*policyVol, *mgwConfVol}
 	vols = append(vols, swaggerVols...)
-	mounts := []corev1.VolumeMount{*dockerFileMount, *policyMount, *mgwConfMount}
+	mounts := []corev1.VolumeMount{*policyMount, *mgwConfMount}
 	mounts = append(mounts, swaggerMounts...)
 	return &vols, &mounts
 }
@@ -66,7 +61,7 @@ func addContainers(containers *[]corev1.Container) {
 	*ContainerList = append(*ContainerList, *containers...)
 }
 
-func addVolume(vols *corev1.Volume, volMounts *corev1.VolumeMount) {
+func AddVolume(vols *corev1.Volume, volMounts *corev1.VolumeMount) {
 	*JobVolume = append(*JobVolume, *vols)
 	*JobVolumeMount = append(*JobVolumeMount, *volMounts)
 }
