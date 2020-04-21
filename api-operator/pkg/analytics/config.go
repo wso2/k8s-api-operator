@@ -2,9 +2,9 @@ package analytics
 
 import (
 	"errors"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/cert"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/mgw"
-	"github.com/wso2/k8s-api-operator/api-operator/pkg/volume"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -70,7 +70,7 @@ func Handle(client *client.Client, userNamespace string) error {
 				}
 				// Configure MGW and add cert
 				setMgwConfigs(analyticsConf, analyticsSecret)
-				volume.AddCert(analyticsCertSecret, "analytics")
+				cert.Add(analyticsCertSecret, "analytics")
 			} else {
 				if errSecret == nil {
 					errSecret = errors.New("required field in the secret is missing the secret: " + analyticsConf.Data[analyticsSecretConst])
