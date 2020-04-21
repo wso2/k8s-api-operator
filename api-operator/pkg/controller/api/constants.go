@@ -34,8 +34,6 @@ const (
 	repositoryNameConst  = "repositoryName"
 	wso2NameSpaceConst   = "wso2-system"
 	policyConfigmap      = "policy-configmap"
-	mgwConfSecretConst   = "mgw-conf"
-	mgwConfConst         = "micro-gw.conf"
 	controllerConfName   = "controller-config"
 	ingressConfigs       = "ingress-configs"
 	openShiftConfigs     = "route-configs"
@@ -55,8 +53,6 @@ const (
 
 	defaultSecurity = "default-security-jwt"
 	certPath        = "/usr/wso2/certs/"
-	mgwConfMustache = "mgw-conf-mustache"
-	mgwConfGoTmpl   = "mgwConf.gotmpl"
 
 	portConst  = "port"
 	httpConst  = "http"

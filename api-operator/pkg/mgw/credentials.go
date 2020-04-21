@@ -47,8 +47,8 @@ func SetCredentials(client *client.Client, securityType string, namespacedName t
 		Configs.BasicPassword = hex.EncodeToString(sha1Hash.Sum(nil))
 	}
 	if securityType == "Oauth" {
-		Configs.KeymanagerUsername = userName
-		Configs.KeymanagerPassword = string(password)
+		Configs.KeyManagerUsername = userName
+		Configs.KeyManagerPassword = string(password)
 	}
 	return nil
 }
