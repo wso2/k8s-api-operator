@@ -21,10 +21,10 @@ import (
 	"fmt"
 	"github.com/golang/glog"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/analytics"
-	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/interceptors"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/kaniko"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/maps"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/mgw"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/registry"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/registry/utils"
@@ -33,7 +33,6 @@ import (
 	swagger "github.com/wso2/k8s-api-operator/api-operator/pkg/swagger"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/volume"
 	"k8s.io/api/extensions/v1beta1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -64,31 +63,6 @@ import (
 )
 
 var log = logf.Log.WithName("api.controller")
-
-//These structs used to build the security schema in json
-type path struct {
-	Security []map[string][]string `json:"security"`
-}
-type securitySchemeStruct struct {
-	SecurityType string             `json:"type"`
-	Scheme       string             `json:"scheme,omitempty"`
-	Flows        *authorizationCode `json:"flows,omitempty"`
-}
-
-type SecurityTypeJWT struct {
-	CertificateAlias     string
-	Issuer               string
-	Audience             string
-	ValidateSubscription bool
-}
-type authorizationCode struct {
-	AuthorizationCode scopeSet `json:"authorizationCode,omitempty"`
-}
-type scopeSet struct {
-	AuthorizationUrl string            `json:"authorizationUrl"`
-	TokenUrl         string            `json:"tokenUrl"`
-	Scopes           map[string]string `json:"scopes,omitempty"`
-}
 
 // Add creates a new API Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
@@ -241,7 +215,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	swaggerCmNames := instance.Spec.Definition.SwaggerConfigmapNames
 	for _, swaggerCmName := range swaggerCmNames {
-		// Check if the configmaps mentioned in the crd object exist
+		// Check if the configmap mentioned in the crd object exist
 		swaggerConfMap := k8s.NewConfMap()
 		err := k8s.Get(&r.client, types.NamespacedName{Namespace: userNamespace, Name: swaggerCmName}, swaggerConfMap)
 		if err != nil {
@@ -256,9 +230,13 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 		// update owner reference to the swagger configmap and update it
 		_ = k8s.UpdateOwner(&r.client, owner, swaggerConfMap)
-
 		// fetch swagger data from configmap and loads as open api swagger v3
-		swaggerFileName, swaggerData, _ := config.GetMapKeyValue(swaggerConfMap.Data)
+		swaggerFileName, errSwagger := maps.OneKey(swaggerConfMap.Data)
+		if errSwagger != nil {
+			log.Error(errSwagger, "Error in the swagger configmap data", "data", swaggerConfMap.Data)
+			return reconcile.Result{}, errSwagger
+		}
+		swaggerData := swaggerConfMap.Data[swaggerFileName]
 		swaggerFileName = str.GetRandFileName(swaggerFileName) // randomize file name to make it unique
 		swaggerOriginal, err := swagger.GetSwaggerV3(&swaggerData)
 		if err != nil {
@@ -411,15 +389,9 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	if errGenArtifacts != nil {
 		log.Error(errGenArtifacts, "error reading value for generate k8s artifacts")
 	}
-	getResourceReqCPU := controlConfigData[resourceRequestCPU]
-	getResourceReqMemory := controlConfigData[resourceRequestMemory]
-	getResourceLimitCPU := controlConfigData[resourceLimitCPU]
-	getResourceLimitMemory := controlConfigData[resourceLimitMemory]
 
-	analyticsEnabledBool, _ := strconv.ParseBool(mgw.Configs.AnalyticsEnabled)
-	dep := createMgwDeployment(instance, controlConf, analyticsEnabledBool, r, userNamespace, *owner,
-		getResourceReqCPU, getResourceReqMemory, getResourceLimitCPU, getResourceLimitMemory, *volume.ContainerList,
-		mgw.Configs.HttpPort, mgw.Configs.HttpsPort)
+	dep := mgw.Deployment(instance, controlConfigData, owner)
+
 	depFound := &appsv1.Deployment{}
 	deperr := r.client.Get(context.TODO(), types.NamespacedName{Name: dep.Name, Namespace: dep.Namespace}, depFound)
 
@@ -766,115 +738,6 @@ func createHorizontalPodAutoscaler(dep *appsv1.Deployment, r *ReconcileAPI, owne
 		log.Info("HPA for deployment " + dep.Name + " is already exist")
 	}
 	return nil
-}
-
-// generate relevant MGW deployment/services for the given API definition
-func createMgwDeployment(cr *wso2v1alpha1.API, conf *corev1.ConfigMap, analyticsEnabled bool,
-	r *ReconcileAPI, nameSpace string, owner []metav1.OwnerReference, resourceReqCPU string, resourceReqMemory string,
-	resourceLimitCPU string, resourceLimitMemory string, containerList []corev1.Container, httpPortVal int32,
-	httpsPortVal int32) *appsv1.Deployment {
-	regConfig := registry.GetConfig()
-	labels := map[string]string{
-		"app": cr.Name,
-	}
-	controlConfigData := conf.Data
-	liveDelay, _ := strconv.ParseInt(controlConfigData[livenessProbeInitialDelaySeconds], 10, 32)
-	livePeriod, _ := strconv.ParseInt(controlConfigData[livenessProbePeriodSeconds], 10, 32)
-	readDelay, _ := strconv.ParseInt(controlConfigData[readinessProbeInitialDelaySeconds], 10, 32)
-	readPeriod, _ := strconv.ParseInt(controlConfigData[readinessProbePeriodSeconds], 10, 32)
-	reps := int32(cr.Spec.Replicas)
-	var deployVolumeMount []corev1.VolumeMount
-	var deployVolume []corev1.Volume
-	if analyticsEnabled {
-		deployVolumeMountTemp, deployVolumeTemp, err := getAnalyticsPVClaim(r, deployVolumeMount, deployVolume)
-		if err != nil {
-			log.Error(err, "Analytics volume mounting error")
-		} else {
-			deployVolumeMount = deployVolumeMountTemp
-			deployVolume = deployVolumeTemp
-		}
-	}
-	req := corev1.ResourceList{
-		corev1.ResourceCPU:    resource.MustParse(resourceReqCPU),
-		corev1.ResourceMemory: resource.MustParse(resourceReqMemory),
-	}
-	lim := corev1.ResourceList{
-		corev1.ResourceCPU:    resource.MustParse(resourceLimitCPU),
-		corev1.ResourceMemory: resource.MustParse(resourceLimitMemory),
-	}
-	apiContainer := corev1.Container{
-		Name:            "mgw" + cr.Name,
-		Image:           regConfig.ImagePath,
-		ImagePullPolicy: "Always",
-		Resources: corev1.ResourceRequirements{
-			Requests: req,
-			Limits:   lim,
-		},
-		VolumeMounts: deployVolumeMount,
-		Env:          regConfig.Env,
-		Ports: []corev1.ContainerPort{
-			{
-				ContainerPort: httpPortVal,
-			},
-			{
-				ContainerPort: httpsPortVal,
-			},
-		},
-		ReadinessProbe: &corev1.Probe{
-			Handler: corev1.Handler{
-				HTTPGet: &corev1.HTTPGetAction{
-					Path:   "/health",
-					Port:   intstr.IntOrString{Type: intstr.Int, IntVal: httpsPortVal},
-					Scheme: "HTTPS",
-				},
-			},
-			InitialDelaySeconds: int32(readDelay),
-			PeriodSeconds:       int32(readPeriod),
-			TimeoutSeconds:      1,
-		},
-		LivenessProbe: &corev1.Probe{
-			Handler: corev1.Handler{
-				HTTPGet: &corev1.HTTPGetAction{
-					Path:   "/health",
-					Port:   intstr.IntOrString{Type: intstr.Int, IntVal: httpsPortVal},
-					Scheme: "HTTPS",
-				},
-			},
-			InitialDelaySeconds: int32(liveDelay),
-			PeriodSeconds:       int32(livePeriod),
-			TimeoutSeconds:      1,
-		},
-	}
-
-	containerList = append(containerList, apiContainer)
-	return &appsv1.Deployment{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: apiVersionKey,
-			Kind:       deploymentKind,
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:            cr.Name,
-			Namespace:       nameSpace,
-			Labels:          labels,
-			OwnerReferences: owner,
-		},
-		Spec: appsv1.DeploymentSpec{
-			Replicas: &reps,
-			Selector: &metav1.LabelSelector{
-				MatchLabels: labels,
-			},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: labels,
-				},
-				Spec: corev1.PodSpec{
-					Containers:       containerList,
-					Volumes:          deployVolume,
-					ImagePullSecrets: regConfig.ImagePullSecrets,
-				},
-			},
-		},
-	}
 }
 
 func policyHandler(r *ReconcileAPI, operatorOwner *[]metav1.OwnerReference, userNameSpace string) error {
@@ -1275,27 +1138,6 @@ func createorUpdateMgwRouteResource(r *ReconcileAPI, cr *wso2v1alpha1.API, httpP
 	}
 
 	return nil
-}
-
-//Mounts an emptydir volume to be used when analytics is enabled
-func getAnalyticsPVClaim(r *ReconcileAPI, deployVolumeMount []corev1.VolumeMount, deployVolume []corev1.Volume) ([]corev1.VolumeMount, []corev1.Volume, error) {
-
-	deployVolumeMount = []corev1.VolumeMount{
-		{
-			Name:      analyticsVolumeName,
-			MountPath: analyticsVolumeLocation,
-			ReadOnly:  false,
-		},
-	}
-	deployVolume = []corev1.Volume{
-		{
-			Name: analyticsVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			},
-		},
-	}
-	return deployVolumeMount, deployVolume, nil
 }
 
 //gets the details of the operator for owner reference

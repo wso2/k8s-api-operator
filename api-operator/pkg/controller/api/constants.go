@@ -20,11 +20,10 @@ const (
 	interceptorsVolume     = "intcpt-vol"
 	javaInterceptorsVolume = "java-intcpt-vol"
 
-	analyticsCertFile       = "analytics-cert"
-	analyticsCertLocation   = "/usr/wso2/analyticssecret/"
-	analyticsVolumeName     = "analytics-volume-storage"
-	analyticsVolumeLocation = "/home/ballerina/wso2/api-usage-data/"
-	analyticsConfName       = "analytics-config"
+	analyticsCertFile     = "analytics-cert"
+	analyticsCertLocation = "/usr/wso2/analyticssecret/"
+	analyticsVolumeName   = "analytics-volume-storage"
+	analyticsConfName     = "analytics-config"
 
 	mgwToolkitImgConst   = "mgwToolkitImg"
 	mgwRuntimeImgConst   = "mgwRuntimeImg"
@@ -77,23 +76,13 @@ const (
 	verifyHostNameVal    = "false"
 	apiCrdDefaultVersion = "v1.0.0"
 
-	hpaMaxReplicas                    = "hpaMaxReplicas"
-	hpaTargetAverageUtilizationCPU    = "hpaTargetAverageUtilizationCPU"
-	readinessProbeInitialDelaySeconds = "readinessProbeInitialDelaySeconds"
-	readinessProbePeriodSeconds       = "readinessProbePeriodSeconds"
-	livenessProbeInitialDelaySeconds  = "livenessProbeInitialDelaySeconds"
-	livenessProbePeriodSeconds        = "livenessProbePeriodSeconds"
+	hpaMaxReplicas                 = "hpaMaxReplicas"
+	hpaTargetAverageUtilizationCPU = "hpaTargetAverageUtilizationCPU"
 
-	resourceRequestCPU                 = "resourceRequestCPU"
-	resourceRequestMemory              = "resourceRequestMemory"
-	resourceLimitCPU                   = "resourceLimitCPU"
-	resourceLimitMemory                = "resourceLimitMemory"
 	generatekubernbetesartifactsformgw = "generatekubernbetesartifactsformgw"
 
-	deploymentKind = "Deployment"
-	serviceKind    = "Service"
-	apiVersionKey  = "apps/v1"
-	versionField   = "{version}"
+	serviceKind  = "Service"
+	versionField = "{version}"
 
 	edge        = "edge"
 	reencrypt   = "reencrypt"
