@@ -19,6 +19,7 @@ package mgw
 import (
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/str"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/volume"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -34,6 +35,7 @@ const (
 	mgwConfGoTmpl      = "mgwConf.gotmpl"
 	mgwConfSecretConst = "mgw-conf"
 	mgwConfConst       = "micro-gw.conf"
+	mgwConfLocation    = "/usr/wso2/mgwconf/"
 
 	httpPortValConst  = 9090
 	httpsPortValConst = 9095
@@ -230,7 +232,13 @@ func ApplyConfFile(client *client.Client, userNamespace, apiName string, owner *
 	confNsName := types.NamespacedName{Namespace: userNamespace, Name: apiName + "-" + mgwConfSecretConst}
 	confData := map[string][]byte{mgwConfConst: []byte(finalConf)}
 	confSecret := k8s.NewSecretWith(confNsName, &confData, nil, owner)
-	return k8s.Apply(client, confSecret)
+	if err := k8s.Apply(client, confSecret); err != nil {
+		return err
+	}
+
+	// add volumes to Kaniko job
+	volume.AddVolume(volume.SecretVolume(confNsName.Name, mgwConfLocation))
+	return nil
 }
 
 // TODO: rnk: remove this after finish refactor

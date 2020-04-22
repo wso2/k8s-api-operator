@@ -2,13 +2,19 @@ package swagger
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/getkin/kin-openapi/openapi3"
+	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
 )
 
-func GetApiBasePath(swagger *openapi3.Swagger) string {
+const (
+	privateJet = "privateJet"
+)
+
+func ApiBasePath(swagger *openapi3.Swagger) string {
 	var apiBasePath string
 
-	basePathData, checkBasePath := swagger.Extensions[ApiBasePathExtention]
+	basePathData, checkBasePath := swagger.Extensions[ApiBasePathExtension]
 	if checkBasePath {
 		basePathJson, checkJsonRaw := basePathData.(json.RawMessage)
 		if checkJsonRaw {
@@ -26,18 +32,41 @@ func GetApiBasePath(swagger *openapi3.Swagger) string {
 	return apiBasePath
 }
 
-func GetMode(swagger *openapi3.Swagger) string {
-	var mode string
-	modeExt, isModeDefined := swagger.Extensions[DeploymentMode]
-	if isModeDefined {
-		modeRawStr, _ := modeExt.(json.RawMessage)
-		err := json.Unmarshal(modeRawStr, &mode)
-		if err != nil {
-			logger.Error(err, "Error unmarshal mode in swagger", "field", DeploymentMode)
+func EpDeployMode(api *wso2v1alpha1.API, swagger *openapi3.Swagger) (string, error) {
+	var epDeployMode string
+	numOfSwaggers := len(api.Spec.Definition.SwaggerConfigmapNames)
+
+	if numOfSwaggers > 1 {
+		// override mode in swaggers if there are multiple swaggers
+		if api.Spec.Mode != "" {
+			epDeployMode = api.Spec.Mode.String()
+			logger.Info("Set endpoint deployment mode in multi swagger mode given in API crd", "mode", epDeployMode)
+			return epDeployMode, nil
 		}
-	} else {
-		logger.Info("Deployment mode is not set in the swagger", "field", DeploymentMode)
+
+		// if not defined in swagger or CRD mode set default
+		logger.Info("Set endpoint deployment mode in multi swagger mode with default mode", "default_mode", privateJet)
+		return privateJet, nil
+
+	} else if numOfSwaggers < 1 {
+		err := errors.New("no swagger configmap defined")
+		return "", err
 	}
 
-	return mode
+	// override 'instance.Spec.Mode' if there is only one swagger
+	// get the mode from swagger file
+	modeExt, isModeDefined := swagger.Extensions[DeploymentModeExtension]
+	if isModeDefined {
+		modeRawStr, _ := modeExt.(json.RawMessage)
+		err := json.Unmarshal(modeRawStr, &epDeployMode)
+		if err != nil {
+			logger.Error(err, "Error unmarshal mode in swagger", "field", DeploymentModeExtension)
+			return "", err
+		}
+
+		return epDeployMode, nil
+	}
+
+	logger.Info("Deployment mode is not found in the swagger and setting to default", "default_mode", privateJet)
+	return privateJet, nil
 }

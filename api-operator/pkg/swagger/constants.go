@@ -2,8 +2,8 @@ package swagger
 
 const (
 	EndpointExtension       = "x-wso2-production-endpoints"
-	ApiBasePathExtention    = "x-wso2-basePath"
-	DeploymentMode          = "x-wso2-mode"
+	ApiBasePathExtension    = "x-wso2-basePath"
+	DeploymentModeExtension = "x-wso2-mode"
 	SecurityExtension       = "security"
 	PathsExtension          = "paths"
 	SecuritySchemeExtension = "securitySchemes"
