@@ -70,7 +70,7 @@ type Configuration struct {
 	JwtConfigs *[]JwtTokenConfig
 
 	// analytics
-	AnalyticsEnabled          string
+	AnalyticsEnabled          bool
 	AnalyticsUsername         string
 	AnalyticsPassword         string
 	UploadingTimeSpanInMillis string
@@ -135,7 +135,7 @@ var Configs = &Configuration{
 	},
 
 	// analytics
-	AnalyticsEnabled:          "false",
+	AnalyticsEnabled:          false,
 	AnalyticsUsername:         "admin",
 	AnalyticsPassword:         "admin",
 	UploadingTimeSpanInMillis: "600000",

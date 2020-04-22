@@ -39,7 +39,7 @@ func Handle(client *client.Client, userNamespace string) error {
 	errConf := k8s.Get(client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: analyticsConfName}, analyticsConf)
 	if errConf != nil {
 		logger.Info("Disabling analytics since the analytics configuration related config map not found")
-		mgw.Configs.AnalyticsEnabled = "false"
+		mgw.Configs.AnalyticsEnabled = false
 	} else {
 		if analyticsConf.Data[analyticsEnabledConst] == "true" {
 			// gets the data from analytics secret
@@ -93,7 +93,7 @@ func isValidSecret(secret *corev1.Secret) bool {
 
 // setMgwConfigs enable analytics and set MGW configs
 func setMgwConfigs(confMap *corev1.ConfigMap, secret *corev1.Secret) {
-	mgw.Configs.AnalyticsEnabled = "true"
+	mgw.Configs.AnalyticsEnabled = true
 
 	mgw.Configs.UploadingTimeSpanInMillis = confMap.Data[uploadingTimeSpanInMillisConst]
 	mgw.Configs.RotatingPeriod = confMap.Data[rotatingPeriodConst]

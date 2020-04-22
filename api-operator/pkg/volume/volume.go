@@ -40,3 +40,19 @@ func ConfigMapVolume(confMapName string, mountPath string) (*corev1.Volume, *cor
 	}
 	return &vol, &mount
 }
+
+func EmptyDirVolume(volumeName string, mountPath string) (*corev1.Volume, *corev1.VolumeMount) {
+	volName := volumeName + "-volume"
+	vol := corev1.Volume{
+		Name: volName,
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		},
+	}
+	mount := corev1.VolumeMount{
+		Name:      volName,
+		MountPath: mountPath,
+		ReadOnly:  true,
+	}
+	return &vol, &mount
+}

@@ -17,6 +17,7 @@
 package k8s
 
 import (
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -78,6 +79,15 @@ func NewSecretWith(namespacedName types.NamespacedName, data *map[string][]byte,
 	}
 
 	return secret
+}
+
+func NewDeployment() *appsv1.Deployment {
+	return &appsv1.Deployment{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Deployment",
+			APIVersion: "apps/v1",
+		},
+	}
 }
 
 // NewOwnerRef returns an array with a new owner reference object of given meta data
