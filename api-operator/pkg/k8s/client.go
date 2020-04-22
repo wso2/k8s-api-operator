@@ -55,6 +55,22 @@ func Create(client *client.Client, obj runtime.Object) error {
 	return err
 }
 
+// CreateIfNotExists creates the given k8s object if the object is not exists in the k8s cluster
+func CreateIfNotExists(client *client.Client, obj runtime.Object) error {
+	// get k8s object
+	objMeta := obj.(metav1.Object)
+	namespaceName := types.NamespacedName{Namespace: objMeta.GetNamespace(), Name: objMeta.GetName()}
+	kind := obj.GetObjectKind().GroupVersionKind().Kind
+
+	err := (*client).Get(context.TODO(), namespaceName, obj)
+	if err != nil && errors.IsNotFound(err) {
+		return Create(client, obj)
+	} else if err != nil {
+		logCnt.Error(err, "Error creating k8s object if not found. Error while getting object", "kind", kind, "object", obj)
+	}
+	return err
+}
+
 // Update updates the given k8s object in the k8s cluster
 func Update(client *client.Client, obj runtime.Object) error {
 	kind := obj.GetObjectKind().GroupVersionKind().Kind

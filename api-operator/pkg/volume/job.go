@@ -6,12 +6,6 @@ import (
 )
 
 const (
-	policyConfigmap    = "policy-configmap"
-	policyYamlLocation = "/usr/wso2/policy/"
-
-	mgwConfSecretConst = "mgw-conf"
-	mgwConfLocation    = "/usr/wso2/mgwconf/"
-
 	swaggerLocation = "/usr/wso2/swagger/project-%v/"
 )
 
@@ -36,11 +30,6 @@ func InitJobVolumes() {
 }
 
 func AddDefaultKanikoVolumes(apiName string, swaggerCmNames []string) (*[]corev1.Volume, *[]corev1.VolumeMount) {
-	// policy
-	policyVol, policyMount := ConfigMapVolume(policyConfigmap, policyYamlLocation)
-	// MGW conf file
-	mgwConfVol, mgwConfMount := SecretVolume(apiName+"-"+mgwConfSecretConst, mgwConfLocation)
-
 	// swagger file config maps
 	swaggerVols := make([]corev1.Volume, 0, len(swaggerCmNames))
 	swaggerMounts := make([]corev1.VolumeMount, 0, len(swaggerCmNames))
@@ -50,11 +39,7 @@ func AddDefaultKanikoVolumes(apiName string, swaggerCmNames []string) (*[]corev1
 		swaggerMounts = append(swaggerMounts, *mount)
 	}
 
-	vols := []corev1.Volume{*policyVol, *mgwConfVol}
-	vols = append(vols, swaggerVols...)
-	mounts := []corev1.VolumeMount{*policyMount, *mgwConfMount}
-	mounts = append(mounts, swaggerMounts...)
-	return &vols, &mounts
+	return &swaggerVols, &swaggerMounts
 }
 
 func addContainers(containers *[]corev1.Container) {

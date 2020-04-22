@@ -16,23 +16,12 @@
 package api
 
 const (
-	mgwDockerFile          = "dockerfile-conf"
-	interceptorsVolume     = "intcpt-vol"
-	javaInterceptorsVolume = "java-intcpt-vol"
-
-	analyticsCertFile     = "analytics-cert"
-	analyticsCertLocation = "/usr/wso2/analyticssecret/"
-	analyticsVolumeName   = "analytics-volume-storage"
-	analyticsConfName     = "analytics-config"
-
 	mgwToolkitImgConst   = "mgwToolkitImg"
 	mgwRuntimeImgConst   = "mgwRuntimeImg"
-	kanikoImgConst       = "kanikoImg"
 	kanikoArguments      = "kanikoArguments"
 	registryTypeConst    = "registryType"
 	repositoryNameConst  = "repositoryName"
 	wso2NameSpaceConst   = "wso2-system"
-	policyConfigmap      = "policy-configmap"
 	controllerConfName   = "controller-config"
 	ingressConfigs       = "ingress-configs"
 	openShiftConfigs     = "route-configs"
@@ -40,7 +29,6 @@ const (
 	kanikoArgsConfigs    = "kaniko-arguments"
 	ingressProperties    = "ingress.properties"
 	routeProperties      = "route.properties"
-	policyFileConst      = "policies.yaml"
 	ingressResourceName  = "ingressResourceName"
 	ingressTransportMode = "ingressTransportMode"
 	ingressHostName      = "ingressHostName"
@@ -49,9 +37,6 @@ const (
 	routeHost            = "routeHost"
 	routeTransportMode   = "routeTransportMode"
 	tlsTermination       = "tlsTermination"
-
-	defaultSecurity = "default-security-jwt"
-	certPath        = "/usr/wso2/certs/"
 
 	portConst  = "port"
 	httpConst  = "http"
@@ -62,24 +47,14 @@ const (
 	clusterIPMode     = "ClusterIP"
 	routeMode         = "Route"
 
-	authorizationUrl       = "https://example.com/oauth/authorize"
-	tokenUrl               = "https://example.com/oauth/token"
-	oauthSecurityType      = "oauth2"
-	basicSecurityType      = "http"
-	basicSecurityAndScheme = "basic"
+	sidecar = "sidecar"
 
-	securityJWT          = "JWT"
-	securityOauth        = "Oauth"
-	certAlias            = "alias"
-	sidecar              = "sidecar"
-	privateJet           = "privateJet"
-	verifyHostNameVal    = "false"
 	apiCrdDefaultVersion = "v1.0.0"
 
 	hpaMaxReplicas                 = "hpaMaxReplicas"
 	hpaTargetAverageUtilizationCPU = "hpaTargetAverageUtilizationCPU"
 
-	generatekubernbetesartifactsformgw = "generatekubernbetesartifactsformgw"
+	generateKubernetesArtifactsForMgw = "generatekubernbetesartifactsformgw"
 
 	serviceKind  = "Service"
 	versionField = "{version}"

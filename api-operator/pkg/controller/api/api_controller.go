@@ -26,6 +26,7 @@ import (
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/kaniko"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/maps"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/mgw"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/ratelimit"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/registry"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/registry/utils"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/security"
@@ -38,6 +39,7 @@ import (
 	"k8s.io/client-go/rest"
 	"strconv"
 	"strings"
+	"time"
 
 	routv1 "github.com/openshift/api/route/v1"
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
@@ -59,7 +61,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"encoding/json"
-	"github.com/wso2/k8s-api-operator/api-operator/pkg/controller/ratelimiting"
 )
 
 var log = logf.Log.WithName("api.controller")
@@ -103,8 +104,6 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 }
 
 var _ reconcile.Reconciler = &ReconcileAPI{}
-
-var kanikoArgs = &corev1.ConfigMap{}
 
 // ReconcileAPI reconciles a API object
 type ReconcileAPI struct {
@@ -199,18 +198,15 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		"Controller configurations",
 		"mgw_toolkit_image", kaniko.DocFileProp.ToolkitImage,
 		"mgw_runtime_image", kaniko.DocFileProp.RuntimeImage,
-		"kaniko_image", controlConfigData[kanikoImgConst],
 		"registry_type", registryType,
 		"repository_name", repositoryName,
 		"user_nameSpace", userNamespace,
 		"operator_mode", operatorMode,
 	)
 
-	// handles policy.yaml
-	//If there aren't any ratelimiting objects deployed, new policy.yaml configmap will be created with default policies
-	policyEr := policyHandler(r, operatorOwner, userNamespace)
-	if policyEr != nil {
-		log.Error(policyEr, "Error in default policy map creation")
+	// if there aren't any ratelimiting objects deployed, new policy.yaml configmap will be created with default policies
+	if err := ratelimit.Handle(&r.client, userNamespace, operatorOwner); err != nil {
+		log.Error(err, "Error in creating default policy configmap")
 	}
 
 	swaggerCmNames := instance.Spec.Definition.SwaggerConfigmapNames
@@ -230,6 +226,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 		// update owner reference to the swagger configmap and update it
 		_ = k8s.UpdateOwner(&r.client, owner, swaggerConfMap)
+
 		// fetch swagger data from configmap and loads as open api swagger v3
 		swaggerFileName, errSwagger := maps.OneKey(swaggerConfMap.Data)
 		if errSwagger != nil {
@@ -238,35 +235,25 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		}
 		swaggerData := swaggerConfMap.Data[swaggerFileName]
 		swaggerFileName = str.GetRandFileName(swaggerFileName) // randomize file name to make it unique
-		swaggerOriginal, err := swagger.GetSwaggerV3(&swaggerData)
+		swaggerDoc, err := swagger.GetSwaggerV3(&swaggerData)
 		if err != nil {
 			return reconcile.Result{}, nil
 		}
 
-		// Set deployment mode: sidecar/private-jet
-		var mode string
-		if len(swaggerCmNames) == 1 {
-			// override 'instance.Spec.Mode' if there is only one swagger
-			mode = swagger.GetMode(swaggerOriginal)
-		} else {
-			// override mode in swaggers if there are multiple swaggers
-			if instance.Spec.Mode != "" {
-				mode = instance.Spec.Mode.String()
-				log.Info("Set deployment mode in multi swagger mode given in API crd", "mode", mode)
-			} else {
-				// if no defined in swagger or CRD mode set default
-				mode = privateJet
-				log.Info("Set deployment mode in multi swagger mode with default mode", "mode", mode)
-			}
+		// Set endpoint deployment mode: sidecar/private-jet
+		epDeployMode, errMode := swagger.EpDeployMode(instance, swaggerDoc)
+		if errMode != nil {
+			log.Error(errMode, "Error setting the endpoint deployment mode")
+			return reconcile.Result{}, errMode
 		}
 
-		apiVersion = swaggerOriginal.Info.Version
-		endpointNames := swagger.HandleMgwEndpoints(&r.client, swaggerOriginal, mode, userNamespace)
-		apiBasePath := swagger.GetApiBasePath(swaggerOriginal)
+		apiVersion = swaggerDoc.Info.Version
+		endpointNames := swagger.HandleMgwEndpoints(&r.client, swaggerDoc, epDeployMode, userNamespace)
+		apiBasePath := swagger.ApiBasePath(swaggerDoc)
 		apiBasePathMap[apiBasePath] = apiVersion
 
 		// Creating sidecar endpoint deployment
-		if mode == sidecar {
+		if epDeployMode == sidecar {
 			err := volume.AddSidecarContainers(&r.client, userNamespace, &endpointNames)
 			if err != nil {
 				return reconcile.Result{}, err
@@ -275,9 +262,9 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 		reqLogger.Info("getting security instance")
 		//check security scheme already exist
-		_, secSchemeDefined := swaggerOriginal.Extensions[swagger.SecuritySchemeExtension]
+		_, secSchemeDefined := swaggerDoc.Extensions[swagger.SecuritySchemeExtension]
 
-		securityMap, isDefinedSecurity, resourceLevelSec, securityErr := swagger.GetSecurityMap(swaggerOriginal)
+		securityMap, isDefinedSecurity, resourceLevelSec, securityErr := swagger.GetSecurityMap(swaggerDoc)
 		if securityErr != nil {
 			return reconcile.Result{}, securityErr
 		}
@@ -290,10 +277,10 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 		//adding security scheme to swagger
 		if len(securityDefinition) > 0 {
-			swaggerOriginal.Components.Extensions[swagger.SecuritySchemeExtension] = securityDefinition
+			swaggerDoc.Components.Extensions[swagger.SecuritySchemeExtension] = securityDefinition
 		}
 
-		formattedSwagger := swagger.PrettyString(swaggerOriginal)
+		formattedSwagger := swagger.PrettyString(swaggerDoc)
 		formattedSwaggerCmName := swaggerCmName + "-mgw"
 		//create configmap with modified swagger
 		swaggerDataMgw := map[string]string{swaggerFileName: formattedSwagger}
@@ -304,11 +291,17 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		errGetConf := k8s.Get(&r.client, types.NamespacedName{Namespace: userNamespace, Name: formattedSwaggerCmName}, mgwSwaggerConfMap)
 		if errGetConf != nil && errors.IsNotFound(errGetConf) {
 			log.Info("swagger-mgw is not found. Hence creating new configmap")
-			_ = k8s.Create(&r.client, swaggerConfMapMgw)
+			if err := k8s.Create(&r.client, swaggerConfMapMgw); err != nil {
+				log.Error(err, "Error creating formatted swagger configmap", "configmap", mgwSwaggerConfMap)
+				return reconcile.Result{}, err
+			}
 		} else if errGetConf == nil {
 			if instance.Spec.UpdateTimeStamp != "" {
 				log.Info("Updating swagger-mgw since timestamp value is given")
-				_ = k8s.Update(&r.client, swaggerConfMapMgw)
+				if err := k8s.Update(&r.client, swaggerConfMapMgw); err != nil {
+					log.Error(err, "Error updating formatted swagger configmap", "configmap", mgwSwaggerConfMap)
+					return reconcile.Result{}, err
+				}
 			}
 		}
 
@@ -384,21 +377,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		return reconcile.Result{}, err
 	}
 
-	generateK8sArtifactsForMgw := controlConfigData[generatekubernbetesartifactsformgw]
-	genArtifacts, errGenArtifacts := strconv.ParseBool(generateK8sArtifactsForMgw)
-	if errGenArtifacts != nil {
-		log.Error(errGenArtifacts, "error reading value for generate k8s artifacts")
-	}
-
-	dep := mgw.Deployment(instance, controlConfigData, owner)
-
-	depFound := &appsv1.Deployment{}
-	deperr := r.client.Get(context.TODO(), types.NamespacedName{Name: dep.Name, Namespace: dep.Namespace}, depFound)
-
-	svc := createMgwLBService(r, instance, userNamespace, *owner, mgw.Configs.HttpPort, mgw.Configs.HttpsPort, operatorMode)
-	svcFound := &corev1.Service{}
-	svcErr := r.client.Get(context.TODO(), types.NamespacedName{Name: svc.Name, Namespace: svc.Namespace}, svcFound)
-
 	getMaxRep := controlConfigData[hpaMaxReplicas]
 	intValueRep, err := strconv.ParseInt(getMaxRep, 10, 32)
 	if err != nil {
@@ -413,6 +391,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	targetAvgUtilizationCPU := int32(intValueUtilCPU)
 	minReplicas := int32(instance.Spec.Replicas)
 
+	kanikoArgs := k8s.NewConfMap()
 	err = k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: kanikoArgsConfigs}, kanikoArgs)
 	if err != nil && errors.IsNotFound(err) {
 		log.Info("No kaniko-arguments config map is available in wso2-system namespace")
@@ -423,235 +402,80 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		log.Error(err, "Error coping registry specific configs to user's namespace", "user's namespace", userNamespace)
 	}
 
-	// Add Kaniko job specific volumes
+	// add Kaniko job specific volumes
 	volume.AddDefaultKanikoVolumes(instance.Name, swaggerCmNames)
 
-	if instance.Spec.UpdateTimeStamp != "" {
-		//Schedule Kaniko pod
-		reqLogger.Info("Updating the API", "API.Name", instance.Name, "API.Namespace", instance.Namespace)
-		job := scheduleKanikoJob(instance, controlConf, *volume.JobVolumeMount, *volume.JobVolume, instance.Spec.UpdateTimeStamp, owner)
-		if err := controllerutil.SetControllerReference(instance, job, r.scheme); err != nil {
+	// create Kaniko job
+	// if updating api or overriding api or image not found
+	var kanikoJob *batchv1.Job
+	if instance.Spec.UpdateTimeStamp != "" || instance.Spec.Override || !imageExist {
+		log.Info("Deploying the Kaniko job in cluster")
+		kanikoJob = kaniko.Job(instance, controlConfigData, kanikoArgs.Data[kanikoArguments], owner)
+		if err := controllerutil.SetControllerReference(instance, kanikoJob, r.scheme); err != nil {
 			return reconcile.Result{}, err
 		}
-		kubeJob := &batchv1.Job{}
-		jobErr := r.client.Get(context.TODO(), types.NamespacedName{Name: job.Name, Namespace: job.Namespace}, kubeJob)
-		// if Job is not available
-		if jobErr != nil && errors.IsNotFound(jobErr) {
-			reqLogger.Info("Creating a new Job", "Job.Namespace", job.Namespace, "Job.Name", job.Name)
-			jobErr = r.client.Create(context.TODO(), job)
-			if jobErr != nil {
-				return reconcile.Result{}, jobErr
-			}
-		} else if jobErr != nil {
-			return reconcile.Result{}, jobErr
+		// create Kaniko job
+		if errJob := k8s.CreateIfNotExists(&r.client, kanikoJob); errJob != nil {
+			return reconcile.Result{}, errJob
+		}
+	}
+	// if kaniko job started (i.e. not nil) and still running log and requeue request after 10 sec
+	if kanikoJob != nil && kanikoJob.Status.Succeeded == 0 {
+		reqLogger.Info("Kainko job is still not completed and requeue request after 10 seconds", "job_status", kanikoJob.Status)
+		return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(1e10)}, nil
+	}
+
+	// kaniko job completed or not ran (i.e. image already exists)
+	// deploying the MGW runtime image
+	generateK8sArtifactsForMgw := controlConfigData[generateKubernetesArtifactsForMgw]
+	deployMgwRuntime, err := strconv.ParseBool(generateK8sArtifactsForMgw)
+	if err != nil {
+		log.Error(err, "Error reading value for generate k8s artifacts")
+		return reconcile.Result{}, err
+	}
+	if deployMgwRuntime {
+		reqLogger.Info("Deploying MGW runtime image")
+		// create MGW deployment in k8s cluster
+		mgwDeployment := mgw.Deployment(instance, controlConfigData, owner)
+		if errMgw := k8s.Apply(&r.client, mgwDeployment); errMgw != nil {
+			reqLogger.Error(errMgw, "Error updating the MGW deployment", "deploy_name", mgwDeployment.Name)
+			return reconcile.Result{}, errMgw
+		}
+		reqLogger.Info("Updated the MGW deployment", "deploy_name", mgwDeployment.Name)
+
+		// create MGW service
+		mgwSvc := createMgwLBService(r, instance, userNamespace, *owner, mgw.Configs.HttpPort, mgw.Configs.HttpsPort, operatorMode)
+		if errMgwSvc := k8s.CreateIfNotExists(&r.client, mgwSvc); errMgwSvc != nil {
+			reqLogger.Error(errMgwSvc, "Error creating the MGW service", "service_name", mgwSvc.Name)
+			return reconcile.Result{}, errMgwSvc
 		}
 
-		// if kaniko job is succeeded, edit the deployment
-		if kubeJob.Status.Succeeded > 0 {
-			if genArtifacts {
-				reqLogger.Info("Job completed successfully", "Job.Namespace", job.Namespace, "Job.Name", job.Name)
-				if deperr != nil && errors.IsNotFound(deperr) {
-					reqLogger.Info("Creating a new Dep", "Dep.Namespace", dep.Namespace, "Dep.Name", dep.Name)
-					deperr = r.client.Create(context.TODO(), dep)
-					if deperr != nil {
-						return reconcile.Result{}, deperr
-					}
-					// deployment created successfully - go to create service
-				} else if deperr != nil {
-					return reconcile.Result{}, deperr
-				}
-				reqLogger.Info("Updating the found deployment", "Dep.Namespace", dep.Namespace, "Dep.Name", dep.Name)
-				updateEr := r.client.Update(context.TODO(), dep)
-				if updateEr != nil {
-					log.Error(updateEr, "Error in updating deployment")
-					return reconcile.Result{}, updateEr
-				}
-				reqLogger.Info("Skip reconcile: Deployment updated", "Dep.Name", depFound.Name)
-
-				if svcErr != nil && errors.IsNotFound(svcErr) {
-					reqLogger.Info("Creating a new Service", "SVC.Namespace", svc.Namespace, "SVC.Name", svc.Name)
-					svcErr = r.client.Create(context.TODO(), svc)
-					if svcErr != nil {
-						return reconcile.Result{}, svcErr
-					}
-
-				} else if svcErr != nil {
-					return reconcile.Result{}, svcErr
-				} else {
-					// if service already exsits
-					reqLogger.Info("Skip reconcile: Service already exists", "SVC.Namespace",
-						svcFound.Namespace, "SVC.Name", svcFound.Name)
-				}
-
-				errGettingHpa := createHorizontalPodAutoscaler(dep, r, owner, minReplicas, maxReplicas, targetAvgUtilizationCPU)
-				if errGettingHpa != nil {
-					log.Error(errGettingHpa, "Error getting HPA")
-					return reconcile.Result{}, errGettingHpa
-				}
-
-				reqLogger.Info("Operator mode is set to " + operatorMode)
-				if strings.EqualFold(operatorMode, ingressMode) {
-					ingErr := createorUpdateMgwIngressResource(r, instance, mgw.Configs.HttpPort, mgw.Configs.HttpsPort,
-						apiBasePathMap, controlIngressConf, owner)
-					if ingErr != nil {
-						return reconcile.Result{}, ingErr
-					}
-				}
-				if strings.EqualFold(operatorMode, routeMode) {
-					rutErr := createorUpdateMgwRouteResource(r, instance, mgw.Configs.HttpPort,
-						mgw.Configs.HttpsPort, apiBasePathMap, controlOpenshiftConf, owner)
-					if rutErr != nil {
-						return reconcile.Result{}, rutErr
-					}
-				}
-
-				return reconcile.Result{}, nil
-			} else {
-				log.Info("skip updating kubernetes artifacts")
-				return reconcile.Result{}, nil
-			}
-		} else {
-			reqLogger.Info("Job is still not completed.", "Job.Status", job.Status)
-			return reconcile.Result{Requeue: true}, nil
+		errGettingHpa := createHorizontalPodAutoscaler(mgwDeployment, r, owner, minReplicas, maxReplicas, targetAvgUtilizationCPU)
+		if errGettingHpa != nil {
+			log.Error(errGettingHpa, "Error getting HPA")
+			return reconcile.Result{}, errGettingHpa
 		}
 
-	} else if imageExist && !instance.Spec.Override {
-		log.Info("Image already exist, hence skipping the kaniko job")
-
-		if genArtifacts {
-			log.Info("generating kubernetes artifacts")
-			if deperr != nil && errors.IsNotFound(deperr) {
-				log.Info("Creating a new Dep", "Dep.Namespace", dep.Namespace, "Dep.Name", dep.Name)
-				deperr = r.client.Create(context.TODO(), dep)
-				if deperr != nil {
-					return reconcile.Result{}, deperr
-				}
-				// deployment created successfully - go to create service
-			} else if deperr != nil {
-				return reconcile.Result{}, deperr
+		reqLogger.Info("Operator mode is set to " + operatorMode)
+		if strings.EqualFold(operatorMode, ingressMode) {
+			ingErr := createorUpdateMgwIngressResource(r, instance, mgw.Configs.HttpPort, mgw.Configs.HttpsPort,
+				apiBasePathMap, controlIngressConf, owner)
+			if ingErr != nil {
+				return reconcile.Result{}, ingErr
 			}
-
-			if svcErr != nil && errors.IsNotFound(svcErr) {
-				log.Info("Creating a new Service", "SVC.Namespace", svc.Namespace, "SVC.Name", svc.Name)
-				svcErr = r.client.Create(context.TODO(), svc)
-				if svcErr != nil {
-					return reconcile.Result{}, svcErr
-				}
-
-			} else if svcErr != nil {
-				return reconcile.Result{}, svcErr
-			} else {
-				// if service already exsits
-				reqLogger.Info("Skip reconcile: Service already exists", "SVC.Namespace",
-					svcFound.Namespace, "SVC.Name", svcFound.Name)
+		}
+		if strings.EqualFold(operatorMode, routeMode) {
+			rutErr := createorUpdateMgwRouteResource(r, instance, mgw.Configs.HttpPort,
+				mgw.Configs.HttpsPort, apiBasePathMap, controlOpenshiftConf, owner)
+			if rutErr != nil {
+				return reconcile.Result{}, rutErr
 			}
-
-			errGettingHpa := createHorizontalPodAutoscaler(dep, r, owner, minReplicas, maxReplicas, targetAvgUtilizationCPU)
-			if errGettingHpa != nil {
-				log.Error(errGettingHpa, "Error getting HPA")
-				return reconcile.Result{}, errGettingHpa
-			}
-
-			reqLogger.Info("Operator mode is set to " + operatorMode)
-			if strings.EqualFold(operatorMode, ingressMode) {
-				ingErr := createorUpdateMgwIngressResource(r, instance, mgw.Configs.HttpPort, mgw.Configs.HttpsPort,
-					apiBasePathMap, controlIngressConf, owner)
-				if ingErr != nil {
-					return reconcile.Result{}, ingErr
-				}
-			}
-			if strings.EqualFold(operatorMode, routeMode) {
-				rutErr := createorUpdateMgwRouteResource(r, instance, mgw.Configs.HttpPort,
-					mgw.Configs.HttpsPort, apiBasePathMap, controlOpenshiftConf, owner)
-				if rutErr != nil {
-					return reconcile.Result{}, rutErr
-				}
-			}
-			return reconcile.Result{}, nil
-
-		} else {
-			log.Info("skip generating kubernetes artifacts")
 		}
 
 		return reconcile.Result{}, nil
 	} else {
-		//Schedule Kaniko pod
-		job := scheduleKanikoJob(instance, controlConf, *volume.JobVolumeMount, *volume.JobVolume, instance.Spec.UpdateTimeStamp, owner)
-		if err := controllerutil.SetControllerReference(instance, job, r.scheme); err != nil {
-			return reconcile.Result{}, err
-		}
-		kubeJob := &batchv1.Job{}
-		jobErr := r.client.Get(context.TODO(), types.NamespacedName{Name: job.Name, Namespace: job.Namespace}, kubeJob)
-		// if Job is not available
-		if jobErr != nil && errors.IsNotFound(jobErr) {
-			reqLogger.Info("Creating a new Job", "Job.Namespace", job.Namespace, "Job.Name", job.Name)
-			jobErr = r.client.Create(context.TODO(), job)
-			if jobErr != nil {
-				return reconcile.Result{}, jobErr
-			}
-		} else if jobErr != nil {
-			return reconcile.Result{}, jobErr
-		}
-
-		if kubeJob.Status.Succeeded > 0 {
-			reqLogger.Info("Job completed successfully", "Job.Namespace", job.Namespace, "Job.Name", job.Name)
-
-			if genArtifacts {
-				if deperr != nil && errors.IsNotFound(deperr) {
-					reqLogger.Info("Creating a new Deployment", "Dep.Namespace", dep.Namespace, "Dep.Name", dep.Name)
-					deperr = r.client.Create(context.TODO(), dep)
-					if deperr != nil {
-						return reconcile.Result{}, deperr
-					}
-					// deployment created successfully - go to create service
-				} else if deperr != nil {
-					return reconcile.Result{}, deperr
-				}
-				if svcErr != nil && errors.IsNotFound(svcErr) {
-					reqLogger.Info("Creating a new Service", "SVC.Namespace", svc.Namespace, "SVC.Name", svc.Name)
-					svcErr = r.client.Create(context.TODO(), svc)
-					if svcErr != nil {
-						return reconcile.Result{}, svcErr
-					}
-
-				} else if svcErr != nil {
-					return reconcile.Result{}, svcErr
-				} else {
-					// if service already exsits
-					reqLogger.Info("Skip reconcile: Service already exists", "SVC.Namespace",
-						svcFound.Namespace, "SVC.Name", svcFound.Name)
-				}
-
-				errGettingHpa := createHorizontalPodAutoscaler(dep, r, owner, minReplicas, maxReplicas, targetAvgUtilizationCPU)
-				if errGettingHpa != nil {
-					log.Error(errGettingHpa, "Error getting HPA")
-					return reconcile.Result{}, errGettingHpa
-				}
-
-				reqLogger.Info("Operator mode is set to " + operatorMode)
-				if strings.EqualFold(operatorMode, ingressMode) {
-					ingErr := createorUpdateMgwIngressResource(r, instance, mgw.Configs.HttpPort,
-						mgw.Configs.HttpsPort, apiBasePathMap, controlIngressConf, owner)
-					if ingErr != nil {
-						return reconcile.Result{}, ingErr
-					}
-				}
-				if strings.EqualFold(operatorMode, routeMode) {
-					rutErr := createorUpdateMgwRouteResource(r, instance, mgw.Configs.HttpPort, mgw.Configs.HttpsPort, apiBasePathMap, controlOpenshiftConf, owner)
-					if rutErr != nil {
-						return reconcile.Result{}, rutErr
-					}
-				}
-
-				return reconcile.Result{}, nil
-			} else {
-				log.Info("Skip generating kubernetes artifacts")
-				return reconcile.Result{}, nil
-			}
-		} else {
-			reqLogger.Info("Job is still not completed.", "Job.Status", job.Status)
-			return reconcile.Result{}, deperr
-		}
+		log.Info("Skip updating kubernetes artifacts")
+		return reconcile.Result{}, nil
 	}
 }
 
@@ -740,30 +564,6 @@ func createHorizontalPodAutoscaler(dep *appsv1.Deployment, r *ReconcileAPI, owne
 	return nil
 }
 
-func policyHandler(r *ReconcileAPI, operatorOwner *[]metav1.OwnerReference, userNameSpace string) error {
-	//Check if policy configmap is available
-	foundmapc := k8s.NewConfMap()
-	err := k8s.Get(&r.client, types.NamespacedName{Name: policyConfigmap, Namespace: userNameSpace}, foundmapc)
-
-	if err != nil && errors.IsNotFound(err) {
-		//create new map with default policies in user namespace if a map is not found
-		log.Info("Creating a config map with default policies", "Namespace", userNameSpace, "Name", policyConfigmap)
-
-		defaultval := ratelimiting.CreateDefault()
-		policyDataMap := map[string]string{policyFileConst: defaultval}
-		policyConfMap := k8s.NewConfMapWith(types.NamespacedName{Namespace: userNameSpace, Name: policyConfigmap}, &policyDataMap, nil, operatorOwner)
-
-		err = r.client.Create(context.TODO(), policyConfMap)
-		if err != nil {
-			log.Error(err, "error ")
-			return err
-		}
-	} else if err != nil {
-		return err
-	}
-	return nil
-}
-
 // isImageExist checks if the image exists in the given registry using the secret in the user-namespace
 func isImageExist(r *ReconcileAPI, secretName string, namespace string) (bool, error) {
 	var registryUrl string
@@ -805,65 +605,6 @@ func isImageExist(r *ReconcileAPI, secretName string, namespace string) (bool, e
 	}
 
 	return registry.IsImageExists(utils.RegAuth{RegistryUrl: registryUrl, Username: username, Password: password}, log)
-}
-
-//Schedule Kaniko Job to generate micro-gw image
-func scheduleKanikoJob(cr *wso2v1alpha1.API, conf *corev1.ConfigMap, jobVolumeMount []corev1.VolumeMount,
-	jobVolume []corev1.Volume, timeStamp string, owner *[]metav1.OwnerReference) *batchv1.Job {
-	roolValue := int64(0)
-	regConfig := registry.GetConfig()
-	kanikoJobName := cr.Name + "-kaniko"
-	if timeStamp != "" {
-		kanikoJobName = kanikoJobName + "-" + timeStamp
-	}
-	controlConfigData := conf.Data
-	kanikoImg := controlConfigData[kanikoImgConst]
-	//read kaniko arguments and split them as they are read as a single string
-	kanikoArguments := strings.Split(kanikoArgs.Data[kanikoArguments], "\n")
-	args := append([]string{
-		"--dockerfile=/usr/wso2/dockerfile/Dockerfile",
-		"--context=/usr/wso2/",
-		"--destination=" + regConfig.ImagePath,
-	}, regConfig.Args...)
-	//if kanikoarguments are provided
-	if kanikoArguments != nil {
-		args = append(args, kanikoArguments...)
-	}
-
-	return &batchv1.Job{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:            kanikoJobName,
-			Namespace:       cr.Namespace,
-			OwnerReferences: *owner,
-		},
-		Spec: batchv1.JobSpec{
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      cr.Name + "-job",
-					Namespace: cr.Namespace,
-					Annotations: map[string]string{
-						"sidecar.istio.io/inject": "false",
-					},
-				},
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Name:         cr.Name + "gen-container",
-							Image:        kanikoImg,
-							VolumeMounts: jobVolumeMount,
-							Args:         args,
-							Env:          regConfig.Env,
-						},
-					},
-					SecurityContext: &corev1.PodSecurityContext{
-						RunAsUser: &roolValue,
-					},
-					RestartPolicy: "Never",
-					Volumes:       jobVolume,
-				},
-			},
-		},
-	}
 }
 
 //Creating a LB balancer service to expose mgw
