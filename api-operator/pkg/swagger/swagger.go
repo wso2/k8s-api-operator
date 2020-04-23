@@ -12,7 +12,7 @@ import (
 
 var logger = log.Log.WithName("swagger")
 
-// GetSwaggerV3 retuns the openapi3.Swagger of given swagger string
+// GetSwaggerV3 returns the openapi3.Swagger of given swagger string
 func GetSwaggerV3(swaggerStr *string) (*openapi3.Swagger, error) {
 	swagger, err := openapi3.NewSwaggerLoader().LoadSwaggerFromData([]byte(*swaggerStr))
 	if err != nil {

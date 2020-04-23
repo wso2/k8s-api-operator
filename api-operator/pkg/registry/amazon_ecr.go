@@ -68,10 +68,10 @@ var amazonEcr = &Config{
 		},
 	},
 	IsImageExist: func(config *Config, auth utils.RegAuth, image string, tag string) (bool, error) {
-		repoNameSplits := strings.Split(repositoryName, ".")
+		repoNameSplits := strings.Split(dockerImage.RepositoryName, ".")
 		awsRegistryId := repoNameSplits[0]
 		awsRegion := repoNameSplits[3]
-		awsRepoName := strings.Split(repositoryName, "/")[1]
+		awsRepoName := strings.Split(dockerImage.RepositoryName, "/")[1]
 
 		sess, err := session.NewSession(&aws.Config{
 			Region: aws.String(awsRegion)},
@@ -94,8 +94,9 @@ var amazonEcr = &Config{
 		for _, id := range images.ImageIds {
 			// found the image with tag
 			// untagged images 'id.ImageTag' returns nil; check nil before accessing the pointer
-			if id.ImageTag != nil && *id.ImageTag == fmt.Sprintf("%s-%s", imageName, tag) {
-				logger.Info("Found the image tag from the AWS ECR repository", "RegistryId", awsRegistryId, "RepositoryName", awsRepoName, "image", imageName, "tag", tag)
+			if id.ImageTag != nil && *id.ImageTag == fmt.Sprintf("%s-%s", dockerImage.Name, tag) {
+				logger.Info("Found the image tag from the AWS ECR repository",
+					"RegistryId", awsRegistryId, "RepositoryName", awsRepoName, "image", dockerImage.Name, "tag", tag)
 				return true, nil
 			}
 		}

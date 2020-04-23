@@ -5,10 +5,18 @@ import (
 	"errors"
 	"github.com/getkin/kin-openapi/openapi3"
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
+	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
+var logExt = log.Log.WithName("swagger.extensions")
+
 const (
-	privateJet = "privateJet"
+	EndpointExtension       = "x-wso2-production-endpoints"
+	ApiBasePathExtension    = "x-wso2-basePath"
+	DeploymentModeExtension = "x-wso2-mode"
+	SecurityExtension       = "security"
+	PathsExtension          = "paths"
+	SecuritySchemeExtension = "securitySchemes"
 )
 
 func ApiBasePath(swagger *openapi3.Swagger) string {
@@ -20,13 +28,13 @@ func ApiBasePath(swagger *openapi3.Swagger) string {
 		if checkJsonRaw {
 			err := json.Unmarshal(basePathJson, &apiBasePath)
 			if err != nil {
-				logger.Error(err, "Error unmarshal API base path path")
+				logExt.Error(err, "Error unmarshal API base path path")
 			}
 		} else {
-			logger.Error(nil, "Wrong format of API base path in the swagger")
+			logExt.Error(nil, "Wrong format of API base path in the swagger")
 		}
 	} else {
-		logger.Error(nil, "API base path extension not found in the swagger")
+		logExt.Error(nil, "API base path extension not found in the swagger")
 	}
 
 	return apiBasePath
@@ -40,12 +48,12 @@ func EpDeployMode(api *wso2v1alpha1.API, swagger *openapi3.Swagger) (string, err
 		// override mode in swaggers if there are multiple swaggers
 		if api.Spec.Mode != "" {
 			epDeployMode = api.Spec.Mode.String()
-			logger.Info("Set endpoint deployment mode in multi swagger mode given in API crd", "mode", epDeployMode)
+			logExt.Info("Set endpoint deployment mode in multi swagger mode given in API crd", "mode", epDeployMode)
 			return epDeployMode, nil
 		}
 
 		// if not defined in swagger or CRD mode set default
-		logger.Info("Set endpoint deployment mode in multi swagger mode with default mode", "default_mode", privateJet)
+		logExt.Info("Set endpoint deployment mode in multi swagger mode with default mode", "default_mode", privateJet)
 		return privateJet, nil
 
 	} else if numOfSwaggers < 1 {
@@ -60,13 +68,13 @@ func EpDeployMode(api *wso2v1alpha1.API, swagger *openapi3.Swagger) (string, err
 		modeRawStr, _ := modeExt.(json.RawMessage)
 		err := json.Unmarshal(modeRawStr, &epDeployMode)
 		if err != nil {
-			logger.Error(err, "Error unmarshal mode in swagger", "field", DeploymentModeExtension)
+			logExt.Error(err, "Error unmarshal mode in swagger", "field", DeploymentModeExtension)
 			return "", err
 		}
 
 		return epDeployMode, nil
 	}
 
-	logger.Info("Deployment mode is not found in the swagger and setting to default", "default_mode", privateJet)
+	logExt.Info("Deployment mode is not found in the swagger and setting to default", "default_mode", privateJet)
 	return privateJet, nil
 }
