@@ -237,6 +237,11 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	owner := getOwnerDetails(instance)
+	if errOwnerSet := setApiDependent(&r.client, instance, &owner); errOwnerSet != nil {
+		log.Error(errOwnerSet, "Error setting owner ref for API dependent configs")
+		return reconcile.Result{}, errOwnerSet
+	}
+
 	operatorOwner, ownerErr := getOperatorOwner(r)
 	if ownerErr != nil {
 		reqLogger.Info("Operator was not found in the " + wso2NameSpaceConst + " namespace. No owner will be set for the artifacts")
@@ -1021,6 +1026,36 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			return reconcile.Result{}, deperr
 		}
 	}
+}
+
+// setApiDependent sets API owner reference to dependents
+func setApiDependent(client *client.Client, api *wso2v1alpha1.API, ownerRef *[]metav1.OwnerReference) error {
+	confMap := &corev1.ConfigMap{}
+	// swagger configmaps
+	confMapNames := api.Spec.Definition.SwaggerConfigmapNames
+	confMapNames = append(confMapNames, api.Spec.Definition.Interceptors.Ballerina...)
+	confMapNames = append(confMapNames, api.Spec.Definition.Interceptors.Java...)
+
+	for _, confMapName := range confMapNames {
+		// get configmap
+		err := (*client).Get(context.TODO(), types.NamespacedName{
+			Namespace: api.Namespace,
+			Name:      confMapName,
+		}, confMap)
+		if err != nil {
+			log.Error(err, "Error retrieving api dependent configmap", "configmap", confMapName)
+			return err
+		}
+
+		// set owner ref
+		confMap.OwnerReferences = *ownerRef
+		if err = (*client).Update(context.TODO(), confMap); err != nil {
+			log.Error(err, "Error updating owner reference of api dependent configmap", "configmap", confMap)
+			return err
+		}
+	}
+
+	return nil
 }
 
 // copyConfigVolumes copy the configured secrets and config maps to user's namespace
