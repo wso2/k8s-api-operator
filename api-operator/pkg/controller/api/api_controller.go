@@ -18,8 +18,6 @@ package api
 
 import (
 	"context"
-	"fmt"
-	"github.com/golang/glog"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/analytics"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/interceptors"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
@@ -33,18 +31,12 @@ import (
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/str"
 	swagger "github.com/wso2/k8s-api-operator/api-operator/pkg/swagger"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/volume"
-	"k8s.io/api/extensions/v1beta1"
-	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 	"strconv"
 	"strings"
 	"time"
 
-	routv1 "github.com/openshift/api/route/v1"
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
-	"k8s.io/api/autoscaling/v2beta1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -145,7 +137,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	owner := k8s.NewOwnerRef(instance.TypeMeta, instance.ObjectMeta)
-	operatorOwner, ownerErr := getOperatorOwner(r)
+	operatorOwner, ownerErr := getOperatorOwner(&r.client)
 	if ownerErr != nil {
 		reqLogger.Info("Operator was not found in the " + wso2NameSpaceConst + " namespace. No owner will be set for the artifacts")
 	}
@@ -154,17 +146,11 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	//get configurations file for the controller
 	controlConf := k8s.NewConfMap()
 	errConf := k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: controllerConfName}, controlConf)
-	//get ingress configs
-	controlIngressConf := k8s.NewConfMap()
-	errIngressConf := k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: ingressConfigs}, controlIngressConf)
-	//get openshift configs
-	controlOpenshiftConf := k8s.NewConfMap()
-	errOpenshiftConf := k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: openShiftConfigs}, controlOpenshiftConf)
 	//get docker registry configs
 	dockerRegistryConf := k8s.NewConfMap()
 	errRegConf := k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: dockerRegConfigs}, dockerRegistryConf)
 
-	confErrs := []error{errConf, errIngressConf, errRegConf, errOpenshiftConf}
+	confErrs := []error{errConf, errRegConf}
 	for _, err := range confErrs {
 		if err != nil {
 			if errors.IsNotFound(err) {
@@ -377,20 +363,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		return reconcile.Result{}, err
 	}
 
-	getMaxRep := controlConfigData[hpaMaxReplicas]
-	intValueRep, err := strconv.ParseInt(getMaxRep, 10, 32)
-	if err != nil {
-		log.Error(err, "error getting max replicas")
-	}
-	maxReplicas := int32(intValueRep)
-	GetAvgUtilCPU := controlConfigData[hpaTargetAverageUtilizationCPU]
-	intValueUtilCPU, err := strconv.ParseInt(GetAvgUtilCPU, 10, 32)
-	if err != nil {
-		log.Error(err, "error getting hpa target average utilization for CPU")
-	}
-	targetAvgUtilizationCPU := int32(intValueUtilCPU)
-	minReplicas := int32(instance.Spec.Replicas)
-
 	kanikoArgs := k8s.NewConfMap()
 	err = k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: kanikoArgsConfigs}, kanikoArgs)
 	if err != nil && errors.IsNotFound(err) {
@@ -421,7 +393,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 	// if kaniko job started (i.e. not nil) and still running log and requeue request after 10 sec
 	if kanikoJob != nil && kanikoJob.Status.Succeeded == 0 {
-		reqLogger.Info("Kainko job is still not completed and requeue request after 10 seconds", "job_status", kanikoJob.Status)
+		reqLogger.Info("Kaniko job is still not completed and requeue request after 10 seconds", "job_status", kanikoJob.Status)
 		return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(1e10)}, nil
 	}
 
@@ -444,29 +416,34 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		reqLogger.Info("Updated the MGW deployment", "deploy_name", mgwDeployment.Name)
 
 		// create MGW service
-		mgwSvc := createMgwLBService(r, instance, userNamespace, *owner, mgw.Configs.HttpPort, mgw.Configs.HttpsPort, operatorMode)
+		mgwSvc := mgw.Service(instance, operatorMode, *owner)
+		// controllerutil.SetControllerReference(instance, mgwSvc, r.scheme) <- check with commenting this, if work delete this.
 		if errMgwSvc := k8s.CreateIfNotExists(&r.client, mgwSvc); errMgwSvc != nil {
 			reqLogger.Error(errMgwSvc, "Error creating the MGW service", "service_name", mgwSvc.Name)
 			return reconcile.Result{}, errMgwSvc
 		}
 
-		errGettingHpa := createHorizontalPodAutoscaler(mgwDeployment, r, owner, minReplicas, maxReplicas, targetAvgUtilizationCPU)
-		if errGettingHpa != nil {
-			log.Error(errGettingHpa, "Error getting HPA")
-			return reconcile.Result{}, errGettingHpa
+		// create horizontal pod auto-scalar
+		hpaProp, err := mgw.GetHPAProp(instance, &controlConfigData)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+		hpa := mgw.HPA(mgwDeployment, hpaProp, owner)
+		if errHpa := k8s.CreateIfNotExists(&r.client, hpa); errHpa != nil {
+			reqLogger.Error(errHpa, "Error creating the horizontal pod auto-scalar", "hpa_name", hpa.Name)
+			return reconcile.Result{}, errHpa
 		}
 
-		reqLogger.Info("Operator mode is set to " + operatorMode)
+		reqLogger.Info("Operator mode", "mode", operatorMode)
 		if strings.EqualFold(operatorMode, ingressMode) {
-			ingErr := createorUpdateMgwIngressResource(r, instance, mgw.Configs.HttpPort, mgw.Configs.HttpsPort,
-				apiBasePathMap, controlIngressConf, owner)
-			if ingErr != nil {
-				return reconcile.Result{}, ingErr
+			errIng := mgw.ApplyIngressResource(&r.client, instance, apiBasePathMap, owner)
+			if errIng != nil {
+				reqLogger.Error(errIng, "Error creating the ingress resource")
+				return reconcile.Result{}, errIng
 			}
 		}
 		if strings.EqualFold(operatorMode, routeMode) {
-			rutErr := createorUpdateMgwRouteResource(r, instance, mgw.Configs.HttpPort,
-				mgw.Configs.HttpsPort, apiBasePathMap, controlOpenshiftConf, owner)
+			rutErr := mgw.ApplyRouteResource(&r.client, instance, apiBasePathMap, owner)
 			if rutErr != nil {
 				return reconcile.Result{}, rutErr
 			}
@@ -514,56 +491,6 @@ func copyConfigVolumes(r *ReconcileAPI, namespace string) error {
 	return nil
 }
 
-func createHorizontalPodAutoscaler(dep *appsv1.Deployment, r *ReconcileAPI, owner *[]metav1.OwnerReference,
-	minReplicas int32, maxReplicas int32, targetAverageUtilizationCPU int32) error {
-
-	targetResource := v2beta1.CrossVersionObjectReference{
-		Kind:       dep.Kind,
-		Name:       dep.Name,
-		APIVersion: dep.APIVersion,
-	}
-	//CPU utilization
-	resourceMetricsForCPU := &v2beta1.ResourceMetricSource{
-		Name:                     corev1.ResourceCPU,
-		TargetAverageUtilization: &targetAverageUtilizationCPU,
-	}
-	metricsResCPU := v2beta1.MetricSpec{
-		Type:     "Resource",
-		Resource: resourceMetricsForCPU,
-	}
-	metricsSet := []v2beta1.MetricSpec{metricsResCPU}
-	hpa := &v2beta1.HorizontalPodAutoscaler{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:            dep.Name + "-hpa",
-			Namespace:       dep.Namespace,
-			OwnerReferences: *owner,
-		},
-		Spec: v2beta1.HorizontalPodAutoscalerSpec{
-			MinReplicas:    &minReplicas,
-			MaxReplicas:    maxReplicas,
-			ScaleTargetRef: targetResource,
-			Metrics:        metricsSet,
-		},
-	}
-	//check hpa already exists
-	checkHpa := &v2beta1.HorizontalPodAutoscaler{}
-	hpaErr := r.client.Get(context.TODO(), types.NamespacedName{Name: hpa.Name, Namespace: hpa.Namespace}, checkHpa)
-	if hpaErr != nil && errors.IsNotFound(hpaErr) {
-		//creating new hpa
-		log.Info("Creating HPA for deployment " + dep.Name)
-		errHpaCreating := r.client.Create(context.TODO(), hpa)
-		if errHpaCreating != nil {
-			return errHpaCreating
-		}
-		return nil
-	} else if hpaErr != nil {
-		return hpaErr
-	} else {
-		log.Info("HPA for deployment " + dep.Name + " is already exist")
-	}
-	return nil
-}
-
 // isImageExist checks if the image exists in the given registry using the secret in the user-namespace
 func isImageExist(r *ReconcileAPI, secretName string, namespace string) (bool, error) {
 	var registryUrl string
@@ -607,327 +534,14 @@ func isImageExist(r *ReconcileAPI, secretName string, namespace string) (bool, e
 	return registry.IsImageExists(utils.RegAuth{RegistryUrl: registryUrl, Username: username, Password: password}, log)
 }
 
-//Creating a LB balancer service to expose mgw
-func createMgwLBService(r *ReconcileAPI, cr *wso2v1alpha1.API, nameSpace string, owner []metav1.OwnerReference, httpPortVal int32,
-	httpsPortVal int32, operatorMode string) *corev1.Service {
-	var serviceType corev1.ServiceType
-	serviceType = corev1.ServiceTypeLoadBalancer
-
-	if strings.EqualFold(operatorMode, ingressMode) || strings.EqualFold(operatorMode, clusterIPMode) ||
-		strings.EqualFold(operatorMode, routeMode) {
-		serviceType = corev1.ServiceTypeClusterIP
-	}
-
-	labels := map[string]string{
-		"app": cr.Name,
-	}
-
-	svc := &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:            cr.Name,
-			Namespace:       nameSpace,
-			Labels:          labels,
-			OwnerReferences: owner,
-		},
-		Spec: corev1.ServiceSpec{
-			Type: serviceType,
-			Ports: []corev1.ServicePort{{
-				Name:       httpsConst + "-" + portConst,
-				Port:       httpsPortVal,
-				TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: httpsPortVal},
-			}, {
-				Name:       httpConst + "-" + portConst,
-				Port:       httpPortVal,
-				TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: httpPortVal},
-			}},
-			Selector: labels,
-		},
-	}
-
-	controllerutil.SetControllerReference(cr, svc, r.scheme)
-	return svc
-}
-
-// Creating an Ingress resource to expose mgw
-// Supports for multiple apiBasePaths when there are multiple swaggers for one API CRD
-func createorUpdateMgwIngressResource(r *ReconcileAPI, cr *wso2v1alpha1.API, httpPortVal int32, httpsPortVal int32,
-	apiBasePathMap map[string]string, controllerConfig *corev1.ConfigMap, owner *[]metav1.OwnerReference) error {
-
-	controlConfigData := controllerConfig.Data
-	transportMode := controlConfigData[ingressTransportMode]
-	ingressHostName := controlConfigData[ingressHostName]
-	tlsSecretName := controlConfigData[tlsSecretName]
-	ingressNamePrefix := controlConfigData[ingressResourceName]
-	ingressName := ingressNamePrefix + "-" + cr.Name
-	namespace := cr.Namespace
-	apiServiceName := cr.Name
-
-	var hostArray []string
-	hostArray = append(hostArray, ingressHostName)
-	log.Info(fmt.Sprintf("Creating ingress resource with name: %v", ingressName))
-	log.WithValues("Ingress metadata. Transport mode", transportMode, "Ingress name", ingressName,
-		"Ingress hostname ", ingressHostName)
-	annotationMap := k8s.NewConfMap()
-	err := k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: ingressConfigs}, annotationMap)
-	var port int32
-
-	if httpConst == transportMode {
-		port = httpPortVal
-	} else {
-		port = httpsPortVal
-	}
-
-	annotationConfigData := annotationMap.Data
-	annotationsList := annotationConfigData[ingressProperties]
-	var ingressAnnotationMap map[string]string
-	ingressAnnotationMap = make(map[string]string)
-
-	splitArray := strings.Split(annotationsList, "\n")
-	for _, element := range splitArray {
-		if element != "" && strings.ContainsAny(element, ":") {
-			splitValues := strings.Split(element, ":")
-			ingressAnnotationMap[strings.TrimSpace(splitValues[0])] = strings.TrimSpace(splitValues[1])
-		}
-	}
-
-	log.Info("Creating ingress resource with the following Base Paths")
-
-	// add multiple api base paths
-	var httpIngressPaths []v1beta1.HTTPIngressPath
-	for basePath := range apiBasePathMap {
-
-		apiBasePath := basePath
-		// if the base path contains /petstore/{version}, then it is converted to /petstore/1.0.0
-		if strings.Contains(basePath, versionField) {
-			apiBasePath = strings.Replace(basePath, versionField, apiBasePathMap[basePath], -1)
-		}
-
-		log.Info(fmt.Sprintf("Adding the base path: %v to ingress resource", apiBasePath))
-		httpIngressPaths = append(httpIngressPaths, v1beta1.HTTPIngressPath{
-			Path: apiBasePath,
-			Backend: v1beta1.IngressBackend{
-				ServiceName: apiServiceName,
-				ServicePort: intstr.IntOrString{IntVal: port},
-			},
-		})
-
-	}
-
-	ingressResource := &v1beta1.Ingress{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace:       namespace, // goes into backend full name
-			Name:            ingressName,
-			Annotations:     ingressAnnotationMap,
-			OwnerReferences: *owner,
-		},
-		Spec: v1beta1.IngressSpec{
-			Rules: []v1beta1.IngressRule{
-				{
-					Host: ingressHostName,
-					IngressRuleValue: v1beta1.IngressRuleValue{
-						HTTP: &v1beta1.HTTPIngressRuleValue{
-							Paths: httpIngressPaths,
-						},
-					},
-				},
-			},
-			TLS: []v1beta1.IngressTLS{
-				{
-					Hosts:      hostArray,
-					SecretName: tlsSecretName,
-				},
-			},
-		},
-	}
-
-	ingress := &v1beta1.Ingress{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: ingressName, Namespace: namespace}, ingress)
-
-	if err != nil && errors.IsNotFound(err) {
-		log.Info("Ingress resource not found with name " + ingressName + ".Hence creating a new Ingress resource")
-		err = r.client.Create(context.TODO(), ingressResource)
-		return err
-	} else {
-		log.Info("Ingress resource found with name " + ingressName + ".Hence updating the existing Ingress resource")
-		err = r.client.Update(context.TODO(), ingressResource)
-		return err
-	}
-	return err
-}
-
-// Creating a Route resource to expose microgateway
-// Supports for multiple apiBasePaths when there are multiple swaggers for one API CRD
-func createorUpdateMgwRouteResource(r *ReconcileAPI, cr *wso2v1alpha1.API, httpPortVal int32, httpsPortVal int32,
-	apiBasePathMap map[string]string, controllerConfig *corev1.ConfigMap, owner *[]metav1.OwnerReference) error {
-
-	controlConfigData := controllerConfig.Data
-	routePrefix := controlConfigData[routeName]
-	routesHostname := controlConfigData[routeHost]
-	transportMode := controlConfigData[routeTransportMode]
-	tlsTerminationValue := controlConfigData[tlsTermination]
-
-	var tlsTerminationType routv1.TLSTerminationType
-	if strings.EqualFold(tlsTerminationValue, edge) {
-		tlsTerminationType = routv1.TLSTerminationEdge
-	} else if strings.EqualFold(tlsTerminationValue, reencrypt) {
-		tlsTerminationType = routv1.TLSTerminationReencrypt
-	} else if strings.EqualFold(tlsTerminationValue, passthrough) {
-		tlsTerminationType = routv1.TLSTerminationPassthrough
-	} else {
-		tlsTerminationType = ""
-	}
-
-	routeName := routePrefix + "-" + cr.Name
-	namespace := cr.Namespace
-	apiServiceName := cr.Name
-
-	var hostArray []string
-	hostArray = append(hostArray, routesHostname)
-	log.Info(fmt.Sprintf("Creating route resource with name: %v", routeName))
-	log.WithValues("Route metadata. Transport mode", transportMode, "Route name", routeName,
-		"Ingress hostname ", routesHostname)
-
-	annotationMap := k8s.NewConfMap()
-	err := k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: openShiftConfigs}, annotationMap)
-	var port int32
-
-	if httpConst == transportMode {
-		port = httpPortVal
-	} else {
-		port = httpsPortVal
-	}
-
-	annotationConfigData := annotationMap.Data
-	annotationsList := annotationConfigData[routeProperties]
-	var routeAnnotationMap map[string]string
-	routeAnnotationMap = make(map[string]string)
-
-	splitArray := strings.Split(annotationsList, "\n")
-	for _, element := range splitArray {
-		if element != "" && strings.ContainsAny(element, ":") {
-			splitValues := strings.Split(element, ":")
-			routeAnnotationMap[strings.TrimSpace(splitValues[0])] = strings.TrimSpace(splitValues[1])
-		}
-	}
-
-	log.Info("Creating route resource for API " + cr.Name)
-
-	var routeList []routv1.Route
-
-	for basePath := range apiBasePathMap {
-
-		apiBasePath := basePath
-		// if the base path contains /petstore/{version}, then it is converted to /petstore/1.0.0
-		if strings.Contains(basePath, versionField) {
-			apiBasePath = strings.Replace(basePath, versionField, apiBasePathMap[basePath], -1)
-		}
-
-		apiBasePathSuffix := apiBasePath
-		apiBasePathSuffix = strings.Replace(apiBasePathSuffix, "/", "-", -1)
-		routeNewName := routeName + apiBasePathSuffix
-
-		log.Info(fmt.Sprintf("Creating the route : %v to ingress resource", apiBasePath))
-
-		routeResource := routv1.Route{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:            routeNewName,
-				Namespace:       namespace,
-				OwnerReferences: *owner,
-				Annotations:     routeAnnotationMap,
-			},
-			Spec: routv1.RouteSpec{
-				Host: routesHostname,
-				Path: apiBasePath,
-				Port: &routv1.RoutePort{
-					TargetPort: intstr.IntOrString{IntVal: port},
-				},
-				To: routv1.RouteTargetReference{
-					Kind: serviceKind,
-					Name: apiServiceName,
-				},
-				TLS: &routv1.TLSConfig{
-					Termination: tlsTerminationType,
-				},
-			},
-		}
-
-		routeList = append(routeList, routeResource)
-	}
-
-	for _, route := range routeList {
-
-		routeGet := &routv1.Route{}
-		err = r.client.Get(context.TODO(), types.NamespacedName{Name: route.Name, Namespace: route.Namespace}, routeGet)
-
-		if err != nil && errors.IsNotFound(err) {
-			log.Info("Route resource not found with name " + route.Name + ".Hence creating a new Route resource")
-			errInCreating := r.client.Create(context.TODO(), &route)
-
-			if errInCreating != nil {
-				return errInCreating
-			}
-		} else {
-			log.Info("Route resource found with name " + route.Name + ".Hence updating the existing Route resource")
-			routeGet.Spec = route.Spec
-			errInUpdating := r.client.Update(context.TODO(), routeGet)
-
-			if errInUpdating != nil {
-				return errInUpdating
-			}
-		}
-
-	}
-
-	return nil
-}
-
 //gets the details of the operator for owner reference
-func getOperatorOwner(r *ReconcileAPI) (*[]metav1.OwnerReference, error) {
+func getOperatorOwner(client *client.Client) (*[]metav1.OwnerReference, error) {
 	depFound := &appsv1.Deployment{}
-	deperr := r.client.Get(context.TODO(), types.NamespacedName{Name: "api-operator", Namespace: wso2NameSpaceConst}, depFound)
-	if deperr != nil {
+	errDeploy := k8s.Get(client, types.NamespacedName{Name: "api-operator", Namespace: wso2NameSpaceConst}, depFound)
+	if errDeploy != nil {
 		noOwner := []metav1.OwnerReference{}
-		return &noOwner, deperr
+		return &noOwner, errDeploy
 	}
 
 	return k8s.NewOwnerRef(depFound.TypeMeta, depFound.ObjectMeta), nil
-}
-
-func deleteCompletedJobs(namespace string) error {
-	log.Info("Deleting completed kaniko job")
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		glog.Errorf("Can't load in cluster config: %v", err)
-		return err
-	}
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		glog.Errorf("Can't get client set: %v", err)
-		return err
-	}
-
-	deletePolicy := metav1.DeletePropagationBackground
-	deleteOptions := metav1.DeleteOptions{PropagationPolicy: &deletePolicy}
-	//get list of exsisting jobs
-	getListOfJobs, errGetJobs := clientset.BatchV1().Jobs(namespace).List(metav1.ListOptions{})
-	if len(getListOfJobs.Items) != 0 {
-		for _, kanikoJob := range getListOfJobs.Items {
-			if kanikoJob.Status.Succeeded > 0 {
-				log.Info("Job "+kanikoJob.Name+" completed successfully", "Job.Namespace", kanikoJob.Namespace, "Job.Name", kanikoJob.Name)
-				log.Info("Deleting job "+kanikoJob.Name, "Job.Namespace", kanikoJob.Namespace, "Job.Name", kanikoJob.Name)
-				//deleting completed jobs
-				errDelete := clientset.BatchV1().Jobs(kanikoJob.Namespace).Delete(kanikoJob.Name, &deleteOptions)
-				if errDelete != nil {
-					log.Error(errDelete, "error while deleting "+kanikoJob.Name+" job")
-					return errDelete
-				} else {
-					log.Info("successfully deleted job "+kanikoJob.Name, "Job.Namespace", kanikoJob.Namespace, "Job.Name", kanikoJob.Name)
-				}
-			}
-		}
-	} else if errGetJobs != nil {
-		log.Error(errGetJobs, "error retrieving jobs")
-		return err
-	}
-	return nil
 }

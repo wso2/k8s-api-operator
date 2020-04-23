@@ -16,50 +16,22 @@
 package api
 
 const (
-	mgwToolkitImgConst   = "mgwToolkitImg"
-	mgwRuntimeImgConst   = "mgwRuntimeImg"
-	kanikoArguments      = "kanikoArguments"
-	registryTypeConst    = "registryType"
-	repositoryNameConst  = "repositoryName"
-	wso2NameSpaceConst   = "wso2-system"
-	controllerConfName   = "controller-config"
-	ingressConfigs       = "ingress-configs"
-	openShiftConfigs     = "route-configs"
-	dockerRegConfigs     = "docker-registry-config"
-	kanikoArgsConfigs    = "kaniko-arguments"
-	ingressProperties    = "ingress.properties"
-	routeProperties      = "route.properties"
-	ingressResourceName  = "ingressResourceName"
-	ingressTransportMode = "ingressTransportMode"
-	ingressHostName      = "ingressHostName"
-	tlsSecretName        = "tlsSecretName"
-	routeName            = "routeName"
-	routeHost            = "routeHost"
-	routeTransportMode   = "routeTransportMode"
-	tlsTermination       = "tlsTermination"
-
-	portConst  = "port"
-	httpConst  = "http"
-	httpsConst = "https"
+	mgwToolkitImgConst  = "mgwToolkitImg"
+	mgwRuntimeImgConst  = "mgwRuntimeImg"
+	kanikoArguments     = "kanikoArguments"
+	registryTypeConst   = "registryType"
+	repositoryNameConst = "repositoryName"
+	wso2NameSpaceConst  = "wso2-system"
+	controllerConfName  = "controller-config"
+	dockerRegConfigs    = "docker-registry-config"
+	kanikoArgsConfigs   = "kaniko-arguments"
 
 	operatorModeConst = "operatorMode"
 	ingressMode       = "Ingress"
-	clusterIPMode     = "ClusterIP"
 	routeMode         = "Route"
+	clusterIPMode     = "ClusterIP"
 
-	sidecar = "sidecar"
-
-	apiCrdDefaultVersion = "v1.0.0"
-
-	hpaMaxReplicas                 = "hpaMaxReplicas"
-	hpaTargetAverageUtilizationCPU = "hpaTargetAverageUtilizationCPU"
-
+	sidecar                           = "sidecar"
+	apiCrdDefaultVersion              = "v1.0.0"
 	generateKubernetesArtifactsForMgw = "generatekubernbetesartifactsformgw"
-
-	serviceKind  = "Service"
-	versionField = "{version}"
-
-	edge        = "edge"
-	reencrypt   = "reencrypt"
-	passthrough = "passthrough"
 )
