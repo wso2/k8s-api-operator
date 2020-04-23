@@ -26,7 +26,6 @@ import (
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/mgw"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/ratelimit"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/registry"
-	"github.com/wso2/k8s-api-operator/api-operator/pkg/registry/utils"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/security"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/str"
 	swagger "github.com/wso2/k8s-api-operator/api-operator/pkg/swagger"
@@ -51,8 +50,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-
-	"encoding/json"
 )
 
 var log = logf.Log.WithName("api.controller")
@@ -320,7 +317,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	registry.SetRegistry(registryType, repositoryName, builtImage, builtImageTag)
 
 	// check if the image already exists
-	imageExist, errImage := isImageExist(r, utils.DockerRegCredSecret, wso2NameSpaceConst)
+	imageExist, errImage := registry.IsImageExist(&r.client, wso2NameSpaceConst)
 	if errImage != nil {
 		log.Error(errImage, "Error in image finding")
 	}
@@ -489,49 +486,6 @@ func copyConfigVolumes(r *ReconcileAPI, namespace string) error {
 	}
 
 	return nil
-}
-
-// isImageExist checks if the image exists in the given registry using the secret in the user-namespace
-func isImageExist(r *ReconcileAPI, secretName string, namespace string) (bool, error) {
-	var registryUrl string
-	var username string
-	var password string
-
-	type Auth struct {
-		Auths map[string]struct {
-			Auth     string `json:"auth"`
-			Username string `json:"username"`
-			Password string `json:"password"`
-		} `json:"auths"`
-	}
-
-	// checks if the secret is available
-	log.Info("Getting Docker credentials secret")
-	dockerConfigSecret := k8s.NewSecret()
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: secretName, Namespace: namespace}, dockerConfigSecret)
-	if err == nil && errors.IsNotFound(err) {
-		log.Info("Docker credentials secret is not found", "secret-name", secretName, "namespace", namespace)
-	} else if err != nil {
-		authsJsonString := dockerConfigSecret.Data[utils.DockerConfigKeyConst]
-		auths := Auth{}
-		err := json.Unmarshal([]byte(authsJsonString), &auths)
-		if err != nil {
-			log.Info("Error unmarshal data of docker credential auth")
-		}
-
-		for regUrl, credential := range auths.Auths {
-			registryUrl = str.RemoveVersionTag(regUrl)
-			if !strings.HasPrefix(registryUrl, "https://") {
-				registryUrl = "https://" + registryUrl
-			}
-			username = credential.Username
-			password = credential.Password
-
-			break
-		}
-	}
-
-	return registry.IsImageExists(utils.RegAuth{RegistryUrl: registryUrl, Username: username, Password: password}, log)
 }
 
 //gets the details of the operator for owner reference
