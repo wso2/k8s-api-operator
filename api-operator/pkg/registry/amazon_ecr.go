@@ -21,7 +21,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ecr"
-	"github.com/go-logr/logr"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/registry/utils"
 	corev1 "k8s.io/api/core/v1"
 	"strings"
@@ -68,7 +67,7 @@ var amazonEcr = &Config{
 			},
 		},
 	},
-	IsImageExist: func(config *Config, auth utils.RegAuth, image string, tag string, logger logr.Logger) (bool, error) {
+	IsImageExist: func(config *Config, auth utils.RegAuth, image string, tag string) (bool, error) {
 		repoNameSplits := strings.Split(repositoryName, ".")
 		awsRegistryId := repoNameSplits[0]
 		awsRegion := repoNameSplits[3]

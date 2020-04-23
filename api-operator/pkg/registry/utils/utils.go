@@ -18,10 +18,12 @@ package utils
 
 import (
 	"fmt"
-	"github.com/go-logr/logr"
 	registryclient "github.com/heroku/docker-registry-client/registry"
+	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"strings"
 )
+
+var logger = log.Log.WithName("registry.utils")
 
 type RegAuth struct {
 	RegistryUrl string
@@ -29,7 +31,7 @@ type RegAuth struct {
 	Password    string
 }
 
-func IsImageExists(auth RegAuth, image string, tag string, logger logr.Logger) (bool, error) {
+func IsImageExists(auth RegAuth, image string, tag string) (bool, error) {
 	hub, err := registryclient.New(auth.RegistryUrl, auth.Username, auth.Password)
 	if err != nil {
 		logger.Error(err, "Error connecting to the docker registry", "registry-url", auth.RegistryUrl)
