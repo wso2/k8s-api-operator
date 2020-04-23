@@ -4,17 +4,13 @@ import (
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/registry"
-	"github.com/wso2/k8s-api-operator/api-operator/pkg/volume"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"strconv"
 )
-
-var logDeploy = log.Log.WithName("mgw.deployment")
 
 const (
 	analyticsLocation = "/home/ballerina/wso2/api-usage-data/"
@@ -32,6 +28,19 @@ const (
 	resourceLimitCPU      = "resourceLimitCPU"
 	resourceLimitMemory   = "resourceLimitMemory"
 )
+
+var (
+	ContainerList     *[]corev1.Container
+	initContainerList = make([]corev1.Container, 0, 2)
+)
+
+func InitJobVolumes() {
+	ContainerList = &initContainerList
+}
+
+func AddContainers(containers *[]corev1.Container) {
+	*ContainerList = append(*ContainerList, *containers...)
+}
 
 // Deployment returns a MGW deployment for the given API definition
 func Deployment(api *wso2v1alpha1.API, controlConfigData map[string]string, owner *[]metav1.OwnerReference) *appsv1.Deployment {
@@ -54,7 +63,7 @@ func Deployment(api *wso2v1alpha1.API, controlConfigData map[string]string, owne
 
 	if Configs.AnalyticsEnabled {
 		// mounts an empty dir volume to be used when analytics is enabled
-		analVol, analMount := volume.EmptyDirVolume("analytics", analyticsLocation)
+		analVol, analMount := k8s.EmptyDirVolumeMount("analytics", analyticsLocation)
 		deployVolume = append(deployVolume, *analVol)
 		deployVolumeMount = append(deployVolumeMount, *analMount)
 	}
@@ -110,7 +119,7 @@ func Deployment(api *wso2v1alpha1.API, controlConfigData map[string]string, owne
 		},
 	}
 
-	*(volume.ContainerList) = append(*(volume.ContainerList), apiContainer)
+	*(ContainerList) = append(*(ContainerList), apiContainer)
 
 	deploy := k8s.NewDeployment()
 	deploy.ObjectMeta = metav1.ObjectMeta{
@@ -129,7 +138,7 @@ func Deployment(api *wso2v1alpha1.API, controlConfigData map[string]string, owne
 				Labels: labels,
 			},
 			Spec: corev1.PodSpec{
-				Containers:       *(volume.ContainerList),
+				Containers:       *(ContainerList),
 				Volumes:          deployVolume,
 				ImagePullSecrets: regConfig.ImagePullSecrets,
 			},

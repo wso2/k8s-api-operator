@@ -11,8 +11,17 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"net/url"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"strconv"
 	"strings"
+)
+
+var logEp = log.Log.WithName("swagger.endpoints")
+
+const (
+	ServerLess = "serverless"
+	Sidecar    = "sidecar"
+	privateJet = "privateJet"
 )
 
 //XMgwProductionEndpoint represents the structure of endpoint
@@ -33,7 +42,7 @@ func HandleMgwEndpoints(client *client.Client, swagger *openapi3.Swagger, mode s
 		if checkJsonRaw {
 			err := json.Unmarshal(endpointJson, &endPoint)
 			if err == nil {
-				logger.Info("Parsing endpoints and not available root service endpoint")
+				logEp.Info("Parsing endpoints and not available root service endpoint")
 				//check if service & targetendpoint cr object are available
 				extractData := strings.Split(endPoint, ".")
 				if len(extractData) == 2 {
@@ -44,9 +53,9 @@ func HandleMgwEndpoints(client *client.Client, swagger *openapi3.Swagger, mode s
 				erCr := k8s.Get(client, types.NamespacedName{Namespace: apiNamespace, Name: endPoint}, targetEndpointCr)
 
 				if erCr != nil && errors.IsNotFound(erCr) {
-					logger.Error(err, "targetEndpoint CRD object is not found")
+					logEp.Error(err, "targetEndpoint CRD object is not found")
 				} else if erCr != nil {
-					logger.Error(err, "Error in getting targetendpoint CRD object")
+					logEp.Error(err, "Error in getting targetendpoint CRD object")
 				}
 
 				if strings.EqualFold(targetEndpointCr.Spec.Mode.String(), ServerLess) {
@@ -59,9 +68,9 @@ func HandleMgwEndpoints(client *client.Client, swagger *openapi3.Swagger, mode s
 						Name: endPoint}, currentService)
 				}
 				if err != nil && errors.IsNotFound(err) && mode != Sidecar {
-					logger.Error(err, "service not found")
+					logEp.Error(err, "service not found")
 				} else if err != nil && mode != Sidecar {
-					logger.Error(err, "Error in getting service")
+					logEp.Error(err, "Error in getting service")
 				} else {
 					protocol := targetEndpointCr.Spec.Protocol
 					if mode == Sidecar {
@@ -117,7 +126,7 @@ func HandleMgwEndpoints(client *client.Client, swagger *openapi3.Swagger, mode s
 						swagger.Extensions[EndpointExtension] = prodEp
 					}
 				} else {
-					logger.Info("error unmarshal endpoint")
+					logEp.Info("error unmarshal endpoint")
 				}
 			}
 		}
@@ -257,9 +266,9 @@ func resolveEps(client *client.Client, pathName string, resourceGetEp interface{
 				erCr := k8s.Get(client, types.NamespacedName{Namespace: userNameSpace, Name: endPoint}, targetEndpointCr)
 
 				if erCr != nil && errors.IsNotFound(erCr) {
-					logger.Error(err, "targetEndpoint CRD object is not found")
+					logEp.Error(err, "targetEndpoint CRD object is not found")
 				} else if erCr != nil {
-					logger.Error(err, "Error in getting targetendpoint CRD object")
+					logEp.Error(err, "Error in getting targetendpoint CRD object")
 				}
 				if strings.EqualFold(targetEndpointCr.Spec.Mode.String(), ServerLess) {
 					currentService := &v1.Service{}
@@ -271,9 +280,9 @@ func resolveEps(client *client.Client, pathName string, resourceGetEp interface{
 						Name: endPoint}, currentService)
 				}
 				if err != nil && errors.IsNotFound(err) && mode != Sidecar {
-					logger.Error(err, "service not found")
+					logEp.Error(err, "service not found")
 				} else if err != nil && mode != Sidecar {
-					logger.Error(err, "Error in getting service")
+					logEp.Error(err, "Error in getting service")
 				} else {
 					protocol := targetEndpointCr.Spec.Protocol
 					if mode == Sidecar {

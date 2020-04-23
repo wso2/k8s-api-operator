@@ -4,7 +4,6 @@ import (
 	"github.com/golang/glog"
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/registry"
-	"github.com/wso2/k8s-api-operator/api-operator/pkg/volume"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -64,7 +63,7 @@ func Job(api *wso2v1alpha1.API, controlConfigData map[string]string, kanikoArgs 
 						{
 							Name:         api.Name + "gen-container",
 							Image:        kanikoImg,
-							VolumeMounts: *volume.JobVolumeMount,
+							VolumeMounts: *JobVolumeMount,
 							Args:         args,
 							Env:          regConfig.Env,
 						},
@@ -73,7 +72,7 @@ func Job(api *wso2v1alpha1.API, controlConfigData map[string]string, kanikoArgs 
 						RunAsUser: &rootUserVal,
 					},
 					RestartPolicy: "Never",
-					Volumes:       *volume.JobVolume,
+					Volumes:       *JobVolume,
 				},
 			},
 		},

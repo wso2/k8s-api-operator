@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/kaniko"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/maps"
-	"github.com/wso2/k8s-api-operator/api-operator/pkg/volume"
 	corev1 "k8s.io/api/core/v1"
 	"math/rand"
 )
@@ -36,6 +35,6 @@ func Add(cert *corev1.Secret, aliasPrefix string) string {
 		MountPath: filePath,
 		ReadOnly:  true,
 	}
-	volume.AddVolume(&certVol, &certVolMount)
+	kaniko.AddVolume(&certVol, &certVolMount)
 	return alias
 }

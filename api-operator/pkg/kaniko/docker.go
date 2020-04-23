@@ -6,7 +6,6 @@ import (
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/maps"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/str"
-	"github.com/wso2/k8s-api-operator/api-operator/pkg/volume"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -17,13 +16,13 @@ import (
 var logDocker = log.Log.WithName("kaniko.docker")
 
 const (
-	truststoreSecretName     = "truststorepass"
-	dockerFileTemplate       = "dockerfile-template"
-	wso2NameSpaceConst       = "wso2-system"
-	encodedTrustsorePassword = "YmFsbGVyaW5h"
-	truststoreSecretData     = "password"
-	dockerFile               = "dockerfile"
-	dockerFileLocation       = "/usr/wso2/dockerfile/"
+	truststoreSecretName      = "truststorepass"
+	dockerFileTemplate        = "dockerfile-template"
+	wso2NameSpaceConst        = "wso2-system"
+	encodedTruststorePassword = "YmFsbGVyaW5h"
+	truststoreSecretData      = "password"
+	dockerFile                = "dockerfile"
+	dockerFileLocation        = "/usr/wso2/dockerfile/"
 )
 
 // DockerfileProperties represents the type for properties of docker file
@@ -93,8 +92,8 @@ func HandleDockerFile(client *client.Client, userNamespace, apiName string, owne
 	}
 
 	// add to job volumes
-	vol, mount := volume.ConfigMapVolume(apiName+"-"+dockerFile, dockerFileLocation)
-	volume.AddVolume(vol, mount)
+	vol, mount := k8s.ConfigMapVolumeMount(apiName+"-"+dockerFile, dockerFileLocation)
+	AddVolume(vol, mount)
 
 	return nil
 }
@@ -105,7 +104,7 @@ func setTruststorePassword(client *client.Client) error {
 	secret := k8s.NewSecret()
 	err := k8s.Get(client, types.NamespacedName{Name: truststoreSecretName, Namespace: wso2NameSpaceConst}, secret)
 	if err != nil && errors.IsNotFound(err) {
-		encodedPw := encodedTrustsorePassword
+		encodedPw := encodedTruststorePassword
 		decodedPw, err := b64.StdEncoding.DecodeString(encodedPw)
 		if err != nil {
 			logDocker.Error(err, "Error decoding truststore password")

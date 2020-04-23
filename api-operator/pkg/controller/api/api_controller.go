@@ -19,6 +19,7 @@ package api
 import (
 	"context"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/analytics"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/endpoints"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/interceptors"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/kaniko"
@@ -29,7 +30,6 @@ import (
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/security"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/str"
 	swagger "github.com/wso2/k8s-api-operator/api-operator/pkg/swagger"
-	"github.com/wso2/k8s-api-operator/api-operator/pkg/volume"
 	"strconv"
 	"strings"
 	"time"
@@ -112,7 +112,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	// initialize volumes
 	kaniko.InitDocFileProp()
-	volume.InitJobVolumes()
+	kaniko.InitJobVolumes()
 
 	var apiVersion string // API version - for the tag of final MGW docker image
 
@@ -133,7 +133,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		return reconcile.Result{}, err
 	}
 
-	owner := k8s.NewOwnerRef(instance.TypeMeta, instance.ObjectMeta)
+	ownerRef := k8s.NewOwnerRef(instance.TypeMeta, instance.ObjectMeta)
 	operatorOwner, ownerErr := getOperatorOwner(&r.client)
 	if ownerErr != nil {
 		reqLogger.Info("Operator was not found in the " + wso2NameSpaceConst + " namespace. No owner will be set for the artifacts")
@@ -208,7 +208,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		}
 
 		// update owner reference to the swagger configmap and update it
-		_ = k8s.UpdateOwner(&r.client, owner, swaggerConfMap)
+		_ = k8s.UpdateOwner(&r.client, ownerRef, swaggerConfMap)
 
 		// fetch swagger data from configmap and loads as open api swagger v3
 		swaggerFileName, errSwagger := maps.OneKey(swaggerConfMap.Data)
@@ -237,7 +237,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 		// Creating sidecar endpoint deployment
 		if epDeployMode == sidecar {
-			err := volume.AddSidecarContainers(&r.client, userNamespace, &endpointNames)
+			err := endpoints.AddSidecarContainers(&r.client, userNamespace, &endpointNames)
 			if err != nil {
 				return reconcile.Result{}, err
 			}
@@ -267,7 +267,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		formattedSwaggerCmName := swaggerCmName + "-mgw"
 		//create configmap with modified swagger
 		swaggerDataMgw := map[string]string{swaggerFileName: formattedSwagger}
-		swaggerConfMapMgw := k8s.NewConfMapWith(types.NamespacedName{Namespace: userNamespace, Name: formattedSwaggerCmName}, &swaggerDataMgw, nil, owner)
+		swaggerConfMapMgw := k8s.NewConfMapWith(types.NamespacedName{Namespace: userNamespace, Name: formattedSwaggerCmName}, &swaggerDataMgw, nil, ownerRef)
 		log.Info("Creating swagger configmap for mgw", "name", formattedSwaggerCmName, "namespace", userNamespace)
 
 		mgwSwaggerConfMap := k8s.NewConfMap()
@@ -292,7 +292,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		if !isDefinedSecurity && resourceLevelSec == 0 {
 			log.Info("Use default security")
 
-			err := security.Default(&r.client, userNamespace, owner)
+			err := security.Default(&r.client, userNamespace, ownerRef)
 			if err != nil {
 				return reconcile.Result{}, err
 			}
@@ -314,10 +314,20 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	if instance.Spec.UpdateTimeStamp != "" {
 		builtImageTag = builtImageTag + "-" + instance.Spec.UpdateTimeStamp
 	}
-	registry.SetRegistry(registryType, repositoryName, builtImage, builtImageTag)
+
+	errReg := registry.SetRegistry(&r.client, userNamespace, registry.Image{
+		RegistryType:   registryType,
+		RepositoryName: repositoryName,
+		Name:           builtImage,
+		Tag:            builtImageTag,
+	})
+	if errReg != nil {
+		log.Error(errReg, "Error setting docker registry")
+		return reconcile.Result{}, errReg
+	}
 
 	// check if the image already exists
-	imageExist, errImage := registry.IsImageExist(&r.client, wso2NameSpaceConst)
+	imageExist, errImage := registry.IsImageExist(&r.client)
 	if errImage != nil {
 		log.Error(errImage, "Error in image finding")
 	}
@@ -334,14 +344,14 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	// handling interceptors
 	log.Info("Handling interceptors")
-	if err := interceptors.Handle(&r.client, instance, owner); err != nil {
+	if err := interceptors.Handle(&r.client, instance, ownerRef); err != nil {
 		log.Error(err, "Error handling interceptors")
 		return reconcile.Result{}, err
 	}
 
 	// handling Kaniko docker file
 	log.Info("Rendering the dockerfile for Kaniko job and adding volumes to the Kaniko job")
-	if err := kaniko.HandleDockerFile(&r.client, userNamespace, instance.Name, owner); err != nil {
+	if err := kaniko.HandleDockerFile(&r.client, userNamespace, instance.Name, ownerRef); err != nil {
 		log.Error(err, "Error rendering the docker file for Kaniko job and adding volumes to the Kaniko job")
 		return reconcile.Result{}, err
 	}
@@ -355,7 +365,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	// rendering MGW config file
 	log.Info("Rendering and adding the MGW configuration file to cluster")
-	if err := mgw.ApplyConfFile(&r.client, userNamespace, instance.Name, owner); err != nil {
+	if err := mgw.ApplyConfFile(&r.client, userNamespace, instance.Name, ownerRef); err != nil {
 		log.Error(err, "Error rendering and adding the MGW configuration file to cluster")
 		return reconcile.Result{}, err
 	}
@@ -366,20 +376,15 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		log.Info("No kaniko-arguments config map is available in wso2-system namespace")
 	}
 
-	// copy configs and secrets to user's namespace
-	if err = copyConfigVolumes(r, userNamespace); err != nil {
-		log.Error(err, "Error coping registry specific configs to user's namespace", "user's namespace", userNamespace)
-	}
-
 	// add Kaniko job specific volumes
-	volume.AddDefaultKanikoVolumes(instance.Name, swaggerCmNames)
+	kaniko.AddDefaultKanikoVolumes(instance.Name, swaggerCmNames)
 
 	// create Kaniko job
 	// if updating api or overriding api or image not found
 	var kanikoJob *batchv1.Job
 	if instance.Spec.UpdateTimeStamp != "" || instance.Spec.Override || !imageExist {
 		log.Info("Deploying the Kaniko job in cluster")
-		kanikoJob = kaniko.Job(instance, controlConfigData, kanikoArgs.Data[kanikoArguments], owner)
+		kanikoJob = kaniko.Job(instance, controlConfigData, kanikoArgs.Data[kanikoArguments], ownerRef)
 		if err := controllerutil.SetControllerReference(instance, kanikoJob, r.scheme); err != nil {
 			return reconcile.Result{}, err
 		}
@@ -405,7 +410,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	if deployMgwRuntime {
 		reqLogger.Info("Deploying MGW runtime image")
 		// create MGW deployment in k8s cluster
-		mgwDeployment := mgw.Deployment(instance, controlConfigData, owner)
+		mgwDeployment := mgw.Deployment(instance, controlConfigData, ownerRef)
 		if errMgw := k8s.Apply(&r.client, mgwDeployment); errMgw != nil {
 			reqLogger.Error(errMgw, "Error updating the MGW deployment", "deploy_name", mgwDeployment.Name)
 			return reconcile.Result{}, errMgw
@@ -413,7 +418,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		reqLogger.Info("Updated the MGW deployment", "deploy_name", mgwDeployment.Name)
 
 		// create MGW service
-		mgwSvc := mgw.Service(instance, operatorMode, *owner)
+		mgwSvc := mgw.Service(instance, operatorMode, *ownerRef)
 		// controllerutil.SetControllerReference(instance, mgwSvc, r.scheme) <- check with commenting this, if work delete this.
 		if errMgwSvc := k8s.CreateIfNotExists(&r.client, mgwSvc); errMgwSvc != nil {
 			reqLogger.Error(errMgwSvc, "Error creating the MGW service", "service_name", mgwSvc.Name)
@@ -425,7 +430,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		if err != nil {
 			return reconcile.Result{}, err
 		}
-		hpa := mgw.HPA(mgwDeployment, hpaProp, owner)
+		hpa := mgw.HPA(mgwDeployment, hpaProp, ownerRef)
 		if errHpa := k8s.CreateIfNotExists(&r.client, hpa); errHpa != nil {
 			reqLogger.Error(errHpa, "Error creating the horizontal pod auto-scalar", "hpa_name", hpa.Name)
 			return reconcile.Result{}, errHpa
@@ -433,14 +438,14 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 		reqLogger.Info("Operator mode", "mode", operatorMode)
 		if strings.EqualFold(operatorMode, ingressMode) {
-			errIng := mgw.ApplyIngressResource(&r.client, instance, apiBasePathMap, owner)
+			errIng := mgw.ApplyIngressResource(&r.client, instance, apiBasePathMap, ownerRef)
 			if errIng != nil {
 				reqLogger.Error(errIng, "Error creating the ingress resource")
 				return reconcile.Result{}, errIng
 			}
 		}
 		if strings.EqualFold(operatorMode, routeMode) {
-			rutErr := mgw.ApplyRouteResource(&r.client, instance, apiBasePathMap, owner)
+			rutErr := mgw.ApplyRouteResource(&r.client, instance, apiBasePathMap, ownerRef)
 			if rutErr != nil {
 				return reconcile.Result{}, rutErr
 			}
@@ -453,45 +458,10 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 }
 
-// copyConfigVolumes copy the configured secrets and config maps to user's namespace
-func copyConfigVolumes(r *ReconcileAPI, namespace string) error {
-	config := registry.GetConfig()
-	for _, volume := range config.Volumes {
-		var fromObj runtime.Object
-		var name string
-
-		if volume.Secret != nil {
-			name = volume.Secret.SecretName
-			fromObj = k8s.NewSecret()
-		}
-		if volume.ConfigMap != nil {
-			name = volume.ConfigMap.Name
-			fromObj = k8s.NewConfMap()
-		}
-
-		fromNsName := types.NamespacedName{Namespace: wso2NameSpaceConst, Name: name}
-		if err := k8s.Get(&r.client, fromNsName, fromObj); err != nil {
-			return err
-		}
-
-		toObj := fromObj
-		toObj.(metav1.Object).SetNamespace(namespace)
-		toObjMeta := toObj.(metav1.Object)
-		toObjMeta.SetResourceVersion("")
-		//newObjMeta := metav1.ObjectMeta{Namespace:namespace, Name:name}
-
-		if err := k8s.Apply(&r.client, toObj); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-//gets the details of the operator for owner reference
+// getOperatorOwner returns the owner reference of the operator
 func getOperatorOwner(client *client.Client) (*[]metav1.OwnerReference, error) {
 	depFound := &appsv1.Deployment{}
-	errDeploy := k8s.Get(client, types.NamespacedName{Name: "api-operator", Namespace: wso2NameSpaceConst}, depFound)
+	errDeploy := k8s.Get(client, types.NamespacedName{Name: "api_operator", Namespace: wso2NameSpaceConst}, depFound)
 	if errDeploy != nil {
 		noOwner := []metav1.OwnerReference{}
 		return &noOwner, errDeploy

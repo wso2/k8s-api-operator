@@ -1,8 +1,8 @@
-package volume
+package k8s
 
 import corev1 "k8s.io/api/core/v1"
 
-func SecretVolume(secretName string, mountPath string) (*corev1.Volume, *corev1.VolumeMount) {
+func SecretVolumeMount(secretName string, mountPath string) (*corev1.Volume, *corev1.VolumeMount) {
 	volName := secretName + "-volume"
 	vol := corev1.Volume{
 		Name: volName,
@@ -21,7 +21,7 @@ func SecretVolume(secretName string, mountPath string) (*corev1.Volume, *corev1.
 	return &vol, &mount
 }
 
-func ConfigMapVolume(confMapName string, mountPath string) (*corev1.Volume, *corev1.VolumeMount) {
+func ConfigMapVolumeMount(confMapName string, mountPath string) (*corev1.Volume, *corev1.VolumeMount) {
 	volName := confMapName + "-volume"
 	vol := corev1.Volume{
 		Name: volName,
@@ -41,7 +41,7 @@ func ConfigMapVolume(confMapName string, mountPath string) (*corev1.Volume, *cor
 	return &vol, &mount
 }
 
-func EmptyDirVolume(volumeName string, mountPath string) (*corev1.Volume, *corev1.VolumeMount) {
+func EmptyDirVolumeMount(volumeName string, mountPath string) (*corev1.Volume, *corev1.VolumeMount) {
 	volName := volumeName + "-volume"
 	vol := corev1.Volume{
 		Name: volName,

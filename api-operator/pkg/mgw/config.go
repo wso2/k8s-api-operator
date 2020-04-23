@@ -18,8 +18,8 @@ package mgw
 
 import (
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/kaniko"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/str"
-	"github.com/wso2/k8s-api-operator/api-operator/pkg/volume"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -237,7 +237,7 @@ func ApplyConfFile(client *client.Client, userNamespace, apiName string, owner *
 	}
 
 	// add volumes to Kaniko job
-	volume.AddVolume(volume.SecretVolume(confNsName.Name, mgwConfLocation))
+	kaniko.AddVolume(k8s.SecretVolumeMount(confNsName.Name, mgwConfLocation))
 	return nil
 }
 

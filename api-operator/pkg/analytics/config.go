@@ -11,7 +11,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
-var logger = log.Log.WithName("analytics")
+var logger = log.Log.WithName("analytics.config")
 
 // k8s configs
 const (

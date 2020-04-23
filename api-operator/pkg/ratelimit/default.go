@@ -3,7 +3,7 @@ package ratelimit
 import (
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/controller/ratelimiting"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
-	"github.com/wso2/k8s-api-operator/api-operator/pkg/volume"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/kaniko"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -41,6 +41,6 @@ func Handle(client *client.Client, userNameSpace string, operatorOwner *[]metav1
 		return err
 	}
 
-	volume.AddVolume(volume.ConfigMapVolume(policyConfigmap, policyYamlLocation))
+	kaniko.AddVolume(k8s.ConfigMapVolumeMount(policyConfigmap, policyYamlLocation))
 	return nil
 }
