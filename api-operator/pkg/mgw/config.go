@@ -24,8 +24,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"strconv"
 )
+
+var logConf = log.Log.WithName("mgw.config")
 
 const (
 	apimConfName       = "apim-config"
@@ -177,9 +180,9 @@ func SetApimConfigs(client *client.Client) error {
 
 	if errApim != nil {
 		if errors.IsNotFound(errApim) {
-			logger.Info("APIM config is not found. Continue with default configs")
+			logConf.Info("APIM config is not found. Continue with default configs")
 		} else {
-			logger.Error(errApim, "Error retrieving APIM configs")
+			logConf.Error(errApim, "Error retrieving APIM configs")
 			return errApim
 		}
 	}
@@ -194,14 +197,14 @@ func SetApimConfigs(client *client.Client) error {
 	Configs.LogLevel = apimConfig.Data[logLevelConst]
 	httpPort, err := strconv.Atoi(apimConfig.Data[httpPortConst])
 	if err != nil {
-		logger.Error(err, "Provided http port is not valid. Using the default port")
+		logConf.Error(err, "Provided http port is not valid. Using the default port")
 		Configs.HttpPort = httpPortValConst
 	} else {
 		Configs.HttpPort = int32(httpPort)
 	}
 	httpsPort, err := strconv.Atoi(apimConfig.Data[httpsPortConst])
 	if err != nil {
-		logger.Error(err, "Provided https port is not valid. Using the default port")
+		logConf.Error(err, "Provided https port is not valid. Using the default port")
 		Configs.HttpsPort = httpsPortValConst
 	} else {
 		Configs.HttpsPort = int32(httpsPort)
@@ -216,7 +219,7 @@ func ApplyConfFile(client *client.Client, userNamespace, apiName string, owner *
 	templateConfMap := k8s.NewConfMap()
 	errConf := k8s.Get(client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: mgwConfMustache}, templateConfMap)
 	if errConf != nil {
-		logger.Error(errConf, "Error retrieving the MGW template configmap")
+		logConf.Error(errConf, "Error retrieving the MGW template configmap")
 		return errConf
 	}
 
@@ -224,7 +227,7 @@ func ApplyConfFile(client *client.Client, userNamespace, apiName string, owner *
 	templateText := templateConfMap.Data[mgwConfGoTmpl]
 	finalConf, errRender := str.RenderTemplate(templateText, Configs)
 	if errRender != nil {
-		logger.Error(errRender, "Error rendering the MGW configuration file")
+		logConf.Error(errRender, "Error rendering the MGW configuration file")
 		return errRender
 	}
 

@@ -14,12 +14,13 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package mgw
+package security
 
 import (
 	"crypto/sha1"
 	"encoding/hex"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/mgw"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -27,7 +28,7 @@ import (
 	"strings"
 )
 
-var logger = log.Log.WithName("mgw")
+var logCred = log.Log.WithName("security.credentials")
 
 func SetCredentials(client *client.Client, securityType string, namespacedName types.NamespacedName) error {
 	sha1Hash := sha1.New()
@@ -53,18 +54,18 @@ func SetCredentials(client *client.Client, securityType string, namespacedName t
 	}
 	if securityType == "Basic" {
 
-		Configs.BasicUsername = userName
+		mgw.Configs.BasicUsername = userName
 		_, err := sha1Hash.Write(password)
 		if err != nil {
-			logger.Info("error in encoding password")
+			logCred.Info("error in encoding password")
 			return err
 		}
 		//convert encoded password to a hex string
-		Configs.BasicPassword = hex.EncodeToString(sha1Hash.Sum(nil))
+		mgw.Configs.BasicPassword = hex.EncodeToString(sha1Hash.Sum(nil))
 	}
 	if securityType == "Oauth" {
-		Configs.KeyManagerUsername = userName
-		Configs.KeyManagerPassword = string(password)
+		mgw.Configs.KeyManagerUsername = userName
+		mgw.Configs.KeyManagerPassword = string(password)
 	}
 	return nil
 }

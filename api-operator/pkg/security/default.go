@@ -25,7 +25,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
+
+var logDef = log.Log.WithName("security.default")
 
 func Default(client *client.Client, apiNamespace string, owner *[]metav1.OwnerReference) error {
 	defaultSecConf := mgw.JwtTokenConfig{}
@@ -35,11 +38,11 @@ func Default(client *client.Client, apiNamespace string, owner *[]metav1.OwnerRe
 	errGetSec := k8s.Get(client, types.NamespacedName{Name: defaultSecurity, Namespace: apiNamespace}, securityDefault)
 
 	if errGetSec != nil && errors.IsNotFound(errGetSec) {
-		logger.Info("Get default-security", "from namespace", wso2NameSpaceConst)
+		logDef.Info("Get default-security", "from namespace", wso2NameSpaceConst)
 		//retrieve default-security from wso2-system namespace
 		errSec := k8s.Get(client, types.NamespacedName{Name: defaultSecurity, Namespace: wso2NameSpaceConst}, securityDefault)
 		if errSec != nil {
-			logger.Error(errSec, "Error getting default security", "namespace", wso2NameSpaceConst)
+			logDef.Error(errSec, "Error getting default security", "namespace", wso2NameSpaceConst)
 			return errSec
 		}
 
@@ -70,7 +73,7 @@ func Default(client *client.Client, apiNamespace string, owner *[]metav1.OwnerRe
 				defaultSecConf.CertificateAlias = alias
 			}
 		} else if err != nil {
-			logger.Error(err, "Error getting default certificate", "from namespace", apiNamespace)
+			logDef.Error(err, "Error getting default certificate", "from namespace", apiNamespace)
 			return err
 		} else {
 			//mount certs
@@ -78,14 +81,14 @@ func Default(client *client.Client, apiNamespace string, owner *[]metav1.OwnerRe
 			defaultSecConf.CertificateAlias = alias
 		}
 		//copying default security to user namespace
-		logger.Info("copying default security to " + apiNamespace)
+		logDef.Info("copying default security to " + apiNamespace)
 		newDefaultSecurity := copyDefaultSecurity(securityDefault, apiNamespace, *owner)
 		errCreateSecurity := k8s.Create(client, newDefaultSecurity)
 		if errCreateSecurity != nil {
-			logger.Error(errCreateSecurity, "error creating secret for default security in user namespace")
+			logDef.Error(errCreateSecurity, "error creating secret for default security in user namespace")
 			return errCreateSecurity
 		}
-		logger.Info("default security successfully copied to " + apiNamespace + " namespace")
+		logDef.Info("default security successfully copied to " + apiNamespace + " namespace")
 		if newDefaultSecurity.Spec.SecurityConfig[0].Issuer != "" {
 			defaultSecConf.Issuer = newDefaultSecurity.Spec.SecurityConfig[0].Issuer
 		}
@@ -94,10 +97,10 @@ func Default(client *client.Client, apiNamespace string, owner *[]metav1.OwnerRe
 		}
 		defaultSecConf.ValidateSubscription = newDefaultSecurity.Spec.SecurityConfig[0].ValidateSubscription
 	} else if errGetSec != nil {
-		logger.Error(errGetSec, "error getting default security from user namespace")
+		logDef.Error(errGetSec, "error getting default security from user namespace")
 		return errGetSec
 	} else {
-		logger.Info("Default security exists in the namespace", "namespace", apiNamespace)
+		logDef.Info("Default security exists in the namespace", "namespace", apiNamespace)
 		// check default cert exist in api namespace
 		var defaultCertUsrNs = k8s.NewSecret()
 		err := k8s.Get(client, types.NamespacedName{Name: securityDefault.Spec.SecurityConfig[0].Certificate, Namespace: apiNamespace}, defaultCertUsrNs)
