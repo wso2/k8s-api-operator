@@ -14,16 +14,19 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package k8s
+package security
 
-import (
-	"k8s.io/apimachinery/pkg/runtime"
-	"reflect"
-	"strings"
+const (
+	authorizationUrl       = "https://example.com/oauth/authorize"
+	tokenUrl               = "https://example.com/oauth/token"
+	oauth2Type             = "oauth2"
+	basicSecurityType      = "http"
+	basicSecurityAndScheme = "basic"
+	jwtConst               = "JWT"
+	oauthConst             = "Oauth"
 )
 
-// getK8sObjType returns the k8s object type for given k8s obj
-func getK8sObjType(obj runtime.Object) string {
-	tp := reflect.ValueOf(obj).Type().String()
-	return strings.SplitN(tp, ".", 2)[1]
-}
+const (
+	defaultSecurity    = "default-security-jwt"
+	wso2NameSpaceConst = "wso2-system"
+)
