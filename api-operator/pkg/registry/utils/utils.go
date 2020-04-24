@@ -19,6 +19,7 @@ package utils
 import (
 	"fmt"
 	registryclient "github.com/heroku/docker-registry-client/registry"
+	"net/url"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"strings"
 )
@@ -45,10 +46,16 @@ func IsImageExists(auth RegAuth, image string, tag string) (bool, error) {
 		imageWithoutReg = fmt.Sprintf("%s/%s", splits[1], splits[2])
 	}
 
-	tags, err := hub.Tags(imageWithoutReg)
-	if err != nil {
-		logger.Error(err, "Error getting tags from the image in the docker registry", "registry-url", auth.RegistryUrl, "image", image)
-		return false, err
+	tags, errRepo := hub.Tags(imageWithoutReg)
+	if errRepo != nil {
+		if errRepo.(*url.Error).Err.(*registryclient.HttpStatusError).Response.StatusCode == 404 {
+			logger.Info("Docker repository not found in the registry",
+				"registry-url", auth.RegistryUrl, "repository", imageWithoutReg)
+			return false, nil
+		}
+		logger.Error(errRepo, "Error getting tags from the image in the docker registry",
+			"registry-url", auth.RegistryUrl, "image", image)
+		return false, errRepo
 	}
 	for _, foundTag := range tags {
 		if foundTag == tag {

@@ -9,14 +9,10 @@ var (
 	JobVolumeMount *[]corev1.VolumeMount
 )
 
-// make capacity as 8 since there are 8 volumes in normal scenario
-var (
-	initJobVolume      = make([]corev1.Volume, 0, 8)
-	initJobVolumeMount = make([]corev1.VolumeMount, 0, 8)
-)
-
 // InitJobVolumes initialize Kaniko job volumes
 func InitJobVolumes() {
+	initJobVolume := make([]corev1.Volume, 0, 8)
+	initJobVolumeMount := make([]corev1.VolumeMount, 0, 8)
 	JobVolume = &initJobVolume
 	JobVolumeMount = &initJobVolumeMount
 }

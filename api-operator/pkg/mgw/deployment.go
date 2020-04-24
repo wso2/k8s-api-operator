@@ -30,11 +30,11 @@ const (
 )
 
 var (
-	ContainerList     *[]corev1.Container
-	initContainerList = make([]corev1.Container, 0, 2)
+	ContainerList *[]corev1.Container
 )
 
 func InitContainers() {
+	initContainerList := make([]corev1.Container, 0, 2)
 	ContainerList = &initContainerList
 }
 

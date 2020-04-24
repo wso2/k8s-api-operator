@@ -27,7 +27,8 @@ func GetHPAProp(api *wso2v1alpha1.API, controlConfigData *map[string]string) (*A
 	prop := &AutoScalarProp{}
 
 	// MinReplicas
-	*prop.MinReplicas = int32(api.Spec.Replicas)
+	replicas := int32(api.Spec.Replicas)
+	prop.MinReplicas = &replicas
 
 	// TargetAverageUtilization
 	val := (*controlConfigData)[hpaTargetAverageUtilizationCPU]
@@ -36,7 +37,8 @@ func GetHPAProp(api *wso2v1alpha1.API, controlConfigData *map[string]string) (*A
 		logHpa.Error(err, "Error parsing HPA TargetAverageUtilization", "value", val)
 		return nil, err
 	}
-	*prop.TargetAverageUtilization = int32(intVal)
+	avgUtil := int32(intVal)
+	prop.TargetAverageUtilization = &avgUtil
 
 	// MaxReplicas
 	val = (*controlConfigData)[hpaMaxReplicas]
@@ -52,9 +54,9 @@ func GetHPAProp(api *wso2v1alpha1.API, controlConfigData *map[string]string) (*A
 
 func HPA(dep *appsv1.Deployment, prop *AutoScalarProp, owner *[]metav1.OwnerReference) *v2beta1.HorizontalPodAutoscaler {
 	targetResource := v2beta1.CrossVersionObjectReference{
-		Kind:       dep.Kind,
+		Kind:       "Deployment",
 		Name:       dep.Name,
-		APIVersion: dep.APIVersion,
+		APIVersion: "apps/v1",
 	}
 	//CPU utilization
 	resourceMetricsForCPU := &v2beta1.ResourceMetricSource{
