@@ -28,7 +28,7 @@ import (
 	"strings"
 )
 
-var logger = log.Log.WithName("security")
+var logSec = log.Log.WithName("security")
 
 type securitySchemeStruct struct {
 	SecurityType string             `json:"type"`
@@ -63,10 +63,10 @@ func Handle(client *client.Client, securityMap map[string][]string, userNameSpac
 			for _, securityConf := range securityInstance.Spec.SecurityConfig {
 				errc := k8s.Get(client, types.NamespacedName{Name: securityConf.Certificate, Namespace: userNameSpace}, certificateSecret)
 				if errc != nil && errors.IsNotFound(errc) {
-					logger.Info("defined certificate is not found")
+					logSec.Info("defined certificate is not found")
 					return securityDefinition, &jwtConfArray, errc
 				} else {
-					logger.Info("defined certificate successfully retrieved")
+					logSec.Info("defined certificate successfully retrieved")
 				}
 				//mount certs
 				_ = cert.Add(certificateSecret, "security")
@@ -74,11 +74,11 @@ func Handle(client *client.Client, securityMap map[string][]string, userNameSpac
 				//get the keymanager server URL from the security kind
 				mgw.Configs.KeyManagerServerUrl = securityConf.Endpoint
 				//fetch credentials from the secret created
-				errGetCredentials := mgw.SetCredentials(client, oauthConst, types.NamespacedName{Namespace: userNameSpace, Name: securityConf.Credentials})
+				errGetCredentials := SetCredentials(client, oauthConst, types.NamespacedName{Namespace: userNameSpace, Name: securityConf.Credentials})
 				if errGetCredentials != nil {
-					logger.Error(errGetCredentials, "Error occurred when retrieving credentials for Oauth")
+					logSec.Error(errGetCredentials, "Error occurred when retrieving credentials for Oauth")
 				} else {
-					logger.Info("Credentials successfully retrieved for security " + secName)
+					logSec.Info("Credentials successfully retrieved for security " + secName)
 				}
 				if !secSchemeDefined {
 					//add scopes
@@ -102,15 +102,15 @@ func Handle(client *client.Client, securityMap map[string][]string, userNameSpac
 			}
 		}
 		if strings.EqualFold(securityInstance.Spec.Type, jwtConst) {
-			logger.Info("retrieving data for security type JWT")
+			logSec.Info("retrieving data for security type JWT")
 			for _, securityConf := range securityInstance.Spec.SecurityConfig {
 				jwtConf := mgw.JwtTokenConfig{}
 				errc := k8s.Get(client, types.NamespacedName{Name: securityConf.Certificate, Namespace: userNameSpace}, certificateSecret)
 				if errc != nil && errors.IsNotFound(errc) {
-					logger.Info("defined certificate is not found")
+					logSec.Info("defined certificate is not found")
 					return securityDefinition, &jwtConfArray, errc
 				} else {
-					logger.Info("defined certificate successfully retrieved")
+					logSec.Info("defined certificate successfully retrieved")
 				}
 				//mount certs
 				alias := cert.Add(certificateSecret, "security")
@@ -124,7 +124,7 @@ func Handle(client *client.Client, securityMap map[string][]string, userNameSpac
 					jwtConf.Audience = securityConf.Audience
 				}
 
-				logger.Info("certificate issuer", "issuer", jwtConf.Issuer)
+				logSec.Info("certificate issuer", "issuer", jwtConf.Issuer)
 				jwtConfArray = append(jwtConfArray, jwtConf)
 			}
 		}
@@ -133,12 +133,12 @@ func Handle(client *client.Client, securityMap map[string][]string, userNameSpac
 			// i.e. if global "existCert" is true, even though the scenario for this swagger is false keep that value as true
 
 			//fetch credentials from the secret created
-			errGetCredentials := mgw.SetCredentials(client, "Basic",
+			errGetCredentials := SetCredentials(client, "Basic",
 				types.NamespacedName{Namespace: userNameSpace, Name: securityInstance.Spec.SecurityConfig[0].Credentials})
 			if errGetCredentials != nil {
-				logger.Error(errGetCredentials, "Error occurred when retrieving credentials for Basic")
+				logSec.Error(errGetCredentials, "Error occurred when retrieving credentials for Basic")
 			} else {
-				logger.Info("Credentials successfully retrieved for security " + secName)
+				logSec.Info("Credentials successfully retrieved for security " + secName)
 			}
 			//creating security scheme
 			if !secSchemeDefined {
