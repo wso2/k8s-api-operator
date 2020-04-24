@@ -43,7 +43,7 @@ func Handle(client *client.Client, securityMap map[string][]string, userNameSpac
 		if errGetSec != nil && errors.IsNotFound(errGetSec) {
 			return securityDefinition, &jwtConfArray, errGetSec
 		}
-		if strings.EqualFold(securityInstance.Spec.Type, SecurityOauth) {
+		if strings.EqualFold(securityInstance.Spec.Type, oauthConst) {
 			for _, securityConf := range securityInstance.Spec.SecurityConfig {
 				errc := k8s.Get(client, types.NamespacedName{Name: securityConf.Certificate, Namespace: userNameSpace}, certificateSecret)
 				if errc != nil && errors.IsNotFound(errc) {
@@ -58,7 +58,7 @@ func Handle(client *client.Client, securityMap map[string][]string, userNameSpac
 				//get the keymanager server URL from the security kind
 				mgw.Configs.KeyManagerServerUrl = securityConf.Endpoint
 				//fetch credentials from the secret created
-				errGetCredentials := mgw.SetCredentials(client, SecurityOauth, types.NamespacedName{Namespace: userNameSpace, Name: securityConf.Credentials})
+				errGetCredentials := mgw.SetCredentials(client, oauthConst, types.NamespacedName{Namespace: userNameSpace, Name: securityConf.Credentials})
 				if errGetCredentials != nil {
 					logger.Error(errGetCredentials, "Error occurred when retrieving credentials for Oauth")
 				} else {
@@ -72,7 +72,7 @@ func Handle(client *client.Client, securityMap map[string][]string, userNameSpac
 					}
 					//creating security scheme
 					scheme := securitySchemeStruct{
-						SecurityType: oauthSecurityType,
+						SecurityType: oauth2Type,
 						Flows: &authorizationCode{
 							scopeSet{
 								authorizationUrl,
@@ -85,7 +85,7 @@ func Handle(client *client.Client, securityMap map[string][]string, userNameSpac
 				}
 			}
 		}
-		if strings.EqualFold(securityInstance.Spec.Type, securityJWT) {
+		if strings.EqualFold(securityInstance.Spec.Type, jwtConst) {
 			logger.Info("retrieving data for security type JWT")
 			for _, securityConf := range securityInstance.Spec.SecurityConfig {
 				jwtConf := mgw.JwtTokenConfig{}

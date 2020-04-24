@@ -1,14 +1,13 @@
 package security
 
 const (
-	authorizationUrl        = "https://example.com/oauth/authorize"
-	tokenUrl                = "https://example.com/oauth/token"
-	oauthSecurityType       = "oauth2"
-	basicSecurityType       = "http"
-	basicSecurityAndScheme  = "basic"
-	securitySchemeExtension = "securitySchemes"
-	securityJWT             = "JWT"
-	SecurityOauth           = "Oauth"
+	authorizationUrl       = "https://example.com/oauth/authorize"
+	tokenUrl               = "https://example.com/oauth/token"
+	oauth2Type             = "oauth2"
+	basicSecurityType      = "http"
+	basicSecurityAndScheme = "basic"
+	jwtConst               = "JWT"
+	oauthConst             = "Oauth"
 )
 
 const (

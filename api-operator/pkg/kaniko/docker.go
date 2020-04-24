@@ -23,6 +23,7 @@ const (
 	truststoreSecretData      = "password"
 	dockerFile                = "dockerfile"
 	dockerFileLocation        = "/usr/wso2/dockerfile/"
+	SwaggerLocation           = "/usr/wso2/swagger/project-%v/"
 )
 
 // DockerfileProperties represents the type for properties of docker file
