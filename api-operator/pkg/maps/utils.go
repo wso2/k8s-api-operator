@@ -13,24 +13,25 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package api
 
-const (
-	mgwToolkitImgConst  = "mgwToolkitImg"
-	mgwRuntimeImgConst  = "mgwRuntimeImg"
-	kanikoArguments     = "kanikoArguments"
-	registryTypeConst   = "registryType"
-	repositoryNameConst = "repositoryName"
-	wso2NameSpaceConst  = "wso2-system"
-	controllerConfName  = "controller-config"
-	dockerRegConfigs    = "docker-registry-config"
-	kanikoArgsConfigs   = "kaniko-arguments"
+package maps
 
-	operatorModeConst = "operatorMode"
-	ingressMode       = "Ingress"
-	routeMode         = "Route"
-
-	sidecar                           = "sidecar"
-	apiCrdDefaultVersion              = "v1.0.0"
-	generateKubernetesArtifactsForMgw = "generatekubernbetesartifactsformgw"
+import (
+	"errors"
+	"reflect"
 )
+
+func OneKey(m interface{}) (string, error) {
+	if reflect.TypeOf(m).Kind().String() != "map" {
+		err := errors.New("type of the argument is not a map")
+		return "", err
+	}
+	keys := reflect.ValueOf(m).MapKeys()
+
+	if len(keys) != 1 {
+		err := errors.New("length of the map should be 1 but was " + string(len(keys)))
+		return "", err
+	}
+
+	return keys[0].String(), nil
+}

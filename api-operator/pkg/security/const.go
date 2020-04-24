@@ -13,24 +13,20 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package api
+
+package security
 
 const (
-	mgwToolkitImgConst  = "mgwToolkitImg"
-	mgwRuntimeImgConst  = "mgwRuntimeImg"
-	kanikoArguments     = "kanikoArguments"
-	registryTypeConst   = "registryType"
-	repositoryNameConst = "repositoryName"
-	wso2NameSpaceConst  = "wso2-system"
-	controllerConfName  = "controller-config"
-	dockerRegConfigs    = "docker-registry-config"
-	kanikoArgsConfigs   = "kaniko-arguments"
+	authorizationUrl       = "https://example.com/oauth/authorize"
+	tokenUrl               = "https://example.com/oauth/token"
+	oauth2Type             = "oauth2"
+	basicSecurityType      = "http"
+	basicSecurityAndScheme = "basic"
+	jwtConst               = "JWT"
+	oauthConst             = "Oauth"
+)
 
-	operatorModeConst = "operatorMode"
-	ingressMode       = "Ingress"
-	routeMode         = "Route"
-
-	sidecar                           = "sidecar"
-	apiCrdDefaultVersion              = "v1.0.0"
-	generateKubernetesArtifactsForMgw = "generatekubernbetesartifactsformgw"
+const (
+	defaultSecurity    = "default-security-jwt"
+	wso2NameSpaceConst = "wso2-system"
 )

@@ -13,24 +13,27 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package api
 
-const (
-	mgwToolkitImgConst  = "mgwToolkitImg"
-	mgwRuntimeImgConst  = "mgwRuntimeImg"
-	kanikoArguments     = "kanikoArguments"
-	registryTypeConst   = "registryType"
-	repositoryNameConst = "repositoryName"
-	wso2NameSpaceConst  = "wso2-system"
-	controllerConfName  = "controller-config"
-	dockerRegConfigs    = "docker-registry-config"
-	kanikoArgsConfigs   = "kaniko-arguments"
+package kaniko
 
-	operatorModeConst = "operatorMode"
-	ingressMode       = "Ingress"
-	routeMode         = "Route"
-
-	sidecar                           = "sidecar"
-	apiCrdDefaultVersion              = "v1.0.0"
-	generateKubernetesArtifactsForMgw = "generatekubernbetesartifactsformgw"
+import (
+	corev1 "k8s.io/api/core/v1"
 )
+
+var (
+	JobVolume      *[]corev1.Volume
+	JobVolumeMount *[]corev1.VolumeMount
+)
+
+// InitJobVolumes initialize Kaniko job volumes
+func InitJobVolumes() {
+	initJobVolume := make([]corev1.Volume, 0, 8)
+	initJobVolumeMount := make([]corev1.VolumeMount, 0, 8)
+	JobVolume = &initJobVolume
+	JobVolumeMount = &initJobVolumeMount
+}
+
+func AddVolume(vols *corev1.Volume, volMounts *corev1.VolumeMount) {
+	*JobVolume = append(*JobVolume, *vols)
+	*JobVolumeMount = append(*JobVolumeMount, *volMounts)
+}

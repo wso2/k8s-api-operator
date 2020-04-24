@@ -18,10 +18,13 @@ package utils
 
 import (
 	"fmt"
-	"github.com/go-logr/logr"
 	registryclient "github.com/heroku/docker-registry-client/registry"
+	"net/url"
+	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"strings"
 )
+
+var logger = log.Log.WithName("registry.utils")
 
 type RegAuth struct {
 	RegistryUrl string
@@ -29,7 +32,7 @@ type RegAuth struct {
 	Password    string
 }
 
-func IsImageExists(auth RegAuth, image string, tag string, logger logr.Logger) (bool, error) {
+func IsImageExists(auth RegAuth, image string, tag string) (bool, error) {
 	hub, err := registryclient.New(auth.RegistryUrl, auth.Username, auth.Password)
 	if err != nil {
 		logger.Error(err, "Error connecting to the docker registry", "registry-url", auth.RegistryUrl)
@@ -43,10 +46,16 @@ func IsImageExists(auth RegAuth, image string, tag string, logger logr.Logger) (
 		imageWithoutReg = fmt.Sprintf("%s/%s", splits[1], splits[2])
 	}
 
-	tags, err := hub.Tags(imageWithoutReg)
-	if err != nil {
-		logger.Error(err, "Error getting tags from the image in the docker registry", "registry-url", auth.RegistryUrl, "image", image)
-		return false, err
+	tags, errRepo := hub.Tags(imageWithoutReg)
+	if errRepo != nil {
+		if errRepo.(*url.Error).Err.(*registryclient.HttpStatusError).Response.StatusCode == 404 {
+			logger.Info("Docker repository not found in the registry",
+				"registry-url", auth.RegistryUrl, "repository", imageWithoutReg)
+			return false, nil
+		}
+		logger.Error(errRepo, "Error getting tags from the image in the docker registry",
+			"registry-url", auth.RegistryUrl, "image", image)
+		return false, errRepo
 	}
 	for _, foundTag := range tags {
 		if foundTag == tag {
