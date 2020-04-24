@@ -19,6 +19,7 @@ package api
 import (
 	"fmt"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/analytics"
+	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/endpoints"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/interceptors"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
@@ -30,11 +31,6 @@ import (
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/security"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/str"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/swagger"
-	"strconv"
-	"strings"
-	"time"
-
-	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -50,6 +46,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+	"strconv"
+	"strings"
+	"time"
 )
 
 var log = logf.Log.WithName("api.controller")
@@ -107,7 +106,7 @@ type ReconcileAPI struct {
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
+	reqLogger := log.WithValues("request_namespace", request.Namespace, "request_name", request.Name)
 	reqLogger.Info("Reconciling API")
 
 	// initialize volumes
@@ -374,15 +373,26 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		if err := controllerutil.SetControllerReference(instance, kanikoJob, r.scheme); err != nil {
 			return reconcile.Result{}, err
 		}
-		// create Kaniko job
+		// create Kaniko job and set kaniko object
 		if errJob := k8s.CreateIfNotExists(&r.client, kanikoJob); errJob != nil {
 			return reconcile.Result{}, errJob
 		}
 	}
-	// if kaniko job started (i.e. not nil) and still running log and requeue request after 10 sec
-	if kanikoJob != nil && kanikoJob.Status.Succeeded == 0 {
-		reqLogger.Info("Kaniko job is still not completed and requeue request after 10 seconds", "job_status", kanikoJob.Status)
-		return reconcile.Result{Requeue: true, RequeueAfter: time.Duration(1e10)}, nil
+	// if kaniko job started (i.e. not nil)
+	if kanikoJob != nil {
+		// check for kaniko completion
+		for t := 30; kanikoJob.Status.Succeeded == 0 && t > 0; t -= 5 {
+			reqLogger.Info("Kaniko job is still not completed", "retry_interval_seconds", t, "job_status", kanikoJob.Status)
+			time.Sleep(10 * time.Second)
+			_ = k8s.Get(&r.client, types.NamespacedName{Namespace: kanikoJob.Namespace, Name: kanikoJob.Name}, kanikoJob)
+		}
+
+		if kanikoJob.Status.Succeeded == 0 {
+			reqLogger.Info("Kaniko job is still not completed and requeue request after 10 seconds", "job_status", kanikoJob.Status)
+			return reconcile.Result{Requeue: true, RequeueAfter: 10 * time.Second}, nil
+		} else {
+			reqLogger.Info("Kaniko job is completed successfully", "job_status", kanikoJob.Status)
+		}
 	}
 
 	// kaniko job completed or not ran (i.e. image already exists)
@@ -437,9 +447,10 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			}
 		}
 
+		reqLogger.Info("Successfully deployed the API", "api_name", instance.Name)
 		return reconcile.Result{}, nil
 	} else {
-		log.Info("Skip updating kubernetes artifacts")
+		reqLogger.Info("Skip updating kubernetes artifacts")
 		return reconcile.Result{}, nil
 	}
 }

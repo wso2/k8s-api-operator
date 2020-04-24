@@ -38,20 +38,18 @@ type DockerfileProperties struct {
 }
 
 // DocFileProp represents the properties of docker file
-var DocFileProp = initDocFileProp
-
-// initDocFileProp represents the initial values for DocFileProp
-var initDocFileProp = &DockerfileProperties{
-	CertFound:             false,
-	TruststorePassword:    "",
-	Certs:                 map[string]string{},
-	ToolkitImage:          "",
-	RuntimeImage:          "",
-	BalInterceptorsFound:  false,
-	JavaInterceptorsFound: false,
-}
+var DocFileProp *DockerfileProperties
 
 func InitDocFileProp() {
+	initDocFileProp := &DockerfileProperties{
+		CertFound:             false,
+		TruststorePassword:    "",
+		Certs:                 map[string]string{},
+		ToolkitImage:          "",
+		RuntimeImage:          "",
+		BalInterceptorsFound:  false,
+		JavaInterceptorsFound: false,
+	}
 	DocFileProp = initDocFileProp
 }
 

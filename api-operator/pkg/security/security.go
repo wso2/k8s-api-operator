@@ -34,7 +34,7 @@ func Handle(client *client.Client, securityMap map[string][]string, userNameSpac
 	var securityDefinition = make(map[string]securitySchemeStruct)
 	//to add multiple certs with alias
 
-	jwtConfArray := []mgw.JwtTokenConfig{}
+	var jwtConfArray []mgw.JwtTokenConfig
 	securityInstance := &wso2v1alpha1.Security{}
 	var certificateSecret = k8s.NewSecret()
 	for secName, scopeList := range securityMap {

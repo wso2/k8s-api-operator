@@ -22,6 +22,7 @@ import (
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/maps"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/registry/utils"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/str"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,6 +30,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	"strings"
 )
 
 var logger = log.Log.WithName("registry")
@@ -99,24 +101,34 @@ func IsImageExist(client *client.Client) (bool, error) {
 	logger.Info("Getting Docker credentials secret")
 	dockerConfigSecret := k8s.NewSecret()
 	err := k8s.Get(client, types.NamespacedName{Name: utils.DockerRegCredSecret, Namespace: wso2NameSpaceConst}, dockerConfigSecret)
-	if err == nil && errors.IsNotFound(err) {
-		logger.Info("Docker credentials secret is not found", "secret-name", utils.DockerRegCredSecret, "namespace", wso2NameSpaceConst)
-	} else if err != nil {
-		authsJsonString := dockerConfigSecret.Data[utils.DockerConfigKeyConst]
-		auth := Auth{}
-		err := json.Unmarshal(authsJsonString, &auth)
-		if err != nil {
-			logger.Info("Error unmarshal data of docker credential auth")
-		}
-
-		registryUrl, err = maps.OneKey(auth.Auths)
-		if err != nil {
-			logger.Error(err, "Error in docker config secret", "secret", dockerConfigSecret)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			logger.Info("Docker credentials secret is not found", "secret_name", utils.DockerRegCredSecret, "namespace", wso2NameSpaceConst)
+		} else {
+			logger.Error(err, "Error retrieving docker credentials secret", "secret_name", utils.DockerRegCredSecret, "namespace", wso2NameSpaceConst)
 			return false, err
 		}
-		username = auth.Auths[registryUrl].Username
-		password = auth.Auths[registryUrl].Password
 	}
+
+	authsJsonString := dockerConfigSecret.Data[utils.DockerConfigKeyConst]
+	auth := Auth{}
+	err = json.Unmarshal(authsJsonString, &auth)
+	if err != nil {
+		logger.Info("Error unmarshal data of docker credential auth")
+	}
+
+	registryUrl, err = maps.OneKey(auth.Auths)
+	if err != nil {
+		logger.Error(err, "Error in docker config secret", "secret", dockerConfigSecret)
+		return false, err
+	}
+	registryUrl = str.RemoveVersionTag(registryUrl)
+	if !strings.HasPrefix(registryUrl, "https://") {
+		registryUrl = "https://" + registryUrl
+	}
+
+	username = auth.Auths[registryUrl].Username
+	password = auth.Auths[registryUrl].Password
 
 	config := GetConfig()
 	imageCheckFunc := config.IsImageExist
