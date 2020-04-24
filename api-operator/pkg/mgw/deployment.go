@@ -34,7 +34,7 @@ var (
 	initContainerList = make([]corev1.Container, 0, 2)
 )
 
-func InitJobVolumes() {
+func InitContainers() {
 	ContainerList = &initContainerList
 }
 

@@ -104,7 +104,7 @@ func IsImageExist(client *client.Client) (bool, error) {
 	} else if err != nil {
 		authsJsonString := dockerConfigSecret.Data[utils.DockerConfigKeyConst]
 		auth := Auth{}
-		err := json.Unmarshal([]byte(authsJsonString), &auth)
+		err := json.Unmarshal(authsJsonString, &auth)
 		if err != nil {
 			logger.Info("Error unmarshal data of docker credential auth")
 		}

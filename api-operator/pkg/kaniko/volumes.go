@@ -1,13 +1,7 @@
 package kaniko
 
 import (
-	"fmt"
-	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	corev1 "k8s.io/api/core/v1"
-)
-
-const (
-	swaggerLocation = "/usr/wso2/swagger/project-%v/"
 )
 
 var (
@@ -25,19 +19,6 @@ var (
 func InitJobVolumes() {
 	JobVolume = &initJobVolume
 	JobVolumeMount = &initJobVolumeMount
-}
-
-func AddDefaultKanikoVolumes(apiName string, swaggerCmNames []string) (*[]corev1.Volume, *[]corev1.VolumeMount) {
-	// swagger file config maps
-	swaggerVols := make([]corev1.Volume, 0, len(swaggerCmNames))
-	swaggerMounts := make([]corev1.VolumeMount, 0, len(swaggerCmNames))
-	for i, swaggerCmName := range swaggerCmNames {
-		vol, mount := k8s.ConfigMapVolumeMount(swaggerCmName+"-mgw", fmt.Sprintf(swaggerLocation, i+1))
-		swaggerVols = append(swaggerVols, *vol)
-		swaggerMounts = append(swaggerMounts, *mount)
-	}
-
-	return &swaggerVols, &swaggerMounts
 }
 
 func AddVolume(vols *corev1.Volume, volMounts *corev1.VolumeMount) {

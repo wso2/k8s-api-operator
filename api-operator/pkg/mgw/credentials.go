@@ -38,7 +38,7 @@ func SetCredentials(client *client.Client, securityType string, namespacedName t
 	if securityType == "Basic" {
 
 		Configs.BasicUsername = userName
-		_, err := sha1Hash.Write([]byte(password))
+		_, err := sha1Hash.Write(password)
 		if err != nil {
 			logger.Info("error in encoding password")
 			return err

@@ -29,7 +29,6 @@ const (
 	operatorModeConst = "operatorMode"
 	ingressMode       = "Ingress"
 	routeMode         = "Route"
-	clusterIPMode     = "ClusterIP"
 
 	sidecar                           = "sidecar"
 	apiCrdDefaultVersion              = "v1.0.0"
