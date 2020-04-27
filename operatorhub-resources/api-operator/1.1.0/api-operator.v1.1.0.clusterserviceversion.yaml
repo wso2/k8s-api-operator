@@ -368,7 +368,25 @@ spec:
             kind: Secret
           - version: v1
             kind: ConfigMap
-        specDescriptors: []
+        specDescriptors:
+          - description: Definition of the API.
+            displayName: Defintion
+            path: definition
+          - description: Overwrite the deploying mode when multiple open API definitions provided. Available modes- privateJet, sidecar.
+            displayName: Mode
+            path: mode
+          - description: Overwrite the docker image creation for already created docker image.
+            displayName: Override
+            path: override
+          - description: Number of replicas.
+            displayName: Replicas
+            path: replicas
+          - description: Updated timestamp preserves the previous images when updating already existing API.
+            displayName: Update Time Stamp
+            path: updateTimeStamp
+          - description: Overwrite the deploying version when multiple open API definitions provided.
+            displayName: Version
+            path: version
         statusDescriptors: []
       - name: securities.wso2.com
         displayName: Security
@@ -392,7 +410,13 @@ spec:
             kind: Secret
           - version: v1
             kind: ConfigMap
-        specDescriptors: []
+        specDescriptors: 
+          - description: Security configurations such as issuer, audience, certificate.
+            displayName: Security Config
+            path: securityConfig
+          - description: Type of the security. Could be Basic, Opaque, JWT, or OAuth.
+            displayName: Type
+            path: type
         statusDescriptors: []
       - name: ratelimitings.wso2.com
         displayName: RateLimiting
@@ -414,7 +438,31 @@ spec:
             kind: Secret
           - version: v1
             kind: ConfigMap
-        specDescriptors: []
+        specDescriptors:
+          - description: Bandwidth of the policy.
+            displayName: Bandwidth
+            path: bandwidth
+          - description: Conditions of the policy.
+            displayName: Conditions
+            path: conditions
+          - description: Description of the ratelimiting policy.
+            displayName: Description
+            path: description
+          - description: Request limit for the policy.
+            displayName: Request Count
+            path: requestCount
+          - description: Stop condition for the policy.
+            displayName: Stop on Quota Reach
+            path: stopOnQuotaReach
+          - description: Time unit for the policy.
+            displayName: Time Unit
+            path: timeUnit
+          - description: Type of the policy. Can have values application, subscription, advance.
+            displayName: Type
+            path: type
+          - description: Unit time for the corresponsing time unit.
+            displayName: Unit Time
+            path: unitTime
         statusDescriptors: []
       - name: targetendpoints.wso2.com
         displayName: TargetEndpoint
@@ -459,7 +507,34 @@ spec:
             kind: Secret
           - version: v1
             kind: ConfigMap
-        specDescriptors: []
+        specDescriptors:
+          - description: Deployment configurations.
+            displayName: Deploy
+            path: deploy
+          - description: Name of the target endpoint.
+            displayName: Endpoint Name
+            path: endpointName
+          - description: Security for the endpoint.
+            displayName: Endpoint Security
+            path: endpointSecurity
+          - description: Hostname of the endpoint.
+            displayName: Hostname
+            path: hostname
+          - description: Mode is very important paramets in the target endpoint kind. If the mode is set to privateJet Target endpoint controller will create the endpoint deployment along with the service. In sidecar mode, target endpoint controller only add the endpoint definition but no deployment will be created.
+            displayName: Mode
+            path: mode
+          - description: If the port and target port do not specified, depend on the protocol type.
+            displayName: Port
+            path: port
+          - description: Specify the protocol that service should be exposed.
+            displayName: Protocol
+            path: protocol
+          - description: Port and target port will be assigned. https associated with port 443 and target port 443 and http associated with port 80 and target port 80.
+            displayName: Target Port
+            path: targetPort
+          - description: Type of the endpoint.
+            displayName: Type
+            path: type
         statusDescriptors: []
     required: []
   install:
