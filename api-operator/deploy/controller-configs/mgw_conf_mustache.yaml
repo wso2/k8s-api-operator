@@ -70,7 +70,7 @@ data:
     # Key manager configurations
     [keyManager]
       # Connection URL of the Key Manager server
-      serverUrl = "{{$.KeymanagerServerurl}}"
+      serverUrl = "{{$.KeyManagerServerUrl}}"
       # The token endpoint context of the Key Manager server
       tokenContext = "oauth2"
       # timestamp skew in seconds which added when checking the token validity period
@@ -80,8 +80,8 @@ data:
       # Basic security configurations
       [keymanager.security.basic]
         enabled = true
-        username = "{{$.KeymanagerUsername}}"
-        password = "{{$.KeymanagerPassword}}"
+        username = "{{$.KeyManagerUsername}}"
+        password = "{{$.KeyManagerPassword}}"
       # Oauth2 security configurations
       [keymanager.security.oauth2]
         enabled = false
@@ -169,7 +169,7 @@ data:
         # Initial time delay in milliseconds for file upload analytics
         initialDelayInMillis = 5000
         # Endpoint configured to accept file upload analytics
-        uploadingEndpoint = "https://{{$.Hostname}}:{{$.Port}}/analytics/v1.0/usage/upload-file"
+        uploadingEndpoint = "https://{{$.AnalyticsHostname}}:{{$.AnalyticsPort}}/analytics/v1.0/usage/upload-file"
         # File rotating period in milliseconds
         rotatingPeriod = {{$.RotatingPeriod}}
         # To enable file upload task

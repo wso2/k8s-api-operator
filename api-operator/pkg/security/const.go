@@ -14,13 +14,19 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package controller
+package security
 
-import (
-	"github.com/wso2/k8s-api-operator/api-operator/pkg/controller/api"
+const (
+	authorizationUrl       = "https://example.com/oauth/authorize"
+	tokenUrl               = "https://example.com/oauth/token"
+	oauth2Type             = "oauth2"
+	basicSecurityType      = "http"
+	basicSecurityAndScheme = "basic"
+	jwtConst               = "JWT"
+	oauthConst             = "Oauth"
 )
 
-func init() {
-	// AddToManagerFuncs is a list of functions to create controllers and add them to a manager.
-	AddToManagerFuncs = append(AddToManagerFuncs, api.Add)
-}
+const (
+	defaultSecurity    = "default-security-jwt"
+	wso2NameSpaceConst = "wso2-system"
+)

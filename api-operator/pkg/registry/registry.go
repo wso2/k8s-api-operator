@@ -17,16 +17,35 @@
 package registry
 
 import (
+	"encoding/json"
 	"fmt"
-	"github.com/go-logr/logr"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/maps"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/registry/utils"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/str"
 	corev1 "k8s.io/api/core/v1"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	"strings"
 )
 
-var log = logf.Log.WithName("registry")
+var logger = log.Log.WithName("registry")
+
+const wso2NameSpaceConst = "wso2-system"
 
 type Type string
+
+// Image defines a docker image
+type Image struct {
+	RegistryType   Type   // Type of the registry
+	RepositoryName string // Name of the Docker repository
+	Name           string // Image name
+	Tag            string // Image tag
+}
 
 // Config defines the registry specific configurations
 type Config struct {
@@ -38,29 +57,24 @@ type Config struct {
 	Args             []string                      // Args to be passed to the Kaniko Job
 	ImagePullSecrets []corev1.LocalObjectReference // Secrets for the pod which runs the final micro-gateway setup
 	IsImageExist     func(config *Config, auth utils.RegAuth, image string,
-		tag string, logger logr.Logger) (bool, error) // Function to check the already existence of the image
+		tag string) (bool, error) // Function to check the already existence of the image
 }
 
 // registry details
-var registryType Type
-var repositoryName string
-var imageName string
-var imageTag string
-
+var dockerImage Image
 var registryConfigs = map[Type]func(repoName string, imgName string, tag string) *Config{}
 
 // SetRegistry sets the registry type, repository and image
-func SetRegistry(regType Type, repoName string, imgName string, tag string) {
-	log.Info("Setting registry type", "registry-type", regType, "repository", repoName, "image", imgName, "tag", tag)
-	registryType = regType
-	repositoryName = repoName
-	imageName = imgName
-	imageTag = tag
+func SetRegistry(client *client.Client, namespace string, img Image) error {
+	logger.Info("Setting registry type", "image", img)
+	dockerImage = img
+
+	return copyConfigVolumes(client, namespace)
 }
 
 // GetConfig returns the registry config
 func GetConfig() *Config {
-	return registryConfigs[registryType](repositoryName, imageName, imageTag)
+	return registryConfigs[dockerImage.RegistryType](dockerImage.RepositoryName, dockerImage.Name, dockerImage.Tag)
 }
 
 // IsRegistryType validates the given regType is a valid registry type
@@ -69,22 +83,103 @@ func IsRegistryType(regType string) bool {
 	return ok
 }
 
-// IsImageExists check repository for image and returns true if it exists
-func IsImageExists(auth utils.RegAuth, logger logr.Logger) (bool, error) {
-	config := GetConfig()
-	imageCheckFunc := config.IsImageExist
-	image := fmt.Sprintf("%s/%s", repositoryName, imageName)
+// IsImageExist checks if the image exists in the given registry using the secret in the user-namespace
+func IsImageExist(client *client.Client) (bool, error) {
+	var registryUrl string
+	var username string
+	var password string
 
-	if imageCheckFunc == nil {
-		return utils.IsImageExists(auth, image, imageTag, logger)
+	type Auth struct {
+		Auths map[string]struct {
+			Auth     string `json:"auth"`
+			Username string `json:"username"`
+			Password string `json:"password"`
+		} `json:"auths"`
 	}
 
-	return imageCheckFunc(config, auth, image, imageTag, logger)
+	// checks if the secret is available
+	logger.Info("Getting Docker credentials secret")
+	dockerConfigSecret := k8s.NewSecret()
+	err := k8s.Get(client, types.NamespacedName{Name: utils.DockerRegCredSecret, Namespace: wso2NameSpaceConst}, dockerConfigSecret)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			logger.Info("Docker credentials secret is not found", "secret_name", utils.DockerRegCredSecret, "namespace", wso2NameSpaceConst)
+		} else {
+			logger.Error(err, "Error retrieving docker credentials secret", "secret_name", utils.DockerRegCredSecret, "namespace", wso2NameSpaceConst)
+			return false, err
+		}
+	}
+
+	authsJsonString := dockerConfigSecret.Data[utils.DockerConfigKeyConst]
+	auth := Auth{}
+	err = json.Unmarshal(authsJsonString, &auth)
+	if err != nil {
+		logger.Info("Error unmarshal data of docker credential auth")
+	}
+
+	registryUrl, err = maps.OneKey(auth.Auths)
+	if err != nil {
+		logger.Error(err, "Error in docker config secret", "secret", dockerConfigSecret)
+		return false, err
+	}
+	registryUrl = str.RemoveVersionTag(registryUrl)
+	if !strings.HasPrefix(registryUrl, "https://") {
+		registryUrl = "https://" + registryUrl
+	}
+
+	username = auth.Auths[registryUrl].Username
+	password = auth.Auths[registryUrl].Password
+
+	config := GetConfig()
+	imageCheckFunc := config.IsImageExist
+	image := fmt.Sprintf("%s/%s", dockerImage.RepositoryName, dockerImage.Name)
+	regAuth := utils.RegAuth{RegistryUrl: registryUrl, Username: username, Password: password}
+
+	if imageCheckFunc == nil {
+		return utils.IsImageExists(regAuth, image, dockerImage.Tag)
+	}
+
+	return imageCheckFunc(config, regAuth, image, dockerImage.Tag)
+}
+
+// copyConfigVolumes copy the configured secrets and config maps to user's namespace
+func copyConfigVolumes(client *client.Client, namespace string) error {
+	config := GetConfig()
+	for _, volume := range config.Volumes {
+		var fromObj runtime.Object
+		var name string
+
+		if volume.Secret != nil {
+			name = volume.Secret.SecretName
+			fromObj = k8s.NewSecret()
+		}
+		if volume.ConfigMap != nil {
+			name = volume.ConfigMap.Name
+			fromObj = k8s.NewConfMap()
+		}
+
+		fromNsName := types.NamespacedName{Namespace: wso2NameSpaceConst, Name: name}
+		if err := k8s.Get(client, fromNsName, fromObj); err != nil {
+			return err
+		}
+
+		toObj := fromObj
+		toObj.(metav1.Object).SetNamespace(namespace)
+		toObjMeta := toObj.(metav1.Object)
+		toObjMeta.SetResourceVersion("")
+		//newObjMeta := metav1.ObjectMeta{Namespace:namespace, Name:name}
+
+		if err := k8s.Apply(client, toObj); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func addRegistryConfig(regType Type, getConfigFunc func(repoName string, imgName string, tag string) *Config) {
 	if registryConfigs[regType] != nil {
-		log.Error(nil, "Duplicate registry types", "type", regType)
+		logger.Error(nil, "Duplicate registry types", "type", regType)
 	} else {
 		registryConfigs[regType] = getConfigFunc
 	}

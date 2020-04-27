@@ -14,13 +14,26 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package controller
+package kaniko
 
 import (
-	"github.com/wso2/k8s-api-operator/api-operator/pkg/controller/api"
+	corev1 "k8s.io/api/core/v1"
 )
 
-func init() {
-	// AddToManagerFuncs is a list of functions to create controllers and add them to a manager.
-	AddToManagerFuncs = append(AddToManagerFuncs, api.Add)
+var (
+	JobVolume      *[]corev1.Volume
+	JobVolumeMount *[]corev1.VolumeMount
+)
+
+// InitJobVolumes initialize Kaniko job volumes
+func InitJobVolumes() {
+	initJobVolume := make([]corev1.Volume, 0, 8)
+	initJobVolumeMount := make([]corev1.VolumeMount, 0, 8)
+	JobVolume = &initJobVolume
+	JobVolumeMount = &initJobVolumeMount
+}
+
+func AddVolume(vols *corev1.Volume, volMounts *corev1.VolumeMount) {
+	*JobVolume = append(*JobVolume, *vols)
+	*JobVolumeMount = append(*JobVolumeMount, *volMounts)
 }

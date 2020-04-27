@@ -14,13 +14,24 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package controller
+package maps
 
 import (
-	"github.com/wso2/k8s-api-operator/api-operator/pkg/controller/api"
+	"errors"
+	"reflect"
 )
 
-func init() {
-	// AddToManagerFuncs is a list of functions to create controllers and add them to a manager.
-	AddToManagerFuncs = append(AddToManagerFuncs, api.Add)
+func OneKey(m interface{}) (string, error) {
+	if reflect.TypeOf(m).Kind().String() != "map" {
+		err := errors.New("type of the argument is not a map")
+		return "", err
+	}
+	keys := reflect.ValueOf(m).MapKeys()
+
+	if len(keys) != 1 {
+		err := errors.New("length of the map should be 1 but was " + string(len(keys)))
+		return "", err
+	}
+
+	return keys[0].String(), nil
 }
