@@ -1140,9 +1140,9 @@ func createHorizontalPodAutoscaler(dep *appsv1.Deployment, r *ReconcileAPI, owne
 	minReplicas int32, maxReplicas int32, targetAverageUtilizationCPU int32) error {
 
 	targetResource := v2beta1.CrossVersionObjectReference{
-		Kind:       dep.Kind,
+		Kind:       deploymentKind,
 		Name:       dep.Name,
-		APIVersion: dep.APIVersion,
+		APIVersion: apiVersionKey,
 	}
 	//CPU utilization
 	resourceMetricsForCPU := &v2beta1.ResourceMetricSource{
