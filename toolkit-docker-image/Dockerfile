@@ -26,7 +26,7 @@ ARG USER_ID=802
 ARG USER_GROUP=ballerina
 ARG USER_GROUP_ID=802
 ARG USER_HOME=/home/${USER}
-ARG JMS_MODULE_PATH=${USER_HOME}/.ballerina
+ARG JMS_MODULE_PATH=/root/.ballerina
 
 # build arguments for WSO2 product installation
 ARG WSO2_SERVER_NAME=wso2am-micro-gw-toolkit-linux
