@@ -44,6 +44,7 @@ func Job(api *wso2v1alpha1.API, controlConfigData map[string]string, kanikoArgs 
 	}
 
 	regConfig := registry.GetConfig()
+	AddVolumes(&regConfig.Volumes, &regConfig.VolumeMounts)
 
 	kanikoImg := controlConfigData[kanikoImgConst]
 	args := append([]string{

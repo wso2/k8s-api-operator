@@ -33,7 +33,12 @@ func InitJobVolumes() {
 	JobVolumeMount = &initJobVolumeMount
 }
 
-func AddVolume(vols *corev1.Volume, volMounts *corev1.VolumeMount) {
-	*JobVolume = append(*JobVolume, *vols)
-	*JobVolumeMount = append(*JobVolumeMount, *volMounts)
+func AddVolume(vol *corev1.Volume, volMount *corev1.VolumeMount) {
+	*JobVolume = append(*JobVolume, *vol)
+	*JobVolumeMount = append(*JobVolumeMount, *volMount)
+}
+
+func AddVolumes(vols *[]corev1.Volume, volMounts *[]corev1.VolumeMount) {
+	*JobVolume = append(*JobVolume, *vols...)
+	*JobVolumeMount = append(*JobVolumeMount, *volMounts...)
 }
