@@ -14,6 +14,12 @@ This policy cofigmap is mounted to kaniko job by the API controller and used to 
 Create a ratelimiting policy using the RateLimiting kind. You can create 3 types of policies with the RateLimiting kind as shown below.
 Include the limit from which you want to throttle the API requests.
 
+Note: When an API refers a ratelimiting policy in swagger definition under x-wso2-throttling-tier keyword you need to make sure that the namespace that you have
+provided the ratelimiting policy is same as the namespace of the API. 
+
+Example: In the following ratelimiting policies the namespace is provided as "wso2-test-ns". Therefore the namespace of the API that these ratelimiting policies are being
+referred should be "wso2-test-ns". 
+
 * Application throttling
 ```
 apiVersion: wso2.com/v1alpha1
