@@ -35,6 +35,7 @@ type APISpec struct {
 	Definition      Definition `json:"definition"`
 	Override        bool       `json:"override,omitempty"`
 	Version         string     `json:"version,omitempty"`
+	ApiEndPoint     string     `json:"apiEndPoint,omitempty"`
 }
 
 // APIStatus defines the observed state of API
@@ -43,12 +44,14 @@ type APIStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
+	Replicas   int    `json:"replicas"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // API is the Schema for the apis API
 // +k8s:openapi-gen=true
+// +kubebuilder:subresource:status
 type API struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

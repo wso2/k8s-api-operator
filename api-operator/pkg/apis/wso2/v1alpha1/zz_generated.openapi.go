@@ -115,6 +115,12 @@ func schema_pkg_apis_wso2_v1alpha1_APISpec(ref common.ReferenceCallback) common.
 							Format: "",
 						},
 					},
+					"apiEndPoint": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
 				},
 				Required: []string{"replicas", "definition"},
 			},
@@ -130,6 +136,16 @@ func schema_pkg_apis_wso2_v1alpha1_APIStatus(ref common.ReferenceCallback) commo
 			SchemaProps: spec.SchemaProps{
 				Description: "APIStatus defines the observed state of API",
 				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"replicas": {
+						SchemaProps: spec.SchemaProps{
+							Description: "INSERT ADDITIONAL STATUS FIELD - define observed state of cluster Important: Run \"operator-sdk generate k8s\" to regenerate code after modifying this file Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+				},
+				Required: []string{"replicas"},
 			},
 		},
 	}
