@@ -23,12 +23,17 @@ const (
 	repositoryNameConst = "repositoryName"
 	wso2NameSpaceConst  = "wso2-system"
 	controllerConfName  = "controller-config"
+	ingressConfigs      = "ingress-configs"
+	openShiftConfigs    = "route-configs"
 	dockerRegConfigs    = "docker-registry-config"
 	kanikoArgsConfigs   = "kaniko-arguments"
 
 	operatorModeConst = "operatorMode"
 	ingressMode       = "Ingress"
 	routeMode         = "Route"
+
+	ingressHostName   = "ingressHostName"
+	routeHost         = "routeHost"
 
 	sidecar                           = "sidecar"
 	apiCrdDefaultVersion              = "v1.0.0"

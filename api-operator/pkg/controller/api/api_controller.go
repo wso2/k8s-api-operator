@@ -17,6 +17,7 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/analytics"
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
@@ -150,8 +151,13 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	//get docker registry configs
 	dockerRegistryConf := k8s.NewConfMap()
 	errRegConf := k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: dockerRegConfigs}, dockerRegistryConf)
-
-	confErrs := []error{errConf, errRegConf}
+	//get ingress configs
+	ingressConf := k8s.NewConfMap()
+	errIngressConf := k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: ingressConfigs}, ingressConf)
+	//get ingress configs
+	OpenshiftConf := k8s.NewConfMap()
+	errOpenshiftConf := k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: openShiftConfigs}, OpenshiftConf)
+	confErrs := []error{errConf, errRegConf,errIngressConf,errOpenshiftConf}
 	for _, err := range confErrs {
 		if err != nil {
 			if errors.IsNotFound(err) {
@@ -166,6 +172,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	controlConfigData := controlConf.Data
+	controlIngressData := ingressConf.Data
+	controlOpenshiftConf := OpenshiftConf.Data
 	kaniko.DocFileProp.ToolkitImage = controlConfigData[mgwToolkitImgConst]
 	kaniko.DocFileProp.RuntimeImage = controlConfigData[mgwRuntimeImgConst]
 
@@ -446,6 +454,52 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 				return reconcile.Result{}, rutErr
 			}
 		}
+		// setting apiEndPoint value
+		var getIP string
+		if operatorMode == "default" {
+			loadBalancerFound := mgwSvc.Status.LoadBalancer.Ingress
+			getIP = ""
+			for _, elem := range loadBalancerFound {
+				getIP += elem.IP
+			}
+			instance.Spec.ApiEndPoint = getIP
+			log.Info("IP value is :" + getIP)
+			log.Info("ENDPOINT value is :" + instance.Spec.ApiEndPoint)
+		}
+		if operatorMode == "ingress" {
+			getIngressHost := controlIngressData[ingressHostName]
+			log.Info("Host Name is :" + getIngressHost)
+			instance.Spec.ApiEndPoint = getIngressHost
+			log.Info("ENDPOINT value is :" + instance.Spec.ApiEndPoint)
+		}
+		if operatorMode == "route" {
+			getRouteHost := controlOpenshiftConf[routeHost]
+			log.Info("Host Name is :" + getRouteHost)
+			instance.Spec.ApiEndPoint = getRouteHost
+			log.Info("ENDPOINT value is :" + instance.Spec.ApiEndPoint)
+		}
+		if instance.Spec.ApiEndPoint == "" {
+			instance.Spec.ApiEndPoint = "<pending>"
+			log.Info("ENDPOINT value is :" + instance.Spec.ApiEndPoint)
+		}
+		log.Info("ENDPOINT value after updating is :" + instance.Spec.ApiEndPoint)
+		err = r.client.Update(context.TODO(),instance)
+		// updating the status
+		instance.Status.Replicas = instance.Spec.Replicas
+		err = r.client.Status().Update(context.TODO(),instance)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+		// requeue until external IP is extracted
+		if getIP == "" {
+			//return reconcile.Result{Requeue: true},nil
+			return reconcile.Result{Requeue: true},nil
+		}
+		if getIP != "" {
+			log.Info("External IP extracted succesfully")
+		}
+		log.Info("loop test")
+		reqLogger.Info("Successfully deployed the API", "api_name", instance.Name)
 
 		reqLogger.Info("Successfully deployed the API", "api_name", instance.Name)
 		return reconcile.Result{}, nil
