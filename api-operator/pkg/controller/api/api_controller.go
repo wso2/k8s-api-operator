@@ -154,10 +154,10 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	//get ingress configs
 	ingressConf := k8s.NewConfMap()
 	errIngressConf := k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: ingressConfigs}, ingressConf)
-	//get ingress configs
+	//get openshift configs
 	OpenshiftConf := k8s.NewConfMap()
 	errOpenshiftConf := k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: openShiftConfigs}, OpenshiftConf)
-	confErrs := []error{errConf, errRegConf,errIngressConf,errOpenshiftConf}
+	confErrs := []error{errConf, errRegConf, errIngressConf, errOpenshiftConf}
 	for _, err := range confErrs {
 		if err != nil {
 			if errors.IsNotFound(err) {
@@ -464,25 +464,25 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			}
 			instance.Spec.ApiEndPoint = getIP
 			log.Info("IP value is :" + getIP)
-			log.Info("ENDPOINT value is :" + instance.Spec.ApiEndPoint)
+			log.Info("ENDPOINT value is ","apiEndpoint",instance.Spec.ApiEndPoint)
 		}
 		if operatorMode == "ingress" {
 			getIngressHost := controlIngressData[ingressHostName]
 			log.Info("Host Name is :" + getIngressHost)
 			instance.Spec.ApiEndPoint = getIngressHost
-			log.Info("ENDPOINT value is :" + instance.Spec.ApiEndPoint)
+			log.Info("ENDPOINT value is","apiEndpoint",instance.Spec.ApiEndPoint)
 		}
 		if operatorMode == "route" {
 			getRouteHost := controlOpenshiftConf[routeHost]
 			log.Info("Host Name is :" + getRouteHost)
 			instance.Spec.ApiEndPoint = getRouteHost
-			log.Info("ENDPOINT value is :" + instance.Spec.ApiEndPoint)
+			log.Info("ENDPOINT value is","apiEndpoint",instance.Spec.ApiEndPoint)
 		}
 		if instance.Spec.ApiEndPoint == "" {
 			instance.Spec.ApiEndPoint = "<pending>"
-			log.Info("ENDPOINT value is :" + instance.Spec.ApiEndPoint)
+			log.Info("ENDPOINT value is","apiEndpoint" ,instance.Spec.ApiEndPoint)
 		}
-		log.Info("ENDPOINT value after updating is :" + instance.Spec.ApiEndPoint)
+		log.Info("ENDPOINT value after updating is","apiEndpoint", instance.Spec.ApiEndPoint)
 		err = r.client.Update(context.TODO(),instance)
 		// updating the status
 		instance.Status.Replicas = instance.Spec.Replicas
@@ -498,7 +498,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		if getIP != "" {
 			log.Info("External IP extracted succesfully")
 		}
-		log.Info("loop test")
 		reqLogger.Info("Successfully deployed the API", "api_name", instance.Name)
 
 		reqLogger.Info("Successfully deployed the API", "api_name", instance.Name)
