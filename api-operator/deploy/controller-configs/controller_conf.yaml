@@ -59,6 +59,8 @@ data:
   generatekubernbetesartifactsformgw: "true"
   #Available modes - ingress, default , route and clusterIP
   operatorMode: "default"
+  #Expose custom metrics. Default-> observabilityEnabled: "false"
+  observabilityEnabled: "false"
 
 
 ---
@@ -89,6 +91,73 @@ data:
   #Request and response validation
   enableRequestValidation: "false"
   enableResponseValidation: "false"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hpa-configs
+  namespace: wso2-system
+data:
+  # Maximum number of replicas for the Horizontal Pod Auto-scale. Default->  maxReplicas: "5"
+  maxReplicas: "5"
+  # Targeted CPU usage
+  metrics.resource.cpu: |
+    # targetType can be (Utilization|AverageValue)
+    targetType: Utilization
+    targetAverageUtilization: 50
+  # Targeted memory usage
+  metrics.resource.memory: |
+    # targetType can be (Utilization|AverageValue)
+    targetType: AverageValue
+    targetAverageValue: 100Mi
+  # Targeted custom metrics
+  metrics.custom.pod: |
+    - metricName: http_requests_total_value_per_second
+      # targetType can be (AverageValue) only
+      targetType: AverageValue
+      targetAverageValue: 500m
+  # Targeted custom metrics
+  metrics.custom.object: |
+    - metricName: http_requests_total_value_per_second
+      describedObject:
+        apiVersion: networking.k8s.io/v1beta1
+        kind: Ingress
+        name: main-route
+      # targetType can be (Value|AverageValue)
+      targetType: Value
+      targetValue: 2k
+  metrics.external: |
+    - metricName: queue_messages_ready
+      metricSelector: "queue=worker_tasks"
+      # targetType can be (Value|AverageValue)
+      targetType: AverageValue
+      targetValue: 2k
+  metrics: |
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 50
+    - type: Pods
+      pods:
+        metric:
+          name: packets-per-second
+        target:
+          type: AverageValue
+          averageValue: 1k
+    - type: Object
+      object:
+        metric:
+          name: requests-per-second
+        describedObject:
+          apiVersion: networking.k8s.io/v1beta1
+          kind: Ingress
+          name: main-route
+        target:
+          type: Value
+          value: 10k
 
 ---
 apiVersion: v1

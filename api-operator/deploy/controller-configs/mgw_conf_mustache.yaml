@@ -247,3 +247,15 @@ data:
     # ballerina logs
     [b7a.log]
       level="{{$.LogLevel}}"
+
+    {{ if .ObservabilityEnabled }}
+    # ballerina metrics
+    [b7a.observability.metrics]
+      # Flag to enable Metrics
+      enabled = true
+      reporter = "prometheus"
+
+    # ballerina metrics for prometheus
+    [b7a.observability.metrics.prometheus]
+      port=9797
+    {{ end }}
