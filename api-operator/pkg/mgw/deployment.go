@@ -60,7 +60,6 @@ func AddContainers(containers *[]corev1.Container) {
 
 // Deployment returns a MGW deployment for the given API definition
 func Deployment(api *wso2v1alpha1.API, controlConfigData map[string]string, owner *[]metav1.OwnerReference) *appsv1.Deployment {
-
 	regConfig := registry.GetConfig()
 	labels := map[string]string{"app": api.Name}
 	var deployVolume []corev1.Volume
@@ -91,6 +90,23 @@ func Deployment(api *wso2v1alpha1.API, controlConfigData map[string]string, owne
 		corev1.ResourceCPU:    resource.MustParse(resLimitCPU),
 		corev1.ResourceMemory: resource.MustParse(resLimitMemory),
 	}
+
+	// container ports
+	containerPorts := []corev1.ContainerPort{
+		{
+			ContainerPort: Configs.HttpPort,
+		},
+		{
+			ContainerPort: Configs.HttpsPort,
+		},
+	}
+	// setting observability port
+	if Configs.ObservabilityEnabled {
+		containerPorts = append(containerPorts, corev1.ContainerPort{
+			ContainerPort: observabilityPrometheusPort,
+		})
+	}
+
 	apiContainer := corev1.Container{
 		Name:            "mgw" + api.Name,
 		Image:           regConfig.ImagePath,
@@ -101,14 +117,7 @@ func Deployment(api *wso2v1alpha1.API, controlConfigData map[string]string, owne
 		},
 		VolumeMounts: deployVolumeMount,
 		Env:          regConfig.Env,
-		Ports: []corev1.ContainerPort{
-			{
-				ContainerPort: Configs.HttpPort,
-			},
-			{
-				ContainerPort: Configs.HttpsPort,
-			},
-		},
+		Ports:        containerPorts,
 		ReadinessProbe: &corev1.Probe{
 			Handler: corev1.Handler{
 				HTTPGet: &corev1.HTTPGetAction{

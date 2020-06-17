@@ -29,9 +29,10 @@ const (
 	routeMode     = "Route"
 	clusterIPMode = "ClusterIP"
 
-	portConst  = "port"
-	httpConst  = "http"
-	httpsConst = "https"
+	portConst              = "port"
+	httpConst              = "http"
+	httpsConst             = "https"
+	metricsPrometheusConst = "metrics-prometheus"
 )
 
 //Creating a LB balancer service to expose mgw
@@ -44,10 +45,31 @@ func Service(api *wso2v1alpha1.API, operatorMode string, owner []metav1.OwnerRef
 		serviceType = corev1.ServiceTypeClusterIP
 	}
 
+	// service label
 	labels := map[string]string{
 		"app": api.Name,
 	}
 
+	// service ports
+	servicePorts := []corev1.ServicePort{{
+		Name:       httpsConst + "-" + portConst,
+		Port:       Configs.HttpsPort,
+		TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: Configs.HttpsPort},
+	}, {
+		Name:       httpConst + "-" + portConst,
+		Port:       Configs.HttpPort,
+		TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: Configs.HttpPort},
+	}}
+	// setting observability port
+	if Configs.ObservabilityEnabled {
+		servicePorts = append(servicePorts, corev1.ServicePort{
+			Name:       metricsPrometheusConst + "-" + portConst,
+			Port:       observabilityPrometheusPort,
+			TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: observabilityPrometheusPort},
+		})
+	}
+
+	// MGW service
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            api.Name,
@@ -56,16 +78,8 @@ func Service(api *wso2v1alpha1.API, operatorMode string, owner []metav1.OwnerRef
 			OwnerReferences: owner,
 		},
 		Spec: corev1.ServiceSpec{
-			Type: serviceType,
-			Ports: []corev1.ServicePort{{
-				Name:       httpsConst + "-" + portConst,
-				Port:       Configs.HttpsPort,
-				TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: Configs.HttpsPort},
-			}, {
-				Name:       httpConst + "-" + portConst,
-				Port:       Configs.HttpPort,
-				TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: Configs.HttpPort},
-			}},
+			Type:     serviceType,
+			Ports:    servicePorts,
 			Selector: labels,
 		},
 	}

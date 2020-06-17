@@ -42,6 +42,8 @@ const (
 
 	httpPortValConst  = 9090
 	httpsPortValConst = 9095
+
+	observabilityPrometheusPort = 9797
 )
 
 const (
@@ -57,6 +59,7 @@ const (
 	httpsPortConst                      = "httpsPort"
 )
 
+// Configuration represents configurations for MGW
 type Configuration struct {
 	// transport listener Configurations
 	HttpPort           int32
@@ -103,8 +106,11 @@ type Configuration struct {
 	// HTTP client hostname verification
 	VerifyHostname string
 
-	//log level
+	// log level
 	LogLevel string
+
+	// enable observability of MGW
+	ObservabilityEnabled bool
 }
 
 type JwtTokenConfig struct {
@@ -114,7 +120,7 @@ type JwtTokenConfig struct {
 	ValidateSubscription bool
 }
 
-// mgw configs with default values
+// Configs represents MGW configs with default values
 var Configs = &Configuration{
 	// transport listener Configurations
 	HttpPort:           9090,
@@ -168,8 +174,11 @@ var Configs = &Configuration{
 	// HTTP client hostname verification
 	VerifyHostname: "true",
 
-	//log level
+	// log level
 	LogLevel: "INFO",
+
+	// enable observability of MGW
+	ObservabilityEnabled: false,
 }
 
 // SetApimConfigs sets the MGW configs from APIM configmap

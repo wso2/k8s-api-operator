@@ -185,8 +185,13 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	reqLogger.Info(
 		"Controller configurations",
 		"mgw_toolkit_image", kaniko.DocFileProp.ToolkitImage, "mgw_runtime_image", kaniko.DocFileProp.RuntimeImage,
-		"registry_type", mgwDockerImage.RegistryType, "repository_name", mgwDockerImage.RepositoryName,
+		"gateway_observability", controlConfigData[""],
 		"user_nameSpace", userNamespace, "operator_mode", operatorMode,
+	)
+	// log registry configurations
+	reqLogger.Info(
+		"Registry configurations", "registry_type", mgwDockerImage.RegistryType,
+		"repository_name", mgwDockerImage.RepositoryName,
 	)
 
 	// if there aren't any ratelimiting objects deployed, new policy.yaml configmap will be created with default policies
@@ -383,7 +388,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		// check for kaniko completion
 		for t := 30; kanikoJob.Status.Succeeded == 0 && t > 0; t -= 5 {
 			reqLogger.Info("Kaniko job is still not completed", "retry_interval_seconds", t, "job_status", kanikoJob.Status)
-			time.Sleep(10 * time.Second)
+			time.Sleep(time.Duration(t * 1e9)) // t seconds (i.e. t * 1e9 nano seconds)
 			_ = k8s.Get(&r.client, types.NamespacedName{Namespace: kanikoJob.Namespace, Name: kanikoJob.Name}, kanikoJob)
 		}
 
