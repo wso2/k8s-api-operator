@@ -185,7 +185,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	reqLogger.Info(
 		"Controller configurations",
 		"mgw_toolkit_image", kaniko.DocFileProp.ToolkitImage, "mgw_runtime_image", kaniko.DocFileProp.RuntimeImage,
-		"gateway_observability", controlConfigData[""],
+		"gateway_observability", controlConfigData[observabilityEnabledConfigKey],
 		"user_nameSpace", userNamespace, "operator_mode", operatorMode,
 	)
 	// log registry configurations
@@ -193,6 +193,14 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		"Registry configurations", "registry_type", mgwDockerImage.RegistryType,
 		"repository_name", mgwDockerImage.RepositoryName,
 	)
+
+	// validate HPA configs and setting configs
+	mgw.Configs.ObservabilityEnabled = strings.EqualFold(controlConfigData[observabilityEnabledConfigKey], "true")
+	if err := mgw.ValidateHpaConfigs(&r.client); err != nil {
+		// error has already logged inside the method
+		// Return and requeue request since config mismatch
+		return reconcile.Result{}, err
+	}
 
 	// if there aren't any ratelimiting objects deployed, new policy.yaml configmap will be created with default policies
 	if err := ratelimit.Handle(&r.client, userNamespace, operatorOwner); err != nil {
@@ -427,11 +435,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		}
 
 		// create horizontal pod auto-scalar
-		hpaProp, err := mgw.GetHPAProp(instance, &controlConfigData)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-		hpa := mgw.HPA(mgwDeployment, hpaProp, ownerRef)
+		hpa := mgw.HPA(instance, mgwDeployment, ownerRef)
 		if errHpa := k8s.CreateIfNotExists(&r.client, hpa); errHpa != nil {
 			reqLogger.Error(errHpa, "Error creating the horizontal pod auto-scalar", "hpa_name", hpa.Name)
 			return reconcile.Result{}, errHpa
