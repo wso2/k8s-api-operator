@@ -467,15 +467,15 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			log.Info("ENDPOINT value is ","apiEndpoint",instance.Spec.ApiEndPoint)
 		}
 		if operatorMode == "ingress" {
-			getIngressHost := controlIngressData[ingressHostName]
-			log.Info("Host Name is :" + getIngressHost)
-			instance.Spec.ApiEndPoint = getIngressHost
+			ingressHostConf := controlIngressData[ingressHostName]
+			log.Info("Host Name is :" + ingressHostConf)
+			instance.Spec.ApiEndPoint = ingressHostConf
 			log.Info("ENDPOINT value is","apiEndpoint",instance.Spec.ApiEndPoint)
 		}
 		if operatorMode == "route" {
-			getRouteHost := controlOpenshiftConf[routeHost]
-			log.Info("Host Name is :" + getRouteHost)
-			instance.Spec.ApiEndPoint = getRouteHost
+			routeHostConf := controlOpenshiftConf[routeHost]
+			log.Info("Host Name is :" + routeHostConf)
+			instance.Spec.ApiEndPoint = routeHostConf
 			log.Info("ENDPOINT value is","apiEndpoint",instance.Spec.ApiEndPoint)
 		}
 		if instance.Spec.ApiEndPoint == "" {
