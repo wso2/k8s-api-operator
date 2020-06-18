@@ -440,6 +440,21 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			return reconcile.Result{}, errHpa
 		}
 
+		getResponce := mgw.Responce(&r.client,instance,operatorMode,mgwSvc,controlIngressData,controlOpenshiftConf)
+		err = r.client.Update(context.TODO(),instance)
+		if getResponce == "" {
+			instance.Spec.ApiEndPoint = "<pending>"
+			err = r.client.Update(context.TODO(),instance)
+			return reconcile.Result{Requeue: true},nil
+		}
+		if getResponce != "" {
+			log.Info("External IP extracted succesfully")
+		}
+		instance.Status.Replicas = instance.Spec.Replicas
+		err = r.client.Status().Update(context.TODO(),instance)
+		err = r.client.Update(context.TODO(),instance)
+		log.Info("ENDPOINT value after updating is","apiEndpoint", instance.Spec.ApiEndPoint)
+
 		reqLogger.Info("Operator mode", "mode", operatorMode)
 		if strings.EqualFold(operatorMode, ingressMode) {
 			errIng := mgw.ApplyIngressResource(&r.client, instance, apiBasePathMap, ownerRef)
@@ -454,52 +469,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 				return reconcile.Result{}, rutErr
 			}
 		}
-		// setting apiEndPoint value
-		var getIP string
-		if operatorMode == "default" {
-			loadBalancerFound := mgwSvc.Status.LoadBalancer.Ingress
-			getIP = ""
-			for _, elem := range loadBalancerFound {
-				getIP += elem.IP
-			}
-			instance.Spec.ApiEndPoint = getIP
-			log.Info("IP value is :" + getIP)
-			log.Info("ENDPOINT value is ","apiEndpoint",instance.Spec.ApiEndPoint)
-		}
-		if operatorMode == "ingress" {
-			ingressHostConf := controlIngressData[ingressHostName]
-			log.Info("Host Name is :" + ingressHostConf)
-			instance.Spec.ApiEndPoint = ingressHostConf
-			log.Info("ENDPOINT value is","apiEndpoint",instance.Spec.ApiEndPoint)
-		}
-		if operatorMode == "route" {
-			routeHostConf := controlOpenshiftConf[routeHost]
-			log.Info("Host Name is :" + routeHostConf)
-			instance.Spec.ApiEndPoint = routeHostConf
-			log.Info("ENDPOINT value is","apiEndpoint",instance.Spec.ApiEndPoint)
-		}
-		if instance.Spec.ApiEndPoint == "" {
-			instance.Spec.ApiEndPoint = "<pending>"
-			log.Info("ENDPOINT value is","apiEndpoint" ,instance.Spec.ApiEndPoint)
-		}
-		log.Info("ENDPOINT value after updating is","apiEndpoint", instance.Spec.ApiEndPoint)
-		err = r.client.Update(context.TODO(),instance)
-		// updating the status
-		instance.Status.Replicas = instance.Spec.Replicas
-		err = r.client.Status().Update(context.TODO(),instance)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-		// requeue until external IP is extracted
-		if getIP == "" {
-			//return reconcile.Result{Requeue: true},nil
-			return reconcile.Result{Requeue: true},nil
-		}
-		if getIP != "" {
-			log.Info("External IP extracted succesfully")
-		}
-		reqLogger.Info("Successfully deployed the API", "api_name", instance.Name)
-
 		reqLogger.Info("Successfully deployed the API", "api_name", instance.Name)
 		return reconcile.Result{}, nil
 	} else {
