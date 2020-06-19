@@ -195,6 +195,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	)
 
 	// validate HPA configs and setting configs
+	// this is to verify HPA configs prior running kaniko job and creating MGW image
+	// otherwise user may have to wait long time to know the error in configs
 	mgw.Configs.ObservabilityEnabled = strings.EqualFold(controlConfigData[observabilityEnabledConfigKey], "true")
 	if err := mgw.ValidateHpaConfigs(&r.client); err != nil {
 		// error has already logged inside the method

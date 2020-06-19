@@ -35,8 +35,8 @@ var hpaMaxReplicas int32
 
 const (
 	hpaConfigMapName     = "hpa-configs"
-	metricsConfigKey     = "metrics"
-	maxReplicasConfigKey = "maxReplicas"
+	metricsConfigKey     = "mgwMetrics"
+	maxReplicasConfigKey = "mgwMaxReplicas"
 )
 
 // HPA returns a HPA instance with specified config values

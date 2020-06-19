@@ -16,19 +16,20 @@
 package targetendpoint
 
 const (
-	privateJet                     = "privateJet"
-	serverless                     = "serverless"
-	hpaMaxReplicas                 = "hpaMaxReplicas"
-	hpaTargetAverageUtilizationCPU = "hpaTargetAverageUtilizationCPU"
+	wso2NameSpaceConst = "wso2-system"
+	privateJet         = "privateJet"
+	serverless         = "serverless"
+
+	hpaConfigMapName     = "hpa-configs"
+	maxReplicasConfigKey = "targetEndpointMaxReplicas"
+	metricsConfigKey     = "targetEndpointMetrics"
 
 	resourceRequestCPUTarget    = "resourceRequestCPUTarget"
 	resourceRequestMemoryTarget = "resourceRequestMemoryTarget"
 	resourceLimitCPUTarget      = "resourceLimitCPUTarget"
 	resourceLimitMemoryTarget   = "resourceLimitMemoryTarget"
 
-	resourceKey = "Resource"
-	portKey     = "port"
-	hpaKey      = "hpa"
+	portKey = "port"
 
 	deploymentKind    = "Deployment"
 	serviceKind       = "Service"
