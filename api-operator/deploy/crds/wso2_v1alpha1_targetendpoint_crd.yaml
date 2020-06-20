@@ -73,9 +73,6 @@ spec:
               description: 'Mode of the Target Endpoint. Applicable values: (privateJet|sidecar|serverless).
                 Default value: privateJet'
               type: string
-            port:
-              format: int32
-              type: integer
             ports:
               description: List of optional ports of the target endpoint.
               items:
@@ -100,15 +97,31 @@ spec:
                 - targetPort
                 type: object
               type: array
-            protocol:
-              type: string
-            targetPort:
-              format: int32
-              type: integer
+            servicePort:
+              description: Port of the target endpoint service referred in swagger
+                definition.
+              properties:
+                name:
+                  description: Optional name of the port.
+                  type: string
+                port:
+                  description: Port to be exposed in a service.
+                  format: int32
+                  type: integer
+                protocol:
+                  description: Protocol of the port.
+                  type: string
+                targetPort:
+                  description: Port that is targeted to expose.
+                  format: int32
+                  type: integer
+              required:
+              - protocol
+              - port
+              - targetPort
+              type: object
           required:
-          - protocol
-          - port
-          - targetPort
+          - servicePort
           - deploy
           type: object
         status:

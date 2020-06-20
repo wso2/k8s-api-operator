@@ -387,22 +387,10 @@ func schema_pkg_apis_wso2_v1alpha1_TargetEndpointSpec(ref common.ReferenceCallba
 				Description: "TargetEndpointSpec defines the desired state of TargetEndpoint",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
-					"protocol": {
+					"servicePort": {
 						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"port": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"integer"},
-							Format: "int32",
-						},
-					},
-					"targetPort": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"integer"},
-							Format: "int32",
+							Description: "Port of the target endpoint service referred in swagger definition.",
+							Ref:         ref("github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1.Ports"),
 						},
 					},
 					"ports": {
@@ -431,7 +419,7 @@ func schema_pkg_apis_wso2_v1alpha1_TargetEndpointSpec(ref common.ReferenceCallba
 						},
 					},
 				},
-				Required: []string{"protocol", "port", "targetPort", "deploy"},
+				Required: []string{"servicePort", "deploy"},
 			},
 		},
 		Dependencies: []string{

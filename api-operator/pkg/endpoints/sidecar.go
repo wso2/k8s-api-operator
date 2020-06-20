@@ -44,7 +44,7 @@ func AddSidecarContainers(client *client.Client, apiNamespace string, endpointNa
 					Image: targetEndpointCr.Spec.Deploy.DockerImage,
 					Name:  targetEndpointCr.Spec.Deploy.Name,
 					Ports: []corev1.ContainerPort{{
-						ContainerPort: targetEndpointCr.Spec.Port,
+						ContainerPort: targetEndpointCr.Spec.ServicePort.Port,
 					}},
 				}
 				logger.Info("Added sidecar container to the list of containers to be deployed",

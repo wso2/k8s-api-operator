@@ -26,9 +26,8 @@ import (
 // TargetEndpointSpec defines the desired state of TargetEndpoint
 // +k8s:openapi-gen=true
 type TargetEndpointSpec struct {
-	Protocol   string `json:"protocol"`
-	Port       int32  `json:"port"`
-	TargetPort int32  `json:"targetPort"`
+	// Port of the target endpoint service referred in swagger definition.
+	ServicePort Ports `json:"servicePort"`
 	// List of optional ports of the target endpoint.
 	Ports  []Ports `json:"ports,omitempty"`
 	Deploy Deploy  `json:"deploy"`

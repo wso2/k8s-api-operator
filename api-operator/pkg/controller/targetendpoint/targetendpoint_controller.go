@@ -251,8 +251,8 @@ func (r *ReconcileTargetEndpoint) newDeploymentForCR(m *wso2v1alpha1.TargetEndpo
 						Image: m.Spec.Deploy.DockerImage,
 						Name:  m.Spec.Deploy.Name,
 						Ports: []corev1.ContainerPort{{
-							Name:          m.Spec.Protocol + "-" + portKey,
-							ContainerPort: m.Spec.Port,
+							Name:          m.Spec.ServicePort.Protocol + "-" + portKey,
+							ContainerPort: m.Spec.ServicePort.Port,
 						}},
 						Resources: corev1.ResourceRequirements{
 							Limits:   lim,
@@ -297,7 +297,7 @@ func (r *ReconcileTargetEndpoint) newKnativeDeploymentForCR(m *wso2v1alpha1.Targ
 									Image: m.Spec.Deploy.DockerImage,
 									Name:  m.Spec.Deploy.Name,
 									Ports: []corev1.ContainerPort{{
-										ContainerPort: m.Spec.Port,
+										ContainerPort: m.Spec.ServicePort.Port,
 									}},
 								},
 							},
@@ -388,9 +388,9 @@ func (r *ReconcileTargetEndpoint) reconcileKnativeDeployment(m *wso2v1alpha1.Tar
 // NewService assembles the ClusterIP service for the Nginx
 func (r *ReconcileTargetEndpoint) newServiceForCR(m *wso2v1alpha1.TargetEndpoint) *corev1.Service {
 
-	protocol := m.Spec.Protocol
-	port := int(m.Spec.Port)
-	targetPort := int(m.Spec.TargetPort)
+	protocol := m.Spec.ServicePort.Protocol
+	port := int(m.Spec.ServicePort.Port)
+	targetPort := int(m.Spec.ServicePort.TargetPort)
 
 	switch protocol {
 	case "https":
@@ -422,8 +422,8 @@ func (r *ReconcileTargetEndpoint) newServiceForCR(m *wso2v1alpha1.TargetEndpoint
 			Selector: m.ObjectMeta.Labels,
 			Ports: []corev1.ServicePort{
 				corev1.ServicePort{
-					Name:       m.Spec.Protocol + "-" + portKey,
-					Port:       m.Spec.Port,
+					Name:       m.Spec.ServicePort.Protocol + "-" + portKey,
+					Port:       m.Spec.ServicePort.Port,
 					TargetPort: intstr.FromInt(targetPort)},
 			},
 		},
