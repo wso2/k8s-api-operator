@@ -69,39 +69,42 @@ spec:
               - name
               - dockerImage
               type: object
-            endpointName:
-              type: string
-            endpointSecurity:
-              properties:
-                password:
-                  type: string
-                type:
-                  type: string
-                username:
-                  type: string
-              required:
-              - username
-              - password
-              - type
-              type: object
-            hostname:
-              type: string
             mode:
+              description: 'Mode of the Target Endpoint. Applicable values: (privateJet|sidecar|serverless).
+                Default value: privateJet'
               type: string
             port:
               format: int32
               type: integer
+            ports:
+              description: List of optional ports of the target endpoint.
+              items:
+                properties:
+                  name:
+                    description: Optional name of the port.
+                    type: string
+                  port:
+                    description: Port to be exposed in a service.
+                    format: int32
+                    type: integer
+                  protocol:
+                    description: Protocol of the port.
+                    type: string
+                  targetPort:
+                    description: Port that is targeted to expose.
+                    format: int32
+                    type: integer
+                required:
+                - protocol
+                - port
+                - targetPort
+                type: object
+              type: array
             protocol:
               type: string
             targetPort:
               format: int32
               type: integer
-            type:
-              description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-                Important: Run "operator-sdk generate k8s" to regenerate code after
-                modifying this file Add custom validation using kubebuilder tags:
-                https://book.kubebuilder.io/beyond_basics/generating_crd.html'
-              type: string
           required:
           - protocol
           - port

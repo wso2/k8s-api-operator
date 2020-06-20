@@ -387,20 +387,7 @@ func schema_pkg_apis_wso2_v1alpha1_TargetEndpointSpec(ref common.ReferenceCallba
 				Description: "TargetEndpointSpec defines the desired state of TargetEndpoint",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
-					"type": {
-						SchemaProps: spec.SchemaProps{
-							Description: "INSERT ADDITIONAL SPEC FIELDS - desired state of cluster Important: Run \"operator-sdk generate k8s\" to regenerate code after modifying this file Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
 					"protocol": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"hostname": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
 							Format: "",
@@ -418,26 +405,29 @@ func schema_pkg_apis_wso2_v1alpha1_TargetEndpointSpec(ref common.ReferenceCallba
 							Format: "int32",
 						},
 					},
+					"ports": {
+						SchemaProps: spec.SchemaProps{
+							Description: "List of optional ports of the target endpoint.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1.Ports"),
+									},
+								},
+							},
+						},
+					},
 					"deploy": {
 						SchemaProps: spec.SchemaProps{
 							Ref: ref("github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1.Deploy"),
 						},
 					},
-					"endpointName": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"endpointSecurity": {
-						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1.EndpointSecurity"),
-						},
-					},
 					"mode": {
 						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
+							Description: "Mode of the Target Endpoint. Applicable values: (privateJet|sidecar|serverless). Default value: privateJet",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 				},
@@ -445,7 +435,7 @@ func schema_pkg_apis_wso2_v1alpha1_TargetEndpointSpec(ref common.ReferenceCallba
 			},
 		},
 		Dependencies: []string{
-			"github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1.Deploy", "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1.EndpointSecurity"},
+			"github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1.Deploy", "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1.Ports"},
 	}
 }
 

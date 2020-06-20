@@ -26,18 +26,16 @@ import (
 // TargetEndpointSpec defines the desired state of TargetEndpoint
 // +k8s:openapi-gen=true
 type TargetEndpointSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
-	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
-	Type             string           `json:"type,omitempty"`
-	Protocol         string           `json:"protocol"`
-	Hostname         string           `json:"hostname,omitempty"`
-	Port             int32            `json:"port"`
-	TargetPort       int32            `json:"targetPort"`
-	Deploy           Deploy           `json:"deploy"`
-	EndpointName     string           `json:"endpointName,omitempty"`
-	EndpointSecurity EndpointSecurity `json:"endpointSecurity,omitempty"`
-	Mode             Mode             `json:"mode,omitempty"`
+	Protocol   string `json:"protocol"`
+	Port       int32  `json:"port"`
+	TargetPort int32  `json:"targetPort"`
+	// List of optional ports of the target endpoint.
+	Ports  []Ports `json:"ports,omitempty"`
+	Deploy Deploy  `json:"deploy"`
+	// Mode of the Target Endpoint.
+	// Applicable values: (privateJet|sidecar|serverless).
+	// Default value: privateJet
+	Mode Mode `json:"mode,omitempty"`
 }
 
 // TargetEndpointStatus defines the observed state of TargetEndpoint
@@ -52,6 +50,18 @@ type EndpointSecurity struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 	Type     string `json:"type"`
+}
+
+// Ports represents ports of the Target Endpoint
+type Ports struct {
+	// Optional name of the port.
+	Name string `json:"name,omitempty"`
+	// Protocol of the port.
+	Protocol string `json:"protocol"`
+	// Port to be exposed in a service.
+	Port int32 `json:"port"`
+	// Port that is targeted to expose.
+	TargetPort int32 `json:"targetPort"`
 }
 
 //Replica count for create HPA for targetEndPoint
