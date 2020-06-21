@@ -211,7 +211,8 @@ func (r *ReconcileTargetEndpoint) Reconcile(request reconcile.Request) (reconcil
 			log.Error(errHpa, "Error creating HPA")
 		}
 	}
-	return reconcile.Result{Requeue: true}, nil
+
+	return reconcile.Result{}, nil
 }
 
 // Create newDeploymentForCR method to create a deployment.

@@ -459,11 +459,11 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		}
 
 		reqLogger.Info("Successfully deployed the API", "api_name", instance.Name)
-		return reconcile.Result{}, nil
 	} else {
 		reqLogger.Info("Skip updating kubernetes artifacts")
-		return reconcile.Result{}, nil
 	}
+
+	return reconcile.Result{}, nil
 }
 
 // setApiDependent sets API owner reference to dependents
