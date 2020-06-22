@@ -26,15 +26,16 @@ import (
 // TargetEndpointSpec defines the desired state of TargetEndpoint
 // +k8s:openapi-gen=true
 type TargetEndpointSpec struct {
-	// Port of the target endpoint service referred in swagger definition.
-	ServicePort Ports `json:"servicePort"`
+	// Protocol of the application. Supports "http" and "https".
+	ApplicationProtocol string `json:"applicationProtocol"`
 	// List of optional ports of the target endpoint.
+	// First port should be the port of the target endpoint which is referred in swagger definition.
+	Ports []Port `json:"ports"`
+	// Deployment details.
+	Deploy Deploy `json:"deploy"`
+	// Mode of the Target Endpoint. Supports "privateJet", "sidecar", "serverless".
+	// Default value "privateJet"
 	// +optional
-	Ports  []Ports `json:"ports,omitempty"`
-	Deploy Deploy  `json:"deploy"`
-	// Mode of the Target Endpoint.
-	// Applicable values: (privateJet|sidecar|serverless).
-	// Default value: privateJet
 	Mode Mode `json:"mode,omitempty"`
 }
 
@@ -52,13 +53,11 @@ type EndpointSecurity struct {
 	Type     string `json:"type"`
 }
 
-// Ports represents ports of the Target Endpoint
-type Ports struct {
+// Port represents ports of the Target Endpoint
+type Port struct {
 	// The name of this port within the service. This must be a DNS_LABEL.
 	// All ports within a ServiceSpec must have unique names.
 	Name string `json:"name"`
-	// The IP protocol for this port. Supports "TCP", "UDP", and "SCTP".
-	Protocol string `json:"protocol"`
 	// The port that will be exposed by this service.
 	Port int32 `json:"port"`
 	// Port that is targeted to expose.

@@ -45,7 +45,11 @@ spec:
           type: object
         spec:
           properties:
+            applicationProtocol:
+              description: Protocol of the application. Supports "http" and "https".
+              type: string
             deploy:
+              description: Deployment details.
               properties:
                 cpuLimit:
                   type: string
@@ -70,58 +74,37 @@ spec:
               - dockerImage
               type: object
             mode:
-              description: 'Mode of the Target Endpoint. Applicable values: (privateJet|sidecar|serverless).
-                Default value: privateJet'
+              description: Mode of the Target Endpoint. Supports "privateJet", "sidecar",
+                "serverless". Default value "privateJet"
               type: string
             ports:
-              description: List of optional ports of the target endpoint.
+              description: List of optional ports of the target endpoint. First port
+                should be the port of the target endpoint which is referred in swagger
+                definition.
               items:
                 properties:
                   name:
-                    description: Optional name of the port.
+                    description: The name of this port within the service. This must
+                      be a DNS_LABEL. All ports within a ServiceSpec must have unique
+                      names.
                     type: string
                   port:
-                    description: Port to be exposed in a service.
+                    description: The port that will be exposed by this service.
                     format: int32
                     type: integer
-                  protocol:
-                    description: Protocol of the port.
-                    type: string
                   targetPort:
                     description: Port that is targeted to expose.
                     format: int32
                     type: integer
                 required:
-                - protocol
+                - name
                 - port
                 - targetPort
                 type: object
               type: array
-            servicePort:
-              description: Port of the target endpoint service referred in swagger
-                definition.
-              properties:
-                name:
-                  description: Optional name of the port.
-                  type: string
-                port:
-                  description: Port to be exposed in a service.
-                  format: int32
-                  type: integer
-                protocol:
-                  description: Protocol of the port.
-                  type: string
-                targetPort:
-                  description: Port that is targeted to expose.
-                  format: int32
-                  type: integer
-              required:
-              - protocol
-              - port
-              - targetPort
-              type: object
           required:
-          - servicePort
+          - applicationProtocol
+          - ports
           - deploy
           type: object
         status:

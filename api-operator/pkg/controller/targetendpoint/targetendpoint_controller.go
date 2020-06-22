@@ -229,6 +229,16 @@ func (r *ReconcileTargetEndpoint) newDeploymentForCR(m *wso2v1alpha1.TargetEndpo
 		corev1.ResourceCPU:    resource.MustParse(resourceLimitCPU),
 		corev1.ResourceMemory: resource.MustParse(resourceLimitMemory),
 	}
+
+	// set container ports
+	containerPorts := make([]corev1.ContainerPort, 0, len(m.Spec.Ports))
+	for _, port := range m.Spec.Ports {
+		containerPorts = append(containerPorts, corev1.ContainerPort{
+			Name:          port.Name,
+			ContainerPort: port.TargetPort,
+		})
+	}
+
 	dep := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: apiVersion,
@@ -252,10 +262,7 @@ func (r *ReconcileTargetEndpoint) newDeploymentForCR(m *wso2v1alpha1.TargetEndpo
 					Containers: []corev1.Container{{
 						Image: m.Spec.Deploy.DockerImage,
 						Name:  m.Spec.Deploy.Name,
-						Ports: []corev1.ContainerPort{{
-							Name:          m.Spec.ServicePort.Name,
-							ContainerPort: m.Spec.ServicePort.Port,
-						}},
+						Ports: containerPorts,
 						Resources: corev1.ResourceRequirements{
 							Limits:   lim,
 							Requests: req,
@@ -273,6 +280,15 @@ func (r *ReconcileTargetEndpoint) newDeploymentForCR(m *wso2v1alpha1.TargetEndpo
 
 // Create newKnativeDeploymentForCR method to create a deployment.
 func (r *ReconcileTargetEndpoint) newKnativeDeploymentForCR(m *wso2v1alpha1.TargetEndpoint) *v1.Service {
+	// set container ports
+	containerPorts := make([]corev1.ContainerPort, 0, len(m.Spec.Ports))
+	for _, port := range m.Spec.Ports {
+		containerPorts = append(containerPorts, corev1.ContainerPort{
+			Name:          port.Name,
+			ContainerPort: port.TargetPort,
+		})
+	}
+
 	ser := &v1.Service{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: knativeApiVersion,
@@ -298,9 +314,7 @@ func (r *ReconcileTargetEndpoint) newKnativeDeploymentForCR(m *wso2v1alpha1.Targ
 								{
 									Image: m.Spec.Deploy.DockerImage,
 									Name:  m.Spec.Deploy.Name,
-									Ports: []corev1.ContainerPort{{
-										ContainerPort: m.Spec.ServicePort.Port,
-									}},
+									Ports: containerPorts,
 								},
 							},
 						},
@@ -389,10 +403,19 @@ func (r *ReconcileTargetEndpoint) reconcileKnativeDeployment(m *wso2v1alpha1.Tar
 
 // NewService assembles the ClusterIP service for the Nginx
 func (r *ReconcileTargetEndpoint) newServiceForCR(m *wso2v1alpha1.TargetEndpoint) *corev1.Service {
+	// set service ports
+	servicePorts := make([]corev1.ServicePort, 0, len(m.Spec.Ports))
+	for _, port := range m.Spec.Ports {
+		servicePorts = append(servicePorts, corev1.ServicePort{
+			Name:       port.Name,
+			Port:       port.Port,
+			TargetPort: intstr.FromInt(int(port.TargetPort)),
+		})
+	}
 
-	protocol := m.Spec.ServicePort.Protocol
-	port := int(m.Spec.ServicePort.Port)
-	targetPort := int(m.Spec.ServicePort.TargetPort)
+	protocol := m.Spec.ApplicationProtocol
+	port := m.Spec.Ports[0].Port
+	targetPort := int(m.Spec.Ports[0].TargetPort)
 
 	switch protocol {
 	case "https":
@@ -410,6 +433,8 @@ func (r *ReconcileTargetEndpoint) newServiceForCR(m *wso2v1alpha1.TargetEndpoint
 			targetPort = 80
 		}
 	}
+	servicePorts[0].Port = port
+	servicePorts[0].TargetPort = intstr.FromInt(targetPort)
 
 	service := corev1.Service{
 		TypeMeta: metav1.TypeMeta{
@@ -423,12 +448,7 @@ func (r *ReconcileTargetEndpoint) newServiceForCR(m *wso2v1alpha1.TargetEndpoint
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: m.ObjectMeta.Labels,
-			Ports: []corev1.ServicePort{
-				corev1.ServicePort{
-					Name:       m.Spec.ServicePort.Name,
-					Port:       m.Spec.ServicePort.Port,
-					TargetPort: intstr.FromInt(targetPort)},
-			},
+			Ports:    servicePorts,
 		},
 	}
 	controllerutil.SetControllerReference(m, &service, r.scheme)

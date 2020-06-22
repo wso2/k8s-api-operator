@@ -40,12 +40,19 @@ func AddSidecarContainers(client *client.Client, apiNamespace string, endpointNa
 			erCr := k8s.Get(client,
 				types.NamespacedName{Namespace: apiNamespace, Name: endpointName}, targetEndpointCr)
 			if erCr == nil && targetEndpointCr.Spec.Deploy.DockerImage != "" {
+				// set container ports
+				containerPorts := make([]corev1.ContainerPort, 0, len(targetEndpointCr.Spec.Ports))
+				for _, port := range targetEndpointCr.Spec.Ports {
+					containerPorts = append(containerPorts, corev1.ContainerPort{
+						Name:          port.Name,
+						ContainerPort: port.TargetPort,
+					})
+				}
+
 				sidecarContainer := corev1.Container{
 					Image: targetEndpointCr.Spec.Deploy.DockerImage,
 					Name:  targetEndpointCr.Spec.Deploy.Name,
-					Ports: []corev1.ContainerPort{{
-						ContainerPort: targetEndpointCr.Spec.ServicePort.Port,
-					}},
+					Ports: containerPorts,
 				}
 				logger.Info("Added sidecar container to the list of containers to be deployed",
 					"endpoint_name", endpointName, "docker_image", targetEndpointCr.Spec.Deploy.DockerImage)

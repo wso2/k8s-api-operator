@@ -21,16 +21,11 @@ metadata:
   labels:
     app: products
 spec:
-  servicePort:
-    name: products
-    protocol: http
-    port: 80
-    targetPort: 8080
-#  ports:
-#    - name: metrics-prometheus
-#      protocol: TCP
-#      port: 80
-#      targetPort: 8080
+  applicationProtocol: http
+  ports:
+    - name: http-products
+      port: 80
+      targetPort: 8080
   deploy:
     name: products-pj-service
     dockerImage: renukafernando/k8s-prometheu-metrics-sample:v1.0.0

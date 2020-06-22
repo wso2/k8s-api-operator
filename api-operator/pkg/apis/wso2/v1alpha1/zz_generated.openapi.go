@@ -387,20 +387,21 @@ func schema_pkg_apis_wso2_v1alpha1_TargetEndpointSpec(ref common.ReferenceCallba
 				Description: "TargetEndpointSpec defines the desired state of TargetEndpoint",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
-					"servicePort": {
+					"applicationProtocol": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Port of the target endpoint service referred in swagger definition.",
-							Ref:         ref("github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1.Ports"),
+							Description: "Protocol of the application. Supports \"http\" and \"https\".",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 					"ports": {
 						SchemaProps: spec.SchemaProps{
-							Description: "List of optional ports of the target endpoint.",
+							Description: "List of optional ports of the target endpoint. First port should be the port of the target endpoint which is referred in swagger definition.",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1.Ports"),
+										Ref: ref("github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1.Port"),
 									},
 								},
 							},
@@ -408,22 +409,23 @@ func schema_pkg_apis_wso2_v1alpha1_TargetEndpointSpec(ref common.ReferenceCallba
 					},
 					"deploy": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1.Deploy"),
+							Description: "Deployment details.",
+							Ref:         ref("github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1.Deploy"),
 						},
 					},
 					"mode": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Mode of the Target Endpoint. Applicable values: (privateJet|sidecar|serverless). Default value: privateJet",
+							Description: "Mode of the Target Endpoint. Supports \"privateJet\", \"sidecar\", \"serverless\". Default value \"privateJet\"",
 							Type:        []string{"string"},
 							Format:      "",
 						},
 					},
 				},
-				Required: []string{"servicePort", "deploy"},
+				Required: []string{"applicationProtocol", "ports", "deploy"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1.Deploy", "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1.Ports"},
+			"github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1.Deploy", "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1.Port"},
 	}
 }
 
