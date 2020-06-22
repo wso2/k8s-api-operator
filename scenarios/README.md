@@ -18,3 +18,4 @@
 1. [Sample 16: Deploy multiple swagger-projects as one API](scenario-16)
 1. [Sample 17: Expose an API using Ingress](scenario-17)
 1. [Sample 18: Expose an API using Openshift Route](scenario-18)
+1. [Sample 19: Horizontal pod auto-scaling with custom-metrics](scenario-19)

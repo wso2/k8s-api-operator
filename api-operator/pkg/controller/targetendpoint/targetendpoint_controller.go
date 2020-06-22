@@ -237,6 +237,7 @@ func (r *ReconcileTargetEndpoint) newDeploymentForCR(m *wso2v1alpha1.TargetEndpo
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      m.ObjectMeta.Name,
 			Namespace: m.ObjectMeta.Namespace,
+			Labels:    m.Labels,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &replicas,
@@ -252,7 +253,7 @@ func (r *ReconcileTargetEndpoint) newDeploymentForCR(m *wso2v1alpha1.TargetEndpo
 						Image: m.Spec.Deploy.DockerImage,
 						Name:  m.Spec.Deploy.Name,
 						Ports: []corev1.ContainerPort{{
-							Name:          m.Spec.ServicePort.Protocol + "-" + portKey,
+							Name:          m.Spec.ServicePort.Name,
 							ContainerPort: m.Spec.ServicePort.Port,
 						}},
 						Resources: corev1.ResourceRequirements{
@@ -418,12 +419,13 @@ func (r *ReconcileTargetEndpoint) newServiceForCR(m *wso2v1alpha1.TargetEndpoint
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      m.ObjectMeta.Name,
 			Namespace: m.ObjectMeta.Namespace,
+			Labels:    m.Labels,
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: m.ObjectMeta.Labels,
 			Ports: []corev1.ServicePort{
 				corev1.ServicePort{
-					Name:       m.Spec.ServicePort.Protocol + "-" + portKey,
+					Name:       m.Spec.ServicePort.Name,
 					Port:       m.Spec.ServicePort.Port,
 					TargetPort: intstr.FromInt(targetPort)},
 			},

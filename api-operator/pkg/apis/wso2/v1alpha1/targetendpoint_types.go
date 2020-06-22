@@ -29,6 +29,7 @@ type TargetEndpointSpec struct {
 	// Port of the target endpoint service referred in swagger definition.
 	ServicePort Ports `json:"servicePort"`
 	// List of optional ports of the target endpoint.
+	// +optional
 	Ports  []Ports `json:"ports,omitempty"`
 	Deploy Deploy  `json:"deploy"`
 	// Mode of the Target Endpoint.
@@ -53,11 +54,12 @@ type EndpointSecurity struct {
 
 // Ports represents ports of the Target Endpoint
 type Ports struct {
-	// Optional name of the port.
-	Name string `json:"name,omitempty"`
-	// Protocol of the port.
+	// The name of this port within the service. This must be a DNS_LABEL.
+	// All ports within a ServiceSpec must have unique names.
+	Name string `json:"name"`
+	// The IP protocol for this port. Supports "TCP", "UDP", and "SCTP".
 	Protocol string `json:"protocol"`
-	// Port to be exposed in a service.
+	// The port that will be exposed by this service.
 	Port int32 `json:"port"`
 	// Port that is targeted to expose.
 	TargetPort int32 `json:"targetPort"`

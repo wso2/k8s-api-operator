@@ -29,10 +29,9 @@ const (
 	routeMode     = "Route"
 	clusterIPMode = "ClusterIP"
 
-	portConst              = "port"
 	httpConst              = "http"
 	httpsConst             = "https"
-	metricsPrometheusConst = "metrics-prometheus"
+	metricsPrometheusConst = "metrics"
 )
 
 //Creating a LB balancer service to expose mgw
@@ -52,18 +51,18 @@ func Service(api *wso2v1alpha1.API, operatorMode string, owner []metav1.OwnerRef
 
 	// service ports
 	servicePorts := []corev1.ServicePort{{
-		Name:       httpsConst + "-" + portConst,
+		Name:       httpsConst,
 		Port:       Configs.HttpsPort,
 		TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: Configs.HttpsPort},
 	}, {
-		Name:       httpConst + "-" + portConst,
+		Name:       httpConst,
 		Port:       Configs.HttpPort,
 		TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: Configs.HttpPort},
 	}}
 	// setting observability port
 	if Configs.ObservabilityEnabled {
 		servicePorts = append(servicePorts, corev1.ServicePort{
-			Name:       metricsPrometheusConst + "-" + portConst,
+			Name:       metricsPrometheusConst,
 			Port:       observabilityPrometheusPort,
 			TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: observabilityPrometheusPort},
 		})
