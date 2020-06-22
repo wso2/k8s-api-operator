@@ -440,7 +440,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			return reconcile.Result{}, errHpa
 		}
 
-		getResponce := mgw.Responce(&r.client,instance,operatorMode,mgwSvc,controlIngressData,controlOpenshiftConf)
+		getResponce := mgw.ExternalIP(&r.client,instance,operatorMode,mgwSvc,controlIngressData,controlOpenshiftConf)
 		err = r.client.Update(context.TODO(),instance)
 		if getResponce == "" {
 			instance.Spec.ApiEndPoint = "<pending>"

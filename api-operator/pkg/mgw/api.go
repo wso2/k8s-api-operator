@@ -7,7 +7,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func Responce (client *client.Client, apiInstance *wso2v1alpha1.API, operatorMode string, svc *corev1.Service,
+func ExternalIP (client *client.Client, apiInstance *wso2v1alpha1.API, operatorMode string, svc *corev1.Service,
 	ingressConfData map[string]string, openshiftConfData map[string]string) string {
 
 	var log = logf.Log.WithName("api.controller")
