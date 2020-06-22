@@ -130,6 +130,15 @@ func (r *ReconcileSecurity) Reconcile(request reconcile.Request) (reconcile.Resu
 		}
 	}
 
+	if strings.EqualFold(instance.Spec.Type, "apiKey") {
+		for _, securityConfig := range instance.Spec.SecurityConfig {
+			if securityConfig.Issuer == "" || securityConfig.Audience == "" || securityConfig.Alias == "" {
+				reqLogger.Info("Required fields are missing")
+				return reconcile.Result{}, nil
+			}
+		}
+	}
+
 	if strings.EqualFold(instance.Spec.Type, "Oauth") {
 		for _, securityConfig := range instance.Spec.SecurityConfig {
 			if securityConfig.Credentials == "" || securityConfig.Endpoint == "" {

@@ -17,45 +17,6 @@
 apiVersion: wso2.com/v1alpha1
 kind: Security
 metadata:
-  name: petstoreoauth
-spec:
-  # Security - Oauth2
-  type: Oauth
-  securityConfig:
-    - certificate: wso2am310-secret #create secret with certificate and add secret name
-      endpoint: "https://wso2apim.wso2:9443"
-      credentials: oauth-credentials
-
----
-apiVersion: wso2.com/v1alpha1
-kind: Security
-metadata:
-  name: petstorebasic
-spec:
-  # Security - Basic
-  type: basic
-  securityConfig:
-    - credentials: secret-basic
-
----
-apiVersion: wso2.com/v1alpha1
-kind: Security
-metadata:
-  name: petstorejwt
-spec:
-  # Security - JWT
-  type: JWT
-  securityConfig:
-    - issuer: https://wso2apim:32001/oauth2/token
-      audience: http://org.wso2.apimgt/gateway
-      #create secret with certificate and add secret name
-      certificate: wso2am310-secret
-      validateSubscription: false
-
----
-apiVersion: wso2.com/v1alpha1
-kind: Security
-metadata:
   name: petstoreapikey
 spec:
   # Security - APIKey

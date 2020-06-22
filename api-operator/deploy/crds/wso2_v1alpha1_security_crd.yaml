@@ -62,6 +62,8 @@ spec:
                     type: string
                   validateSubscription:
                     type: boolean
+                  validateAllowedAPIs:
+                    type: boolean
                 type: object
               type: array
             type:
@@ -80,3 +82,11 @@ spec:
   - name: v1alpha1
     served: true
     storage: true
+  additionalPrinterColumns:
+  - name: SECURITY_TYPE
+    type: string
+    JSONPath: .spec.type
+  - name: AGE
+    type: date
+    JSONPath: .metadata.creationTimestamp
+

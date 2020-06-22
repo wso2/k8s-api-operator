@@ -70,6 +70,7 @@ type SecurityConfig struct {
 	Issuer               string `json:"issuer"`
 	Audience             string `json:"audience"`
 	ValidateSubscription bool   `json:"validateSubscription,omitempty"`
+	ValidateAllowedAPIs  bool   `json:"validateAllowedAPIs,omitempty"`
 }
 
 func init() {
