@@ -25,6 +25,19 @@ Lets use the [Prometheus Operator](https://github.com/coreos/prometheus-operator
 - Install Prometheus Operator (version 0.39 for this sample) in Kubernetes cluster.
     ```sh
     >> apictl apply -f https://raw.githubusercontent.com/coreos/prometheus-operator/v0.39.0/bundle.yaml
+  
+    Output:
+    customresourcedefinition.apiextensions.k8s.io/alertmanagers.monitoring.coreos.com created
+    customresourcedefinition.apiextensions.k8s.io/podmonitors.monitoring.coreos.com created
+    customresourcedefinition.apiextensions.k8s.io/prometheuses.monitoring.coreos.com created
+    customresourcedefinition.apiextensions.k8s.io/prometheusrules.monitoring.coreos.com created
+    customresourcedefinition.apiextensions.k8s.io/servicemonitors.monitoring.coreos.com created
+    customresourcedefinition.apiextensions.k8s.io/thanosrulers.monitoring.coreos.com created
+    clusterrolebinding.rbac.authorization.k8s.io/prometheus-operator created
+    clusterrole.rbac.authorization.k8s.io/prometheus-operator created
+    deployment.apps/prometheus-operator created
+    serviceaccount/prometheus-operator created
+    service/prometheus-operator created
     ```
 
 - Create a Prometheus instance in Kubernetes cluster. The directory `prometheus/` contains related configurations.
@@ -39,9 +52,9 @@ Lets use the [Prometheus Operator](https://github.com/coreos/prometheus-operator
     servicemonitor.monitoring.coreos.com/products created
     service/prometheus created
     ```
-  In this sample we have defined the endpoint ports as `metrics` and `products` for metrics in the file `service-monitor.yaml`.
-  Name of the metrics port of **micro-gateway** is `metrics`. Make sure to add `metrics` as the port of **micro-gateway**
-  when you are working on your samples.
+  In this sample we have defined the endpoint ports as `metrics` and `products` for metrics in the file
+  [service-monitor.yaml](prometheus/service-monitor.yaml). Name of the metrics port of **micro-gateway** is `metrics`.
+  Make sure to add `metrics` as the port of **micro-gateway** when you are working on your samples.
     ```yaml
     kind: ServiceMonitor
     spec:
@@ -51,16 +64,85 @@ Lets use the [Prometheus Operator](https://github.com/coreos/prometheus-operator
     ```
   
 - Test the Prometheus deployment by visiting the url `http://<NODE-IP>:30900/graph`.
+    ![Prometheus Dashboard](images/prometheus-dashboard.png)
 
 #### 1.2. Prometheus Adapter
 
-- Install Prometheus Adapter (version 0.7.0 for this sample) in Kubernetes cluster.
+- Create namespace `custom-metrics`.
     ```sh
-    >> apictl apply -f prometheus-adapter
+    >> kubectl create namespace custom-metrics
+  
+    Output:
+    namespace/custom-metrics created
+    ```
+- Create service certificate. Follow [Serving Certificates, Authentication, and Authorization](https://github.com/kubernetes-sigs/apiserver-builder-alpha/blob/v1.18.0/docs/concepts/auth.md)
+to create serving certificate. For this sample we can use certs in the directory `prometheus-adapter/certs`. Create secret `cm-adapter-serving-certs` as follows.
+    ```sh
+    >> kubectl create secret generic cm-adapter-serving-certs \
+            --from-file=serving-ca.crt=prometheus-adapter/certs/serving-ca.crt \
+            --from-file=serving-ca.key=prometheus-adapter/certs/serving-ca.key \
+            -n custom-metrics
+    
+    Output:
+    secret/cm-adapter-serving-certs created
     ```
 
-### 2. Deploy Sample
- 
+- Install Prometheus Adapter (version 0.7.0 for this sample) in Kubernetes cluster.
+    ```sh
+    >> apictl apply -f prometheus-adapter/
+  
+    Output:
+    clusterrolebinding.rbac.authorization.k8s.io/custom-metrics:system:auth-delegator created
+    rolebinding.rbac.authorization.k8s.io/custom-metrics-auth-reader created
+    deployment.apps/custom-metrics-apiserver created
+    clusterrolebinding.rbac.authorization.k8s.io/custom-metrics-resource-reader created
+    serviceaccount/custom-metrics-apiserver created
+    service/custom-metrics-apiserver created
+    apiservice.apiregistration.k8s.io/v1beta1.custom.metrics.k8s.io created
+    clusterrole.rbac.authorization.k8s.io/custom-metrics-server-resources created
+    configmap/adapter-config created
+    clusterrole.rbac.authorization.k8s.io/custom-metrics-resource-reader created
+    clusterrolebinding.rbac.authorization.k8s.io/hpa-controller-custom-metrics created
+    ```
+  In the directory `prometheus-adapter` we have specified configurations for Prometheus Adapter.
+  [custom-metrics-config-map.yaml](prometheus-adapter/custom-metrics-config-map.yaml) contains rules defined for this
+  sample.
+    ```yaml
+    # rule for products backend service
+    - seriesQuery: '{__name__=~"^.*_http_requests_total"}'
+      resources:
+        overrides:
+          namespace: {resource: "namespace"}
+          pod: {resource: "pod"}
+      name:
+        matches: "^(.*)_http_requests_total"
+        as: "${1}_http_requests_total_per_second"
+      metricsQuery: 'sum(rate(<<.Series>>{<<.LabelMatchers>>,http_url!=""}[1m])) by (<<.GroupBy>>)'
+    
+    # rule for managed API (micro-gateway)
+    - seriesQuery: '{__name__="http_requests_total_value"}'
+      resources:
+        overrides:
+          namespace: {resource: "namespace"}
+          pod: {resource: "pod"}
+      name:
+        matches: "http_requests_total_value"
+        as: "http_requests_total_value_per_second"
+      metricsQuery: 'sum(rate(<<.Series>>{<<.LabelMatchers>>,http_url!~"(/health|/metrics)"}[1m])) by (<<.GroupBy>>)'
+    ```
+
+- Test the Prometheus Adapter deployment executing follows.
+    ```sh
+    >> kubectl get --raw /apis/custom.metrics.k8s.io/v1beta1
+  
+    Output:
+    {"kind":"APIResourceList","apiVersion":"v1","groupVersion":"custom.metrics.k8s.io/v1beta1","resources":[]}
+    ```
+
+### 2. Go Through Sample
+
+#### 2.1. Deploy sample
+
 - Navigate to `scenarios/scenario-19` directory and deploy the sample backend service using the following command.
     ```
     >> apictl apply -f products-privatejet.yaml
@@ -99,6 +181,8 @@ In this swagger definition, the backend service of the "products" service and th
     products-pj   3m
     ```
 
+#### 2.2. Test Sample
+
 - Get service details to invoke the API
     ```
     >> apictl get services
@@ -109,7 +193,7 @@ In this swagger definition, the backend service of the "products" service and th
     products-privatejet   ClusterIP      10.101.34.213   <none>        80/TCP                          45m
     ```
     - You can see both the backend(products-privatejet) service and the managed API service(product-pj) is available.
-    - Get the external IP of the managed API's service
+    - Get the external IP of the managed API's service.
  
 - Invoking the API
     ```
