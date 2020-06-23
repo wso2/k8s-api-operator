@@ -440,14 +440,14 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			return reconcile.Result{}, errHpa
 		}
 
-		getResponce := mgw.ExternalIP(&r.client,instance,operatorMode,mgwSvc,controlIngressData,controlOpenshiftConf)
+		getEndPointValue := mgw.ExternalIP(&r.client,instance,operatorMode,mgwSvc,controlIngressData,controlOpenshiftConf)
 		err = r.client.Update(context.TODO(),instance)
-		if getResponce == "" {
+		if getEndPointValue == "" {
 			instance.Spec.ApiEndPoint = "<pending>"
 			err = r.client.Update(context.TODO(),instance)
 			return reconcile.Result{Requeue: true},nil
 		}
-		if getResponce != "" {
+		if getEndPointValue != "" {
 			log.Info("External IP extracted succesfully")
 		}
 		instance.Status.Replicas = instance.Spec.Replicas
