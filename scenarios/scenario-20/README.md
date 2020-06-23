@@ -1,4 +1,4 @@
-## Scenario 20 - Horizontal pod auto-scaling with custom-metrics
+## Scenario 20 - Horizontal Pod Auto-Scaling with Custom-Metrics
 
 - This scenario describes how to auto-scale backend or managed API horizontally based on custom metrics.
 - Prometheus will be used as the monitoring system for custom metrics.
@@ -12,13 +12,13 @@ a target endpoint of mode Private Jet.
 - Then we would refer the backend in the swagger file and set the `private jet` mode in the swagger file.
 - Later we will deploy the API using the swagger definition.
 
-### 1. Prerequisites
- 
 ***Important:***
 > Follow the main README and deploy the api-operator and configuration files.
 > Make sure to set the analyticsEnabled to "true" and deploy analytics secret with credentials to analytics server and
 > certificate, if you want to check analytics.
 
+### 1. Prerequisites
+ 
 #### 1.1. Kubernetes Metrics Server
 
 [Metrics Server](https://github.com/kubernetes-sigs/metrics-server) collects resource metrics from Kubelets and exposes
@@ -170,7 +170,70 @@ to create serving certificate. For this sample we can use certs in the directory
 
 ### 2. Go Through Sample
 
-#### 2.1. Deploy sample
+#### 2.1. Configure Metrics
+
+- For this sample let's make our custom metrics as follows.
+    - Managed API: 0.2 http requests per second (i.e. 1 http request per 5 seconds)
+    
+      `http_requests_total_value_per_second = 200m`
+      
+    - Target Endpoint: 0.1 http requests per second (i.e. 1 http request per 10 seconds)
+    
+      `products_http_requests_total_per_second = 100m`
+
+- Update the configmap `hpa-configs` with metrics by editing the file `controller-configs/controller_conf.yaml` in
+distribution as follows.
+    ```yaml
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: hpa-configs
+      namespace: wso2-system
+    data:
+      # Horizontal Pod Auto-Scaling for Micro-Gateways
+      # Maximum number of replicas for the Horizontal Pod Auto-scale. Default->  maxReplicas: "5"
+      mgwMaxReplicas: "5"
+      # Metrics configurations
+      mgwMetrics: |
+        - type: Resource
+          resource:
+            name: cpu
+            target:
+                type: Utilization
+                averageUtilization: 50
+         - type: Pods
+           pods:
+             metric:
+                 name: http_requests_total_value_per_second
+             target:
+                 type: AverageValue
+                 averageValue: 200m
+    
+      # Horizontal Pod Auto-Scaling for Target-Endpoints
+      # Maximum number of replicas for the Horizontal Pod Auto-scale. Default->  maxReplicas: "5"
+      targetEndpointMaxReplicas: "5"
+      # Metrics configurations
+      targetEndpointMetrics: |
+        - type: Resource
+          resource:
+            name: cpu
+            target:
+                type: Utilization
+                averageUtilization: 50
+        - type: Pods
+          pods:
+            metric:
+                name: products_http_requests_total_per_second
+            target:
+                type: AverageValue
+                averageValue: 100m
+    ```
+    
+    ```sh
+    >> apictl apply -f controller-configs/controller_conf.yaml
+    ```
+
+#### 2.2. Deploy sample
 
 - Navigate to `scenarios/scenario-20` directory and deploy the sample backend service using the following command.
     ```sh
@@ -209,7 +272,7 @@ In this swagger definition, the backend service of the "products" service and th
     products-pj   3m
     ```
 
-#### 2.2. Test Sample
+#### 2.3. Test Sample
 
 - Get service details to invoke the API
     ```sh
@@ -288,10 +351,11 @@ In this swagger definition, the backend service of the "products" service and th
     targetendpoint.wso2.com "products-privatejet" deleted
     ```
 
-### References
+### 4. References
 
 - Horizontal Pod Autoscale: https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/
 - Metrics Server: https://github.com/kubernetes-sigs/metrics-server
 - Prometheus Operator: https://github.com/coreos/prometheus-operator/tree/v0.39.0
 - Prometheus Adapter: https://github.com/DirectXMan12/k8s-prometheus-adapter/tree/v0.7.0
 - Serving Certificate: https://github.com/kubernetes-sigs/apiserver-builder-alpha/blob/master/docs/concepts/auth.md
+- Sample backend with metrics: https://hub.docker.com/repository/docker/renukafernando/k8s-prometheu-metrics-sample

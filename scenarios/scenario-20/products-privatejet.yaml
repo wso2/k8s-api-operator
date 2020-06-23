@@ -29,8 +29,7 @@ spec:
   deploy:
     name: products-pj-service
     dockerImage: renukafernando/k8s-prometheu-metrics-sample:v1.0.0
-#    dockerImage: pubudu/products:1.0.0
-    minReplicas: 2
+    minReplicas: 1
     maxReplicas: 6
     requestCPU: "60m"
     reqMemory: "32Mi"
