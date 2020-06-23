@@ -41,9 +41,7 @@ type APISpec struct {
 // APIStatus defines the observed state of API
 // +k8s:openapi-gen=true
 type APIStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
-	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
+	// replicas field in the status sub-resource will define the initial replica count allocated to the API.This will be the minimum replica count for a single API
 	Replicas   int    `json:"replicas"`
 }
 
@@ -52,6 +50,10 @@ type APIStatus struct {
 // API is the Schema for the apis API
 // +k8s:openapi-gen=true
 // +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="INITIAL-REPLICAS",type=integer,JSONPath=`.spec.replicas`
+// +kubebuilder:printcolumn:name="Mode",type=string,JSONPath=`.spec.mode`
+// +kubebuilder:printcolumn:name="ENDPOINT",type=string,JSONPath=`.spec.apiEndPoint`
+// +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 type API struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
