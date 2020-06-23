@@ -18,7 +18,27 @@ a target endpoint of mode Private Jet.
 
 ### 1. Prerequisites
 
-#### 1.1. Prometheus Monitoring System
+#### 1.1. Kubernetes Metrics Server
+Metrics Server collects resource metrics from Kubelets and exposes them in Kubernetes apiserver through
+[Metrics API](https://github.com/kubernetes/metrics) for use by Horizontal Pod Autoscaler and Vertical Pod Autoscaler.
+
+- Install Metrics Server
+    ```sh
+    >> apictl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.3.6/components.yaml
+  
+    Output:
+    clusterrole.rbac.authorization.k8s.io/system:aggregated-metrics-reader created
+    clusterrolebinding.rbac.authorization.k8s.io/metrics-server:system:auth-delegator created
+    rolebinding.rbac.authorization.k8s.io/metrics-server-auth-reader created
+    apiservice.apiregistration.k8s.io/v1beta1.metrics.k8s.io created
+    serviceaccount/metrics-server created
+    deployment.apps/metrics-server created
+    service/metrics-server created
+    clusterrole.rbac.authorization.k8s.io/system:metrics-server created
+    clusterrolebinding.rbac.authorization.k8s.io/system:metrics-server created
+    ```
+
+#### 1.2. Prometheus Monitoring System
 First, we needs to install **Prometheus** monitoring system in the kubernetes cluster.
 Lets use the [Prometheus Operator](https://github.com/coreos/prometheus-operator/tree/v0.39.0) for this installation.
 
@@ -66,7 +86,7 @@ Lets use the [Prometheus Operator](https://github.com/coreos/prometheus-operator
 - Test the Prometheus deployment by visiting the url `http://<NODE-IP>:30900/graph`.
     ![Prometheus Dashboard](images/prometheus-dashboard.png)
 
-#### 1.2. Prometheus Adapter
+#### 1.3. Prometheus Adapter
 
 - Create namespace `custom-metrics`.
     ```sh
