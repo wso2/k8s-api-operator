@@ -82,7 +82,7 @@ Lets use the [Prometheus Operator](https://github.com/coreos/prometheus-operator
     ```
   
   In this sample we have defined the endpoint ports as `metrics` and `products` for metrics in the file
-  [service-monitor.yaml](prometheus/service-monitor.yaml). Name of the metrics port of **micro-gateway** is `metrics`.
+  [service-monitor.yaml](prometheus/service-monitor-backend.yaml). Name of the metrics port of **micro-gateway** is `metrics`.
   Make sure to add `metrics` as the port of **micro-gateway** when you are working on your samples.
     ```yaml
     kind: ServiceMonitor
@@ -99,7 +99,7 @@ Lets use the [Prometheus Operator](https://github.com/coreos/prometheus-operator
 
 - Create namespace `custom-metrics`.
     ```sh
-    >> kubectl create namespace custom-metrics
+    >> apictl create namespace custom-metrics
   
     Output:
     namespace/custom-metrics created
@@ -107,7 +107,7 @@ Lets use the [Prometheus Operator](https://github.com/coreos/prometheus-operator
 - Create service certificate. Follow [Serving Certificates, Authentication, and Authorization](https://github.com/kubernetes-sigs/apiserver-builder-alpha/blob/v1.18.0/docs/concepts/auth.md)
 to create serving certificate. For this sample we can use certs in the directory `prometheus-adapter/certs`. Create secret `cm-adapter-serving-certs` as follows.
     ```sh
-    >> kubectl create secret generic cm-adapter-serving-certs \
+    >> apictl create secret generic cm-adapter-serving-certs \
             --from-file=serving-ca.crt=prometheus-adapter/certs/serving-ca.crt \
             --from-file=serving-ca.key=prometheus-adapter/certs/serving-ca.key \
             -n custom-metrics
@@ -162,7 +162,7 @@ to create serving certificate. For this sample we can use certs in the directory
 
 - Test the Prometheus Adapter deployment executing follows.
     ```sh
-    >> kubectl get --raw /apis/custom.metrics.k8s.io/v1beta1
+    >> apictl get --raw /apis/custom.metrics.k8s.io/v1beta1
   
     Output:
     {"kind":"APIResourceList","apiVersion":"v1","groupVersion":"custom.metrics.k8s.io/v1beta1","resources":[]}
@@ -172,17 +172,30 @@ to create serving certificate. For this sample we can use certs in the directory
 
 #### 2.1. Configure Metrics
 
+- Enable observability in `controller-config`. Edit `<K8S_API_OPERATOR_HOME>controller-configs/controller_conf.yaml`
+as follows.
+    ```yaml
+    #Expose custom metrics. Default-> observabilityEnabled: "false"
+    observabilityEnabled: "true"
+    ```
+  
+    ```sh
+    >> apictl apply -f <K8S_API_OPERATOR_HOME>controller-configs/controller_conf.yaml
+    ```
+
 - For this sample let's make our custom metrics as follows.
     - Managed API: 0.2 http requests per second (i.e. 1 http request per 5 seconds)
-    
-      `http_requests_total_value_per_second = 200m`
+      ```yaml
+      http_requests_total_value_per_second = 200m
+      ```
       
     - Target Endpoint: 0.1 http requests per second (i.e. 1 http request per 10 seconds)
-    
-      `products_http_requests_total_per_second = 100m`
+      ```yaml
+      products_http_requests_total_per_second = 100m
+      ```
 
-- Update the configmap `hpa-configs` with metrics by editing the file `controller-configs/controller_conf.yaml` in
-distribution as follows.
+- Update the configmap `hpa-configs` with metrics by editing the file
+`<K8S_API_OPERATOR_HOME>controller-configs/controller_conf.yaml` in distribution as follows.
     ```yaml
     apiVersion: v1
     kind: ConfigMap
@@ -199,15 +212,15 @@ distribution as follows.
           resource:
             name: cpu
             target:
-                type: Utilization
-                averageUtilization: 50
-         - type: Pods
-           pods:
-             metric:
-                 name: http_requests_total_value_per_second
-             target:
-                 type: AverageValue
-                 averageValue: 200m
+              type: Utilization
+              averageUtilization: 50
+        - type: Pods
+          pods:
+            metric:
+              name: http_requests_total_value_per_second
+            target:
+              type: AverageValue
+              averageValue: 200m
     
       # Horizontal Pod Auto-Scaling for Target-Endpoints
       # Maximum number of replicas for the Horizontal Pod Auto-scale. Default->  maxReplicas: "5"
@@ -218,19 +231,19 @@ distribution as follows.
           resource:
             name: cpu
             target:
-                type: Utilization
-                averageUtilization: 50
+              type: Utilization
+              averageUtilization: 50
         - type: Pods
           pods:
             metric:
-                name: products_http_requests_total_per_second
+              name: products_http_requests_total_per_second
             target:
-                type: AverageValue
-                averageValue: 100m
+              type: AverageValue
+              averageValue: 100m
     ```
     
     ```sh
-    >> apictl apply -f controller-configs/controller_conf.yaml
+    >> apictl apply -f <K8S_API_OPERATOR_HOME>controller-configs/controller_conf.yaml
     ```
 
 #### 2.2. Deploy sample
@@ -251,9 +264,10 @@ In this swagger definition, the backend service of the "products" service and th
     x-wso2-mode: privateJet
     ```
 
-- Create API
+- Create API. We have created the `ServiceMonitor` with adding label `app: <API_NAME>` in `matchLabels` where API_NAME
+is products. So we should create the API with that name. 
     ```sh
-    >> apictl add api -n products-pj --from-file=swagger.yaml --override
+    >> apictl add api -n products --from-file=swagger.yaml --override
 
     Output:
     creating configmap with swagger definition
@@ -336,14 +350,19 @@ In this swagger definition, the backend service of the "products" service and th
     >> apictl get hpa;
   
     Output:
-    
+    NAME                  REFERENCE                        TARGETS             MINPODS   MAXPODS   REPLICAS   AGE
+    products              Deployment/products              100m/200m, 5%/50%   1         5         3          4m42s
+    products-privatejet   Deployment/products-privatejet   33m/100m, 5%/50%    1         6         3          6m
     ```
+    **NOTE:** Wait for fem minutes if the metrics values is `<unknown>`.
+
+- Decrease and increase the `PERIOD` value and do the previous step to see the effect of HPA.
 
 ### 3. Cleanup
 
 - Delete the API and the sample backend service (Target Endpoint resource)
-    ```
-    >> apictl delete api products-pj
+    ```sh
+    >> apictl delete api products
     >> apictl delete targetendpoints products-privatejet
 
     Output:
