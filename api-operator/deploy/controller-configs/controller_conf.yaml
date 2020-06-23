@@ -26,10 +26,6 @@ data:
   mgwRuntimeImg: wso2/wso2micro-gw:3.2.0-alpha
   #kaniko image for the kaniko pod which builds the mgw api runtime and pushes to the registry
   kanikoImg: gcr.io/kaniko-project/executor:v0.18.0
-  #Maximum number of replicas for the Horizontal Pod Auto-scale. Default->  hpaMaxReplicas: "5"
-  hpaMaxReplicas: "5"
-  #Avg CPU utilization(%) to spin up the next pod.  Default->  hpaTargetAverageUtilizationCPU: "50"
-  hpaTargetAverageUtilizationCPU: "50"
   #Required CPU usage for pods.   Default-> resourceRequestCPU: "1000m"
   resourceRequestCPU: "1000m"
   #Required Memory usage pods can use.   Default->  resourceRequestMemory: "512Mi"
@@ -105,20 +101,20 @@ data:
   # Metrics configurations
   mgwMetrics: |
     - type: Resource
-        resource:
+      resource:
         name: cpu
         target:
             type: Utilization
             averageUtilization: 50
     # - type: Pods
-    #     pods:
+    #   pods:
     #     metric:
     #         name: http_requests_total_value_per_second
     #     target:
     #         type: AverageValue
     #         averageValue: 100m
     # - type: Object
-    #     object:
+    #   object:
     #     metric:
     #         name: requests-per-second
     #     describedObject:
@@ -135,29 +131,11 @@ data:
   # Metrics configurations
   targetEndpointMetrics: |
     - type: Resource
-        resource:
+      resource:
         name: cpu
         target:
             type: Utilization
             averageUtilization: 50
-    - type: Pods
-        pods:
-        metric:
-            name: http_requests_total_value_per_second
-        target:
-            type: AverageValue
-            averageValue: 100m
-    # - type: Object
-    #     object:
-    #     metric:
-    #         name: requests-per-second
-    #     describedObject:
-    #         apiVersion: networking.k8s.io/v1beta1
-    #         kind: Ingress
-    #         name: main-route
-    #     target:
-    #         type: Value
-    #         value: 10k
 
 ---
 apiVersion: v1
