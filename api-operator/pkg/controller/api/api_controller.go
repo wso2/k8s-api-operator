@@ -396,10 +396,21 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	// if kaniko job started (i.e. not nil)
 	if kanikoJob != nil {
 		// check for kaniko completion
-		for t := 30; kanikoJob.Status.Succeeded == 0 && t > 0; t -= 5 {
-			reqLogger.Info("Kaniko job is still not completed", "retry_interval_seconds", t, "job_status", kanikoJob.Status)
-			time.Sleep(time.Duration(t * 1e9)) // t seconds (i.e. t * 1e9 nano seconds)
-			_ = k8s.Get(&r.client, types.NamespacedName{Namespace: kanikoJob.Namespace, Name: kanikoJob.Name}, kanikoJob)
+		for t := 40; kanikoJob.Status.Succeeded == 0 && t > 0; t -= 1 {
+			reqLogger.Info("Kaniko job is still not completed",
+				"retry_interval_seconds", "3 seconds", "requeue_step_within", t, "job_status", kanikoJob.Status)
+			// sleep 3 seconds
+			time.Sleep(3 * time.Second)
+			// refresh Kaniko job status
+			if err := k8s.Get(&r.client, types.NamespacedName{Namespace: kanikoJob.Namespace, Name: kanikoJob.Name},
+				kanikoJob); err != nil {
+				if errors.IsNotFound(err) {
+					reqLogger.Info("Kaniko job is not found, API has been deleted")
+					return reconcile.Result{}, nil
+				}
+				reqLogger.Error(err, "Error getting Kaniko job, requeue request")
+				return reconcile.Result{}, err
+			}
 		}
 
 		if kanikoJob.Status.Succeeded == 0 {
