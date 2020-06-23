@@ -1,4 +1,4 @@
-## Scenario 19 - Horizontal pod auto-scaling with custom-metrics
+## Scenario 20 - Horizontal pod auto-scaling with custom-metrics
 - This scenario describes how to auto-scale backend or managed API horizontally based on custom metrics.
 - Prometheus will be used as the monitoring system for custom metrics.
 - Metrics for backend and the managed API can be separately configured.
@@ -143,8 +143,8 @@ to create serving certificate. For this sample we can use certs in the directory
 
 #### 2.1. Deploy sample
 
-- Navigate to `scenarios/scenario-19` directory and deploy the sample backend service using the following command.
-    ```
+- Navigate to `scenarios/scenario-20` directory and deploy the sample backend service using the following command.
+    ```sh
     >> apictl apply -f products-privatejet.yaml
     
     Output:
@@ -154,17 +154,16 @@ to create serving certificate. For this sample we can use certs in the directory
 Backend endpoint of the API should be mentioned in the swagger file with the "x-wso2-production-endpoints" extension.
 The mode of managed API (private jet or sidecar) also has to be mentioned in the swagger with the "x-wso2-mode" extension.
 In this swagger definition, the backend service of the "products" service and the managed API mode have been mentioned as follows.
-    ```
+    ```yaml
     x-wso2-production-endpoints: products-privatejet
     x-wso2-mode: privateJet
     ```
 
 - Create API
-    ```
+    ```sh
     >> apictl add api -n products-pj --from-file=swagger.yaml --override
 
     Output:
-    Processing swagger 1: swagger.yaml
     creating configmap with swagger definition
     configmap/products-pj-swagger created
     api.wso2.com/products-pj created
@@ -173,7 +172,7 @@ In this swagger definition, the backend service of the "products" service and th
   **Note:** When you use the --override flag, it builds the docker image and pushes to the docker registry although it is available in the docker registry. If you are using AWS ECR as the registry type, delete the image of the API.
     
 - Get available API
-    ```
+    ```sh
     >> apictl get apis
 
     Output:   
@@ -195,22 +194,6 @@ In this swagger definition, the backend service of the "products" service and th
     - You can see both the backend(products-privatejet) service and the managed API service(product-pj) is available.
     - Get the external IP of the managed API's service.
  
-- Invoking the API
-    ```sh
-    TOKEN=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6Ik5UZG1aak00WkRrM05qWTBZemM1TW1abU9EZ3dNVEUzTVdZd05ERTVNV1JsWkRnNE56YzRaQT09In0.eyJhdWQiOiJodHRwOlwvXC9vcmcud3NvMi5hcGltZ3RcL2dhdGV3YXkiLCJzdWIiOiJhZG1pbkBjYXJib24uc3VwZXIiLCJhcHBsaWNhdGlvbiI6eyJvd25lciI6ImFkbWluIiwidGllciI6IjEwUGVyTWluIiwibmFtZSI6InNhbXBsZS1jcmQtYXBwbGljYXRpb24iLCJpZCI6NCwidXVpZCI6bnVsbH0sInNjb3BlIjoiYW1fYXBwbGljYXRpb25fc2NvcGUgZGVmYXVsdCIsImlzcyI6Imh0dHBzOlwvXC93c28yYXBpbTozMjAwMVwvb2F1dGgyXC90b2tlbiIsInRpZXJJbmZvIjp7fSwia2V5dHlwZSI6IlBST0RVQ1RJT04iLCJzdWJzY3JpYmVkQVBJcyI6W10sImNvbnN1bWVyS2V5IjoieF8xal83MW11dXZCb01SRjFLZnVLdThNOVVRYSIsImV4cCI6MzczMTQ5Mjg2MSwiaWF0IjoxNTg0MDA5MjE0LCJqdGkiOiJkYTA5Mjg2Yy03OGEzLTQ4YjgtYmFiNy1hYWZiYzhiMTUxNTQifQ.MKmGDwh855NrZ2wOvXO7TwFbCtsgsOFuoZW4DBVIbJ1KQ2F6TgTgBbtzBUvrYGPslEExMemhepfvvlYv8Gd6MMo3GVH4aO8AKyc8gHmeIQ8MQtXGn7u9N00ZW3_9JWaQkU-OYEDsLHvKKHzO0t2umaskSyCS2UkAS4wIT_szZ5sm-O-ez4nKGeJmESiV-1EchFjOhLpEH4p9wIj3MlKnZrIcJByRKK9ZGaHBqxwwYuJtMCDNa2wFAPMOh-45eabIUdo1KUO3gZLVcME93aza1t1jzL9mFsx0LGaXIxB7klrDuBCAdG9Yi3O7-3WUF74QaS2tmCxW36JhhOJ5DdacfQ
-    ```
-   
-    ```sh
-    >> curl -X GET "https://<external IP of LB service>:9095/storepj/v1/products" -H "Authorization:Bearer $TOKEN" -k
-
-    Output:
-    [{"productId":101,"name":"Apples","category":"Food","price":1.49},
-    {"productId":102,"name":"Macaroni & Cheese","category":"Food","price":7.69},
-    {"productId":102,"name":"ABC Smart TV","category":"Electronics","price":399.99},
-    {"productId":104,"name":"Motor Oil","category":"Automobile","price":22.88},
-    {"productId":105,"name":"Floral Sleeveless Blouse","category":"Clothing","price":21.5}]
-    ```
-    
 - List the pods and check how the backend services and the managed API have been deployed
 
     ```
@@ -222,6 +205,47 @@ In this swagger definition, the backend service of the "products" service and th
     products-privatejet-6777d6f5bc-k88sl   1/1     Running   0          25m
     ```
 
+- Invoking the API
+    ```sh
+    TOKEN=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6Ik5UZG1aak00WkRrM05qWTBZemM1TW1abU9EZ3dNVEUzTVdZd05ERTVNV1JsWkRnNE56YzRaQT09In0.eyJhdWQiOiJodHRwOlwvXC9vcmcud3NvMi5hcGltZ3RcL2dhdGV3YXkiLCJzdWIiOiJhZG1pbkBjYXJib24uc3VwZXIiLCJhcHBsaWNhdGlvbiI6eyJvd25lciI6ImFkbWluIiwidGllciI6IjEwUGVyTWluIiwibmFtZSI6InNhbXBsZS1jcmQtYXBwbGljYXRpb24iLCJpZCI6NCwidXVpZCI6bnVsbH0sInNjb3BlIjoiYW1fYXBwbGljYXRpb25fc2NvcGUgZGVmYXVsdCIsImlzcyI6Imh0dHBzOlwvXC93c28yYXBpbTozMjAwMVwvb2F1dGgyXC90b2tlbiIsInRpZXJJbmZvIjp7fSwia2V5dHlwZSI6IlBST0RVQ1RJT04iLCJzdWJzY3JpYmVkQVBJcyI6W10sImNvbnN1bWVyS2V5IjoieF8xal83MW11dXZCb01SRjFLZnVLdThNOVVRYSIsImV4cCI6MzczMTQ5Mjg2MSwiaWF0IjoxNTg0MDA5MjE0LCJqdGkiOiJkYTA5Mjg2Yy03OGEzLTQ4YjgtYmFiNy1hYWZiYzhiMTUxNTQifQ.MKmGDwh855NrZ2wOvXO7TwFbCtsgsOFuoZW4DBVIbJ1KQ2F6TgTgBbtzBUvrYGPslEExMemhepfvvlYv8Gd6MMo3GVH4aO8AKyc8gHmeIQ8MQtXGn7u9N00ZW3_9JWaQkU-OYEDsLHvKKHzO0t2umaskSyCS2UkAS4wIT_szZ5sm-O-ez4nKGeJmESiV-1EchFjOhLpEH4p9wIj3MlKnZrIcJByRKK9ZGaHBqxwwYuJtMCDNa2wFAPMOh-45eabIUdo1KUO3gZLVcME93aza1t1jzL9mFsx0LGaXIxB7klrDuBCAdG9Yi3O7-3WUF74QaS2tmCxW36JhhOJ5DdacfQ
+    ```
+   
+    ```sh
+    >> curl -X GET "https://<EXTERNAL_IP_OF_LB_SERVICE>:9095/prodapi/v1/products" -H "Authorization:Bearer $TOKEN" -k
+
+    Output:
+    [{"productId":101,"name":"Apples","category":"Food","price":1.49},
+    {"productId":102,"name":"Macaroni & Cheese","category":"Food","price":7.69},
+    {"productId":102,"name":"ABC Smart TV","category":"Electronics","price":399.99},
+    {"productId":104,"name":"Motor Oil","category":"Automobile","price":22.88},
+    {"productId":105,"name":"Floral Sleeveless Blouse","category":"Clothing","price":21.5}]
+    ```
+
+- Test HPA
+    Lets make `IP` as the external IP of the LB service and `PERIOD` as waiting period in seconds to send requests
+    periodically.
+    ```sh
+    >> TOKEN=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6Ik5UZG1aak00WkRrM05qWTBZemM1TW1abU9EZ3dNVEUzTVdZd05ERTVNV1JsWkRnNE56YzRaQT09In0.eyJhdWQiOiJodHRwOlwvXC9vcmcud3NvMi5hcGltZ3RcL2dhdGV3YXkiLCJzdWIiOiJhZG1pbkBjYXJib24uc3VwZXIiLCJhcHBsaWNhdGlvbiI6eyJvd25lciI6ImFkbWluIiwidGllciI6IjEwUGVyTWluIiwibmFtZSI6InNhbXBsZS1jcmQtYXBwbGljYXRpb24iLCJpZCI6NCwidXVpZCI6bnVsbH0sInNjb3BlIjoiYW1fYXBwbGljYXRpb25fc2NvcGUgZGVmYXVsdCIsImlzcyI6Imh0dHBzOlwvXC93c28yYXBpbTozMjAwMVwvb2F1dGgyXC90b2tlbiIsInRpZXJJbmZvIjp7fSwia2V5dHlwZSI6IlBST0RVQ1RJT04iLCJzdWJzY3JpYmVkQVBJcyI6W10sImNvbnN1bWVyS2V5IjoieF8xal83MW11dXZCb01SRjFLZnVLdThNOVVRYSIsImV4cCI6MzczMTQ5Mjg2MSwiaWF0IjoxNTg0MDA5MjE0LCJqdGkiOiJkYTA5Mjg2Yy03OGEzLTQ4YjgtYmFiNy1hYWZiYzhiMTUxNTQifQ.MKmGDwh855NrZ2wOvXO7TwFbCtsgsOFuoZW4DBVIbJ1KQ2F6TgTgBbtzBUvrYGPslEExMemhepfvvlYv8Gd6MMo3GVH4aO8AKyc8gHmeIQ8MQtXGn7u9N00ZW3_9JWaQkU-OYEDsLHvKKHzO0t2umaskSyCS2UkAS4wIT_szZ5sm-O-ez4nKGeJmESiV-1EchFjOhLpEH4p9wIj3MlKnZrIcJByRKK9ZGaHBqxwwYuJtMCDNa2wFAPMOh-45eabIUdo1KUO3gZLVcME93aza1t1jzL9mFsx0LGaXIxB7klrDuBCAdG9Yi3O7-3WUF74QaS2tmCxW36JhhOJ5DdacfQ
+    IP=<EXTERNAL_IP_OF_LB_SERVICE>
+    PERIOD=5
+    ```
+    Send requests periodically.
+    ```sh
+    >> echo "Start sending requests"
+    i=1
+    while true; do
+      printf "\nREQUST: %s and SLEEP %s seconds ------------------------------------------------\n" ${i} ${PERIOD};
+      i=$((i+1)) ;
+      curl -X GET "https://${IP}:9095/prodapi/v1/products" -H "Authorization:Bearer $TOKEN" -k & sleep ${PERIOD};
+    done
+    ```
+    Open a new terminal and execute following to get HPA details
+    ```sh
+    >> apictl get hpa;
+  
+    Output:
+    
+    ```
 
 ### 3. Cleanup
 - Delete the API and the sample backend service (Target Endpoint resource)
