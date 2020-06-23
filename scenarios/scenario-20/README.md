@@ -1,4 +1,5 @@
 ## Scenario 20 - Horizontal pod auto-scaling with custom-metrics
+
 - This scenario describes how to auto-scale backend or managed API horizontally based on custom metrics.
 - Prometheus will be used as the monitoring system for custom metrics.
 - Metrics for backend and the managed API can be separately configured.
@@ -11,20 +12,25 @@ a target endpoint of mode Private Jet.
 - Then we would refer the backend in the swagger file and set the `private jet` mode in the swagger file.
 - Later we will deploy the API using the swagger definition.
 
- ***Important:***
+### 1. Prerequisites
+ 
+***Important:***
 > Follow the main README and deploy the api-operator and configuration files.
 > Make sure to set the analyticsEnabled to "true" and deploy analytics secret with credentials to analytics server and
 > certificate, if you want to check analytics.
 
-### 1. Prerequisites
-
 #### 1.1. Kubernetes Metrics Server
-Metrics Server collects resource metrics from Kubelets and exposes them in Kubernetes apiserver through
-[Metrics API](https://github.com/kubernetes/metrics) for use by Horizontal Pod Autoscaler and Vertical Pod Autoscaler.
+
+[Metrics Server](https://github.com/kubernetes-sigs/metrics-server) collects resource metrics from Kubelets and exposes
+them in Kubernetes apiserver through [Metrics API](https://github.com/kubernetes/metrics)
+for use by Horizontal Pod Autoscaler and Vertical Pod Autoscaler
 
 - Install Metrics Server
+
+    **NOTE:** This installation only required in local setup, if you using GKE, EKS cluster you do not need to install
+    following.
     ```sh
-    >> apictl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.3.6/components.yaml
+    >> apictl apply -f metrics-server/metrics-server-components-0.3.6.yaml
   
     Output:
     clusterrole.rbac.authorization.k8s.io/system:aggregated-metrics-reader created
@@ -39,10 +45,12 @@ Metrics Server collects resource metrics from Kubelets and exposes them in Kuber
     ```
 
 #### 1.2. Prometheus Monitoring System
+
 First, we needs to install **Prometheus** monitoring system in the kubernetes cluster.
 Lets use the [Prometheus Operator](https://github.com/coreos/prometheus-operator/tree/v0.39.0) for this installation.
 
 - Install Prometheus Operator (version 0.39 for this sample) in Kubernetes cluster.
+
     ```sh
     >> apictl apply -f https://raw.githubusercontent.com/coreos/prometheus-operator/v0.39.0/bundle.yaml
   
@@ -72,6 +80,7 @@ Lets use the [Prometheus Operator](https://github.com/coreos/prometheus-operator
     servicemonitor.monitoring.coreos.com/products created
     service/prometheus created
     ```
+  
   In this sample we have defined the endpoint ports as `metrics` and `products` for metrics in the file
   [service-monitor.yaml](prometheus/service-monitor.yaml). Name of the metrics port of **micro-gateway** is `metrics`.
   Make sure to add `metrics` as the port of **micro-gateway** when you are working on your samples.
@@ -216,7 +225,7 @@ In this swagger definition, the backend service of the "products" service and th
  
 - List the pods and check how the backend services and the managed API have been deployed
 
-    ```
+    ```sh
     >> apictl get pods        
 
     Output:
@@ -268,6 +277,7 @@ In this swagger definition, the backend service of the "products" service and th
     ```
 
 ### 3. Cleanup
+
 - Delete the API and the sample backend service (Target Endpoint resource)
     ```
     >> apictl delete api products-pj
@@ -280,4 +290,8 @@ In this swagger definition, the backend service of the "products" service and th
 
 ### References
 
-- Prometheus Operator - https://github.com/coreos/prometheus-operator/tree/v0.39.0
+- Horizontal Pod Autoscale: https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/
+- Metrics Server: https://github.com/kubernetes-sigs/metrics-server
+- Prometheus Operator: https://github.com/coreos/prometheus-operator/tree/v0.39.0
+- Prometheus Adapter: https://github.com/DirectXMan12/k8s-prometheus-adapter/tree/v0.7.0
+- Serving Certificate: https://github.com/kubernetes-sigs/apiserver-builder-alpha/blob/master/docs/concepts/auth.md
