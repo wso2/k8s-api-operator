@@ -58,13 +58,13 @@ const (
 	logLevelConst                       = "logLevel"
 	httpPortConst                       = "httpPort"
 	httpsPortConst                      = "httpsPort"
-	enabledAPIKeyIssuerConst			= "enabledAPIKeyIssuer"
-	apiKeyKeystorePathConst				= "apiKeyKeystorePath"
-	apiKeyKeystorePasswordConst			= "apiKeyKeystorePassword"
-	apiKeyIssuerNameConst				= "apiKeyIssuerName"
-	apiKeyIssuerCertificateAliasConst	= "apiKeyIssuerCertificateAlias"
-	validityTimeConst					= "validityTime"
-	allowedAPIsConst					= "allowedAPIs"
+	enabledAPIKeyIssuerConst            = "enabledAPIKeyIssuer"
+	apiKeyKeystorePathConst             = "apiKeyKeystorePath"
+	apiKeyKeystorePasswordConst         = "apiKeyKeystorePassword"
+	apiKeyIssuerNameConst               = "apiKeyIssuerName"
+	apiKeyIssuerCertificateAliasConst   = "apiKeyIssuerCertificateAlias"
+	validityTimeConst                   = "validityTime"
+	allowedAPIsConst                    = "allowedAPIs"
 )
 
 type Configuration struct {
@@ -117,12 +117,12 @@ type Configuration struct {
 	LogLevel string
 
 	//APIKeyIssuerConfig
-	EnabledAPIKeyIssuer				string
-	APIKeyKeystorePath				string
-	APIKeyKeystorePassword			string
-	APIKeyIssuerName				string
-	APIKeyIssuerCertificateAlias	string
-	ValidityTime					int32
+	EnabledAPIKeyIssuer          string
+	APIKeyKeystorePath           string
+	APIKeyKeystorePassword       string
+	APIKeyIssuerName             string
+	APIKeyIssuerCertificateAlias string
+	ValidityTime                 int32
 
 	// APIKeyTokenConfig
 	APIKeyConfigs *[]APIKeyTokenConfig
@@ -139,10 +139,10 @@ type JwtTokenConfig struct {
 }
 
 type APIKeyTokenConfig struct {
-	APIKeyCertificateAlias	string
-	APIKeyIssuer			string
-	APIKeyAudience			string
-	ValidateAllowedAPIs		bool
+	APIKeyCertificateAlias string
+	APIKeyIssuer           string
+	APIKeyAudience         string
+	ValidateAllowedAPIs    bool
 }
 
 type APIKeyTokenAllowedAPIs []map[string]string
@@ -205,20 +205,20 @@ var Configs = &Configuration{
 	LogLevel: "INFO",
 
 	//APIKeyIssuerConfig
-	EnabledAPIKeyIssuer:			"true",
-	APIKeyKeystorePath:				"${mgw-runtime.home}/runtime/bre/security/ballerinaKeystore.p12",
-	APIKeyKeystorePassword:			"ballerina",
-	APIKeyIssuerName:				"https://localhost:9095/apikey",
-	APIKeyIssuerCertificateAlias:	"ballerina",
-	ValidityTime:					-1,
+	EnabledAPIKeyIssuer:          "true",
+	APIKeyKeystorePath:           "${mgw-runtime.home}/runtime/bre/security/ballerinaKeystore.p12",
+	APIKeyKeystorePassword:       "ballerina",
+	APIKeyIssuerName:             "https://localhost:9095/apikey",
+	APIKeyIssuerCertificateAlias: "ballerina",
+	ValidityTime:                 -1,
 
 	// APIKeyTokenConfig
 	APIKeyConfigs: &[]APIKeyTokenConfig{
 		{
-			APIKeyCertificateAlias:	"ballerina",
-			APIKeyIssuer:			"https://localhost:9095/apikey",
+			APIKeyCertificateAlias: "ballerina",
+			APIKeyIssuer:           "https://localhost:9095/apikey",
 			APIKeyAudience:         "http://org.wso2.apimgt/gateway",
-			ValidateAllowedAPIs:	false,
+			ValidateAllowedAPIs:    false,
 		},
 	},
 }
@@ -259,8 +259,8 @@ func SetApimConfigs(client *client.Client) error {
 		Configs.ValidityTime = int32(validityTime)
 	}
 	var apiKeyTokenIssuerAPIs APIKeyTokenAllowedAPIs
-	 _ = yaml.Unmarshal([]byte(apimConfig.Data[allowedAPIsConst]), &apiKeyTokenIssuerAPIs)
-	 logConf.Info("API KEY", "apiKeyTokenAPIS", apiKeyTokenIssuerAPIs)
+	_ = yaml.Unmarshal([]byte(apimConfig.Data[allowedAPIsConst]), &apiKeyTokenIssuerAPIs)
+	logConf.Info("API KEY", "apiKeyTokenAPIS", apiKeyTokenIssuerAPIs)
 	Configs.APIKeyAllowedAPIs = apiKeyTokenIssuerAPIs
 	httpPort, err := strconv.Atoi(apimConfig.Data[httpPortConst])
 	if err != nil {
