@@ -236,10 +236,12 @@ data:
         issuer = "{{$.APIKeyIssuerName}}"
         certificateAlias = "{{$.APIKeyIssuerCertificateAlias}}"
         validityTime = {{$.ValidityTime}}
-        {{range .APIKeyAllowedAPIs}}
+        {{range $allowedAPI := .APIKeyAllowedAPIs}}
+          {{range $allowedAPIName, $allowedAPIVersions := $allowedAPI}}
         [[apikey.issuer.api]]
-          name = "{{.AllowedAPIName}}"
-          versions = "{{.AllowedAPIVersions}}"
+          name = "{{$allowedAPIName}}"
+          versions = "{{$allowedAPIVersions}}"
+          {{end}}
         {{end}}
 
     # Throttling configurations

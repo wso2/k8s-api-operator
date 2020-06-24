@@ -98,12 +98,8 @@ data:
   apiKeyIssuerCertificateAlias: "ballerina"
   validityTime: "-1"
   #Provide the list of allowed APIs by the generated API Key
-  #allowedAPIs: |
-    #API name given in the API Definition: Allowed versions
   allowedAPIs: |
-    Petstore-Apikey: v1, v2, v3
-    Petstore-Apikeyy: v4
-
+  # - API name given in the API Definition: Allowed versions
 ---
 apiVersion: v1
 kind: ConfigMap

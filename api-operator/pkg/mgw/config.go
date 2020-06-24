@@ -20,13 +20,13 @@ import (
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/kaniko"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/str"
+	"gopkg.in/yaml.v2"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"strconv"
-	"strings"
 )
 
 var logConf = log.Log.WithName("mgw.config")
@@ -65,7 +65,6 @@ const (
 	apiKeyIssuerCertificateAliasConst	= "apiKeyIssuerCertificateAlias"
 	validityTimeConst					= "validityTime"
 	allowedAPIsConst 					= "allowedAPIs"
-
 )
 
 type Configuration struct {
@@ -129,7 +128,7 @@ type Configuration struct {
 	APIKeyConfigs *[]APIKeyTokenConfig
 
 	//APIKey Allowed API names and versions
-	APIKeyAllowedAPIs *[]APIKeyTokenAllowedAPIs
+	APIKeyAllowedAPIs APIKeyTokenAllowedAPIs
 }
 
 type JwtTokenConfig struct {
@@ -146,10 +145,7 @@ type APIKeyTokenConfig struct {
 	ValidateAllowedAPIs		bool
 }
 
-type APIKeyTokenAllowedAPIs struct {
-	AllowedAPIName 		string
-	AllowedAPIVersions 	string
-}
+type APIKeyTokenAllowedAPIs []map[string]string
 
 // mgw configs with default values
 var Configs = &Configuration{
@@ -225,14 +221,6 @@ var Configs = &Configuration{
 			ValidateAllowedAPIs:    false,
 		},
 	},
-
-	//APIKey Allowed API names and versions
-	APIKeyAllowedAPIs: &[]APIKeyTokenAllowedAPIs{
-		{
-			AllowedAPIName: 	"Petstore-Apikey",
-			AllowedAPIVersions: "v1",
-		},
-	},
 }
 
 // SetApimConfigs sets the MGW configs from APIM configmap
@@ -270,18 +258,10 @@ func SetApimConfigs(client *client.Client) error {
 	} else {
 		Configs.ValidityTime = int32(validityTime)
 	}
-	var apiKeyTokenIssuerAPIs []APIKeyTokenAllowedAPIs
-	apiKeyIssuerAPIs := APIKeyTokenAllowedAPIs{}
-	splitArray := strings.Split(apimConfig.Data[allowedAPIsConst], "\n")
-	for _, element := range splitArray {
-		if element != "" && strings.ContainsAny(element, ":") {
-			splitValues := strings.Split(element, ":")
-			apiKeyIssuerAPIs.AllowedAPIName = strings.TrimSpace(splitValues[0])
-			apiKeyIssuerAPIs.AllowedAPIVersions = strings.TrimSpace(splitValues[1])
-			apiKeyTokenIssuerAPIs = append(apiKeyTokenIssuerAPIs, apiKeyIssuerAPIs)
-		}
-	}
-	Configs.APIKeyAllowedAPIs = &apiKeyTokenIssuerAPIs
+	var apiKeyTokenIssuerAPIs APIKeyTokenAllowedAPIs
+	 _ = yaml.Unmarshal([]byte(apimConfig.Data[allowedAPIsConst]), &apiKeyTokenIssuerAPIs)
+	 logConf.Info("API KEY", "apiKeyTokenAPIS", apiKeyTokenIssuerAPIs)
+	Configs.APIKeyAllowedAPIs = apiKeyTokenIssuerAPIs
 	httpPort, err := strconv.Atoi(apimConfig.Data[httpPortConst])
 	if err != nil {
 		logConf.Error(err, "Provided http port is not valid. Using the default port")

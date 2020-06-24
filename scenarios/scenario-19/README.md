@@ -24,14 +24,14 @@
     apiKeyIssuerCertificateAlias: "ballerina"
     validityTime: "-1"
     allowedAPIs: |
-      Petstore-Apikey: v1, v2, v3
+      - Petstore-Apikey: v1, v2, v3
     ```
 - You can configure the validity you can configure a validity period for the API key token in validityTime. The default value is -1 which indicates unlimited time. 
 
 - You can provide the list of allowed APIs by the generated API Key.
   ```
   allowedAPIs: |
-    API name given in the API Definition: Allowed versions of that API
+    - API name given in the API Definition: Allowed versions of that API
   ```
 - Apply the changes
    ```$xslt
