@@ -59,12 +59,12 @@ const (
 	httpPortConst                       = "httpPort"
 	httpsPortConst                      = "httpsPort"
 	enabledAPIKeyIssuerConst			= "enabledAPIKeyIssuer"
-    apiKeyKeystorePathConst       		= "apiKeyKeystorePath"
+	apiKeyKeystorePathConst				= "apiKeyKeystorePath"
 	apiKeyKeystorePasswordConst			= "apiKeyKeystorePassword"
 	apiKeyIssuerNameConst				= "apiKeyIssuerName"
 	apiKeyIssuerCertificateAliasConst	= "apiKeyIssuerCertificateAlias"
 	validityTimeConst					= "validityTime"
-	allowedAPIsConst 					= "allowedAPIs"
+	allowedAPIsConst					= "allowedAPIs"
 )
 
 type Configuration struct {
@@ -117,12 +117,12 @@ type Configuration struct {
 	LogLevel string
 
 	//APIKeyIssuerConfig
-	EnabledAPIKeyIssuer 		 string
-	APIKeyKeystorePath 			 string
-	APIKeyKeystorePassword 		 string
-	APIKeyIssuerName 			 string
-	APIKeyIssuerCertificateAlias string
-	ValidityTime 				 int32
+	EnabledAPIKeyIssuer				string
+	APIKeyKeystorePath				string
+	APIKeyKeystorePassword			string
+	APIKeyIssuerName				string
+	APIKeyIssuerCertificateAlias	string
+	ValidityTime					int32
 
 	// APIKeyTokenConfig
 	APIKeyConfigs *[]APIKeyTokenConfig
@@ -205,20 +205,20 @@ var Configs = &Configuration{
 	LogLevel: "INFO",
 
 	//APIKeyIssuerConfig
-	EnabledAPIKeyIssuer: 		  "true",
-	APIKeyKeystorePath: 	      "${mgw-runtime.home}/runtime/bre/security/ballerinaKeystore.p12",
-	APIKeyKeystorePassword:       "ballerina",
-	APIKeyIssuerName: 			  "https://localhost:9095/apikey",
-	APIKeyIssuerCertificateAlias: "ballerina",
-	ValidityTime: 				   -1,
+	EnabledAPIKeyIssuer:			"true",
+	APIKeyKeystorePath:				"${mgw-runtime.home}/runtime/bre/security/ballerinaKeystore.p12",
+	APIKeyKeystorePassword:			"ballerina",
+	APIKeyIssuerName:				"https://localhost:9095/apikey",
+	APIKeyIssuerCertificateAlias:	"ballerina",
+	ValidityTime:					-1,
 
 	// APIKeyTokenConfig
 	APIKeyConfigs: &[]APIKeyTokenConfig{
 		{
-			APIKeyCertificateAlias: "ballerina",
-			APIKeyIssuer:           "https://localhost:9095/apikey",
+			APIKeyCertificateAlias:	"ballerina",
+			APIKeyIssuer:			"https://localhost:9095/apikey",
 			APIKeyAudience:         "http://org.wso2.apimgt/gateway",
-			ValidateAllowedAPIs:    false,
+			ValidateAllowedAPIs:	false,
 		},
 	},
 }
