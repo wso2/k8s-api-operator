@@ -34,6 +34,8 @@ type securitySchemeStruct struct {
 	SecurityType string             `json:"type"`
 	Scheme       string             `json:"scheme,omitempty"`
 	Flows        *authorizationCode `json:"flows,omitempty"`
+	In			 string             `json:"in"`
+	Name         string             `json:"name"`
 }
 
 type authorizationCode struct {
@@ -46,25 +48,26 @@ type scopeSet struct {
 	Scopes           map[string]string `json:"scopes,omitempty"`
 }
 
-func Handle(client *client.Client, securityMap map[string][]string, userNameSpace string, secSchemeDefined bool) (map[string]securitySchemeStruct, *[]mgw.JwtTokenConfig, error) {
+func Handle(client *client.Client, securityMap map[string][]string, userNameSpace string, secSchemeDefined bool) (map[string]securitySchemeStruct, *[]mgw.JwtTokenConfig, *[]mgw.APIKeyTokenConfig, error) {
 	var securityDefinition = make(map[string]securitySchemeStruct)
 	//to add multiple certs with alias
 
 	var jwtConfArray []mgw.JwtTokenConfig
+	var apiKeyConfArray []mgw.APIKeyTokenConfig
 	securityInstance := &wso2v1alpha1.Security{}
 	var certificateSecret = k8s.NewSecret()
 	for secName, scopeList := range securityMap {
 		//retrieve security instances
 		errGetSec := k8s.Get(client, types.NamespacedName{Name: secName, Namespace: userNameSpace}, securityInstance)
 		if errGetSec != nil && errors.IsNotFound(errGetSec) {
-			return securityDefinition, &jwtConfArray, errGetSec
+			return securityDefinition, &jwtConfArray, &apiKeyConfArray,errGetSec
 		}
 		if strings.EqualFold(securityInstance.Spec.Type, oauthConst) {
 			for _, securityConf := range securityInstance.Spec.SecurityConfig {
 				errc := k8s.Get(client, types.NamespacedName{Name: securityConf.Certificate, Namespace: userNameSpace}, certificateSecret)
 				if errc != nil && errors.IsNotFound(errc) {
 					logSec.Info("defined certificate is not found")
-					return securityDefinition, &jwtConfArray, errc
+					return securityDefinition, &jwtConfArray, &apiKeyConfArray, errc
 				} else {
 					logSec.Info("defined certificate successfully retrieved")
 				}
@@ -108,7 +111,7 @@ func Handle(client *client.Client, securityMap map[string][]string, userNameSpac
 				errc := k8s.Get(client, types.NamespacedName{Name: securityConf.Certificate, Namespace: userNameSpace}, certificateSecret)
 				if errc != nil && errors.IsNotFound(errc) {
 					logSec.Info("defined certificate is not found")
-					return securityDefinition, &jwtConfArray, errc
+					return securityDefinition, &jwtConfArray, &apiKeyConfArray,errc
 				} else {
 					logSec.Info("defined certificate successfully retrieved")
 				}
@@ -126,6 +129,31 @@ func Handle(client *client.Client, securityMap map[string][]string, userNameSpac
 
 				logSec.Info("certificate issuer", "issuer", jwtConf.Issuer)
 				jwtConfArray = append(jwtConfArray, jwtConf)
+			}
+		}
+		if strings.EqualFold(securityInstance.Spec.Type, apiKeyConst) {
+			logSec.Info("retrieving data for security type APIKey")
+			for _, securityConf := range securityInstance.Spec.SecurityConfig {
+				apiKeyConf := mgw.APIKeyTokenConfig{}
+				if !secSchemeDefined {
+					//creating security scheme
+					scheme := securitySchemeStruct{
+						SecurityType: apiKeyConst,
+						In: apiKeyIn,
+						Name: apiKeyName,
+					}
+					securityDefinition[secName] = scheme
+				}
+				apiKeyConf.APIKeyCertificateAlias = securityConf.Alias
+				apiKeyConf.ValidateAllowedAPIs = securityConf.ValidateAllowedAPIs
+				if securityConf.Issuer != "" {
+					apiKeyConf.APIKeyIssuer = securityConf.Issuer
+				}
+				if securityConf.Audience != "" {
+					apiKeyConf.APIKeyAudience = securityConf.Audience
+				}
+				logSec.Info("certificate issuer", "issuer", apiKeyConf.APIKeyIssuer)
+				apiKeyConfArray = append(apiKeyConfArray, apiKeyConf)
 			}
 		}
 		if strings.EqualFold(securityInstance.Spec.Type, basicSecurityAndScheme) {
@@ -150,5 +178,5 @@ func Handle(client *client.Client, securityMap map[string][]string, userNameSpac
 			}
 		}
 	}
-	return securityDefinition, &jwtConfArray, nil
+	return securityDefinition, &jwtConfArray, &apiKeyConfArray,nil
 }

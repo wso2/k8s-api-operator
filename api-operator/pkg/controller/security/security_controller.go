@@ -117,8 +117,8 @@ func (r *ReconcileSecurity) Reconcile(request reconcile.Request) (reconcile.Resu
 	if strings.EqualFold(instance.Spec.Type, "JWT") {
 		for _, securityConfig := range instance.Spec.SecurityConfig {
 			if securityConfig.Issuer == "" || securityConfig.Audience == "" {
-				reqLogger.Info("Required fields are missing")
-				return reconcile.Result{}, nil
+				reqLogger.Error(err, "Required fields are missing")
+				return reconcile.Result{}, err
 			}
 			certificateSecret := &corev1.Secret{}
 			errcertificate := r.client.Get(context.TODO(), types.NamespacedName{Name: securityConfig.Certificate, Namespace: userNamespace}, certificateSecret)
@@ -130,11 +130,20 @@ func (r *ReconcileSecurity) Reconcile(request reconcile.Request) (reconcile.Resu
 		}
 	}
 
+	if strings.EqualFold(instance.Spec.Type, "apiKey") {
+		for _, securityConfig := range instance.Spec.SecurityConfig {
+			if securityConfig.Issuer == "" || securityConfig.Audience == "" || securityConfig.Alias == "" {
+				reqLogger.Error(err, "Required fields are missing")
+				return reconcile.Result{}, err
+			}
+		}
+	}
+
 	if strings.EqualFold(instance.Spec.Type, "Oauth") {
 		for _, securityConfig := range instance.Spec.SecurityConfig {
 			if securityConfig.Credentials == "" || securityConfig.Endpoint == "" {
-				reqLogger.Info("required fields are missing")
-				return reconcile.Result{}, nil
+				reqLogger.Error(err, "Required fields are missing")
+				return reconcile.Result{}, err
 			}
 			credentialSecret := &corev1.Secret{}
 			errcertificate := r.client.Get(context.TODO(), types.NamespacedName{Name: securityConfig.Credentials, Namespace: userNamespace}, credentialSecret)
@@ -150,8 +159,8 @@ func (r *ReconcileSecurity) Reconcile(request reconcile.Request) (reconcile.Resu
 	if strings.EqualFold(instance.Spec.Type, "Basic") {
 		for _, securityConfig := range instance.Spec.SecurityConfig {
 			if securityConfig.Credentials == "" {
-				reqLogger.Info("required field credentials are missing")
-				return reconcile.Result{}, nil
+				reqLogger.Error(err, "Required fields are missing")
+				return reconcile.Result{}, err
 			}
 		}
 	}

@@ -24,6 +24,9 @@ const (
 	basicSecurityAndScheme = "basic"
 	jwtConst               = "JWT"
 	oauthConst             = "Oauth"
+	apiKeyConst            = "apiKey"
+	apiKeyIn			   = "header"
+	apiKeyName			   = "api_key"
 )
 
 const (

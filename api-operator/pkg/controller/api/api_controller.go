@@ -259,16 +259,16 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			return reconcile.Result{}, securityErr
 		}
 
-		securityDefinition, jwtConfArray, errSec := security.Handle(&r.client, securityMap, userNamespace, secSchemeDefined)
+		securityDefinition, jwtConfArray, apiKeyConfArray,errSec := security.Handle(&r.client, securityMap, userNamespace, secSchemeDefined)
 		if errSec != nil {
 			return reconcile.Result{}, errSec
 		}
 		mgw.Configs.JwtConfigs = jwtConfArray
+		mgw.Configs.APIKeyConfigs = apiKeyConfArray
 		//adding security scheme to swagger
 		if len(securityDefinition) > 0 {
 			swaggerDoc.Components.Extensions[swagger.SecuritySchemeExtension] = securityDefinition
 		}
-
 		// mount formatted swagger to kaniko job
 		formattedSwagger := swagger.PrettyString(swaggerDoc)
 		formattedSwaggerCmName := swaggerCmName + "-mgw"
