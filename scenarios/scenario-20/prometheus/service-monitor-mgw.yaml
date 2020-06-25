@@ -17,7 +17,7 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: products-backend
+  name: products-mgw
   labels:
     team: products
 spec:

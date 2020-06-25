@@ -82,6 +82,7 @@ spec:
                 should be the port of the target endpoint which is referred in swagger
                 definition.
               items:
+                description: Port represents ports of the Target Endpoint
                 properties:
                   name:
                     description: The name of this port within the service. This must
@@ -104,8 +105,8 @@ spec:
               type: array
           required:
           - applicationProtocol
-          - ports
           - deploy
+          - ports
           type: object
         status:
           description: TargetEndpointStatus defines the observed state of TargetEndpoint
