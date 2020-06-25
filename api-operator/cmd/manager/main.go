@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	v1 "k8s.io/api/core/v1"
 	"os"
 	"runtime"
 
@@ -13,17 +14,16 @@ import (
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/apis"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/controller"
 
+	routv1 "github.com/openshift/api/route/v1"
 	"github.com/operator-framework/operator-sdk/pkg/leader"
 	"github.com/operator-framework/operator-sdk/pkg/log/zap"
 	"github.com/operator-framework/operator-sdk/pkg/metrics"
-	"github.com/operator-framework/operator-sdk/pkg/restmapper"
 	sdkVersion "github.com/operator-framework/operator-sdk/version"
 	"github.com/spf13/pflag"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
-	routv1 "github.com/openshift/api/route/v1"
 )
 
 // Change below variables to serve metrics on different host or port.
@@ -78,10 +78,11 @@ func main() {
 		os.Exit(1)
 	}
 
+	//setMapper, err := util.NewDynamicRESTMapper(cfg)
+
 	// Create a new Cmd to provide shared dependencies and start components
 	mgr, err := manager.New(cfg, manager.Options{
 		Namespace:          "",
-		MapperProvider:     restmapper.NewDynamicRESTMapper,
 		MetricsBindAddress: fmt.Sprintf("%s:%d", metricsHost, metricsPort),
 	})
 	if err != nil {
@@ -110,7 +111,7 @@ func main() {
 	}
 
 	// Create Service object to expose the metrics port.
-	_, err = metrics.ExposeMetricsPort(ctx, metricsPort)
+	_, err = metrics.CreateMetricsService(ctx, cfg, []v1.ServicePort{{Port: metricsPort}})
 	if err != nil {
 		log.Info(err.Error())
 	}

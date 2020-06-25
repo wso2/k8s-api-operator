@@ -19,6 +19,19 @@ kind: CustomResourceDefinition
 metadata:
   name: apis.wso2.com
 spec:
+  additionalPrinterColumns:
+  - JSONPath: .spec.replicas
+    name: INITIAL-REPLICAS
+    type: integer
+  - JSONPath: .spec.mode
+    name: Mode
+    type: string
+  - JSONPath: .spec.apiEndPoint
+    name: ENDPOINT
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    name: Age
+    type: date
   group: wso2.com
   names:
     kind: API
@@ -30,24 +43,27 @@ spec:
     status: {}
   validation:
     openAPIV3Schema:
+      description: API is the Schema for the apis API
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
             of an object. Servers should convert recognized schemas to the latest
-            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
           type: string
         kind:
           description: 'Kind is a string value representing the REST resource this
             object represents. Servers may infer this from the endpoint the client
-            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
           type: string
         metadata:
           type: object
         spec:
+          description: APISpec defines the desired state of API
           properties:
             apiEndPoint:
               type: string
             definition:
+              description: Definition contains api definition related values
               properties:
                 interceptors:
                   properties:
@@ -78,41 +94,30 @@ spec:
             override:
               type: boolean
             replicas:
-              format: int64
               type: integer
             updateTimeStamp:
               type: string
             version:
               type: string
           required:
-          - replicas
           - definition
+          - replicas
           type: object
         status:
+          description: APIStatus defines the observed state of API
           properties:
             replicas:
-              description: 'replicas field in the status sub-resource will define the initial replica
-              count allocated to the API.This will be the minimum replica count for a single API'
-              format: int64
+              description: replicas field in the status sub-resource will define the
+                initial replica count allocated to the API.This will be the minimum
+                replica count for a single API
               type: integer
           required:
           - replicas
           type: object
+      type: object
   version: v1alpha1
   versions:
   - name: v1alpha1
     served: true
     storage: true
-  additionalPrinterColumns:
-  - JSONPath: .spec.replicas
-    name: INITIAL-REPLICAS
-    type: integer
-  - name: Mode
-    type: string
-    JSONPath: .spec.mode
-  - name: ENDPOINT
-    type: string
-    JSONPath: .spec.apiEndPoint
-  - name: Age
-    type: date
-    JSONPath: .metadata.creationTimestamp
+
