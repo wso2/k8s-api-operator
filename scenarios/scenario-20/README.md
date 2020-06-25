@@ -77,13 +77,16 @@ Lets use the [Prometheus Operator](https://github.com/coreos/prometheus-operator
     serviceaccount/prometheus created
     clusterrole.rbac.authorization.k8s.io/prometheus created
     clusterrolebinding.rbac.authorization.k8s.io/prometheus created
-    servicemonitor.monitoring.coreos.com/products created
+    servicemonitor.monitoring.coreos.com/products-backend created
+    servicemonitor.monitoring.coreos.com/products-mgw created
     service/prometheus created
     ```
   
-  In this sample we have defined the endpoint ports as `metrics` and `products` for metrics in the file
-  [service-monitor.yaml](prometheus/service-monitor-backend.yaml). Name of the metrics port of **micro-gateway** is `metrics`.
-  Make sure to add `metrics` as the port of **micro-gateway** when you are working on your samples.
+  In this sample we have defined the endpoint ports as `metrics` and `http-products` for metrics in the files
+  [service-monitor-backend.yaml](prometheus/service-monitor-backend.yaml) and
+  [service-monitor-mgw.yaml](prometheus/service-monitor-mgw.yaml).
+  Name of the metrics port of **micro-gateway** is `metrics`. Make sure to add `metrics` as the port of
+  **micro-gateway** when you are working on your samples.
     ```yaml
     kind: ServiceMonitor
     spec:
@@ -345,14 +348,14 @@ is products. So we should create the API with that name.
       curl -X GET "https://${IP}:9095/prodapi/v1/products" -H "Authorization:Bearer $TOKEN" -k & sleep ${PERIOD};
     done
     ```
-    Open a new terminal and execute following to get HPA details
+    Wait for 2-3 minutes and open a new terminal and execute following to get HPA details.
     ```sh
     >> apictl get hpa;
   
     Output:
-    NAME                  REFERENCE                        TARGETS             MINPODS   MAXPODS   REPLICAS   AGE
-    products              Deployment/products              100m/200m, 5%/50%   1         5         3          4m42s
-    products-privatejet   Deployment/products-privatejet   33m/100m, 5%/50%    1         6         3          6m
+    NAME                  REFERENCE                        TARGETS              MINPODS   MAXPODS   REPLICAS   AGE
+    products              Deployment/products              200m/200m, 18%/50%   1         5         1          6m52s
+    products-privatejet   Deployment/products-privatejet   166m/100m, 5%/50%    1         6         2          8m29s
     ```
     **NOTE:** Wait for fem minutes if the metrics values is `<unknown>`.
 

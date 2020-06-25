@@ -14,24 +14,15 @@
 # specific language governing permissions and limitations
 # under the License.
 
-apiVersion: wso2.com/v1alpha1
-kind: TargetEndpoint
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
 metadata:
-  name: products-privatejet
+  name: products-mgw
   labels:
-    app: products-backend
+    team: product-backend
 spec:
-  applicationProtocol: http
-  ports:
-    - name: http-products
-      port: 80
-      targetPort: 8080
-  deploy:
-    name: products-pj-service
-    dockerImage: renukafernando/k8s-prometheu-metrics-sample:v1.0.0
-    minReplicas: 1
-    maxReplicas: 6
-    requestCPU: "150m"
-    reqMemory: "128Mi"
-    cpuLimit: "300m"
-  mode: privateJet
+  selector:
+    matchLabels:
+      app: products-backend
+  endpoints:
+  - port: http-products
