@@ -20,6 +20,7 @@ import (
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/kaniko"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/str"
+	"gopkg.in/yaml.v2"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -43,6 +44,8 @@ const (
 	httpPortValConst  = 9090
 	httpsPortValConst = 9095
 
+	validityTimeValConst = -1
+
 	observabilityPrometheusPort = 9797
 )
 
@@ -57,6 +60,13 @@ const (
 	logLevelConst                       = "logLevel"
 	httpPortConst                       = "httpPort"
 	httpsPortConst                      = "httpsPort"
+	enabledAPIKeyIssuerConst            = "enabledAPIKeyIssuer"
+	apiKeyKeystorePathConst             = "apiKeyKeystorePath"
+	apiKeyKeystorePasswordConst         = "apiKeyKeystorePassword"
+	apiKeyIssuerNameConst               = "apiKeyIssuerName"
+	apiKeyIssuerCertificateAliasConst   = "apiKeyIssuerCertificateAlias"
+	validityTimeConst                   = "validityTime"
+	allowedAPIsConst                    = "allowedAPIs"
 )
 
 // Configuration represents configurations for MGW
@@ -109,6 +119,20 @@ type Configuration struct {
 	// log level
 	LogLevel string
 
+	//APIKeyIssuerConfig
+	EnabledAPIKeyIssuer          string
+	APIKeyKeystorePath           string
+	APIKeyKeystorePassword       string
+	APIKeyIssuerName             string
+	APIKeyIssuerCertificateAlias string
+	ValidityTime                 int32
+
+	// APIKeyTokenConfig
+	APIKeyConfigs *[]APIKeyTokenConfig
+
+	//APIKey Allowed API names and versions
+	APIKeyAllowedAPIs APIKeyTokenAllowedAPIs
+
 	// enable observability of MGW
 	ObservabilityEnabled bool
 }
@@ -119,6 +143,15 @@ type JwtTokenConfig struct {
 	Audience             string
 	ValidateSubscription bool
 }
+
+type APIKeyTokenConfig struct {
+	APIKeyCertificateAlias string
+	APIKeyIssuer           string
+	APIKeyAudience         string
+	ValidateAllowedAPIs    bool
+}
+
+type APIKeyTokenAllowedAPIs []map[string]string
 
 // Configs represents MGW configs with default values
 var Configs = &Configuration{
@@ -177,6 +210,24 @@ var Configs = &Configuration{
 	// log level
 	LogLevel: "INFO",
 
+	//APIKeyIssuerConfig
+	EnabledAPIKeyIssuer:          "true",
+	APIKeyKeystorePath:           "${mgw-runtime.home}/runtime/bre/security/ballerinaKeystore.p12",
+	APIKeyKeystorePassword:       "ballerina",
+	APIKeyIssuerName:             "https://localhost:9095/apikey",
+	APIKeyIssuerCertificateAlias: "ballerina",
+	ValidityTime:                 -1,
+
+	// APIKeyTokenConfig
+	APIKeyConfigs: &[]APIKeyTokenConfig{
+		{
+			APIKeyCertificateAlias: "ballerina",
+			APIKeyIssuer:           "https://localhost:9095/apikey",
+			APIKeyAudience:         "http://org.wso2.apimgt/gateway",
+			ValidateAllowedAPIs:    false,
+		},
+	},
+
 	// enable observability of MGW
 	ObservabilityEnabled: false,
 }
@@ -204,6 +255,22 @@ func SetApimConfigs(client *client.Client) error {
 	Configs.EnableRequestValidation = apimConfig.Data[enableRequestValidationConst]
 	Configs.EnableResponseValidation = apimConfig.Data[enableResponseValidationConst]
 	Configs.LogLevel = apimConfig.Data[logLevelConst]
+	Configs.EnabledAPIKeyIssuer = apimConfig.Data[enabledAPIKeyIssuerConst]
+	Configs.APIKeyKeystorePath = apimConfig.Data[apiKeyKeystorePathConst]
+	Configs.APIKeyKeystorePassword = apimConfig.Data[apiKeyKeystorePasswordConst]
+	Configs.APIKeyIssuerName = apimConfig.Data[apiKeyIssuerNameConst]
+	Configs.APIKeyIssuerCertificateAlias = apimConfig.Data[apiKeyIssuerCertificateAliasConst]
+	validityTime, err := strconv.Atoi(apimConfig.Data[validityTimeConst])
+	if err != nil {
+		logConf.Error(err, "Provided validity time is not valid. Using the default validity time")
+		Configs.ValidityTime = validityTimeValConst
+	} else {
+		Configs.ValidityTime = int32(validityTime)
+	}
+	var apiKeyTokenIssuerAPIs APIKeyTokenAllowedAPIs
+	_ = yaml.Unmarshal([]byte(apimConfig.Data[allowedAPIsConst]), &apiKeyTokenIssuerAPIs)
+	logConf.Info("API KEY", "apiKeyTokenAPIS", apiKeyTokenIssuerAPIs)
+	Configs.APIKeyAllowedAPIs = apiKeyTokenIssuerAPIs
 	httpPort, err := strconv.Atoi(apimConfig.Data[httpPortConst])
 	if err != nil {
 		logConf.Error(err, "Provided http port is not valid. Using the default port")

@@ -45,6 +45,8 @@ spec:
           type: object
         spec:
           properties:
+            apiEndPoint:
+              type: string
             definition:
               properties:
                 interceptors:
@@ -87,9 +89,30 @@ spec:
           - definition
           type: object
         status:
+          properties:
+            replicas:
+              description: 'replicas field in the status sub-resource will define the initial replica
+              count allocated to the API.This will be the minimum replica count for a single API'
+              format: int64
+              type: integer
+          required:
+          - replicas
           type: object
   version: v1alpha1
   versions:
   - name: v1alpha1
     served: true
     storage: true
+  additionalPrinterColumns:
+  - JSONPath: .spec.replicas
+    name: INITIAL-REPLICAS
+    type: integer
+  - name: Mode
+    type: string
+    JSONPath: .spec.mode
+  - name: ENDPOINT
+    type: string
+    JSONPath: .spec.apiEndPoint
+  - name: Age
+    type: date
+    JSONPath: .metadata.creationTimestamp

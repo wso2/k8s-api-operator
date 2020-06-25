@@ -113,6 +113,7 @@ data:
           clientId = ""
           clientSecret = ""
 
+
     # JWT token authorization configurations. You can provide multiple JWT issuers
     {{range .JwtConfigs}}
     [[jwtTokenConfig]]
@@ -215,6 +216,33 @@ data:
       ciphers="TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256, TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256, TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256,TLS_DHE_RSA_WITH_AES_128_CBC_SHA256,TLS_DHE_DSS_WITH_AES_128_CBC_SHA256, TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_128_CBC_SHA, TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA,TLS_ECDH_RSA_WITH_AES_128_CBC_SHA,TLS_DHE_RSA_WITH_AES_128_CBC_SHA, TLS_DHE_DSS_WITH_AES_128_CBC_SHA,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256  ,TLS_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256, TLS_DHE_RSA_WITH_AES_128_GCM_SHA256,TLS_DHE_RSA_WITH_AES_128_GCM_SHA256,TLS_DHE_DSS_WITH_AES_128_GCM_SHA256  ,TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA,TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA,SSL_RSA_WITH_3DES_EDE_CBC_SHA, TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA,TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA,SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA, SSL_DHE_DSS_WITH_3DES_EDE_CBC_SHA,TLS_EMPTY_RENEGOTIATION_INFO_SCSV"
       # The type of client certificate verification. (e.g.: "require" or "optional")
       sslVerifyClient = "optional"
+
+    # API Key authentication configurations
+    {{range .APIKeyConfigs}}
+    [apikey.tokenConfigs]
+      issuer = "{{.APIKeyIssuer}}"
+      certificateAlias = "{{.APIKeyCertificateAlias}}"
+      audience = "{{.APIKeyAudience}}"
+      # Validate Allowed/subscribed APIs
+      validateAllowedAPIs = {{.ValidateAllowedAPIs}}
+    {{end}}
+
+    [apikey.issuer]
+      # API Key STS token configurations
+      [apikey.issuer.tokenConfig]
+        enabled = {{$.EnabledAPIKeyIssuer}}
+        keyStorePath = "{{$.APIKeyKeystorePath}}"
+        keyStorePassword = "{{$.APIKeyKeystorePassword}}"
+        issuer = "{{$.APIKeyIssuerName}}"
+        certificateAlias = "{{$.APIKeyIssuerCertificateAlias}}"
+        validityTime = {{$.ValidityTime}}
+        {{range $allowedAPI := .APIKeyAllowedAPIs}}
+          {{range $allowedAPIName, $allowedAPIVersions := $allowedAPI}}
+        [[apikey.issuer.api]]
+          name = "{{$allowedAPIName}}"
+          versions = "{{$allowedAPIVersions}}"
+          {{end}}
+        {{end}}
 
     # Throttling configurations
     [throttlingConfig]

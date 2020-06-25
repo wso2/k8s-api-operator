@@ -17,6 +17,7 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/analytics"
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
@@ -150,8 +151,13 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	//get docker registry configs
 	dockerRegistryConf := k8s.NewConfMap()
 	errRegConf := k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: dockerRegConfigs}, dockerRegistryConf)
-
-	confErrs := []error{errConf, errRegConf}
+	//get ingress configs
+	ingressConf := k8s.NewConfMap()
+	errIngressConf := k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: ingressConfigs}, ingressConf)
+	//get openshift configs
+	OpenshiftConf := k8s.NewConfMap()
+	errOpenshiftConf := k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: openShiftConfigs}, OpenshiftConf)
+	confErrs := []error{errConf, errRegConf, errIngressConf, errOpenshiftConf}
 	for _, err := range confErrs {
 		if err != nil {
 			if errors.IsNotFound(err) {
@@ -166,6 +172,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	controlConfigData := controlConf.Data
+	controlIngressData := ingressConf.Data
+	controlOpenshiftConf := OpenshiftConf.Data
 	kaniko.DocFileProp.ToolkitImage = controlConfigData[mgwToolkitImgConst]
 	kaniko.DocFileProp.RuntimeImage = controlConfigData[mgwRuntimeImgConst]
 
@@ -266,16 +274,16 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			return reconcile.Result{}, securityErr
 		}
 
-		securityDefinition, jwtConfArray, errSec := security.Handle(&r.client, securityMap, userNamespace, secSchemeDefined)
+		securityDefinition, jwtConfArray, apiKeyConfArray,errSec := security.Handle(&r.client, securityMap, userNamespace, secSchemeDefined)
 		if errSec != nil {
 			return reconcile.Result{}, errSec
 		}
 		mgw.Configs.JwtConfigs = jwtConfArray
+		mgw.Configs.APIKeyConfigs = apiKeyConfArray
 		//adding security scheme to swagger
 		if len(securityDefinition) > 0 {
 			swaggerDoc.Components.Extensions[swagger.SecuritySchemeExtension] = securityDefinition
 		}
-
 		// mount formatted swagger to kaniko job
 		formattedSwagger := swagger.PrettyString(swaggerDoc)
 		formattedSwaggerCmName := swaggerCmName + "-mgw"
@@ -454,6 +462,21 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			return reconcile.Result{}, errHpa
 		}
 
+		getEndPointValue := mgw.ExternalIP(&r.client,instance,operatorMode,mgwSvc,controlIngressData,controlOpenshiftConf)
+		err = r.client.Update(context.TODO(),instance)
+		if getEndPointValue == "" {
+			instance.Spec.ApiEndPoint = "<pending>"
+			err = r.client.Update(context.TODO(),instance)
+			return reconcile.Result{Requeue: true},nil
+		}
+		if getEndPointValue != "" {
+			log.Info("External IP extracted succesfully")
+		}
+		instance.Status.Replicas = instance.Spec.Replicas
+		err = r.client.Status().Update(context.TODO(),instance)
+		err = r.client.Update(context.TODO(),instance)
+		log.Info("ENDPOINT value after updating is","apiEndpoint", instance.Spec.ApiEndPoint)
+
 		reqLogger.Info("Operator mode", "mode", operatorMode)
 		if strings.EqualFold(operatorMode, ingressMode) {
 			errIng := mgw.ApplyIngressResource(&r.client, instance, apiBasePathMap, ownerRef)
@@ -468,7 +491,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 				return reconcile.Result{}, rutErr
 			}
 		}
-
 		reqLogger.Info("Successfully deployed the API", "api_name", instance.Name)
 	} else {
 		reqLogger.Info("Skip updating kubernetes artifacts")

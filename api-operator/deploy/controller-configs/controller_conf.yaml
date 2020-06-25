@@ -87,7 +87,17 @@ data:
   #Request and response validation
   enableRequestValidation: "false"
   enableResponseValidation: "false"
-
+  #APIKey issuer configurations
+  #APIKey STS token configurations
+  enabledAPIKeyIssuer: "true"
+  apiKeyKeystorePath: "${mgw-runtime.home}/runtime/bre/security/ballerinaKeystore.p12"
+  apiKeyKeystorePassword: "ballerina"
+  apiKeyIssuerName: "https://localhost:9095/apikey"
+  apiKeyIssuerCertificateAlias: "ballerina"
+  validityTime: "-1"
+  #Provide the list of allowed APIs by the generated API Key
+  allowedAPIs: |
+  # - API name given in the API Definition: Allowed versions
 ---
 apiVersion: v1
 kind: ConfigMap

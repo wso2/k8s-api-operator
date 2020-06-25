@@ -45,6 +45,8 @@ type SecurityStatus struct {
 
 // Security is the Schema for the securities API
 // +k8s:openapi-gen=true
+// +kubebuilder:printcolumn:name="SECURITY_TYPE",type=string,JSONPath=`.spec.type`
+// +kubebuilder:printcolumn:name="AGE",type=date,JSONPath=`.metadata.creationTimestamp`
 type Security struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -70,6 +72,7 @@ type SecurityConfig struct {
 	Issuer               string `json:"issuer"`
 	Audience             string `json:"audience"`
 	ValidateSubscription bool   `json:"validateSubscription,omitempty"`
+	ValidateAllowedAPIs  bool   `json:"validateAllowedAPIs,omitempty"`
 }
 
 func init() {
