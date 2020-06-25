@@ -71,13 +71,6 @@ spec:
                     type: boolean
                   validateSubscription:
                     type: boolean
-                required:
-                - alias
-                - audience
-                - certificate
-                - credentials
-                - endpoint
-                - issuer
                 type: object
               type: array
             type:
@@ -87,7 +80,6 @@ spec:
                 https://book.kubebuilder.io/beyond_basics/generating_crd.html'
               type: string
           required:
-          - securityConfig
           - type
           type: object
         status:

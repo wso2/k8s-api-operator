@@ -113,11 +113,7 @@ spec:
             unitTime:
               type: integer
           required:
-          - bandwidth
-          - conditions
-          - description
           - requestCount
-          - stopOnQuotaReach
           - timeUnit
           - type
           - unitTime
