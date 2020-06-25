@@ -11,11 +11,18 @@
 a target endpoint of mode Private Jet.
 - Then we would refer the backend in the swagger file and set the `private jet` mode in the swagger file.
 - Later we will deploy the API using the swagger definition.
+- Following diagram illustrates the flow of custom metrics horizontal pod autoscaling.
+  <img src="images/flow-custom-metrics.png" alt="flow of custom metrics horizontal pod autoscaling" width="700"/>
+  1. Pod (backend service or MGW) is exposing metrics to Prometheus.
+  1. HPA will periodically fetch metrics from registered API (custom.metrics.k8s.io).
+  1. Prometheus Adapter serves HPA by querying Prometheus service.
+  1. HPA will scale pods based on the received metrics. 
 
 ***Important:***
 > Follow the main README and deploy the api-operator and configuration files.
 > Make sure to set the analyticsEnabled to "true" and deploy analytics secret with credentials to analytics server and
 > certificate, if you want to check analytics.
+
 
 ### 1. Prerequisites
  
@@ -83,8 +90,8 @@ Lets use the [Prometheus Operator](https://github.com/coreos/prometheus-operator
     ```
   
   In this sample we have defined the endpoint ports as `metrics` and `http-products` for metrics in the files
-  [service-monitor-backend.yaml](prometheus/service-monitor-backend.yaml) and
-  [service-monitor-mgw.yaml](prometheus/service-monitor-mgw.yaml).
+  [service-monitor-backend.yaml](prometheus/service-monitor-mgw.yaml) and
+  [service-monitor-mgw.yaml](prometheus/service-monitor-backend.yaml).
   Name of the metrics port of **micro-gateway** is `metrics`. Make sure to add `metrics` as the port of
   **micro-gateway** when you are working on your samples.
     ```yaml
@@ -175,7 +182,8 @@ to create serving certificate. For this sample we can use certs in the directory
 
 #### 2.1. Configure Metrics
 
-- Enable observability in `controller-config`. Edit `<K8S_API_OPERATOR_HOME>controller-configs/controller_conf.yaml`
+- Enable observability in micro gateway (not required if want to enable custom metrics for backend service).
+Edit `<K8S_API_OPERATOR_HOME>controller-configs/controller_conf.yaml`
 as follows.
     ```yaml
     #Expose custom metrics. Default-> observabilityEnabled: "false"
@@ -268,9 +276,9 @@ In this swagger definition, the backend service of the "products" service and th
     ```
 
 - Create API. We have created the `ServiceMonitor` with adding label `app: <API_NAME>` in `matchLabels` where API_NAME
-is products. So we should create the API with that name. 
+is products-api. So we should create the API with that name. 
     ```sh
-    >> apictl add api -n products --from-file=swagger.yaml --override
+    >> apictl add api -n products-api --from-file=swagger.yaml --override
 
     Output:
     creating configmap with swagger definition

@@ -22,7 +22,7 @@ spec:
   serviceAccountName: prometheus
   serviceMonitorSelector:
     matchLabels:
-      team: product-backend
+      team: products
   resources:
     requests:
       memory: 400Mi
