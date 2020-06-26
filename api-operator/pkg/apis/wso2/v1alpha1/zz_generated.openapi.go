@@ -403,65 +403,45 @@ func schema_pkg_apis_wso2_v1alpha1_TargetEndpointSpec(ref common.ReferenceCallba
 				Description: "TargetEndpointSpec defines the desired state of TargetEndpoint",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
-					"type": {
+					"applicationProtocol": {
 						SchemaProps: spec.SchemaProps{
-							Description: "INSERT ADDITIONAL SPEC FIELDS - desired state of cluster Important: Run \"operator-sdk generate k8s\" to regenerate code after modifying this file Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html",
+							Description: "Protocol of the application. Supports \"http\" and \"https\".",
 							Type:        []string{"string"},
 							Format:      "",
 						},
 					},
-					"protocol": {
+					"ports": {
 						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"hostname": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"port": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"integer"},
-							Format: "int32",
-						},
-					},
-					"targetPort": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"integer"},
-							Format: "int32",
+							Description: "List of optional ports of the target endpoint. First port should be the port of the target endpoint which is referred in swagger definition.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1.Port"),
+									},
+								},
+							},
 						},
 					},
 					"deploy": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1.Deploy"),
-						},
-					},
-					"endpointName": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"endpointSecurity": {
-						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1.EndpointSecurity"),
+							Description: "Deployment details.",
+							Ref:         ref("github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1.Deploy"),
 						},
 					},
 					"mode": {
 						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
+							Description: "Mode of the Target Endpoint. Supports \"privateJet\", \"sidecar\", \"serverless\". Default value \"privateJet\"",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 				},
-				Required: []string{"protocol", "port", "targetPort", "deploy"},
+				Required: []string{"applicationProtocol", "ports", "deploy"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1.Deploy", "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1.EndpointSecurity"},
+			"github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1.Deploy", "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1.Port"},
 	}
 }
 

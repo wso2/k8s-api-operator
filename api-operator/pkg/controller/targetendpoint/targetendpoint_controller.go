@@ -20,10 +20,12 @@ import (
 	"context"
 	"fmt"
 	"github.com/sirupsen/logrus"
-	"k8s.io/api/autoscaling/v2beta1"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
+	"k8s.io/api/autoscaling/v2beta2"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"reflect"
+	"sigs.k8s.io/yaml"
 	"strconv"
 	"strings"
 
@@ -186,7 +188,6 @@ func (r *ReconcileTargetEndpoint) Reconcile(request reconcile.Request) (reconcil
 		minReplicas = 1
 	}
 
-
 	if instance.Spec.Deploy.DockerImage != "" && strings.EqualFold(mode, serverless) {
 		if err := r.reconcileKnativeDeployment(instance); err != nil {
 			return reconcile.Result{}, err
@@ -204,26 +205,14 @@ func (r *ReconcileTargetEndpoint) Reconcile(request reconcile.Request) (reconcil
 
 	dep := r.newDeploymentForCR(instance, reqCpu, reqMemory, limitCpu, limitMemory, minReplicas)
 
-	getMaxRep := controlConfigData[hpaMaxReplicas]
-	intValueRep, err := strconv.ParseInt(getMaxRep, 10, 32)
-	if err != nil {
-		log.Error(err, "error getting max replicas")
-	}
-	maxReplicas := int32(intValueRep)
-	GetAvgUtilCPU := controlConfigData[hpaTargetAverageUtilizationCPU]
-	intValueUtilCPU, err := strconv.ParseInt(GetAvgUtilCPU, 10, 32)
-	if err != nil {
-		log.Error(err, "error getting hpa target average utilization for CPU")
-	}
-	targetAvgUtilizationCPU := int32(intValueUtilCPU)
-
 	if strings.EqualFold(mode, privateJet) {
-		errGettingHpa := createTargetEndPointHPA(dep,r,owner, minReplicas, maxReplicas, targetAvgUtilizationCPU)
-		if errGettingHpa != nil {
-			log.Error(errGettingHpa, "Error getting HPA")
+		errHpa := createHPA(&r.client, instance, dep, minReplicas, owner)
+		if errHpa != nil {
+			log.Error(errHpa, "Error creating HPA")
 		}
 	}
-	return reconcile.Result{Requeue: true}, nil
+
+	return reconcile.Result{}, nil
 }
 
 // Create newDeploymentForCR method to create a deployment.
@@ -240,6 +229,16 @@ func (r *ReconcileTargetEndpoint) newDeploymentForCR(m *wso2v1alpha1.TargetEndpo
 		corev1.ResourceCPU:    resource.MustParse(resourceLimitCPU),
 		corev1.ResourceMemory: resource.MustParse(resourceLimitMemory),
 	}
+
+	// set container ports
+	containerPorts := make([]corev1.ContainerPort, 0, len(m.Spec.Ports))
+	for _, port := range m.Spec.Ports {
+		containerPorts = append(containerPorts, corev1.ContainerPort{
+			Name:          port.Name,
+			ContainerPort: port.TargetPort,
+		})
+	}
+
 	dep := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: apiVersion,
@@ -248,6 +247,7 @@ func (r *ReconcileTargetEndpoint) newDeploymentForCR(m *wso2v1alpha1.TargetEndpo
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      m.ObjectMeta.Name,
 			Namespace: m.ObjectMeta.Namespace,
+			Labels:    m.Labels,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &replicas,
@@ -262,10 +262,7 @@ func (r *ReconcileTargetEndpoint) newDeploymentForCR(m *wso2v1alpha1.TargetEndpo
 					Containers: []corev1.Container{{
 						Image: m.Spec.Deploy.DockerImage,
 						Name:  m.Spec.Deploy.Name,
-						Ports: []corev1.ContainerPort{{
-							Name: m.Spec.Protocol + "-" + portKey,
-							ContainerPort: m.Spec.Port,
-						}},
+						Ports: containerPorts,
 						Resources: corev1.ResourceRequirements{
 							Limits:   lim,
 							Requests: req,
@@ -283,6 +280,15 @@ func (r *ReconcileTargetEndpoint) newDeploymentForCR(m *wso2v1alpha1.TargetEndpo
 
 // Create newKnativeDeploymentForCR method to create a deployment.
 func (r *ReconcileTargetEndpoint) newKnativeDeploymentForCR(m *wso2v1alpha1.TargetEndpoint) *v1.Service {
+	// set container ports
+	containerPorts := make([]corev1.ContainerPort, 0, len(m.Spec.Ports))
+	for _, port := range m.Spec.Ports {
+		containerPorts = append(containerPorts, corev1.ContainerPort{
+			Name:          port.Name,
+			ContainerPort: port.TargetPort,
+		})
+	}
+
 	ser := &v1.Service{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: knativeApiVersion,
@@ -308,9 +314,7 @@ func (r *ReconcileTargetEndpoint) newKnativeDeploymentForCR(m *wso2v1alpha1.Targ
 								{
 									Image: m.Spec.Deploy.DockerImage,
 									Name:  m.Spec.Deploy.Name,
-									Ports: []corev1.ContainerPort{{
-										ContainerPort: m.Spec.Port,
-									}},
+									Ports: containerPorts,
 								},
 							},
 						},
@@ -399,10 +403,19 @@ func (r *ReconcileTargetEndpoint) reconcileKnativeDeployment(m *wso2v1alpha1.Tar
 
 // NewService assembles the ClusterIP service for the Nginx
 func (r *ReconcileTargetEndpoint) newServiceForCR(m *wso2v1alpha1.TargetEndpoint) *corev1.Service {
+	// set service ports
+	servicePorts := make([]corev1.ServicePort, 0, len(m.Spec.Ports))
+	for _, port := range m.Spec.Ports {
+		servicePorts = append(servicePorts, corev1.ServicePort{
+			Name:       port.Name,
+			Port:       port.Port,
+			TargetPort: intstr.FromInt(int(port.TargetPort)),
+		})
+	}
 
-	protocol := m.Spec.Protocol
-	port := int(m.Spec.Port)
-	targetPort := int(m.Spec.TargetPort)
+	protocol := m.Spec.ApplicationProtocol
+	port := m.Spec.Ports[0].Port
+	targetPort := int(m.Spec.Ports[0].TargetPort)
 
 	switch protocol {
 	case "https":
@@ -420,6 +433,8 @@ func (r *ReconcileTargetEndpoint) newServiceForCR(m *wso2v1alpha1.TargetEndpoint
 			targetPort = 80
 		}
 	}
+	servicePorts[0].Port = port
+	servicePorts[0].TargetPort = intstr.FromInt(targetPort)
 
 	service := corev1.Service{
 		TypeMeta: metav1.TypeMeta{
@@ -429,71 +444,72 @@ func (r *ReconcileTargetEndpoint) newServiceForCR(m *wso2v1alpha1.TargetEndpoint
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      m.ObjectMeta.Name,
 			Namespace: m.ObjectMeta.Namespace,
+			Labels:    m.Labels,
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: m.ObjectMeta.Labels,
-			Ports: []corev1.ServicePort{
-				corev1.ServicePort{
-					Name: m.Spec.Protocol + "-" + portKey,
-					Port: m.Spec.Port,
-					TargetPort: intstr.FromInt(targetPort)},
-			},
+			Ports:    servicePorts,
 		},
 	}
 	controllerutil.SetControllerReference(m, &service, r.scheme)
 	return &service
 }
 
-func createTargetEndPointHPA(dep *appsv1.Deployment, r *ReconcileTargetEndpoint, owner []metav1.OwnerReference,
-	minReplicas int32, maxReplicas int32, targetAverageUtilizationCPU int32) error {
-
-	instance := &wso2v1alpha1.TargetEndpoint{}
-
-	targetResource := v2beta1.CrossVersionObjectReference{
+// createHPA creates (or update) HPA for the Target Endpoint
+func createHPA(client *client.Client, targetEp *wso2v1alpha1.TargetEndpoint, dep *appsv1.Deployment, minReplicas int32,
+	owner []metav1.OwnerReference) error {
+	// target resource
+	targetResource := v2beta2.CrossVersionObjectReference{
 		Kind:       dep.Kind,
 		Name:       dep.Name,
 		APIVersion: dep.APIVersion,
 	}
-	//CPU utilization
-	resourceMetricsForCPU := &v2beta1.ResourceMetricSource{
-		Name:                     corev1.ResourceCPU,
-		TargetAverageUtilization: &targetAverageUtilizationCPU,
+
+	// get global hpa configs, return error if not found (required config map)
+	hpaConfMap := k8s.NewConfMap()
+	err := k8s.Get(client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: hpaConfigMapName}, hpaConfMap)
+	if err != nil {
+		return err
 	}
-	metricsResCPU := v2beta1.MetricSpec{
-		Type:     resourceKey,
-		Resource: resourceMetricsForCPU,
+
+	// setting max replicas
+	maxReplicas := targetEp.Spec.Deploy.MaxReplicas
+	if maxReplicas <= 0 {
+		// setting default max replicas from the configmap "hpa-config"
+		maxReplicasInt64, errInt := strconv.ParseInt(hpaConfMap.Data[maxReplicasConfigKey], 10, 32)
+		if errInt != nil {
+			log.Error(err, "Error parsing HPA MaxReplicas",
+				"value", hpaConfMap.Data[maxReplicasConfigKey])
+			return err
+		}
+		maxReplicas = int32(maxReplicasInt64)
 	}
-	metricsSet := []v2beta1.MetricSpec{metricsResCPU}
-	hpa := &v2beta1.HorizontalPodAutoscaler{
+
+	// parse hpa config yaml
+	var metricsHpa []v2beta2.MetricSpec
+	yamlErr := yaml.Unmarshal([]byte(hpaConfMap.Data[metricsConfigKey]), &metricsHpa)
+	if yamlErr != nil {
+		log.Error(err, "Error marshalling HPA config yaml", "configmap", hpaConfMap)
+		return yamlErr
+	}
+
+	// HPA instance for Target Endpoint
+	hpa := &v2beta2.HorizontalPodAutoscaler{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:            dep.Name + "-" + hpaKey,
+			Name:            dep.Name,
 			Namespace:       dep.Namespace,
 			OwnerReferences: owner,
 		},
-		Spec: v2beta1.HorizontalPodAutoscalerSpec{
+		Spec: v2beta2.HorizontalPodAutoscalerSpec{
 			MinReplicas:    &minReplicas,
 			MaxReplicas:    maxReplicas,
 			ScaleTargetRef: targetResource,
-			Metrics:        metricsSet,
+			Metrics:        metricsHpa,
 		},
 	}
-	//check hpa already exists
-	checkHpa := &v2beta1.HorizontalPodAutoscaler{}
-	hpaErr := r.client.Get(context.TODO(), types.NamespacedName{Name: hpa.Name, Namespace: hpa.Namespace}, checkHpa)
-	if hpaErr != nil && errors.IsNotFound(hpaErr) {
-		//creating new hpa
-		log.Info("Creating HPA for targetEndPoint " + instance.Name)
-		errHpaCreating := r.client.Create(context.TODO(), hpa)
-		if errHpaCreating != nil {
-			return errHpaCreating
-		}
-		return nil
-	} else if hpaErr != nil {
-		return hpaErr
-	} else {
-		log.Info("HPA for targetEndPoint " + instance.Name + " is already exist")
-	}
-	return nil
+
+	// create or apply HPA
+	return k8s.Apply(client, hpa)
 }
 
 //get configmap

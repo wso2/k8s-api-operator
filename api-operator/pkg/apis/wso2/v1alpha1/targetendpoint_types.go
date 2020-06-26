@@ -26,18 +26,17 @@ import (
 // TargetEndpointSpec defines the desired state of TargetEndpoint
 // +k8s:openapi-gen=true
 type TargetEndpointSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
-	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
-	Type             string           `json:"type,omitempty"`
-	Protocol         string           `json:"protocol"`
-	Hostname         string           `json:"hostname,omitempty"`
-	Port             int32            `json:"port"`
-	TargetPort       int32            `json:"targetPort"`
-	Deploy           Deploy           `json:"deploy"`
-	EndpointName     string           `json:"endpointName,omitempty"`
-	EndpointSecurity EndpointSecurity `json:"endpointSecurity,omitempty"`
-	Mode             Mode             `json:"mode,omitempty"`
+	// Protocol of the application. Supports "http" and "https".
+	ApplicationProtocol string `json:"applicationProtocol"`
+	// List of optional ports of the target endpoint.
+	// First port should be the port of the target endpoint which is referred in swagger definition.
+	Ports []Port `json:"ports"`
+	// Deployment details.
+	Deploy Deploy `json:"deploy"`
+	// Mode of the Target Endpoint. Supports "privateJet", "sidecar", "serverless".
+	// Default value "privateJet"
+	// +optional
+	Mode Mode `json:"mode,omitempty"`
 }
 
 // TargetEndpointStatus defines the observed state of TargetEndpoint
@@ -52,6 +51,17 @@ type EndpointSecurity struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 	Type     string `json:"type"`
+}
+
+// Port represents ports of the Target Endpoint
+type Port struct {
+	// The name of this port within the service. This must be a DNS_LABEL.
+	// All ports within a ServiceSpec must have unique names.
+	Name string `json:"name"`
+	// The port that will be exposed by this service.
+	Port int32 `json:"port"`
+	// Port that is targeted to expose.
+	TargetPort int32 `json:"targetPort"`
 }
 
 //Replica count for create HPA for targetEndPoint

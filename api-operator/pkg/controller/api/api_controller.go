@@ -193,9 +193,24 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	reqLogger.Info(
 		"Controller configurations",
 		"mgw_toolkit_image", kaniko.DocFileProp.ToolkitImage, "mgw_runtime_image", kaniko.DocFileProp.RuntimeImage,
-		"registry_type", mgwDockerImage.RegistryType, "repository_name", mgwDockerImage.RepositoryName,
+		"gateway_observability", controlConfigData[observabilityEnabledConfigKey],
 		"user_nameSpace", userNamespace, "operator_mode", operatorMode,
 	)
+	// log registry configurations
+	reqLogger.Info(
+		"Registry configurations", "registry_type", mgwDockerImage.RegistryType,
+		"repository_name", mgwDockerImage.RepositoryName,
+	)
+
+	// validate HPA configs and setting configs
+	// this is to verify HPA configs prior running kaniko job and creating MGW image
+	// otherwise user may have to wait long time to know the error in configs
+	mgw.Configs.ObservabilityEnabled = strings.EqualFold(controlConfigData[observabilityEnabledConfigKey], "true")
+	if err := mgw.ValidateHpaConfigs(&r.client); err != nil {
+		// error has already logged inside the method
+		// Return and requeue request since config mismatch
+		return reconcile.Result{}, err
+	}
 
 	// if there aren't any ratelimiting objects deployed, new policy.yaml configmap will be created with default policies
 	if err := ratelimit.Handle(&r.client, userNamespace, operatorOwner); err != nil {
@@ -389,10 +404,21 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	// if kaniko job started (i.e. not nil)
 	if kanikoJob != nil {
 		// check for kaniko completion
-		for t := 30; kanikoJob.Status.Succeeded == 0 && t > 0; t -= 5 {
-			reqLogger.Info("Kaniko job is still not completed", "retry_interval_seconds", t, "job_status", kanikoJob.Status)
-			time.Sleep(10 * time.Second)
-			_ = k8s.Get(&r.client, types.NamespacedName{Namespace: kanikoJob.Namespace, Name: kanikoJob.Name}, kanikoJob)
+		for t := 40; kanikoJob.Status.Succeeded == 0 && t > 0; t -= 1 {
+			reqLogger.Info("Kaniko job is still not completed",
+				"retry_interval_seconds", "3 seconds", "requeue_step_within", t, "job_status", kanikoJob.Status)
+			// sleep 3 seconds
+			time.Sleep(3 * time.Second)
+			// refresh Kaniko job status
+			if err := k8s.Get(&r.client, types.NamespacedName{Namespace: kanikoJob.Namespace, Name: kanikoJob.Name},
+				kanikoJob); err != nil {
+				if errors.IsNotFound(err) {
+					reqLogger.Info("Kaniko job is not found, API has been deleted")
+					return reconcile.Result{}, nil
+				}
+				reqLogger.Error(err, "Error getting Kaniko job, requeue request")
+				return reconcile.Result{}, err
+			}
 		}
 
 		if kanikoJob.Status.Succeeded == 0 {
@@ -430,11 +456,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		}
 
 		// create horizontal pod auto-scalar
-		hpaProp, err := mgw.GetHPAProp(instance, &controlConfigData)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-		hpa := mgw.HPA(mgwDeployment, hpaProp, ownerRef)
+		hpa := mgw.HPA(instance, mgwDeployment, ownerRef)
 		if errHpa := k8s.CreateIfNotExists(&r.client, hpa); errHpa != nil {
 			reqLogger.Error(errHpa, "Error creating the horizontal pod auto-scalar", "hpa_name", hpa.Name)
 			return reconcile.Result{}, errHpa
@@ -470,11 +492,11 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			}
 		}
 		reqLogger.Info("Successfully deployed the API", "api_name", instance.Name)
-		return reconcile.Result{}, nil
 	} else {
 		reqLogger.Info("Skip updating kubernetes artifacts")
-		return reconcile.Result{}, nil
 	}
+
+	return reconcile.Result{}, nil
 }
 
 // setApiDependent sets API owner reference to dependents

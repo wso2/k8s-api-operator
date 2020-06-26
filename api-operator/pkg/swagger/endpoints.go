@@ -88,9 +88,9 @@ func HandleMgwEndpoints(client *client.Client, swagger *openapi3.Swagger, mode s
 				} else if err != nil && mode != Sidecar {
 					logEp.Error(err, "Error in getting service")
 				} else {
-					protocol := targetEndpointCr.Spec.Protocol
+					protocol := targetEndpointCr.Spec.ApplicationProtocol
 					if mode == Sidecar {
-						endPointSidecar := protocol + "://" + "localhost:" + strconv.Itoa(int(targetEndpointCr.Spec.Port))
+						endPointSidecar := protocol + "://" + "localhost:" + strconv.Itoa(int(targetEndpointCr.Spec.Ports[0].Port))
 						endpointNames[targetEndpointCr.Name] = endPointSidecar
 						checkt = append(checkt, endPointSidecar)
 					}
@@ -100,7 +100,7 @@ func HandleMgwEndpoints(client *client.Client, swagger *openapi3.Swagger, mode s
 						checkt = append(checkt, endPoint)
 
 					} else {
-						endPoint = protocol + "://" + endPoint + "." + apiNamespace + ":" + strconv.Itoa(int(targetEndpointCr.Spec.Port))
+						endPoint = protocol + "://" + endPoint + "." + apiNamespace + ":" + strconv.Itoa(int(targetEndpointCr.Spec.Ports[0].Port))
 						checkt = append(checkt, endPoint)
 					}
 					prodEp.Urls = checkt
@@ -121,10 +121,10 @@ func HandleMgwEndpoints(client *client.Client, swagger *openapi3.Swagger, mode s
 								Name: urlVal}, currentService)
 							erCr := k8s.Get(client, types.NamespacedName{Namespace: apiNamespace, Name: urlVal}, targetEndpointCr)
 							if err == nil && erCr == nil {
-								protocol := targetEndpointCr.Spec.Protocol
-								urlVal = protocol + "://" + urlVal + ":" + strconv.Itoa(int(targetEndpointCr.Spec.Port))
+								protocol := targetEndpointCr.Spec.ApplicationProtocol
+								urlVal = protocol + "://" + urlVal + ":" + strconv.Itoa(int(targetEndpointCr.Spec.Ports[0].Port))
 								if mode == Sidecar {
-									urlValSidecar := protocol + "://" + "localhost:" + strconv.Itoa(int(targetEndpointCr.Spec.Port))
+									urlValSidecar := protocol + "://" + "localhost:" + strconv.Itoa(int(targetEndpointCr.Spec.Ports[0].Port))
 									endpointNames[urlVal] = urlValSidecar
 									endpointList[index] = urlValSidecar
 								} else {
@@ -300,9 +300,9 @@ func resolveEps(client *client.Client, pathName string, resourceGetEp interface{
 				} else if err != nil && mode != Sidecar {
 					logEp.Error(err, "Error in getting service")
 				} else {
-					protocol := targetEndpointCr.Spec.Protocol
+					protocol := targetEndpointCr.Spec.ApplicationProtocol
 					if mode == Sidecar {
-						endPointSidecar := protocol + "://" + "localhost:" + strconv.Itoa(int(targetEndpointCr.Spec.Port))
+						endPointSidecar := protocol + "://" + "localhost:" + strconv.Itoa(int(targetEndpointCr.Spec.Ports[0].Port))
 						endpointNames[targetEndpointCr.Name] = endPointSidecar
 						checkr = append(checkr, endPointSidecar)
 					}
@@ -312,7 +312,7 @@ func resolveEps(client *client.Client, pathName string, resourceGetEp interface{
 						checkr = append(checkr, endPoint)
 
 					} else {
-						endPoint = protocol + "://" + endPoint + "." + userNameSpace + ":" + strconv.Itoa(int(targetEndpointCr.Spec.Port))
+						endPoint = protocol + "://" + endPoint + "." + userNameSpace + ":" + strconv.Itoa(int(targetEndpointCr.Spec.Ports[0].Port))
 						checkr = append(checkr, endPoint)
 					}
 					prodEp.Urls = checkr
@@ -334,13 +334,13 @@ func resolveEps(client *client.Client, pathName string, resourceGetEp interface{
 							erCr := k8s.Get(client, types.NamespacedName{Namespace: userNameSpace, Name: urlVal}, targetEndpointCr)
 							if err == nil && erCr == nil || mode == Sidecar {
 								endpointNames[urlVal] = urlVal
-								protocol := targetEndpointCr.Spec.Protocol
+								protocol := targetEndpointCr.Spec.ApplicationProtocol
 								if mode == Sidecar {
-									urlValSidecar := protocol + "://" + "localhost:" + strconv.Itoa(int(targetEndpointCr.Spec.Port))
+									urlValSidecar := protocol + "://" + "localhost:" + strconv.Itoa(int(targetEndpointCr.Spec.Ports[0].Port))
 									endpointNames[urlVal] = urlValSidecar
 									endpointList[index] = urlValSidecar
 								} else {
-									urlVal = protocol + "://" + urlVal + ":" + strconv.Itoa(int(targetEndpointCr.Spec.Port))
+									urlVal = protocol + "://" + urlVal + ":" + strconv.Itoa(int(targetEndpointCr.Spec.Ports[0].Port))
 									endpointList[index] = urlVal
 								}
 								isServiceDef = true

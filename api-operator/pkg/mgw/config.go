@@ -45,6 +45,8 @@ const (
 	httpsPortValConst = 9095
 
 	validityTimeValConst = -1
+
+	observabilityPrometheusPort = 9797
 )
 
 const (
@@ -67,6 +69,7 @@ const (
 	allowedAPIsConst                    = "allowedAPIs"
 )
 
+// Configuration represents configurations for MGW
 type Configuration struct {
 	// transport listener Configurations
 	HttpPort           int32
@@ -113,7 +116,7 @@ type Configuration struct {
 	// HTTP client hostname verification
 	VerifyHostname string
 
-	//log level
+	// log level
 	LogLevel string
 
 	//APIKeyIssuerConfig
@@ -129,6 +132,9 @@ type Configuration struct {
 
 	//APIKey Allowed API names and versions
 	APIKeyAllowedAPIs APIKeyTokenAllowedAPIs
+
+	// enable observability of MGW
+	ObservabilityEnabled bool
 }
 
 type JwtTokenConfig struct {
@@ -147,7 +153,7 @@ type APIKeyTokenConfig struct {
 
 type APIKeyTokenAllowedAPIs []map[string]string
 
-// mgw configs with default values
+// Configs represents MGW configs with default values
 var Configs = &Configuration{
 	// transport listener Configurations
 	HttpPort:           9090,
@@ -201,7 +207,7 @@ var Configs = &Configuration{
 	// HTTP client hostname verification
 	VerifyHostname: "true",
 
-	//log level
+	// log level
 	LogLevel: "INFO",
 
 	//APIKeyIssuerConfig
@@ -221,6 +227,9 @@ var Configs = &Configuration{
 			ValidateAllowedAPIs:    false,
 		},
 	},
+
+	// enable observability of MGW
+	ObservabilityEnabled: false,
 }
 
 // SetApimConfigs sets the MGW configs from APIM configmap

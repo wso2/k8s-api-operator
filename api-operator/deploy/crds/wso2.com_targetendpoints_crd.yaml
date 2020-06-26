@@ -45,8 +45,11 @@ spec:
         spec:
           description: TargetEndpointSpec defines the desired state of TargetEndpoint
           properties:
+            applicationProtocol:
+              description: Protocol of the application. Supports "http" and "https".
+              type: string
             deploy:
-              description: Replica count for create HPA for targetEndPoint
+              description: Deployment details.
               properties:
                 cpuLimit:
                   type: string
@@ -70,44 +73,40 @@ spec:
               - dockerImage
               - name
               type: object
-            endpointName:
-              type: string
-            endpointSecurity:
-              properties:
-                password:
-                  type: string
-                type:
-                  type: string
-                username:
-                  type: string
-              required:
-              - password
-              - type
-              - username
-              type: object
-            hostname:
-              type: string
             mode:
+              description: Mode of the Target Endpoint. Supports "privateJet", "sidecar",
+                "serverless". Default value "privateJet"
               type: string
-            port:
-              format: int32
-              type: integer
-            protocol:
-              type: string
-            targetPort:
-              format: int32
-              type: integer
-            type:
-              description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-                Important: Run "operator-sdk generate k8s" to regenerate code after
-                modifying this file Add custom validation using kubebuilder tags:
-                https://book.kubebuilder.io/beyond_basics/generating_crd.html'
-              type: string
+            ports:
+              description: List of optional ports of the target endpoint. First port
+                should be the port of the target endpoint which is referred in swagger
+                definition.
+              items:
+                description: Port represents ports of the Target Endpoint
+                properties:
+                  name:
+                    description: The name of this port within the service. This must
+                      be a DNS_LABEL. All ports within a ServiceSpec must have unique
+                      names.
+                    type: string
+                  port:
+                    description: The port that will be exposed by this service.
+                    format: int32
+                    type: integer
+                  targetPort:
+                    description: Port that is targeted to expose.
+                    format: int32
+                    type: integer
+                required:
+                - name
+                - port
+                - targetPort
+                type: object
+              type: array
           required:
+          - applicationProtocol
           - deploy
-          - port
-          - protocol
-          - targetPort
+          - ports
           type: object
         status:
           description: TargetEndpointStatus defines the observed state of TargetEndpoint

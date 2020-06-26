@@ -21,15 +21,11 @@ metadata:
   namespace: wso2-system
 data:
   #mgw toolkit image to initialize/setup the micro gw project
-  mgwToolkitImg: wso2am/wso2micro-gw-toolkit:3.1.0
+  mgwToolkitImg: wso2am/wso2micro-gw-toolkit:3.2.0-alpha
   #mgw runtime image to use in the mgw executable
-  mgwRuntimeImg: wso2/wso2micro-gw:3.1.0
+  mgwRuntimeImg: wso2/wso2micro-gw:3.2.0-alpha
   #kaniko image for the kaniko pod which builds the mgw api runtime and pushes to the registry
   kanikoImg: gcr.io/kaniko-project/executor:v0.18.0
-  #Maximum number of replicas for the Horizontal Pod Auto-scale. Default->  hpaMaxReplicas: "5"
-  hpaMaxReplicas: "5"
-  #Avg CPU utilization(%) to spin up the next pod.  Default->  hpaTargetAverageUtilizationCPU: "50"
-  hpaTargetAverageUtilizationCPU: "50"
   #Required CPU usage for pods.   Default-> resourceRequestCPU: "1000m"
   resourceRequestCPU: "1000m"
   #Required Memory usage pods can use.   Default->  resourceRequestMemory: "512Mi"
@@ -59,6 +55,8 @@ data:
   generatekubernbetesartifactsformgw: "true"
   #Available modes - ingress, default , route and clusterIP
   operatorMode: "default"
+  #Expose custom metrics. Default-> observabilityEnabled: "false"
+  observabilityEnabled: "false"
 
 
 ---
@@ -100,6 +98,55 @@ data:
   #Provide the list of allowed APIs by the generated API Key
   allowedAPIs: |
   # - API name given in the API Definition: Allowed versions
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hpa-configs
+  namespace: wso2-system
+data:
+  # Horizontal Pod Auto-Scaling for Micro-Gateways
+  # Maximum number of replicas for the Horizontal Pod Auto-scale. Default->  maxReplicas: "5"
+  mgwMaxReplicas: "5"
+  # Metrics configurations
+  mgwMetrics: |
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 50
+    # - type: Pods
+    #   pods:
+    #     metric:
+    #       name: http_requests_total_value_per_second
+    #     target:
+    #       type: AverageValue
+    #       averageValue: 100m
+    # - type: Object
+    #   object:
+    #     metric:
+    #       name: requests-per-second
+    #     describedObject:
+    #       apiVersion: networking.k8s.io/v1beta1
+    #       kind: Ingress
+    #       name: main-route
+    #     target:
+    #       type: Value
+    #       value: 10k
+
+  # Horizontal Pod Auto-Scaling for Target-Endpoints
+  # Maximum number of replicas for the Horizontal Pod Auto-scale. Default->  maxReplicas: "5"
+  targetEndpointMaxReplicas: "5"
+  # Metrics configurations
+  targetEndpointMetrics: |
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 50
+
 ---
 apiVersion: v1
 kind: ConfigMap

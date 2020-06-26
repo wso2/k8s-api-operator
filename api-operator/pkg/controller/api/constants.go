@@ -28,9 +28,10 @@ const (
 	dockerRegConfigs    = "docker-registry-config"
 	kanikoArgsConfigs   = "kaniko-arguments"
 
-	operatorModeConst = "operatorMode"
-	ingressMode       = "Ingress"
-	routeMode         = "Route"
+	operatorModeConst             = "operatorMode"
+	ingressMode                   = "Ingress"
+	routeMode                     = "Route"
+	observabilityEnabledConfigKey = "observabilityEnabled"
 
 	ingressHostName   = "ingressHostName"
 	routeHost         = "routeHost"
