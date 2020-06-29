@@ -19,7 +19,7 @@ package k8s
 import corev1 "k8s.io/api/core/v1"
 
 func SecretVolumeMount(secretName string, mountPath string) (*corev1.Volume, *corev1.VolumeMount) {
-	volName := secretName + "-volume"
+	volName := secretName + "-vol"
 	vol := corev1.Volume{
 		Name: volName,
 		VolumeSource: corev1.VolumeSource{
@@ -38,7 +38,7 @@ func SecretVolumeMount(secretName string, mountPath string) (*corev1.Volume, *co
 }
 
 func ConfigMapVolumeMount(confMapName string, mountPath string) (*corev1.Volume, *corev1.VolumeMount) {
-	volName := confMapName + "-volume"
+	volName := confMapName + "-vol"
 	vol := corev1.Volume{
 		Name: volName,
 		VolumeSource: corev1.VolumeSource{
@@ -58,7 +58,7 @@ func ConfigMapVolumeMount(confMapName string, mountPath string) (*corev1.Volume,
 }
 
 func EmptyDirVolumeMount(volumeName string, mountPath string) (*corev1.Volume, *corev1.VolumeMount) {
-	volName := volumeName + "-volume"
+	volName := volumeName + "-vol"
 	vol := corev1.Volume{
 		Name: volName,
 		VolumeSource: corev1.VolumeSource{
