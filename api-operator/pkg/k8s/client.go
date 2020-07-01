@@ -85,20 +85,15 @@ func Update(client *client.Client, obj runtime.Object) error {
 // Apply creates k8s object if not found and updates if found
 func Apply(client *client.Client, obj runtime.Object) error {
 	// get k8s object
-	objMeta := obj.(metav1.Object)
-	namespaceName := types.NamespacedName{Namespace: objMeta.GetNamespace(), Name: objMeta.GetName()}
 	kind := obj.GetObjectKind().GroupVersionKind().Kind
 
-	err := (*client).Get(context.TODO(), namespaceName, obj)
+	err := (*client).Update(context.TODO(), obj)
 	if err != nil && errors.IsNotFound(err) {
 		return Create(client, obj)
 	} else if err != nil {
 		logCnt.Error(err, "Error applying k8s object while getting it from cluster", "kind", kind, "object", obj)
-		return err
 	}
-
-	// configmap already exists and update it
-	return Update(client, obj)
+	return err
 }
 
 // UpdateOwner updates the k8s object with the owner reference
