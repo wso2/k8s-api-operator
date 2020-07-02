@@ -274,7 +274,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			return reconcile.Result{}, securityErr
 		}
 
-		securityDefinition, jwtConfArray, apiKeyConfArray,errSec := security.Handle(&r.client, securityMap, userNamespace, secSchemeDefined)
+		securityDefinition, jwtConfArray, apiKeyConfArray, errSec := security.Handle(&r.client, securityMap, userNamespace, secSchemeDefined)
 		if errSec != nil {
 			return reconcile.Result{}, errSec
 		}
@@ -462,20 +462,20 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			return reconcile.Result{}, errHpa
 		}
 
-		getEndPointValue := mgw.ExternalIP(&r.client,instance,operatorMode,mgwSvc,controlIngressData,controlOpenshiftConf)
-		err = r.client.Update(context.TODO(),instance)
+		getEndPointValue := mgw.ExternalIP(&r.client, instance, operatorMode, mgwSvc, controlIngressData, controlOpenshiftConf)
+		err = r.client.Update(context.TODO(), instance)
 		if getEndPointValue == "" {
 			instance.Spec.ApiEndPoint = "<pending>"
-			err = r.client.Update(context.TODO(),instance)
-			return reconcile.Result{Requeue: true},nil
+			err = r.client.Update(context.TODO(), instance)
+			return reconcile.Result{Requeue: true}, nil
 		}
 		if getEndPointValue != "" {
-			log.Info("External IP extracted succesfully")
+			log.Info("External IP extracted successfully")
 		}
 		instance.Status.Replicas = instance.Spec.Replicas
-		err = r.client.Status().Update(context.TODO(),instance)
-		err = r.client.Update(context.TODO(),instance)
-		log.Info("ENDPOINT value after updating is","apiEndpoint", instance.Spec.ApiEndPoint)
+		err = r.client.Status().Update(context.TODO(), instance)
+		err = r.client.Update(context.TODO(), instance)
+		log.Info("ENDPOINT value after updating is", "apiEndpoint", instance.Spec.ApiEndPoint)
 
 		reqLogger.Info("Operator mode", "mode", operatorMode)
 		if strings.EqualFold(operatorMode, ingressMode) {

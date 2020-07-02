@@ -144,6 +144,7 @@ func IsImageExist(client *client.Client) (bool, error) {
 
 // copyConfigVolumes copy the configured secrets and config maps to user's namespace
 func copyConfigVolumes(client *client.Client, namespace string) error {
+	logger.Info("Replacing configured secrets and config maps for the registry")
 	config := GetConfig()
 	for _, volume := range config.Volumes {
 		var fromObj runtime.Object
@@ -167,7 +168,7 @@ func copyConfigVolumes(client *client.Client, namespace string) error {
 		toObj.(metav1.Object).SetNamespace(namespace)
 		toObjMeta := toObj.(metav1.Object)
 		toObjMeta.SetResourceVersion("")
-		//newObjMeta := metav1.ObjectMeta{Namespace:namespace, Name:name}
+		toObjMeta.SetUID("")
 
 		if err := k8s.Apply(client, toObj); err != nil {
 			return err
