@@ -85,10 +85,8 @@ func IsRegistryType(regType string) bool {
 
 // IsImageExist checks if the image exists in the given registry using the secret in the user-namespace
 func IsImageExist(client *client.Client) (bool, error) {
-	var registryUrl string
-	var username string
-	var password string
-
+	// Auth represents the pull secret of registries
+	// local struct since not used in other places
 	type Auth struct {
 		Auths map[string]struct {
 			Auth     string `json:"auth"`
@@ -97,80 +95,90 @@ func IsImageExist(client *client.Client) (bool, error) {
 		} `json:"auths"`
 	}
 
-	// checks if the secret is available
-	logger.Info("Getting Docker credentials secret")
-	dockerConfigSecret := k8s.NewSecret()
-	err := k8s.Get(client, types.NamespacedName{Name: utils.DockerRegCredSecret, Namespace: wso2NameSpaceConst}, dockerConfigSecret)
+	config := GetConfig()
+	// checks if the pull secret is available
+	regPullSecret := k8s.NewSecret()
+	err := k8s.Get(client, types.NamespacedName{Name: config.ImagePullSecrets[0].Name,
+		Namespace: wso2NameSpaceConst}, regPullSecret)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			logger.Info("Docker credentials secret is not found", "secret_name", utils.DockerRegCredSecret, "namespace", wso2NameSpaceConst)
+			logger.Info("Registry pull secret is not found",
+				"secret_name", utils.DockerRegCredSecret, "namespace", wso2NameSpaceConst)
 		} else {
-			logger.Error(err, "Error retrieving docker credentials secret", "secret_name", utils.DockerRegCredSecret, "namespace", wso2NameSpaceConst)
-			return false, err
+			logger.Info("Error retrieving docker credentials secret", "secret_name", utils.DockerRegCredSecret, "namespace", wso2NameSpaceConst)
 		}
-	}
-
-	authsJsonString := dockerConfigSecret.Data[utils.DockerConfigKeyConst]
-	auth := Auth{}
-	err = json.Unmarshal(authsJsonString, &auth)
-	if err != nil {
-		logger.Info("Error unmarshal data of docker credential auth")
-	}
-
-	registryUrl, err = maps.OneKey(auth.Auths)
-	if err != nil {
-		logger.Error(err, "Error in docker config secret", "secret", dockerConfigSecret)
 		return false, err
 	}
+
+	auth := Auth{}
+	err = json.Unmarshal(regPullSecret.Data[utils.DockerConfigKeyConst], &auth)
+	if err != nil {
+		logger.Info("Error unmarshal data of docker credential auth")
+		return false, err
+	}
+
+	registryUrl, err := maps.OneKey(auth.Auths)
+	if err != nil {
+		logger.Info("Error in docker config secret", "secret", regPullSecret)
+		return false, err
+	}
+	username := auth.Auths[registryUrl].Username
+	password := auth.Auths[registryUrl].Password
+
 	registryUrl = str.RemoveVersionTag(registryUrl)
 	if !strings.HasPrefix(registryUrl, "https://") {
 		registryUrl = "https://" + registryUrl
 	}
-
-	username = auth.Auths[registryUrl].Username
-	password = auth.Auths[registryUrl].Password
-
-	config := GetConfig()
-	imageCheckFunc := config.IsImageExist
 	image := fmt.Sprintf("%s/%s", dockerImage.RepositoryName, dockerImage.Name)
 	regAuth := utils.RegAuth{RegistryUrl: registryUrl, Username: username, Password: password}
 
+	// check registry specific image existence functionality is defined
+	// if not use default function
+	imageCheckFunc := config.IsImageExist
 	if imageCheckFunc == nil {
 		return utils.IsImageExists(regAuth, image, dockerImage.Tag)
 	}
-
+	// otherwise defined function
 	return imageCheckFunc(config, regAuth, image, dockerImage.Tag)
 }
 
 // copyConfigVolumes copy the configured secrets and config maps to user's namespace
+// from wso2's system namespace
 func copyConfigVolumes(client *client.Client, namespace string) error {
 	logger.Info("Replacing configured secrets and config maps for the registry")
 	config := GetConfig()
-	for _, volume := range config.Volumes {
-		var fromObj runtime.Object
-		var name string
+	// registry volumes map: name -> runtime object
+	var regVolumes = make(map[string]runtime.Object, len(config.Volumes)+len(config.ImagePullSecrets))
 
+	// config volumes
+	for _, volume := range config.Volumes {
 		if volume.Secret != nil {
-			name = volume.Secret.SecretName
-			fromObj = k8s.NewSecret()
+			regVolumes[volume.Secret.SecretName] = k8s.NewSecret()
 		}
 		if volume.ConfigMap != nil {
-			name = volume.ConfigMap.Name
-			fromObj = k8s.NewConfMap()
+			regVolumes[volume.Secret.SecretName] = k8s.NewConfMap()
 		}
+	}
 
+	// pull secrets
+	for _, pullSecret := range config.ImagePullSecrets {
+		regVolumes[pullSecret.Name] = k8s.NewSecret()
+	}
+
+	// get object from wso2's system namespace and
+	// creates or replaces volumes in the given namespace
+	for name, object := range regVolumes {
 		fromNsName := types.NamespacedName{Namespace: wso2NameSpaceConst, Name: name}
-		if err := k8s.Get(client, fromNsName, fromObj); err != nil {
+		if err := k8s.Get(client, fromNsName, object); err != nil {
 			return err
 		}
 
-		toObj := fromObj
-		toObj.(metav1.Object).SetNamespace(namespace)
-		toObjMeta := toObj.(metav1.Object)
-		toObjMeta.SetResourceVersion("")
-		toObjMeta.SetUID("")
+		object.(metav1.Object).SetNamespace(namespace)
+		objMeta := object.(metav1.Object)
+		objMeta.SetResourceVersion("")
+		objMeta.SetUID("")
 
-		if err := k8s.Apply(client, toObj); err != nil {
+		if err := k8s.Apply(client, object); err != nil {
 			return err
 		}
 	}
