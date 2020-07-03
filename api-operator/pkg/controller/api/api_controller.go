@@ -141,22 +141,27 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	operatorOwner, ownerErr := getOperatorOwner(&r.client)
 	if ownerErr != nil {
-		reqLogger.Info("Operator was not found in the " + wso2NameSpaceConst + " namespace. No owner will be set for the artifacts")
+		reqLogger.Info("Operator was not found. No owner will be set for the artifacts",
+			"operator_namespace", wso2NameSpaceConst)
 	}
 	userNamespace := instance.Namespace
 
 	//get configurations file for the controller
 	controlConf := k8s.NewConfMap()
-	errConf := k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: controllerConfName}, controlConf)
+	errConf := k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: controllerConfName},
+		controlConf)
 	//get docker registry configs
 	dockerRegistryConf := k8s.NewConfMap()
-	errRegConf := k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: dockerRegConfigs}, dockerRegistryConf)
+	errRegConf := k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: dockerRegConfigs},
+		dockerRegistryConf)
 	//get ingress configs
 	ingressConf := k8s.NewConfMap()
-	errIngressConf := k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: ingressConfigs}, ingressConf)
+	errIngressConf := k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: ingressConfigs},
+		ingressConf)
 	//get openshift configs
 	OpenshiftConf := k8s.NewConfMap()
-	errOpenshiftConf := k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: openShiftConfigs}, OpenshiftConf)
+	errOpenshiftConf := k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: openShiftConfigs},
+		OpenshiftConf)
 	confErrs := []error{errConf, errRegConf, errIngressConf, errOpenshiftConf}
 	for _, err := range confErrs {
 		if err != nil {
@@ -192,7 +197,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	// log controller configurations
 	reqLogger.Info(
 		"Controller configurations",
-		"mgw_toolkit_image", kaniko.DocFileProp.ToolkitImage, "mgw_runtime_image", kaniko.DocFileProp.RuntimeImage,
+		"mgw_toolkit_image", kaniko.DocFileProp.ToolkitImage,
+		"mgw_runtime_image", kaniko.DocFileProp.RuntimeImage,
 		"gateway_observability", controlConfigData[observabilityEnabledConfigKey],
 		"user_nameSpace", userNamespace, "operator_mode", operatorMode,
 	)
@@ -274,7 +280,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			return reconcile.Result{}, securityErr
 		}
 
-		securityDefinition, jwtConfArray, apiKeyConfArray, errSec := security.Handle(&r.client, securityMap, userNamespace, secSchemeDefined)
+		securityDefinition, jwtConfArray, apiKeyConfArray, errSec := security.Handle(&r.client, securityMap,
+			userNamespace, secSchemeDefined)
 		if errSec != nil {
 			return reconcile.Result{}, errSec
 		}
@@ -289,7 +296,9 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		formattedSwaggerCmName := swaggerCmName + "-mgw"
 		// create configmap with modified swagger
 		swaggerDataMgw := map[string]string{swaggerFileName: formattedSwagger}
-		swaggerConfMapMgw := k8s.NewConfMapWith(types.NamespacedName{Namespace: userNamespace, Name: formattedSwaggerCmName}, &swaggerDataMgw, nil, ownerRef)
+		swaggerConfMapMgw := k8s.NewConfMapWith(
+			types.NamespacedName{Namespace: userNamespace, Name: formattedSwaggerCmName}, &swaggerDataMgw, nil, ownerRef,
+		)
 		log.Info("Creating swagger configmap for mgw", "name", formattedSwaggerCmName, "namespace", userNamespace)
 		// add to kaniko volumes
 		if instance.Spec.UpdateTimeStamp == "" {
@@ -339,95 +348,101 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		return reconcile.Result{}, errReg
 	}
 
-	// check if the image already exists
-	imageExist, errImage := registry.IsImageExist(&r.client)
-	if errImage != nil {
-		log.Error(errImage, "Error finding the MGW image in registry. Continue with creating Kaniko job",
-			"mgw_docker_image", mgwDockerImage)
+	// if Spec.Image is supplied do not need to build the image (i.e. don't run kaniko job)
+	if instance.Spec.Image != "" {
+		reqLogger.Info("Image is specified in the in API CRD. Skipping the kaniko job")
 	} else {
-		log.Info("Existence of MGW runtime image in the docker registry",
-			"exists", strconv.FormatBool(imageExist), "mgw_docker_image", mgwDockerImage)
-	}
-
-	// create Kaniko job
-	// if updating api or overriding api or image not found
-	if instance.Spec.UpdateTimeStamp != "" || instance.Spec.Override || !imageExist {
-		// handling analytics
-		log.Info("Handling analytics")
-		if err := analytics.Handle(&r.client, userNamespace); err != nil {
-			return reconcile.Result{}, err
+		// check if the image already exists
+		imageExist, errImage := registry.IsImageExist(&r.client)
+		if errImage != nil {
+			log.Error(errImage, "Error finding the MGW image in registry. Continue with creating Kaniko job",
+				"mgw_docker_image", mgwDockerImage)
+		} else {
+			log.Info("Existence of MGW runtime image in the docker registry",
+				"exists", strconv.FormatBool(imageExist), "mgw_docker_image", mgwDockerImage)
 		}
 
-		// handling interceptors
-		log.Info("Handling interceptors")
-		if err := interceptors.Handle(&r.client, instance); err != nil {
-			log.Error(err, "Error handling interceptors")
-			return reconcile.Result{}, err
-		}
-
-		// handling Kaniko docker file
-		log.Info("Rendering the dockerfile for Kaniko job and adding volumes to the Kaniko job")
-		if err := kaniko.HandleDockerFile(&r.client, userNamespace, instance.Name, ownerRef); err != nil {
-			log.Error(err, "Error rendering the docker file for Kaniko job and adding volumes to the Kaniko job")
-			return reconcile.Result{}, err
-		}
-
-		// setting the MGW configs from APIM configmap
-		log.Info("Setting the MGW configs from APIM configmap")
-		if err := mgw.SetApimConfigs(&r.client); err != nil {
-			log.Error(err, "Error Setting the MGW configs from APIM configmap")
-			return reconcile.Result{}, err
-		}
-
-		// rendering MGW config file
-		log.Info("Rendering and adding the MGW configuration file to cluster")
-		if err := mgw.ApplyConfFile(&r.client, userNamespace, instance.Name, ownerRef); err != nil {
-			log.Error(err, "Error rendering and adding the MGW configuration file to cluster")
-			return reconcile.Result{}, err
-		}
-
-		kanikoArgs := k8s.NewConfMap()
-		err = k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: kanikoArgsConfigs}, kanikoArgs)
-		if err != nil && errors.IsNotFound(err) {
-			log.Info("No kaniko-arguments config map is available in wso2-system namespace")
-		}
-
-		var kanikoJob *batchv1.Job
-		log.Info("Deploying the Kaniko job in cluster")
-		kanikoJob = kaniko.Job(instance, controlConfigData, kanikoArgs.Data[kanikoArguments], ownerRef)
-		if err := controllerutil.SetControllerReference(instance, kanikoJob, r.scheme); err != nil {
-			return reconcile.Result{}, err
-		}
-		// create Kaniko job and set kaniko object
-		if errJob := k8s.CreateIfNotExists(&r.client, kanikoJob); errJob != nil {
-			return reconcile.Result{}, errJob
-		}
-
-		// if kaniko job started (i.e. not nil)
-		if kanikoJob != nil {
-			// check for kaniko completion
-			for t := 40; kanikoJob.Status.Succeeded == 0 && t > 0; t -= 1 {
-				reqLogger.Info("Kaniko job is still not completed",
-					"retry_interval_seconds", "3 seconds", "requeue_step_within", t, "job_status", kanikoJob.Status)
-				// sleep 3 seconds
-				time.Sleep(3 * time.Second)
-				// refresh Kaniko job status
-				if err := k8s.Get(&r.client, types.NamespacedName{Namespace: kanikoJob.Namespace, Name: kanikoJob.Name},
-					kanikoJob); err != nil {
-					if errors.IsNotFound(err) {
-						reqLogger.Info("Kaniko job is not found, API has been deleted")
-						return reconcile.Result{}, nil
-					}
-					reqLogger.Error(err, "Error getting Kaniko job, requeue request")
-					return reconcile.Result{}, err
-				}
+		// create Kaniko job
+		// if updating api or overriding api or image not found
+		if instance.Spec.UpdateTimeStamp != "" || instance.Spec.Override || !imageExist {
+			// handling analytics
+			log.Info("Handling analytics")
+			if err := analytics.Handle(&r.client, userNamespace); err != nil {
+				return reconcile.Result{}, err
 			}
 
-			if kanikoJob.Status.Succeeded == 0 {
-				reqLogger.Info("Kaniko job is still not completed and requeue request after 10 seconds", "job_status", kanikoJob.Status)
-				return reconcile.Result{Requeue: true, RequeueAfter: 10 * time.Second}, nil
-			} else {
-				reqLogger.Info("Kaniko job is completed successfully", "job_status", kanikoJob.Status)
+			// handling interceptors
+			log.Info("Handling interceptors")
+			if err := interceptors.Handle(&r.client, instance); err != nil {
+				log.Error(err, "Error handling interceptors")
+				return reconcile.Result{}, err
+			}
+
+			// handling Kaniko docker file
+			log.Info("Rendering the dockerfile for Kaniko job and adding volumes to the Kaniko job")
+			if err := kaniko.HandleDockerFile(&r.client, userNamespace, instance.Name, ownerRef); err != nil {
+				log.Error(err, "Error rendering the docker file for Kaniko job and adding volumes to the Kaniko job")
+				return reconcile.Result{}, err
+			}
+
+			// setting the MGW configs from APIM configmap
+			log.Info("Setting the MGW configs from APIM configmap")
+			if err := mgw.SetApimConfigs(&r.client); err != nil {
+				log.Error(err, "Error Setting the MGW configs from APIM configmap")
+				return reconcile.Result{}, err
+			}
+
+			// rendering MGW config file
+			log.Info("Rendering and adding the MGW configuration file to cluster")
+			if err := mgw.ApplyConfFile(&r.client, userNamespace, instance.Name, ownerRef); err != nil {
+				log.Error(err, "Error rendering and adding the MGW configuration file to cluster")
+				return reconcile.Result{}, err
+			}
+
+			kanikoArgs := k8s.NewConfMap()
+			err = k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: kanikoArgsConfigs}, kanikoArgs)
+			if err != nil && errors.IsNotFound(err) {
+				log.Info("No kaniko-arguments config map is available in wso2-system namespace")
+			}
+
+			var kanikoJob *batchv1.Job
+			log.Info("Deploying the Kaniko job in cluster")
+			kanikoJob = kaniko.Job(instance, controlConfigData, kanikoArgs.Data[kanikoArguments], ownerRef)
+			if err := controllerutil.SetControllerReference(instance, kanikoJob, r.scheme); err != nil {
+				return reconcile.Result{}, err
+			}
+			// create Kaniko job and set kaniko object
+			if errJob := k8s.CreateIfNotExists(&r.client, kanikoJob); errJob != nil {
+				return reconcile.Result{}, errJob
+			}
+
+			// if kaniko job started (i.e. not nil)
+			if kanikoJob != nil {
+				// check for kaniko completion
+				for t := 40; kanikoJob.Status.Succeeded == 0 && t > 0; t -= 1 {
+					reqLogger.Info("Kaniko job is still not completed",
+						"retry_interval_seconds", "3 seconds", "requeue_step_within", t, "job_status", kanikoJob.Status)
+					// sleep 3 seconds
+					time.Sleep(3 * time.Second)
+					// refresh Kaniko job status
+					if err := k8s.Get(&r.client, types.NamespacedName{Namespace: kanikoJob.Namespace, Name: kanikoJob.Name},
+						kanikoJob); err != nil {
+						if errors.IsNotFound(err) {
+							reqLogger.Info("Kaniko job is not found, API has been deleted")
+							return reconcile.Result{}, nil
+						}
+						reqLogger.Error(err, "Error getting Kaniko job, requeue request")
+						return reconcile.Result{}, err
+					}
+				}
+
+				if kanikoJob.Status.Succeeded == 0 {
+					reqLogger.Info("Kaniko job is still not completed and requeue request after 10 seconds",
+						"job_status", kanikoJob.Status)
+					return reconcile.Result{Requeue: true, RequeueAfter: 10 * time.Second}, nil
+				} else {
+					reqLogger.Info("Kaniko job is completed successfully", "job_status", kanikoJob.Status)
+				}
 			}
 		}
 	}
