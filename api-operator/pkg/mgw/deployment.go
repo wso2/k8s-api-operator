@@ -118,7 +118,7 @@ func Deployment(api *wso2v1alpha1.API, controlConfigData map[string]string, owne
 		envKeyVal := strings.SplitN(variable, envKeyValSeparator, 2)
 		env = append(env, corev1.EnvVar{
 			Name:  envKeyVal[0],
-			Value: envKeyVal[1],
+			Value: envKeyVal[:2][1],
 		})
 	}
 

@@ -37,7 +37,7 @@ func RemoveVersionTag(url string) string {
 // GetRandFileName returns a file name with suffixing a random number
 func GetRandFileName(filename string) string {
 	fileSplits := strings.SplitN(filename, ".", 2)
-	return fmt.Sprintf("%v-%v.%v", fileSplits[0], rand.Intn(10000), fileSplits[1])
+	return fmt.Sprintf("%v-%v.%v", fileSplits[0], rand.Intn(10000), fileSplits[:2][1])
 }
 
 // renderedDockerFile returns the rendered docker file using the properties in DocFileProp
