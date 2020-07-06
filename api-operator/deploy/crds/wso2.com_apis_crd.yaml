@@ -63,20 +63,25 @@ spec:
             apiEndPoint:
               type: string
             definition:
-              description: Definition contains api definition related values
+              description: Definition of the API.
               properties:
                 interceptors:
+                  description: Interceptors for API. Default value "<empty>".
                   properties:
                     ballerina:
+                      description: Ballerina interceptors. Default value "<empty>".
                       items:
                         type: string
                       type: array
                     java:
+                      description: Java interceptors. Default value "<empty>".
                       items:
                         type: string
                       type: array
                   type: object
                 swaggerConfigmapNames:
+                  description: Array of config map names of swagger definitions for
+                    the API.
                   items:
                     type: string
                   type: array
@@ -85,19 +90,36 @@ spec:
               required:
               - swaggerConfigmapNames
               type: object
+            environmentVariables:
+              description: Environment variables to be added to the API deployment.
+                Default value "<empty>".
+              items:
+                type: string
+              type: array
+            image:
+              description: Docker image of the API to be deployed. If specified, ignores
+                the values of `UpdateTimeStamp`, `Override`. Uses the given image
+                for the deployment. Default value "<empty>".
+              type: string
             mode:
-              description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-                Important: Run "operator-sdk generate k8s" to regenerate code after
-                modifying this file Add custom validation using kubebuilder tags:
-                https://book.kubebuilder.io/beyond_basics/generating_crd.html'
+              description: Mode of the API. The mode from the swagger definition will
+                be overridden by this value. Supports "privateJet", "sidecar", "<empty>".
+                Default value "<empty>".
               type: string
             override:
+              description: Override the exiting API docker image. Default value "false".
               type: boolean
             replicas:
+              description: Replica count of the API.
               type: integer
             updateTimeStamp:
+              description: Update API definition creating a new docker image. Make
+                a rolling update to the existing API. with prefixing the timestamp
+                value. Default value "<empty>".
               type: string
             version:
+              description: Version of the API. The version from the swagger definition
+                will be overridden by this value. Default value "<empty>".
               type: string
           required:
           - definition

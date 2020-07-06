@@ -26,6 +26,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"strconv"
+	"strings"
 )
 
 const (
@@ -43,6 +44,8 @@ const (
 	resourceRequestMemory = "resourceRequestMemory"
 	resourceLimitCPU      = "resourceLimitCPU"
 	resourceLimitMemory   = "resourceLimitMemory"
+
+	envKeyValSeparator = "="
 )
 
 var (
@@ -107,16 +110,37 @@ func Deployment(api *wso2v1alpha1.API, controlConfigData map[string]string, owne
 		})
 	}
 
+	// setting environment variables
+	// env from registry configs
+	env := regConfig.Env
+	// env from API CRD Spec
+	for _, variable := range api.Spec.EnvironmentVariables {
+		envKeyVal := strings.SplitN(variable, envKeyValSeparator, 2)
+		env = append(env, corev1.EnvVar{
+			Name:  envKeyVal[0],
+			Value: envKeyVal[:2][1],
+		})
+	}
+
+	// setting container image
+	var image string
+	if api.Spec.Image != "" {
+		image = api.Spec.Image
+	} else {
+		image = regConfig.ImagePath
+	}
+
+	// API container
 	apiContainer := corev1.Container{
 		Name:            "mgw" + api.Name,
-		Image:           regConfig.ImagePath,
+		Image:           image,
 		ImagePullPolicy: "Always",
 		Resources: corev1.ResourceRequirements{
 			Requests: req,
 			Limits:   lim,
 		},
 		VolumeMounts: deployVolumeMount,
-		Env:          regConfig.Env,
+		Env:          env,
 		Ports:        containerPorts,
 		ReadinessProbe: &corev1.Probe{
 			Handler: corev1.Handler{
