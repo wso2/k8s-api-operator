@@ -39,6 +39,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -53,6 +54,7 @@ import (
 )
 
 var log = logf.Log.WithName("api.controller")
+var reconcileExitLimit = 5
 
 // Add creates a new API Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
@@ -62,7 +64,11 @@ func Add(mgr manager.Manager) error {
 
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcileAPI{client: mgr.GetClient(), scheme: mgr.GetScheme()}
+	return &ReconcileAPI{
+		client: mgr.GetClient(),
+		scheme: mgr.GetScheme(),
+		recorder: mgr.GetEventRecorderFor("api-controller"),
+	}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
@@ -100,6 +106,7 @@ type ReconcileAPI struct {
 	// that reads objects from the cache and writes to the apiserver
 	client client.Client
 	scheme *runtime.Scheme
+	recorder record.EventRecorder
 }
 
 // Reconcile reads that state of the cluster for a API object and makes changes based on the state read
@@ -300,16 +307,23 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			types.NamespacedName{Namespace: userNamespace, Name: formattedSwaggerCmName}, &swaggerDataMgw, nil, ownerRef,
 		)
 		log.Info("Creating swagger configmap for mgw", "name", formattedSwaggerCmName, "namespace", userNamespace)
+		r.recorder.Event(instance, corev1.EventTypeNormal, "Configs", "Creating swagger configmap for MGW.")
 		// add to kaniko volumes
 		if instance.Spec.UpdateTimeStamp == "" {
 			if err := k8s.CreateIfNotExists(&r.client, swaggerConfMapMgw); err != nil {
 				log.Error(err, "Error creating formatted swagger configmap", "configmap", swaggerConfMapMgw)
+				r.recorder.Event(instance, eventTypeError, "Configs",
+					"Error creating swagger configmap for MGW.")
 				return reconcile.Result{}, err
 			}
 		} else {
 			log.Info("Updating swagger-mgw since timestamp value is given")
+			r.recorder.Event(instance, corev1.EventTypeNormal, "SwaggerConfigMap",
+				"Updating swagger configmap for MGW.")
 			if err := k8s.Update(&r.client, swaggerConfMapMgw); err != nil {
 				log.Error(err, "Error updating formatted swagger configmap", "configmap", swaggerConfMapMgw)
+				r.recorder.Event(instance, eventTypeError, "Configs",
+					"Error updating swagger configmap for MGW.")
 				return reconcile.Result{}, err
 			}
 		}
@@ -351,6 +365,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	// if Spec.Image is supplied do not need to build the image (i.e. don't run kaniko job)
 	if instance.Spec.Image != "" {
 		reqLogger.Info("Image is specified in the in API CRD. Skipping the kaniko job")
+		r.recorder.Event(instance, corev1.EventTypeWarning, "KanikoJob",
+			"Skipping kaniko job. Image specified in API CRD.")
 	} else {
 		// check if the image already exists
 		imageExist, errImage := registry.IsImageExist(&r.client)
@@ -365,9 +381,12 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		// create Kaniko job
 		// if updating api or overriding api or image not found
 		if instance.Spec.UpdateTimeStamp != "" || instance.Spec.Override || !imageExist {
+			r.recorder.Event(instance, corev1.EventTypeNormal, "Configs",
+				"Handling analytics & interceptors, rendering dockerfile & mgw configs, and creating the Kaniko job.")
 			// handling analytics
 			log.Info("Handling analytics")
 			if err := analytics.Handle(&r.client, userNamespace); err != nil {
+				r.recorder.Event(instance, eventTypeError, "Configs", "Error while handling analytics.")
 				return reconcile.Result{}, err
 			}
 
@@ -375,6 +394,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			log.Info("Handling interceptors")
 			if err := interceptors.Handle(&r.client, instance); err != nil {
 				log.Error(err, "Error handling interceptors")
+				r.recorder.Event(instance, eventTypeError, "Configs", "Error while handling interceptors.")
 				return reconcile.Result{}, err
 			}
 
@@ -382,6 +402,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			log.Info("Rendering the dockerfile for Kaniko job and adding volumes to the Kaniko job")
 			if err := kaniko.HandleDockerFile(&r.client, userNamespace, instance.Name, ownerRef); err != nil {
 				log.Error(err, "Error rendering the docker file for Kaniko job and adding volumes to the Kaniko job")
+				r.recorder.Event(instance, eventTypeError, "KanikoJob",
+					"Error rendering the dockerfile for kaniko job.")
 				return reconcile.Result{}, err
 			}
 
@@ -407,12 +429,15 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 			var kanikoJob *batchv1.Job
 			log.Info("Deploying the Kaniko job in cluster")
+			r.recorder.Event(instance, corev1.EventTypeNormal, "KanikoJob", "Deploying kaniko job.")
 			kanikoJob = kaniko.Job(instance, controlConfigData, kanikoArgs.Data[kanikoArguments], ownerRef)
 			if err := controllerutil.SetControllerReference(instance, kanikoJob, r.scheme); err != nil {
 				return reconcile.Result{}, err
 			}
 			// create Kaniko job and set kaniko object
 			if errJob := k8s.CreateIfNotExists(&r.client, kanikoJob); errJob != nil {
+				r.recorder.Event(instance, eventTypeError, "KanikoJob",
+					"Error when creating the kaniko job.")
 				return reconcile.Result{}, errJob
 			}
 
@@ -439,9 +464,13 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 				if kanikoJob.Status.Succeeded == 0 {
 					reqLogger.Info("Kaniko job is still not completed and requeue request after 10 seconds",
 						"job_status", kanikoJob.Status)
+					r.recorder.Event(instance, corev1.EventTypeWarning, "KanikoJob",
+						"Kaniko job is still not completed. Re-queuing...")
 					return reconcile.Result{Requeue: true, RequeueAfter: 10 * time.Second}, nil
 				} else {
 					reqLogger.Info("Kaniko job is completed successfully", "job_status", kanikoJob.Status)
+					r.recorder.Event(instance, corev1.EventTypeNormal, "KanikoJob",
+						"Kaniko job completed successfully.")
 				}
 			}
 		}
@@ -459,17 +488,25 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		reqLogger.Info("Deploying MGW runtime image")
 		// create MGW deployment in k8s cluster
 		mgwDeployment := mgw.Deployment(instance, controlConfigData, ownerRef)
+		r.recorder.Event(instance, corev1.EventTypeNormal, "MGWRuntime",
+			fmt.Sprintf("Deploying MGW runtime: %s.", mgwDeployment.Name))
 		if errMgw := k8s.Apply(&r.client, mgwDeployment); errMgw != nil {
 			reqLogger.Error(errMgw, "Error updating the MGW deployment", "deploy_name", mgwDeployment.Name)
+			r.recorder.Event(instance, eventTypeError, "MGWRuntime",
+				fmt.Sprintf("Error updating MGW deployment: %s.", mgwDeployment.Name))
 			return reconcile.Result{}, errMgw
 		}
 		reqLogger.Info("Updated the MGW deployment", "deploy_name", mgwDeployment.Name)
 
 		// create MGW service
 		mgwSvc := mgw.Service(instance, operatorMode, *ownerRef)
+		r.recorder.Event(instance, corev1.EventTypeNormal, "MGWService",
+			fmt.Sprintf("Creating MGW service: %s.", mgwSvc.Name))
 		// controllerutil.SetControllerReference(instance, mgwSvc, r.scheme) <- check with commenting this, if work delete this.
 		if errMgwSvc := k8s.CreateIfNotExists(&r.client, mgwSvc); errMgwSvc != nil {
 			reqLogger.Error(errMgwSvc, "Error creating the MGW service", "service_name", mgwSvc.Name)
+			r.recorder.Event(instance, eventTypeError, "MGWService",
+				fmt.Sprintf("Error updating MGW service: %s.", mgwSvc.Name))
 			return reconcile.Result{}, errMgwSvc
 		}
 
@@ -480,36 +517,63 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			return reconcile.Result{}, errHpa
 		}
 
+		for t := 24; t > 0; t -= 1 {
+			time.Sleep(5 * time.Second)
+			getEndPointValue := mgw.ExternalIP(&r.client, instance, operatorMode, mgwSvc, controlIngressData, controlOpenshiftConf)
+			err = r.client.Update(context.TODO(), instance)
+			if getEndPointValue == "" {
+				instance.Spec.ApiEndPoint = "<pending>"
+				err = r.client.Update(context.TODO(), instance)
+			} else {
+				break
+			}
+		}
 		getEndPointValue := mgw.ExternalIP(&r.client, instance, operatorMode, mgwSvc, controlIngressData, controlOpenshiftConf)
 		err = r.client.Update(context.TODO(), instance)
-		if getEndPointValue == "" {
-			instance.Spec.ApiEndPoint = "<pending>"
-			err = r.client.Update(context.TODO(), instance)
+		if getEndPointValue == "" && reconcileExitLimit != 0 {
+			reconcileExitLimit -= 1
+			log.Info("Reconcile attempts remaining to check endpoint", "reconcileExitLimit", reconcileExitLimit)
 			return reconcile.Result{Requeue: true}, nil
 		}
+
 		if getEndPointValue != "" {
 			log.Info("External IP extracted successfully")
+			r.recorder.Event(instance, corev1.EventTypeNormal, "MGWservice",
+				fmt.Sprintf("Managed API service endpoint: %s", instance.Spec.ApiEndPoint))
+		} else {
+			log.Info("Warning: External IP could not be extracted!")
+			r.recorder.Event(instance, corev1.EventTypeWarning, "MGWservice",
+				fmt.Sprintf("Managed API service endpoint: %s", instance.Spec.ApiEndPoint))
 		}
+
 		instance.Status.Replicas = instance.Spec.Replicas
 		err = r.client.Status().Update(context.TODO(), instance)
 		err = r.client.Update(context.TODO(), instance)
-		log.Info("ENDPOINT value after updating is", "apiEndpoint", instance.Spec.ApiEndPoint)
+		log.Info("Final endpoint value after updating is", "apiEndpoint", instance.Spec.ApiEndPoint)
 
 		reqLogger.Info("Operator mode", "mode", operatorMode)
 		if strings.EqualFold(operatorMode, ingressMode) {
 			errIng := mgw.ApplyIngressResource(&r.client, instance, apiBasePathMap, ownerRef)
+			r.recorder.Event(instance, corev1.EventTypeNormal, "Ingress", "Applying Ingress resources.")
 			if errIng != nil {
 				reqLogger.Error(errIng, "Error creating the ingress resource")
+				r.recorder.Event(instance, eventTypeError, "Ingress", "Error creating Ingress resources.")
 				return reconcile.Result{}, errIng
 			}
 		}
 		if strings.EqualFold(operatorMode, routeMode) {
 			rutErr := mgw.ApplyRouteResource(&r.client, instance, apiBasePathMap, ownerRef)
+			r.recorder.Event(instance, corev1.EventTypeNormal, "Route", "Applying Route resources.")
 			if rutErr != nil {
+				r.recorder.Event(instance, eventTypeError, "Route", "Error creating Route resources.")
 				return reconcile.Result{}, rutErr
 			}
 		}
 		reqLogger.Info("Successfully deployed the API", "api_name", instance.Name)
+		r.recorder.Event(instance, corev1.EventTypeNormal, "Deploy",
+			fmt.Sprintf("Successfully deployed the API: %s.", instance.Name))
+
+		reconcileExitLimit = 5
 	} else {
 		reqLogger.Info("Skip updating kubernetes artifacts")
 	}
