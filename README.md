@@ -69,7 +69,7 @@ This will deploy a pod and service for the sample service.
     >> kubectl get services products
   
     Output:
-    NAME       TYPE           CLUSTER-IP    EXTERNAL_IP       PORT(S)        AGE
+    NAME       TYPE           CLUSTER-IP    EXTERNAL-IP       PORT(S)        AGE
     products   LoadBalancer   10.83.1.131   104.197.114.248   80:30475/TCP   27m
     ```
 
@@ -118,9 +118,7 @@ This will deploy a pod and service for the sample service.
 
 #### Step 2: Configure API Controller
 
-- Download API controller v3.1.0 or the latest v3.1.x from the [API Manager Tooling web site](https://wso2.com/api-management/tooling/)
-    
-    - Under Dev-Ops Tooling section, you can download the tool based on your operating system.
+- Download [API controller v3.2.0-beta](https://github.com/wso2/product-apim-tooling/releases/tag/v3.2.0-beta).
 
 - Extract the API controller distribution and navigate inside the extracted folder using the command-line tool
 
@@ -137,7 +135,7 @@ This will deploy a pod and service for the sample service.
 
 - Set the operator version as `v1.2.0-alpha` by executing following in a terminal.
     ```sh
-    export WSO2_API_OPERATOR_VERSION=v1.2.0-alpha
+    >> export WSO2_API_OPERATOR_VERSION=v1.2.0-alpha
     ```
 - Execute the following command to install API Operator interactively and configure repository to push the built managed
 API image.
@@ -183,30 +181,16 @@ API image.
 
 #### Step 4: Install the API portal and security token service
 
-[WSO2AM Kubernetes Operator](https://github.com/wso2/k8s-wso2am-operator) is used to deploy API portal and security token service. 
-
-- Install the WSO2AM Operator in Kubernetes.
-
-    ```sh
-    >> apictl install wso2am-operator
-    
-    namespace/wso2-system created
-    serviceaccount/wso2am-pattern-1-svc-account created
-    ...
-    configmap/wso2am-p1-apim-2-conf created
-    configmap/wso2am-p1-mysql-dbscripts created
-    [Setting to K8s Mode]
-    ```
-
 - Install API Portal and security token service under a namespace called "wso2"
 
     ```sh
-    >> apictl apply -f k8s-artifacts/wso2am-operator/api-portal/
+    >> apictl apply -f k8s-artifacts/api-portal/
     
     Output:
     namespace/wso2 created
     configmap/apim-conf created
-    apimanager.apim.wso2.com/custom-pattern-1 created
+    deployment.apps/wso2apim created
+    service/wso2apim created
     ```
 
 - Access API Portal and security token service
@@ -215,21 +199,21 @@ API image.
     >> apictl get pods -n wso2
     
     Output:
-    NAME                                                        READY   STATUS    RESTARTS   AGE
-    all-in-one-api-manager-5694f99754-4zhpq                     1/1     Running   0          2m39s
+    NAME                        READY   STATUS    RESTARTS   AGE
+    wso2apim-596f9d5ff6-mcch6   1/1     Running   0          5m7s
         
     >> apictl get services -n wso2
     
     Output:
-    NAME       TYPE       CLUSTER-IP    EXTERNAL-IP   PORT(S)                                                       AGE
-    wso2apim   NodePort   10.0.39.192   <none>        8280:32004/TCP,8243:32003/TCP,9763:32002/TCP,9443:32001/TCP   114s
+    NAME       TYPE       CLUSTER-IP     EXTERNAL-IP   PORT(S)                                                       AGE
+    wso2apim   NodePort   10.96.209.21   <none>        8280:32004/TCP,8243:32003/TCP,9763:32002/TCP,9443:32001/TCP   5m24s
     ```
 
     **_Note:_** To access the API portal, add host mapping entry to the /etc/hosts file. As we have exposed
     the API portal service in Node Port type, you can use the IP address of any Kubernetes node.
     
     ```
-    <ANY_K8S_NODE_IPP>  wso2apim
+    <ANY_K8S_NODE_IP>  wso2apim
     ```
     
     - For Docker for Mac use "127.0.0.1" for the K8s node IP
@@ -260,7 +244,8 @@ The endpoint of our microservice is referred in the API definition.
     
     Output:
     creating configmap with swagger definition
-    configmap/online-store-swagger created
+    configmap/online-store-1-swagger created
+    creating API definition
     api.wso2.com/online-store created
     ```
 
@@ -446,6 +431,7 @@ Commands of the API Controller can be found [here](https://github.com/wso2/produ
     </br>
     
     ```sh
+    >> apictl login k8s -k
     >> apictl import-api -f online-store/ -e k8s -k
     
     Output:
@@ -490,9 +476,11 @@ Execute the following commands if you wish to clean up the Kubernetes cluster by
 and configurations related to API operator and API portal.
 
 ```sh
+>> apictl remove env k8s
+>> apictl set --mode k8s
 >> apictl delete api online-store
->> apictl remove-env -e k8s
->> apictl delete -f k8s-artifacts/wso2am-operator/api-portal/
+>> apictl delete -f scenarios/scenario-1/products_dep.yaml
+>> apictl delete -f k8s-artifacts/api-portal/
 >> apictl uninstall api-operator
 ```
 
