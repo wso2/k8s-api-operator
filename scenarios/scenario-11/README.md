@@ -80,8 +80,8 @@ To try out the scenario navigate to ```k8s-api-operator-<version>``` directory.
     **Note:** To access the API portal and Analytics dashboard, add host mapping entries to the /etc/hosts file. As we have exposed the services in Node Port type, you can use the IP address of any Kubernetes node.
     
     ```
-    <Any K8s Node IP>  wso2apim
-    <Any K8s Node IP>  wso2apim-analytics
+    <ANY_K8S_NODE_IP>  wso2apim
+    <ANY_K8S_NODE_IP>  wso2apim-analytics
     ```
 
     - For Docker for Mac use "127.0.0.1" for the K8s node IP

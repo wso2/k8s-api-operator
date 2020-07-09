@@ -2,7 +2,12 @@
 
 ## Introduction
 
-As microservices are increasingly being deployed on Kubernetes, the need to expose these microservices as well documented, easy to consume, managed APIs is becoming important to develop great applications. The API operator for Kubernetes makes APIs a first-class citizen in the Kubernetes ecosystem. Similar to deploying microservices, you can now use this operator to deploy APIs for individual microservices or compose several microservices into individual APIs. With this users will be able to expose their microservice as managed API in Kubernetes environment without any additional work.
+As microservices are increasingly being deployed on Kubernetes, the need to expose these microservices as well
+documented, easy to consume, managed APIs is becoming important to develop great applications.
+The API operator for Kubernetes makes APIs a first-class citizen in the Kubernetes ecosystem.
+Similar to deploying microservices, you can now use this operator to deploy APIs for individual microservices or
+compose several microservices into individual APIs. With this users will be able to expose their microservice
+as managed API in Kubernetes environment without any additional work.
 
 
 ![Alt text](docs/images/K8s-API-Operator.png?raw=true "K8s API Operator")
@@ -30,7 +35,8 @@ In this document, we will walk through on the following.
 
 - An account in DockerHub or private docker registry
 
-- Download [k8s-api-operator-1.2.0-alpha.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.2.0-alpha/k8s-api-operator-1.2.0-alpha.zip) and extract the zip
+- Download [k8s-api-operator-1.2.0-alpha.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.2.0-alpha/k8s-api-operator-1.2.0-alpha.zip)
+and extract the zip
 
     1. This zip contains the artifacts that required to deploy in Kubernetes.
     2. Extract k8s-api-operator-1.2.0-alpha.zip
@@ -46,7 +52,8 @@ In this document, we will walk through on the following.
 #### Step 1: Deploy a sample microservice in Kubernetes
 
 
-- Let’s deploy a sample microservice in K8s which lists the details of products. This will deploy a pod and service for the sample service.
+- Let’s deploy a sample microservice in K8s which lists the details of products.
+This will deploy a pod and service for the sample service.
 
     ```sh
     >> kubectl apply -f scenarios/scenario-1/products_dep.yaml
@@ -69,7 +76,8 @@ In this document, we will walk through on the following.
     <details><summary>If you are using Minikube click here</summary>
     <p>
     
-    **_Note:_**  By default API operator requires the LoadBalancer service type which is not supported in Minikube by default. Here is how you can enable it on Minikube.
+    **_Note:_**  By default API operator requires the LoadBalancer service type which is not supported in Minikube
+    by default. Here is how you can enable it on Minikube.
     
     - On Minikube, the LoadBalancer type makes the Service accessible through the minikube service command.
     
@@ -91,7 +99,13 @@ In this document, we will walk through on the following.
     >> curl -X GET http://<EXTERNAL_IP>:80/products
          
     Output:
-    {"products":[{"name":"Apples", "id":101, "price":"$1.49 / lb"}, {"name":"Macaroni & Cheese", "id":151, "price":"$7.69"}, {"name":"ABC Smart TV", "id":301, "price":"$399.99"}, {"name":"Motor Oil", "id":401, "price":"$22.88"}, {"name":"Floral Sleeveless Blouse", "id":501, "price":"$21.50"}]}
+    {"products":[
+        {"name":"Apples", "id":101, "price":"$1.49 / lb"},
+        {"name":"Macaroni & Cheese", "id":151, "price":"$7.69"},
+        {"name":"ABC Smart TV", "id":301, "price":"$399.99"},
+        {"name":"Motor Oil", "id":401, "price":"$22.88"},
+        {"name":"Floral Sleeveless Blouse", "id":501, "price":"$21.50"}
+    ]}
     ```
    
     ```sh
@@ -211,10 +225,11 @@ API image.
     wso2apim   NodePort   10.0.39.192   <none>        8280:32004/TCP,8243:32003/TCP,9763:32002/TCP,9443:32001/TCP   114s
     ```
 
-    **_Note:_** To access the API portal, add host mapping entry to the /etc/hosts file. As we have exposed the API portal service in Node Port type, you can use the IP address of any Kubernetes node.
+    **_Note:_** To access the API portal, add host mapping entry to the /etc/hosts file. As we have exposed
+    the API portal service in Node Port type, you can use the IP address of any Kubernetes node.
     
     ```
-    <Any K8s Node IP>  wso2apim
+    <ANY_K8S_NODE_IPP>  wso2apim
     ```
     
     - For Docker for Mac use "127.0.0.1" for the K8s node IP
@@ -231,7 +246,8 @@ API image.
 
 #### Step 5: Expose the sample microservice as a managed API
 
-Let’s deploy an API for our microservice. The Open API definition of the API can be found in the scenario/scenario-1/products-swagger.yaml.
+Let’s deploy an API for our microservice. The Open API definition of the API can be found in
+the scenario/scenario-1/products-swagger.yaml.
 
 The endpoint of our microservice is referred in the API definition.
 
@@ -255,18 +271,23 @@ The endpoint of our microservice is referred in the API definition.
     --namespace=wso2      Namespace to deploy the API
     --override            Overwrite the docker image creation for already created docker image
     
-    >> apictl add api -n <API_NAME> --from-file=<LOCATION_TO_THE_OPEN_API_DEFINITION> --replicas=<NUMBER_OF_REPLICAS> --namespace=<DESIRED_NAMESPACE>
+    >> apictl add api -n <API_NAME> --from-file=<LOCATION_TO_THE_OPEN_API_DEFINITION> \
+        --replicas=<NUMBER_OF_REPLICAS> \
+        --namespace=<DESIRED_NAMESPACE>
     ```
 
-    **_Note:_** Namespace and replicas are optional parameters. If they are not provided, the default namespace will be used and 1 replica will be created. 
+    **_Note:_** Namespace and replicas are optional parameters. If they are not provided, the default namespace
+    will be used and 1 replica will be created. 
 
-    When you deploy the API, it will first run the Kaniko job. This basically builds the docker image of the API and pushes it to Docker-Hub. 
+    When you deploy the API, it will first run the Kaniko job. This basically builds the docker image of the API
+    and pushes it to Docker-Hub. 
 
     Once the Kaniko job is completed, it will deploy the managed API for your microservice.
 
 - Verify the API deployment
 
-    If you list down the pods immediately after the add API command you will only see the pod related to Kaniko job. Once it is completed you will see the deployed API. If you are on Minikube, this might take several minutes.
+    If you list down the pods immediately after the add API command you will only see the pod related to Kaniko job.
+    Once it is completed you will see the deployed API. If you are on Minikube, this might take several minutes.
 
     ```sh
     >> apictl get pods 
@@ -303,7 +324,8 @@ The endpoint of our microservice is referred in the API definition.
 
 - Retrieve the API service endpoint details
 
-    The API service is exposed as the Load Balancer service type. You can get the API service endpoint details by using the following command.
+    The API service is exposed as the Load Balancer service type. You can get the API service endpoint details by using
+    the following command.
 
     ```sh
     >> apictl get services
@@ -316,7 +338,8 @@ The endpoint of our microservice is referred in the API definition.
     <details><summary>If you are using Minikube click here</summary>
     <p>
     
-    **_Note:_**  By default API operator requires the LoadBalancer service type which is not supported in Minikube by default. Here is how you can enable it on Minikube.
+    **_Note:_**  By default API operator requires the LoadBalancer service type which is not supported in Minikube
+    by default. Here is how you can enable it on Minikube.
     
     - On Minikube, the LoadBalancer type makes the Service accessible through the minikube service command.
     
@@ -342,7 +365,13 @@ The endpoint of our microservice is referred in the API definition.
     You will get an error as below.
     
     ```json
-    {"fault":{"code":900902, "message":"Missing Credentials", "description":"Missing Credentials. Make sure your API invocation call has a header: \"Authorization\""}}
+    {
+        "fault": {
+            "code": 900902,
+            "message": "Missing Credentials",
+            "description": "Missing Credentials. Make sure your API invocation call has a header: \"Authorization\""
+        }
+    }
     ```
     
     Since the API is secured now, you are experiencing the above error. Hence you need a valid access token to invoke the API.
@@ -370,7 +399,8 @@ The endpoint of our microservice is referred in the API definition.
     >> curl -X GET "https://35.232.188.134:9095/store/v1.0.0/products/101" -H "Authorization:Bearer $TOKEN" -k
     ```
     
-    **_Note:_** In a production-level scenario, there should be a way to discover the available services and obtain an access token in a secured manner. For this, we need to push this API to API Portal and get an OAuth 2.0 access token
+    **_Note:_** In a production-level scenario, there should be a way to discover the available services and obtain
+    an access token in a secured manner. For this, we need to push this API to API Portal and get an OAuth 2.0 access token
 
 
 <br />
@@ -378,13 +408,16 @@ The endpoint of our microservice is referred in the API definition.
 #### Step 7: Pushing the API to the API Portal
 
 
-To make the API discoverable for other users and get the access tokens, we need to push the API to the API portal. Then the app developers/subscribers can navigate to the devportal (https://wso2apim:32001/devportal) to perform the following actions.
+To make the API discoverable for other users and get the access tokens, we need to push the API to the API portal.
+Then the app developers/subscribers can navigate to the devportal (https://wso2apim:32001/devportal)
+to perform the following actions.
 
 - Create an application
 - Subscribe the API to the application
 - Generate a JWT access token 
 
-The following commands will help you to push the API to the API portal in Kubernetes. Commands of the API Controller can be found [here](https://github.com/wso2/product-apim-tooling/blob/v3.1.0/import-export-cli/docs/apictl.md) 
+The following commands will help you to push the API to the API portal in Kubernetes.
+Commands of the API Controller can be found [here](https://github.com/wso2/product-apim-tooling/blob/v3.1.0/import-export-cli/docs/apictl.md) 
 
 
 - Add the API portal as an environment to the API controller using the following command.
@@ -422,7 +455,8 @@ The following commands will help you to push the API to the API portal in Kubern
 
 #### Step 8: Generate an access token for the API
 
-- By default the API is secured with JWT. Hence a valid JWT token is needed to invoke the API. You can obtain a JWT token using the API Controller command as below.
+- By default the API is secured with JWT. Hence a valid JWT token is needed to invoke the API.
+You can obtain a JWT token using the API Controller command as below.
     
     ```sh
     >> apictl set --token-type JWT
@@ -452,7 +486,8 @@ You can find the documentation [here](docs/Readme.md).
 
 ### Cleanup
 
-Execute the following commands if you wish to clean up the Kubernetes cluster by removing all the applied artifacts and configurations related to API operator and API portal.
+Execute the following commands if you wish to clean up the Kubernetes cluster by removing all the applied artifacts
+and configurations related to API operator and API portal.
 
 ```sh
 >> apictl delete api online-store

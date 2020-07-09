@@ -175,8 +175,14 @@ This works in Istio permissive mode and Strict MTLS mode.
      
      You will get an error as below.
      
-     ```
-     {"fault":{"code":900902, "message":"Missing Credentials", "description":"Missing Credentials. Make sure your API invocation call has a header: \"Authorization\""}}
+     ```json
+     {
+         "fault": {
+             "code": 900902,
+             "message": "Missing Credentials",
+             "description": "Missing Credentials. Make sure your API invocation call has a header: \"Authorization\""
+         }
+     }
      ```
      
      Since the API is secured now, you are experiencing the above error. Hence you need a valid access token to invoke the API.
