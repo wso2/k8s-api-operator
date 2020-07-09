@@ -30,16 +30,16 @@ In this document, we will walk through on the following.
 
 - An account in DockerHub or private docker registry
 
-- Download [k8s-api-operator-1.1.0.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.1.0/k8s-api-operator-1.1.0.zip) and extract the zip
+- Download [k8s-api-operator-1.2.0-alpha.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.2.0-alpha/k8s-api-operator-1.2.0-alpha.zip) and extract the zip
 
     1. This zip contains the artifacts that required to deploy in Kubernetes.
-    2. Extract k8s-api-operator-1.1.0.zip
+    2. Extract k8s-api-operator-1.2.0-alpha.zip
     
     ```
-    cd k8s-api-operator-1.1.0
+    cd k8s-api-operator-1.2.0-alpha
     ```
  
-    **_Note:_** You need to run all commands from within the ***k8s-api-operator-1.1.0*** directory.
+    **_Note:_** You need to run all commands from within the ***k8s-api-operator-1.2.0-alpha*** directory.
 
 <br />
 

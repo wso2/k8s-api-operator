@@ -30,16 +30,16 @@ In this document, we will walk through on the following.
 
 - An account in DockerHub or private docker registry
 
-- Download [k8s-api-operator-1.1.0.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.1.0/k8s-api-operator-1.1.0.zip) and extract the zip
+- Download [k8s-api-operator-1.2.0-alpha.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.2.0-alpha/k8s-api-operator-1.2.0-alpha.zip) and extract the zip
 
     1. This zip contains the artifacts that required to deploy in Kubernetes.
-    2. Extract k8s-api-operator-1.1.0.zip
+    2. Extract k8s-api-operator-1.2.0-alpha.zip
     
     ```
-    cd k8s-api-operator-1.1.0
+    cd k8s-api-operator-1.2.0-alpha
     ```
  
-    **_Note:_** You need to run all commands from within the ***k8s-api-operator-1.1.0*** directory.
+    **_Note:_** You need to run all commands from within the ***k8s-api-operator-1.2.0-alpha*** directory.
 
 <br />
 
@@ -121,6 +121,10 @@ In this document, we will walk through on the following.
 
 #### Step 3: Install API Operator
 
+- Set the operator version as `v1.2.0-alpha` by executing following in a terminal.
+    ```sh
+    export WSO2_API_OPERATOR_VERSION=v1.2.0-alpha
+    ```
 - Execute the following command to install API Operator interactively and configure repository to push the microgateway image.
 - Select "Docker Hub" as the repository type.
 - Enter repository name of your Docker Hub account (usually it is the username as well).

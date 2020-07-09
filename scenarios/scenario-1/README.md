@@ -37,7 +37,7 @@ kubernetes cluster as a managed API in the Kubernetes cluster.
  - To test if the product service is working, execute the following commands.
     ```
     Command 1:
-    curl -X GET http://<EXTERNAL-IP>:80/products
+    >> curl -X GET http://<EXTERNAL_IP>:80/products
     
     Output:
     {"products":[{"name":"Apples", "id":101, "price":"$1.49 / lb"}, {"name":"Macaroni & Cheese", "id":151, "price":"$7.69"}, {"name":"ABC Smart TV", "id":301, "price":"$399.99"}, {"name":"Motor Oil", "id":401, "price":"$22.88"}, {"name":"Floral Sleeveless Blouse", "id":501, "price":"$21.50"}]}
@@ -45,7 +45,7 @@ kubernetes cluster as a managed API in the Kubernetes cluster.
     
     ```
     Command 2:
-    curl -X GET http://104.197.114.248:80/products/101
+    >> curl -X GET http://<EXTERNAL_IP>:80/products/101
     
     Output:
     {"name":"Apples", "id":101, "price":"$1.49 / lb", "reviewScore":"0", "stockAvailability":false}
