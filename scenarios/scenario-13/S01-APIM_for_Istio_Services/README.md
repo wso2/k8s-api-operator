@@ -60,12 +60,14 @@ This works only in Istio permissive mode.
     ```
     >> apictl install api-operator
     Choose registry type:
-    1: Docker Hub (Or others, quay.io, HTTPS registry)
+    1: Docker Hub
     2: Amazon ECR
     3: GCR
     4: HTTP Private Registry
+    5: HTTPS Private Registry
+    6: Quay.io
     Choose a number: 1: 1
-    Enter repository name (docker.io/john | quay.io/mark | 10.100.5.225:5000/jennifer): docker.io/jennifer
+    Enter repository name: docker.io/jennifer
     Enter username: jennifer
     Enter password: *******
     

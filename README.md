@@ -35,8 +35,8 @@ In this document, we will walk through on the following.
     1. This zip contains the artifacts that required to deploy in Kubernetes.
     2. Extract k8s-api-operator-1.2.0-alpha.zip
     
-    ```
-    cd k8s-api-operator-1.2.0-alpha
+    ```sh
+    >> cd k8s-api-operator-1.2.0-alpha
     ```
  
     **_Note:_** You need to run all commands from within the ***k8s-api-operator-1.2.0-alpha*** directory.
@@ -62,7 +62,7 @@ In this document, we will walk through on the following.
     >> kubectl get services products
   
     Output:
-    NAME       TYPE           CLUSTER-IP    EXTERNAL-IP       PORT(S)        AGE
+    NAME       TYPE           CLUSTER-IP    EXTERNAL_IP       PORT(S)        AGE
     products   LoadBalancer   10.83.1.131   104.197.114.248   80:30475/TCP   27m
     ```
 
@@ -78,7 +78,7 @@ In this document, we will walk through on the following.
         >> minikube service products --url
         ```
         
-        The IP you receive from above output can be used as the "external-IP" in the following command.
+        The IP you receive from above output can be used as the "EXTERNAL_IP" in the following command.
     
     </p>
     </details>
@@ -88,14 +88,14 @@ In this document, we will walk through on the following.
 
 - To test the microservice, execute the following commands.
     ```sh
-    >> curl -X GET http://<EXTERNAL-IP>:80/products
+    >> curl -X GET http://<EXTERNAL_IP>:80/products
          
     Output:
     {"products":[{"name":"Apples", "id":101, "price":"$1.49 / lb"}, {"name":"Macaroni & Cheese", "id":151, "price":"$7.69"}, {"name":"ABC Smart TV", "id":301, "price":"$399.99"}, {"name":"Motor Oil", "id":401, "price":"$22.88"}, {"name":"Floral Sleeveless Blouse", "id":501, "price":"$21.50"}]}
     ```
    
     ```sh
-    >> curl -X GET http://<EXTERNAL-IP>:80/products/101
+    >> curl -X GET http://<EXTERNAL_IP>:80/products/101
          
     Output:
     {"name":"Apples", "id":101, "price":"$1.49 / lb", "reviewScore":"0", "stockAvailability":false}
@@ -134,12 +134,14 @@ In this document, we will walk through on the following.
     ```sh
     >> apictl install api-operator
     Choose registry type:
-    1: Docker Hub (Or others, quay.io, HTTPS registry)
+    1: Docker Hub
     2: Amazon ECR
     3: GCR
     4: HTTP Private Registry
+    5: HTTPS Private Registry
+    6: Quay.io
     Choose a number: 1: 1
-    Enter repository name (docker.io/john | quay.io/mark | 10.100.5.225:5000/jennifer): docker.io/jennifer
+    Enter repository name: docker.io/jennifer
     Enter username: jennifer
     Enter password: *******
     
@@ -321,7 +323,7 @@ The endpoint of our microservice is referred in the API definition.
         >> minikube service online-store --url
         ```
         
-        The IP you receive from above output can be used as the "external-IP" in the following command.
+        The IP you receive from above output can be used as the "EXTERNAL_IP" in the following command.
     
     </p>
     </details>
@@ -332,7 +334,7 @@ The endpoint of our microservice is referred in the API definition.
 
     Let’s observe what happens if you try to invoke the API as a regular microservice.
     ```sh
-    >> curl -X GET "https://<EXTERNAL-IP>:9095/store/v1.0.0/products" -k
+    >> curl -X GET "https://<EXTERNAL_IP>:9095/store/v1.0.0/products" -k
     ```
     
     You will get an error as below.
@@ -355,7 +357,7 @@ The endpoint of our microservice is referred in the API definition.
     ```sh
     Format: 
     
-    >> curl -X GET "https://<EXTERNAL-IP>:9095/<API-context>/<API-resource>"  -H "Authorization:Bearer $TOKEN" -k
+    >> curl -X GET "https://<EXTERNAL_IP>:9095/<API-context>/<API-resource>"  -H "Authorization:Bearer $TOKEN" -k
     ```
 
     Example commands:

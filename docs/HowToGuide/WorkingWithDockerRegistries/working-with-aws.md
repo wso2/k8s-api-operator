@@ -49,10 +49,12 @@ You can use Amazon ECR as the registry or other registry type. Following [Instal
 ```sh
 >> apictl install api-operator
 Choose repository type:
-1: Docker Hub (Or others, quay.io, HTTPS registry)
+1: Docker Hub
 2: Amazon ECR
 3: GCR
 4: HTTP Private Registry
+5: HTTPS Private Registry
+6: Quay.io
 Choose a number: 1: 2
 Enter repository name (<aws_account_id.dkr.ecr.region.amazonaws.com>/repository): 610968236798.dkr.ecr.us-east-2.amazonaws.com/my-ecr-repo
 Amazon credential file: /Users/wso2/.aws/credentials:

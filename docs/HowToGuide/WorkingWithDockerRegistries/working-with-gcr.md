@@ -16,10 +16,12 @@ Follow the [cloud.google.com documentation](https://cloud.google.com/docs/authen
 ```sh
 >> apictl install api-operator
 Choose registry type:
-1: Docker Hub (Or others, quay.io, HTTPS registry)
+1: Docker Hub
 2: Amazon ECR
 3: GCR
 4: HTTP Private Registry
+5: HTTPS Private Registry
+6: Quay.io
 Choose a number: 1: 3
 GCR service account key json file: /path/to/gcr/service/account/key/file.json
 
