@@ -67,11 +67,11 @@ This works in Istio permissive mode and Strict MTLS mode.
     5: HTTPS Private Registry
     6: Quay.io
     Choose a number: 1: 1
-    Enter repository name: docker.io/jennifer
+    Enter repository name: jennifer
     Enter username: jennifer
     Enter password: *******
     
-    Repository: docker.io/jennifer
+    Repository: jennifer
     Username  : jennifer
     Confirm configurations: Y: Y
     ```

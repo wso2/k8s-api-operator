@@ -119,11 +119,13 @@ In this document, we will walk through on the following.
 
 #### Step 3: Install API Operator
 
-- Execute the following command to install API Operator interactively and configure repository to push the microgateway image.
+- Execute the following command to install API Operator interactively and configure repository to push the built managed
+API image.
 - Select "Docker Hub" as the repository type.
 - Enter repository name of your Docker Hub account (usually it is the username as well).
-- Enter username and the password
-- Confirm configuration are correct with entering "Y"
+  - Supports both `jennifer` and `docker.io/jennifer` (backward compatibility) as repository name.
+- Enter username and the password.
+- Confirm configuration are correct with entering "Y".
 
     ```sh
     >> apictl install api-operator
@@ -135,11 +137,11 @@ In this document, we will walk through on the following.
     5: HTTPS Private Registry
     6: Quay.io
     Choose a number: 1: 1
-    Enter repository name: docker.io/jennifer
+    Enter repository name: jennifer
     Enter username: jennifer
     Enter password: *******
     
-    Repository: docker.io/jennifer
+    Repository: jennifer
     Username  : jennifer
     Confirm configurations: Y: Y
     
