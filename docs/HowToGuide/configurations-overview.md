@@ -1,6 +1,6 @@
 ### Configuration Overview
 
-##### How to configure Readiness and Liveness probes
+#### How to configure Readiness and Liveness probes
 
 - Readiness and Liveness probes are responsible to check the health status of your deployment and pods.
 
@@ -29,25 +29,192 @@
     ```sh
     >> kubectl apply -f api-operator/controller-configs/controller_conf.yaml
     ```
-##### How to change HPA(Horizontal Pod Autoscaler) related configurations
+  
+#### How to configure Microgateway
+
+- Default configurations
+
+    Default configurations related to microgateway can be found in \<k8s-api-operator-home>/api-operator/controller-configs/controller_conf.yaml.
+    You can change these configurations depending on the availability of resources.
+    
+    ```yaml
+    #mgw toolkit image to initialize/setup the micro gw project
+    mgwToolkitImg: wso2am/wso2micro-gw-toolkit:3.2.0
+    #mgw runtime image to use in the mgw executable
+    mgwRuntimeImg: wso2/wso2micro-gw:3.2.0
+    #kaniko image for the kaniko pod which builds the mgw api runtime and pushes to the registry
+    kanikoImg: gcr.io/kaniko-project/executor:v0.24.0
+    #Required CPU usage for pods.   Default-> resourceRequestCPU: "1000m"
+    resourceRequestCPU: "1000m"
+    #Required Memory usage pods can use.   Default->  resourceRequestMemory: "512Mi"
+    resourceRequestMemory: "512Mi"
+    #Max CPU usage limit a pod can use.   Default->  resourceLimitCPU: "2000m"
+    resourceLimitCPU: "2000m"
+    #Max Memory usage limit a pod can use.   Default->  resourceLimitMemory: "512Mi"
+    resourceLimitMemory: "512Mi"
+    
+    resourceRequestCPUTarget: "500m"
+    #Required Memory usage pods can use for TargetEndPoint.   Default->  resourceRequestMemory: "512Mi"
+    resourceRequestMemoryTarget: "512Mi"
+    #Max CPU usage limit a pod can use for TargetEndPoint.   Default->  resourceLimitCPU: "2000m"
+    resourceLimitCPUTarget: "500m"
+    #Max Memory usage limit a pod can use for TargetEndPoint.   Default->  resourceLimitMemory: "512Mi"
+    resourceLimitMemoryTarget: "512Mi"
+    #Configure readiness probe initial delay for API pod
+    readinessProbeInitialDelaySeconds: "8"
+    #Configure readiness prob interval for API pod
+    readinessProbePeriodSeconds: "5"
+    #Configure liveness probe initial delay for API pod
+    livenessProbeInitialDelaySeconds: "10"
+    #Configure liveness probe interval for API pod
+    livenessProbePeriodSeconds: "30"
+    #Stop at docker image creation or continue to deploy kubernetes artifact.
+    #Default->  generatekubernbetesartifactsformgw: "true"
+    generatekubernbetesartifactsformgw: "true"
+    #Available modes - ingress, default , route and clusterIP
+    operatorMode: "default"
+    #Expose custom metrics. Default-> observabilityEnabled: "false"
+    observabilityEnabled: "false"
+    ``` 
+    
+    ```yaml
+    #By default hostname verification is disabled. In a production scenario, this has to be enabled.
+    verifyHostname: "false"
+    #Log level of the managed API (microgateway). Available levels: INFO, DEBUG, TRACE
+    logLevel: "INFO"
+    #Ports from which the managed API service is getting exposed
+    httpPort: "9090"
+    httpsPort: "9095"
+    #Enable distributed ratelimiting. Default value:false. If enabled please deploy API Portal
+    enabledGlobalTMEventPublishing: "false"
+    #The central traffic management solution URL (related to distributed ratelimiting)
+    #Format: hostname_of_API_Portal:Default_port
+    throttleEndpoint: "wso2apim.wso2:9443"
+    #Message broker connection URL (related to distributed ratelimiting and token revocation)
+    #Format: hostname_of_API_Portal:JMS_port
+    jmsConnectionProvider: "wso2apim.wso2:5672"
+    #Token revocation
+    #Enable real time notifier for token revocation
+    enableRealtimeMessageRetrieval: "false"
+    #Request and response validation
+    enableRequestValidation: "false"
+    enableResponseValidation: "false"
+    #APIKey issuer configurations
+    #APIKey STS token configurations
+    enabledAPIKeyIssuer: "true"
+    apiKeyKeystorePath: "${mgw-runtime.home}/runtime/bre/security/ballerinaKeystore.p12"
+    apiKeyKeystorePassword: "ballerina"
+    apiKeyIssuerName: "https://localhost:9095/apikey"
+    apiKeyIssuerCertificateAlias: "ballerina"
+    validityTime: "-1"
+    #Provide the list of allowed APIs by the generated API Key
+    allowedAPIs: |
+    # - API name given in the API Definition: Allowed versions
+    ```
+
+- ##### Ingress Mode
+
+    To use the Ingress controller, change the operator mode to "ingress". This can be found under default configurations for microgateway.
+    
+    Ingress specific configurations can also be changed in controller_conf.yaml.
+    
+    ```yaml
+    ingress.properties: |
+        nginx.ingress.kubernetes.io/backend-protocol: HTTPS
+        kubernetes.io/ingress.class: nginx
+        nginx.ingress.kubernetes.io/ssl-redirect: false
+    ingressResourceName: "api-operator-ingress"
+    #Define whether ingress to use http or https endpoint of operator deployment
+    ingressTransportMode: "https"
+    #Define the hostname of the ingress
+    ingressHostName : "mgw.ingress.wso2.com"
+    #Define the secret name for TLS certificate
+    #tlsSecretName: ""
+    ```
+  
+- ##### Route Mode
+    
+    To expose an API using Openshift Route, change the operator mode to "route". This can be found under default configurations for microgateway.
+    
+    Route specific configurations can also be changed in controller_conf.yaml
+    
+    ```yaml
+    route.properties: |
+      openshift.io/host.generated: false
+    routeName: "api-operator-route"
+    #Define whether Route to use http or https endpoint of operator deployment
+    routeTransportMode: "http"
+    #Define the hostname of the Route
+    routeHost : "mgw.route.wso2.com"
+    # TLS termination - passthrough, edge, reencrypt
+    tlsTermination: ""
+    ``` 
+Once you have done any changes to above configs, you have to execute the following command to apply changes to the cluster.
+
+```shell script
+>> kubectl apply -f api-operator/controller-configs/controller_conf.yaml
+``` 
+
+- ##### Advanced Configurations
+
+    You can further change the configurations related to microgateway by changing the
+    /<k8s-api-operator-home>/api-operator/controller-configs/mgw_conf_mustache.yaml file.
+    
+    Make sure to execute following command for your changes to take effect in the cluster.
+    ```shell script
+    >> kubectl apply -f api-operator/controller-configs/mgw_conf_mustache.yaml
+    ```
+
+
+  
+#### How to change HPA(Horizontal Pod Autoscaler) related configurations
 
 - API Operator provides the HPA capability to the deployed API.
 - HPA will be populated from the default values.
 - These configurations reside in the \<k8s-api-operator-home>/api-operator/controller-configs/controller_conf.yaml
     - Find the default values below.
     ```yaml
-      #Maximum number of replicas for the Horizontal Pod Auto-scale. Default->  hpaMaxReplicas: "5"
-      hpaMaxReplicas: "5"
-      #Avg CPU utilization(%) to spin up the next pod.  Default->  hpaTargetAverageUtilizationCPU: "50"
-      hpaTargetAverageUtilizationCPU: "50"
-      #Required CPU usage for pods.   Default-> resourceRequestCPU: "1000m"
-      resourceRequestCPU: "1000m"
-      #Required Memory usage pods can use.   Default->  resourceRequestMemory: "512Mi"
-      resourceRequestMemory: "512Mi"
-      #Max CPU usage limit a pod can use.   Default->  resourceLimitCPU: "2000m"
-      resourceLimitCPU: "2000m"
-      #Max Memory usage limit a pod can use.   Default->  resourceLimitMemory: "512Mi"
-      resourceLimitMemory: "512Mi"
+  # Horizontal Pod Auto-Scaling for Micro-Gateways
+    # Maximum number of replicas for the Horizontal Pod Auto-scale. Default->  maxReplicas: "5"
+    mgwMaxReplicas: "5"
+    # Metrics configurations
+    mgwMetrics: |
+      - type: Resource
+        resource:
+          name: cpu
+          target:
+            type: Utilization
+            averageUtilization: 50
+      # - type: Pods
+      #   pods:
+      #     metric:
+      #       name: http_requests_total_value_per_second
+      #     target:
+      #       type: AverageValue
+      #       averageValue: 100m
+      # - type: Object
+      #   object:
+      #     metric:
+      #       name: requests-per-second
+      #     describedObject:
+      #       apiVersion: networking.k8s.io/v1beta1
+      #       kind: Ingress
+      #       name: main-route
+      #     target:
+      #       type: Value
+      #       value: 10k
+  
+    # Horizontal Pod Auto-Scaling for Target-Endpoints
+    # Maximum number of replicas for the Horizontal Pod Auto-scale. Default->  maxReplicas: "5"
+    targetEndpointMaxReplicas: "5"
+    # Metrics configurations
+    targetEndpointMetrics: |
+      - type: Resource
+        resource:
+          name: cpu
+          target:
+            type: Utilization
+            averageUtilization: 50
     ```
     - Depending on your requirements and infrastructure availability, you may change the above values.
 - Once you done these changed you have to execute the following command to apply these changed in the Kubernetes cluster.
@@ -55,7 +222,7 @@
     >> kubectl apply -f api-operator/controller-configs/controller_conf.yaml
     ```
 
-##### How to configure the default security
+#### How to configure the default security
 
 - API Operator provides the security to your API. You need to define the security which needs to be applied on the API under "security" extension in the API.
 
