@@ -22,7 +22,7 @@ You can find the content you need to be working with the API operator in this do
         1. [Reconfigure Registry](HowToGuide/WorkingWithDockerRegistries/reconfigure-registry.md)
     1. [Install API Operator in CI/CD](HowToGuide/install-api-operator-in-cicd.md)
     1. [Working With Additional Kaniko Flags](HowToGuide/working-with-kaniko-additional-flags.md)
-    1. [Working with Deployment Modes](HowToGuide/working-wth-deployment-modes.md)
+    1. [Working with Deployment Modes](HowToGuide/working-with-deployment-modes.md)
 1. [Troubleshooting Guide](Troubleshooting/troubleshooting.md)
 
 > If you were not able to find the content you were looking for, please let us know by creating a GitHub issue in our [GitHub space](https://github.com/wso2/k8s-api-operator/issues).
