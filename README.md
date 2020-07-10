@@ -402,7 +402,7 @@ to perform the following actions.
 - Generate a JWT access token 
 
 The following commands will help you to push the API to the API portal in Kubernetes.
-Commands of the API Controller can be found [here](https://github.com/wso2/product-apim-tooling/blob/v3.1.0/import-export-cli/docs/apictl.md) 
+Commands of the API Controller can be found [here](https://github.com/wso2/product-apim-tooling/blob/v3.2.0-beta/import-export-cli/docs/apictl.md) 
 
 
 - Add the API portal as an environment to the API controller using the following command.
@@ -476,12 +476,12 @@ Execute the following commands if you wish to clean up the Kubernetes cluster by
 and configurations related to API operator and API portal.
 
 ```sh
->> apictl remove env k8s
->> apictl set --mode k8s
->> apictl delete api online-store
->> apictl delete -f scenarios/scenario-1/products_dep.yaml
->> apictl delete -f k8s-artifacts/api-portal/
->> apictl uninstall api-operator
+>> apictl remove env k8s;
+   apictl set --mode k8s;
+   apictl delete api online-store;
+   apictl delete -f scenarios/scenario-1/products_dep.yaml;
+   apictl delete -f k8s-artifacts/api-portal/;
+   apictl uninstall api-operator;
 ```
 
 ### Sample Scenarios
@@ -504,6 +504,8 @@ and configurations related to API operator and API portal.
 1. [Sample 16: Deploy multiple swagger-projects as one API](scenarios/scenario-16)
 1. [Sample 17: Expose an API using Ingress](scenarios/scenario-17)
 1. [Sample 18: Expose an API using Openshift Route](scenarios/scenario-18)
+1. [Sample 19: Deploy petstore service as a managed API secured with API Key Authentication](scenarios/scenario-19)
+1. [Sample 20: Horizontal pod auto-scaling with custom-metrics](scenarios/scenario-20)
 
 
 ### Troubleshooting Guide
