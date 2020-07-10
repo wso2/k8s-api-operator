@@ -1,4 +1,4 @@
-## Scenario 16 - Deploy multiple swagger-projects as one API
+## Scenario 16 - Deploy multiple swagger-projects as one API (Shared Mode)
 
 - This scenario describes how to expose multiple APIs as single API gateway on a kubernetes cluster as a managed API.
 
@@ -60,7 +60,7 @@
     
     ```
     --mode=privatejet   Overrides the deploying mode. Available modes: privateJet, sidecar
-    --versio=2.0.0        Used for docker image versioning. Default value is v1.0.0
+    --version=2.0.0     Used for docker image versioning. Default value is v1.0.0
 
     >> apictl add api -n petstore-multiple-api --from-file=pets-int --from-file=stores-int --mode=privatejet --version=2.0.0
     ```
