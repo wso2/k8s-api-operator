@@ -54,7 +54,6 @@ import (
 )
 
 var log = logf.Log.WithName("api.controller")
-var reconcileExitLimit = 5
 
 // Add creates a new API Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
@@ -519,6 +518,10 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 		for t := 24; t > 0; t -= 1 {
 			time.Sleep(5 * time.Second)
+			errSvc := k8s.Get(&r.client, request.NamespacedName, mgwSvc)
+			if errSvc != nil {
+				reqLogger.Error(errSvc, "Error getting the mgw service")
+			}
 			getEndPointValue := mgw.ExternalIP(&r.client, instance, operatorMode, mgwSvc, controlIngressData, controlOpenshiftConf)
 			err = r.client.Update(context.TODO(), instance)
 			if getEndPointValue == "" {
@@ -530,11 +533,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		}
 		getEndPointValue := mgw.ExternalIP(&r.client, instance, operatorMode, mgwSvc, controlIngressData, controlOpenshiftConf)
 		err = r.client.Update(context.TODO(), instance)
-		if getEndPointValue == "" && reconcileExitLimit != 0 {
-			reconcileExitLimit -= 1
-			log.Info("Reconcile attempts remaining to check endpoint", "reconcileExitLimit", reconcileExitLimit)
-			return reconcile.Result{Requeue: true}, nil
-		}
 
 		if getEndPointValue != "" {
 			log.Info("External IP extracted successfully")
@@ -573,7 +571,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		r.recorder.Event(instance, corev1.EventTypeNormal, "Deploy",
 			fmt.Sprintf("Successfully deployed the API: %s.", instance.Name))
 
-		reconcileExitLimit = 5
 	} else {
 		reqLogger.Info("Skip updating kubernetes artifacts")
 	}
