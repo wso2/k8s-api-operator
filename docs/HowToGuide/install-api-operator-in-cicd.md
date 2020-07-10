@@ -15,7 +15,7 @@ Flags:
 
 For offline installation use the `--from-file` flag to point the operator configs downloaded from the [release](https://github.com/wso2/k8s-api-operator/releases). The flag `--from-file` can be used with any registry type.
 
-## 1. Docker Hub or HTTPS registry
+## 1. Docker Hub
 
 ```sh
 Format:
@@ -26,12 +26,6 @@ Format:
 ```sh
 Docker-Hub:
 >> apictl install api-operator --registry-type=DOCKER_HUB --repository=docker.io/wso2 --username=john --password=*******
-
-Quay.io:
->> apictl install api-operator --registry-type=DOCKER_HUB --repository=quay.io/wso2 --username=mark --password=*******
-
-HTTPS registry:
->> apictl install api-operator --registry-type=DOCKER_HUB --repository=10.100.5.225:5000/wso2 --username=jennifer --password=*******
 ```
 
 ## 2. Amazon ECR
@@ -64,3 +58,22 @@ Example:
 >> apictl install api-operator --registry-type=HTTP --repository=10.100.5.225:5000/wso2 --username=jennifer --password=********
 ```
 
+## 5. HTTPS private registry
+
+```sh
+Format:
+>> apictl install api-operator --registry-type=HTTPS --repository=<REPOSITORY> --username=<USER_NAME> --password=<PASSWORD>
+
+Example:
+>> apictl install api-operator --registry-type=HTTPS --repository=10.100.5.225:5000/wso2 --username=jennifer --password=********
+```
+
+## 6. HTTPS private registry
+
+```sh
+Format:
+>> apictl install api-operator --registry-type=QUAY --repository=<REPOSITORY> --username=<USER_NAME> --password=<PASSWORD>
+
+Example:
+>> apictl install api-operator --registry-type=QUAY --repository=john --username=john --password=********
+```

@@ -19,13 +19,13 @@ This works in Istio permissive mode and Strict MTLS mode.
 
 - An account in DockerHub or private docker registry
 
-- Download [k8s-api-operator-1.1.0.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.1.0/k8s-api-operator-1.1.0.zip) and extract the zip
+- Download [k8s-api-operator-1.2.0-alpha.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.2.0-alpha/k8s-api-operator-1.2.0-alpha.zip) and extract the zip
 
     1. This zip contains the artifacts that required to deploy in Kubernetes.
-    2. Extract k8s-api-operator-1.1.0.zip
+    2. Extract k8s-api-operator-1.2.0-alpha.zip
     
     ```
-    cd k8s-api-operator-1.1.0/scenarios/scenario-13/S02-APIM_for_Istio_Services_MTLS
+    cd k8s-api-operator-1.2.0-alpha/scenarios/scenario-13/S02-APIM_for_Istio_Services_MTLS
     ```
  
     **_Note:_** You need to run all commands from within the ```S02-APIM_for_Istio_Services_MTLS``` directory.
@@ -60,16 +60,18 @@ This works in Istio permissive mode and Strict MTLS mode.
     ```
     >> apictl install api-operator
     Choose registry type:
-    1: Docker Hub (Or others, quay.io, HTTPS registry)
+    1: Docker Hub
     2: Amazon ECR
     3: GCR
     4: HTTP Private Registry
+    5: HTTPS Private Registry
+    6: Quay.io
     Choose a number: 1: 1
-    Enter repository name (docker.io/john | quay.io/mark | 10.100.5.225:5000/jennifer): docker.io/jennifer
+    Enter repository name: jennifer
     Enter username: jennifer
     Enter password: *******
     
-    Repository: docker.io/jennifer
+    Repository: jennifer
     Username  : jennifer
     Confirm configurations: Y: Y
     ```
@@ -173,8 +175,14 @@ This works in Istio permissive mode and Strict MTLS mode.
      
      You will get an error as below.
      
-     ```
-     {"fault":{"code":900902, "message":"Missing Credentials", "description":"Missing Credentials. Make sure your API invocation call has a header: \"Authorization\""}}
+     ```json
+     {
+         "fault": {
+             "code": 900902,
+             "message": "Missing Credentials",
+             "description": "Missing Credentials. Make sure your API invocation call has a header: \"Authorization\""
+         }
+     }
      ```
      
      Since the API is secured now, you are experiencing the above error. Hence you need a valid access token to invoke the API.

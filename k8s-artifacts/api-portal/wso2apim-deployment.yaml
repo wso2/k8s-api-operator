@@ -35,7 +35,7 @@ spec:
     spec:
       containers:
         - name: wso2apim
-          image: pubudu/wso2am:3.2.0-alpha
+          image: pubudu/wso2am:3.2.0-beta
           resources:
             limits:
               memory: "2Gi"

@@ -17,7 +17,7 @@ If you wish to add these additional flags to the Kaniko job, please follow the i
 2. Include the [Kaniko additional flags]((https://github.com/GoogleContainerTools/kaniko#additional-flags)) you need under ***KanikoArguments***. 
 
 An example is shown below.
-```
+```yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:

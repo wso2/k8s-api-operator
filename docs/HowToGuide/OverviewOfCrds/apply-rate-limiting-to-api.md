@@ -21,7 +21,7 @@ Example: In the following ratelimiting policies the namespace is provided as "ws
 referred should be "wso2-test-ns". 
 
 * Application throttling
-```
+```yaml
 apiVersion: wso2.com/v1alpha1
 kind: RateLimiting
 metadata:
@@ -37,7 +37,7 @@ spec:
 ```
 
 * Subscription throttling
-```
+```yaml
 apiVersion: wso2.com/v1alpha1
 kind: RateLimiting
 metadata:
@@ -52,7 +52,7 @@ spec:
    limit: 6
 ```
 * Advance throttling 
-```
+```yaml
 apiVersion: wso2.com/v1alpha1
 kind: RateLimiting
 metadata:

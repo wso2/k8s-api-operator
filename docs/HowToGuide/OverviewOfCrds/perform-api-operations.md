@@ -13,7 +13,7 @@ Format:
 ```
 ***NOTE:*** Here ***API_PROJECT*** refers to a project initialized using `apictl init command`
 
-```
+```sh
 >> apictl add api -n online-store --from-file=scenarios/scenario-1/products_swagger.yaml
 
 Output:

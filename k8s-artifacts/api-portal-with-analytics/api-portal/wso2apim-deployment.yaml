@@ -45,7 +45,7 @@ spec:
           command: ["sh", "-c", "for i in $(seq 1 300); do nc -zvw1 wso2apim-dashboard-analytics-service 9643 && exit 0 || sleep 3; done; exit 1"]
       containers:
         - name: wso2apim
-          image: pubudu/wso2am:3.2.0-alpha
+          image: pubudu/wso2am:3.2.0-beta
           resources:
             limits:
               memory: "2Gi"
