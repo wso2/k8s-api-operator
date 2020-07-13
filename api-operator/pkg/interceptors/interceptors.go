@@ -38,7 +38,7 @@ func Handle(client *client.Client, instance *wso2v1alpha1.API) error {
 	// handle ballerina interceptors
 	balFound, err := handle(client, &instance.Spec.Definition.Interceptors.Ballerina, instance.Namespace, balIntPath)
 	if err != nil {
-		logger.Error(err, "Error handling Ballerina interceptors")
+		logger.Error(err, "Error handling Ballerina interceptors", "namespace", instance.Namespace, "apiName", instance.Name)
 		return err
 	}
 	kaniko.DocFileProp.BalInterceptorsFound = balFound
@@ -46,7 +46,7 @@ func Handle(client *client.Client, instance *wso2v1alpha1.API) error {
 	// handle java interceptors
 	javaFound, err := handle(client, &instance.Spec.Definition.Interceptors.Java, instance.Namespace, javaIntPath)
 	if err != nil {
-		logger.Error(err, "Error handling Java interceptors")
+		logger.Error(err, "Error handling Java interceptors", "namespace", instance.Namespace, "apiName", instance.Name)
 		return err
 	}
 	kaniko.DocFileProp.JavaInterceptorsFound = javaFound

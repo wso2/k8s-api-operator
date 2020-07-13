@@ -75,14 +75,16 @@ func HandleDockerFile(client *client.Client, userNamespace, apiName string, owne
 	dockerFileConfMap := k8s.NewConfMap()
 	err := k8s.Get(client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: dockerFileTemplate}, dockerFileConfMap)
 	if err != nil {
-		logDocker.Error(err, "Error retrieving docker template configmap", "configmap", dockerFileTemplate)
+		logDocker.Error(err, "Error retrieving docker template configmap",
+			"configmap", dockerFileTemplate, "namespace", userNamespace, "apiName", apiName)
 		return err
 	}
 
 	// get file name in configmap
 	fileName, err := maps.OneKey(dockerFileConfMap.Data)
 	if err != nil {
-		logDocker.Error(err, "Error retrieving docker template filename", "configmap_data", dockerFileConfMap.Data)
+		logDocker.Error(err, "Error retrieving docker template filename",
+			"configmap_data", dockerFileConfMap.Data, "namespace", userNamespace, "apiName", apiName)
 		return err
 	}
 
