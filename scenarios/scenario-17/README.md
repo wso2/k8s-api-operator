@@ -16,7 +16,7 @@
 - If you have already deployed the operator you have to update operatorMode to "ingress" and apply the changes using
   following command.
   ```
-  >> apictl apply -f api-operator/controller-artifacts/controler_conf.yaml
+  >> apictl apply -f api-operator/controller-artifacts/controller_conf.yaml
   ```
   
 #### Deploying the artifacts
