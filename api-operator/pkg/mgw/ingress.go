@@ -28,7 +28,7 @@ import (
 	"strings"
 )
 
-var logIng = log.Log.WithName("mgw.ingress")
+var loggerIng = log.Log.WithName("mgw.ingress")
 
 const (
 	ingressConfigs       = "ingress-configs"
@@ -44,6 +44,7 @@ const (
 // ApplyIngressResource creates or updates an Ingress resource to expose mgw
 // Supports for multiple apiBasePaths when there are multiple swaggers for one API CRD
 func ApplyIngressResource(client *client.Client, api *wso2v1alpha1.API, apiBasePathMap map[string]string, owner *[]metav1.OwnerReference) error {
+	logIng := loggerIng.WithValues("namespace", api.Namespace, "apiName", api.Name)
 	ingressConfMap := k8s.NewConfMap()
 	err := k8s.Get(client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: ingressConfigs}, ingressConfMap)
 	if err != nil {

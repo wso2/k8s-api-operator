@@ -33,6 +33,8 @@ const (
 	routeMode                     = "Route"
 	observabilityEnabledConfigKey = "observabilityEnabled"
 
+	eventTypeError	=	"Error"
+
 	ingressHostName   = "ingressHostName"
 	routeHost         = "routeHost"
 

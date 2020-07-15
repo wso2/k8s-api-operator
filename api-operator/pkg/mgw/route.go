@@ -28,7 +28,7 @@ import (
 	"strings"
 )
 
-var logRoute = log.Log.WithName("mgw.route")
+var loggerRoute = log.Log.WithName("mgw.route")
 
 const (
 	openShiftConfigs = "route-configs"
@@ -49,6 +49,7 @@ const (
 // Supports for multiple apiBasePaths when there are multiple swaggers for one API CRD
 func ApplyRouteResource(client *client.Client, api *wso2v1alpha1.API,
 	apiBasePathMap map[string]string, owner *[]metav1.OwnerReference) error {
+	logRoute := loggerRoute.WithValues("namespace", api.Namespace, "apiName", api.Name)
 	routeConfMap := k8s.NewConfMap()
 	errRoute := k8s.Get(client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: openShiftConfigs}, routeConfMap)
 	if errRoute != nil {
