@@ -135,6 +135,7 @@ In this swagger definition, the backend service of the "hello-world-serverless" 
     Output:
     creating configmap with swagger definition
     configmap/hello-world-swagger created
+    creating API definition
     api.wso2.com/hello-world created
     ```
   

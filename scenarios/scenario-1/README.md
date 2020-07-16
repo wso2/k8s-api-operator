@@ -78,6 +78,7 @@ kubernetes cluster as a managed API in the Kubernetes cluster.
     Output:
     creating configmap with swagger definition
     configmap/online-store-swagger created
+    creating API definition
     api.wso2.com/online-store created
     ```
     Note: ***--override*** flag is used to you want to rebuild the API image even if it exists in the configured docker repository.

@@ -21,9 +21,11 @@ metadata:
   labels:
     app: wso2
 spec:
-  protocol: http
-  port: 80
-  targetPort: 8080
+  applicationProtocol: http
+  ports:
+      - name: http-ingress
+        port: 80
+        targetPort: 8080
   deploy:
     name: helloworld-service
     dockerImage: gcr.io/knative-samples/helloworld-go

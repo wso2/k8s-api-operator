@@ -31,6 +31,7 @@ In the scenarios, we have defined it in resource level.
     Output:
     creating configmap with swagger definition
     configmap/petstore-api-swagger created
+    creating API definition
     api.wso2.com/petstore-api created
     ``` 
     Note: ***--override*** flag is used to you want to rebuild the API image even if it exists in the configured docker repository.

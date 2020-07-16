@@ -21,9 +21,11 @@ metadata:
   labels:
     app: inventory
 spec:
-  protocol: http
-  port: 80
-  targetPort: 80
+  applicationProtocol: http
+  ports:
+      - name: http-inv
+        port: 80
+        targetPort: 80
   deploy:
     name: inventory-service
     dockerImage: pubudu/inventory:1.0.0
