@@ -21,9 +21,11 @@ metadata:
   labels:
     app: review
 spec:
-  protocol: http
-  port: 8080
-  targetPort: 8080
+  applicationProtocol: http
+  ports:
+      - name: http-rev
+        port: 8080
+        targetPort: 8080
   deploy:
     name: reviewservice
     dockerImage: pubudu/review:1.0.0

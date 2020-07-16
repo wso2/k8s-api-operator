@@ -75,6 +75,7 @@ In this swagger definition, the security schema of the "petstore" service has be
     Output:
     creating configmap with swagger definition
     configmap/petstore-apikey-swagger created
+    creating API definition
     api.wso2.com/petstore-apikey created
     ```
     Note: ***--override*** flag is used to you want to rebuild the API image even if it exists in the configured docker repository

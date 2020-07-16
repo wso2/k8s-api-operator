@@ -21,9 +21,11 @@ metadata:
   labels:
     app: wso2
 spec:
-  protocol: http
-  port: 80
-  targetPort: 80
+  applicationProtocol: http
+  ports:
+    - name: http-inv-sc
+      port: 80
+      targetPort: 80
   deploy:
     name: inventory-sc-service
     dockerImage: pubudu/inventory:1.0.0

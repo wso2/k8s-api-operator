@@ -22,9 +22,11 @@ metadata:
   labels:
     app: hello-world-serverless
 spec:
-  protocol: http
-  port: 80
-  targetPort: 8080
+  applicationProtocol: http
+  ports:
+      - name: http1
+        port: 80
+        targetPort: 8080
   deploy:
     name: helloworld-service
     dockerImage: gcr.io/knative-samples/helloworld-go

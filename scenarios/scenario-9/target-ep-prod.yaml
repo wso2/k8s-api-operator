@@ -21,9 +21,11 @@ metadata:
   labels:
     app: products
 spec:
-  protocol: http
-  port: 80
-  targetPort: 9090
+  applicationProtocol: http
+  ports:
+      - name: http-prod
+        port: 80
+        targetPort: 9090
   deploy:
     name: productservice
     dockerImage: pubudu/products:1.0.0
