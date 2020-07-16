@@ -53,16 +53,21 @@ func ApplyIngressResource(client *client.Client, api *wso2v1alpha1.API, apiBaseP
 	}
 
 	transportMode := ingressConfMap.Data[ingressTransportMode]
-	ingressHostName := ingressConfMap.Data[ingressHostName]
+	var ingressHostname string
+	if api.Spec.IngressHostname != "" {
+		ingressHostname = api.Spec.IngressHostname
+	} else {
+		ingressHostname = ingressConfMap.Data[ingressHostName]
+	}
 	tlsSecretName := ingressConfMap.Data[tlsSecretName]
 	ingressNamePrefix := ingressConfMap.Data[ingressResourceName]
 	ingressName := ingressNamePrefix + "-" + api.Name
 	namespace := api.Namespace
 	apiServiceName := api.Name
 
-	hostArray := []string{ingressHostName}
+	hostArray := []string{ingressHostname}
 	logIng.Info("Creating ingress resource ", "name", ingressName,
-		"transport_mode", transportMode, "ingress_host_name", ingressHostName)
+		"transport_mode", transportMode, "ingress_host_name", ingressHostname)
 
 	var port int32
 	if httpConst == transportMode {
@@ -110,7 +115,7 @@ func ApplyIngressResource(client *client.Client, api *wso2v1alpha1.API, apiBaseP
 		Spec: v1beta1.IngressSpec{
 			Rules: []v1beta1.IngressRule{
 				{
-					Host: ingressHostName,
+					Host: ingressHostname,
 					IngressRuleValue: v1beta1.IngressRuleValue{
 						HTTP: &v1beta1.HTTPIngressRuleValue{
 							Paths: httpIngressPaths,
