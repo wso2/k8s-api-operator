@@ -34,6 +34,16 @@ func InitJobVolumes() {
 }
 
 func AddVolume(vol *corev1.Volume, volMount *corev1.VolumeMount) {
+	for _, volume := range *JobVolume {
+		if volume.Name == vol.Name {
+			return
+		}
+	}
+	for _, volumeMount := range *JobVolume {
+		if volumeMount.Name == volMount.Name {
+			return
+		}
+	}
 	*JobVolume = append(*JobVolume, *vol)
 	*JobVolumeMount = append(*JobVolumeMount, *volMount)
 }

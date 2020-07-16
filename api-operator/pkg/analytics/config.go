@@ -79,6 +79,7 @@ func Handle(client *client.Client, userNamespace string) error {
 					}
 					// copy to user namespace
 					analyticsCertSecret.SetResourceVersion("")
+					analyticsCertSecret.Namespace = userNamespace
 					errCopyCert = k8s.Create(client, analyticsCertSecret)
 					if errCopyCert != nil {
 						return errCopyCert
