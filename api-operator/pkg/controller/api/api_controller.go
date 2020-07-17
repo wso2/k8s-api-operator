@@ -517,23 +517,15 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			return reconcile.Result{}, errMgwSvc
 		}
 
-		// get global hpa configs, return error if not found (required config map)
-		hpaConfMap := k8s.NewConfMap()
-		errHpa := k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: hpaConfigMapName}, hpaConfMap)
-		if errHpa != nil {
-			reqLogger.Error(errHpa, "HPA configs not defined")
-			return reconcile.Result{}, errHpa
-		}
-
 		// create horizontal pod auto-scalar
 		hpaV2beta1, hpaV2beta2 := mgw.HPA(&r.client, instance, mgwDeployment, ownerRef)
-		if hpaConfMap.Data[hpaVersionConst] == "v2beta1" {
+		if hpaV2beta1 != nil && hpaV2beta2 == nil {
 			if errHpaV2beta1 := k8s.CreateIfNotExists(&r.client, hpaV2beta1); errHpaV2beta1 != nil {
 				reqLogger.Error(errHpaV2beta1, "Error creating the horizontal pod auto-scalar with HPA version v2beta1", "hpa_name", hpaV2beta1.Name)
 				return reconcile.Result{}, errHpaV2beta1
 			}
 		}
-		if hpaConfMap.Data[hpaVersionConst] == "v2beta2" {
+		if hpaV2beta2 != nil && hpaV2beta1 == nil {
 			if errHpaV2beta2 := k8s.CreateIfNotExists(&r.client, hpaV2beta2); errHpaV2beta2 != nil {
 				reqLogger.Error(errHpaV2beta2, "Error creating the horizontal pod auto-scalar with HPA version v2beta2", "hpa_name", hpaV2beta2.Name)
 				return reconcile.Result{}, errHpaV2beta2
