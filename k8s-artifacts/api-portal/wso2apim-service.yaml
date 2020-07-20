@@ -40,3 +40,15 @@ spec:
       port: 9443
       targetPort: 9443
       nodePort: 32001
+    - name: jms-port
+      port: 5672
+      targetPort: 5672
+      nodePort: 32005
+    - name: binary-receiver
+      port: 9611
+      targetPort: 9611
+      nodePort: 32006
+    - name: binary-auth
+      port: 9711
+      targetPort: 9711
+      nodePort: 32007

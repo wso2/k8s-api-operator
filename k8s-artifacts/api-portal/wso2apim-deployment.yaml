@@ -67,6 +67,12 @@ spec:
               protocol: "TCP"
             - containerPort: 9443
               protocol: "TCP"
+            - containerPort: 5672
+              protocol: "TCP"
+            - containerPort: 9611
+              protocol: "TCP"
+            - containerPort: 9711
+              protocol: "TCP"
           volumeMounts:
             - name: apim-conf
               mountPath: /home/wso2carbon/wso2-config-volume/repository/conf
