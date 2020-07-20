@@ -78,7 +78,8 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		mgr,
 		controller.Options{
 			MaxConcurrentReconciles: 10,
-			Reconciler:              r},
+			Reconciler:              r,
+		},
 	)
 	if err != nil {
 		return err
