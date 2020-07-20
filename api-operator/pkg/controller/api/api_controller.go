@@ -277,6 +277,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 		// Creating sidecar endpoint deployment
 		if epDeployMode == sidecar {
+			instance.Spec.Mode = sidecar
 			err := endpoints.AddSidecarContainers(&r.client, userNamespace, &endpointNames)
 			if err != nil {
 				return reconcile.Result{}, err
