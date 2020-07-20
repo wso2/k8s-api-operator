@@ -64,8 +64,8 @@ func Add(mgr manager.Manager) error {
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 	return &ReconcileAPI{
-		client: mgr.GetClient(),
-		scheme: mgr.GetScheme(),
+		client:   mgr.GetClient(),
+		scheme:   mgr.GetScheme(),
 		recorder: mgr.GetEventRecorderFor("api-controller"),
 	}
 }
@@ -74,11 +74,11 @@ func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Create a new controller
 	c, err := controller.New(
-		"api-controller", 
+		"api-controller",
 		mgr,
 		controller.Options{
 			MaxConcurrentReconciles: 10,
-			Reconciler: r},
+			Reconciler:              r},
 	)
 	if err != nil {
 		return err
@@ -109,8 +109,8 @@ var _ reconcile.Reconciler = &ReconcileAPI{}
 type ReconcileAPI struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
-	client client.Client
-	scheme *runtime.Scheme
+	client   client.Client
+	scheme   *runtime.Scheme
 	recorder record.EventRecorder
 }
 
@@ -323,13 +323,13 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 				return reconcile.Result{}, err
 			}
 		} else {
-			log.Info("Updating swagger-mgw since timestamp value is given")
+			log.Info("Creating swagger configmap for updated MGW")
 			r.recorder.Event(instance, corev1.EventTypeNormal, "SwaggerConfigMap",
-				"Updating swagger configmap for MGW.")
-			if err := k8s.Update(&r.client, swaggerConfMapMgw); err != nil {
-				log.Error(err, "Error updating formatted swagger configmap", "configmap", swaggerConfMapMgw)
+				"Creating swagger configmap for updated MGW.")
+			if err := k8s.Apply(&r.client, swaggerConfMapMgw); err != nil {
+				log.Error(err, "Error creating formatted swagger configmap", "configmap", swaggerConfMapMgw)
 				r.recorder.Event(instance, eventTypeError, "Configs",
-					"Error updating swagger configmap for MGW.")
+					"Error creating swagger configmap for MGW.")
 				return reconcile.Result{}, err
 			}
 		}
