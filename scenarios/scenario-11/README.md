@@ -120,15 +120,15 @@ To try out the scenario navigate to ```k8s-api-operator-<version>``` directory.
 - You will be able to monitor the analytics as shown in below images.
 
 ##### [Analytics Dashboard](https://wso2apim-analytics:32201/analytics-dashboard)
-![Alt text](images/Analytics-Dashboards.png?raw=true "Analytics-Dashboards")
+![Alt text](images/dashboard.png?raw=true "Analytics-Dashboards")
 
-##### Analytics for Developer Portal
+##### Analytics Monitoring for APIs
 
-![Alt text](images/Developer-Analytics.png?raw=true "Developer Portal Analytics")
+![Alt text](images/analytics-monitoring.png?raw=true "Monitoring Analytics")
 
-##### Analytics for Publisher
+##### Analytics Graphs for Events
 
-![Alt text](images/Publisher-Analytics.png?raw=true "Publisher Portal Analytics")
+![Alt text](images/analytics-graphs.png?raw=true "Graphs for Analytics")
 
 
 #### Customize API Analytics 
