@@ -68,7 +68,7 @@ func EmptyDirVolumeMount(volumeName string, mountPath string) (*corev1.Volume, *
 	mount := corev1.VolumeMount{
 		Name:      volName,
 		MountPath: mountPath,
-		ReadOnly:  true,
+		ReadOnly:  false,
 	}
 	return &vol, &mount
 }
