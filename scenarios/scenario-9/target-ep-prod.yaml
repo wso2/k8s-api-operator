@@ -29,9 +29,4 @@ spec:
   deploy:
     name: productservice
     dockerImage: pubudu/products:1.0.0
-    minReplicas: 1
-    maxReplicas: 1
-    requestCPU: "60m"
-    reqMemory: "32Mi"
-    cpuLimit: "120m"
   mode: privateJet
