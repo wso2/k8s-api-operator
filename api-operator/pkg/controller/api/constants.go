@@ -41,4 +41,7 @@ const (
 	sidecar                           = "sidecar"
 	apiCrdDefaultVersion              = "v1.0.0"
 	generateKubernetesArtifactsForMgw = "generatekubernbetesartifactsformgw"
+
+	hpaConfigMapName = "hpa-configs"
+	hpaVersionConst  = "hpaVersion"
 )

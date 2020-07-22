@@ -23,6 +23,7 @@ const (
 	hpaConfigMapName     = "hpa-configs"
 	maxReplicasConfigKey = "targetEndpointMaxReplicas"
 	metricsConfigKey     = "targetEndpointMetrics"
+	hpaVersionConst      = "hpaVersion"
 
 	resourceRequestCPUTarget    = "resourceRequestCPUTarget"
 	resourceRequestMemoryTarget = "resourceRequestMemoryTarget"

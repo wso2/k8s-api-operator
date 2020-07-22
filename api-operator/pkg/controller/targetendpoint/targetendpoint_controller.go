@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
+	"k8s.io/api/autoscaling/v2beta1"
 	"k8s.io/api/autoscaling/v2beta2"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -204,7 +205,6 @@ func (r *ReconcileTargetEndpoint) Reconcile(request reconcile.Request) (reconcil
 	}
 
 	dep := r.newDeploymentForCR(instance, reqCpu, reqMemory, limitCpu, limitMemory, minReplicas)
-
 	if strings.EqualFold(mode, privateJet) {
 		errHpa := createHPA(&r.client, instance, dep, minReplicas, owner)
 		if errHpa != nil {
@@ -455,9 +455,94 @@ func (r *ReconcileTargetEndpoint) newServiceForCR(m *wso2v1alpha1.TargetEndpoint
 	return &service
 }
 
-// createHPA creates (or update) HPA for the Target Endpoint
+// createHPA checks whether the HPA version is v2beta1 or v2beta2
 func createHPA(client *client.Client, targetEp *wso2v1alpha1.TargetEndpoint, dep *appsv1.Deployment, minReplicas int32,
 	owner []metav1.OwnerReference) error {
+	// get global hpa configs, return error if not found (required config map)
+	hpaConfMap := k8s.NewConfMap()
+	err := k8s.Get(client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: hpaConfigMapName}, hpaConfMap)
+	if err != nil {
+		return err
+	}
+	if hpaConfMap.Data[hpaVersionConst] == "v2beta1" {
+		hpaV2beta1, errHpaV2beta1 := createHPAv2beta1(client, targetEp, dep, minReplicas, owner)
+		if errHpaV2beta1 != nil {
+			return errHpaV2beta1
+		}
+		//create or apply HPA
+		return k8s.Apply(client, hpaV2beta1)
+	}
+	if hpaConfMap.Data[hpaVersionConst] == "v2beta2" {
+		hpaV2beta2, errHpaV2beta2 := createHPAv2beta2(client, targetEp, dep, minReplicas, owner)
+		if errHpaV2beta2 != nil {
+			return errHpaV2beta2
+		}
+		//create or apply HPA
+		return k8s.Apply(client, hpaV2beta2)
+	}
+	return err
+}
+
+// createHPA creates (or update) HPA for the Target Endpoint with HPA version v2beta1
+func createHPAv2beta1(client *client.Client, targetEp *wso2v1alpha1.TargetEndpoint, dep *appsv1.Deployment, minReplicas int32,
+	owner []metav1.OwnerReference) (*v2beta1.HorizontalPodAutoscaler, error) {
+	// target resource
+	targetResource := v2beta1.CrossVersionObjectReference{
+		Kind:       dep.Kind,
+		Name:       dep.Name,
+		APIVersion: dep.APIVersion,
+	}
+
+	// get global hpa configs, return error if not found (required config map)
+	hpaConfMap := k8s.NewConfMap()
+	err := k8s.Get(client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: hpaConfigMapName}, hpaConfMap)
+	if err != nil {
+		log.Error(err, "HPA configs not defined")
+		return nil, err
+	}
+
+	// setting max replicas
+	maxReplicas := targetEp.Spec.Deploy.MaxReplicas
+	if maxReplicas <= 0 {
+		// setting default max replicas from the configmap "hpa-config"
+		maxReplicasInt64, errInt := strconv.ParseInt(hpaConfMap.Data[maxReplicasConfigKey], 10, 32)
+		if errInt != nil {
+			log.Error(err, "Error parsing HPA MaxReplicas",
+				"value", hpaConfMap.Data[maxReplicasConfigKey])
+			return nil, err
+		}
+		maxReplicas = int32(maxReplicasInt64)
+	}
+
+	// parse hpa config yaml
+	var metricsHpa []v2beta1.MetricSpec
+	yamlErr := yaml.Unmarshal([]byte(hpaConfMap.Data[metricsConfigKey]), &metricsHpa)
+	if yamlErr != nil {
+		log.Error(err, "Error marshalling HPA config yaml", "configmap", hpaConfMap)
+		return nil, yamlErr
+	}
+
+	// HPA instance for Target Endpoint
+	hpa := &v2beta1.HorizontalPodAutoscaler{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            dep.Name,
+			Namespace:       dep.Namespace,
+			OwnerReferences: owner,
+		},
+		Spec: v2beta1.HorizontalPodAutoscalerSpec{
+			MinReplicas:    &minReplicas,
+			MaxReplicas:    maxReplicas,
+			ScaleTargetRef: targetResource,
+			Metrics:        metricsHpa,
+		},
+	}
+
+	return hpa, nil
+}
+
+// createHPA creates (or update) HPA for the Target Endpoint with HPA version v2beta1
+func createHPAv2beta2(client *client.Client, targetEp *wso2v1alpha1.TargetEndpoint, dep *appsv1.Deployment, minReplicas int32,
+	owner []metav1.OwnerReference) (*v2beta2.HorizontalPodAutoscaler, error) {
 	// target resource
 	targetResource := v2beta2.CrossVersionObjectReference{
 		Kind:       dep.Kind,
@@ -469,7 +554,7 @@ func createHPA(client *client.Client, targetEp *wso2v1alpha1.TargetEndpoint, dep
 	hpaConfMap := k8s.NewConfMap()
 	err := k8s.Get(client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: hpaConfigMapName}, hpaConfMap)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// setting max replicas
@@ -480,7 +565,7 @@ func createHPA(client *client.Client, targetEp *wso2v1alpha1.TargetEndpoint, dep
 		if errInt != nil {
 			log.Error(err, "Error parsing HPA MaxReplicas",
 				"value", hpaConfMap.Data[maxReplicasConfigKey])
-			return err
+			return nil, err
 		}
 		maxReplicas = int32(maxReplicasInt64)
 	}
@@ -490,7 +575,7 @@ func createHPA(client *client.Client, targetEp *wso2v1alpha1.TargetEndpoint, dep
 	yamlErr := yaml.Unmarshal([]byte(hpaConfMap.Data[metricsConfigKey]), &metricsHpa)
 	if yamlErr != nil {
 		log.Error(err, "Error marshalling HPA config yaml", "configmap", hpaConfMap)
-		return yamlErr
+		return nil, yamlErr
 	}
 
 	// HPA instance for Target Endpoint
@@ -508,8 +593,7 @@ func createHPA(client *client.Client, targetEp *wso2v1alpha1.TargetEndpoint, dep
 		},
 	}
 
-	// create or apply HPA
-	return k8s.Apply(client, hpa)
+	return hpa, nil
 }
 
 //get configmap

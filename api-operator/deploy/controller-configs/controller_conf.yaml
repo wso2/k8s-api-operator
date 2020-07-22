@@ -157,6 +157,8 @@ data:
         target:
           type: Utilization
           averageUtilization: 50
+  # HPA version. For custom metrics HPA version should be v2beta2. Default-> v2beta1
+  hpaVersion: "v2beta1"
 
 ---
 apiVersion: v1
