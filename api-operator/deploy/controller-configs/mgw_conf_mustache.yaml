@@ -248,16 +248,6 @@ data:
 
     # Throttling configurations
     [throttlingConfig]
-      # Configurations related to node local throttling.
-      [throttlingConfig.nodeLocal]
-        # Core number of threads in the thread pool.
-        processThreadPoolCoreSize = 200
-        # Maximum number of threads in the thread pool.
-        processThreadPoolMaximumSize = 1000
-        # Keep alive time of the threads in seconds
-        processThreadPoolKeepAliveTime = 200
-        # Throttle data cleanup task frequency in seconds.
-        cleanUpFrequency = 3600
 
       # Connect with the central traffic manager
       enabledGlobalTMEventPublishing = {{$.EnabledGlobalTMEventPublishing}}
@@ -272,14 +262,19 @@ data:
       # The central traffic management solution URL
       throttleEndpointUrl = "https://{{$.ThrottleEndpoint}}/endpoints"
       # username:password to create the connection to the central traffic manager
-      throttleEndpointbase64Header = "admin:admin"
+      throttleEndpointbase64Header = "{{$.ApimUsername}}:{{$.ApimPassword}}"
+      #Configurations related to retrieve custom throttle policy related key templates from traffic manager or key manager.
+      [throttlingConfig.dataRetriever]
+        serverUrl = "https://{{$.ThrottleEndpoint}}/internal/data/v1"
+        username = "{{$.ApimUsername}}"
+        password = "{{$.ApimPassword}}"
 
       [throttlingConfig.binary]
         enabled = true
 
         # Credentials required to establish connection between Traffic Manager
-        username = "admin"
-        password = "admin"
+        username = "{{$.ApimUsername}}"
+        password = "{{$.ApimPassword}}"
         # Receiver URL and the authentication URL of the Traffic manager node/nodes
         [[throttlingConfig.binary.URLGroup]]
           receiverURL = "tcp://wso2apim.wso2:9611"
@@ -323,6 +318,17 @@ data:
           secureMaxIdleConnections = 250
           secureEvictionTimePeriod = 5500
           secureMinIdleTimeInPool = 5000
+
+      # Configurations related to node local throttling.
+      [throttlingConfig.nodeLocal]
+        # Core number of threads in the thread pool.
+        processThreadPoolCoreSize = 200
+        # Maximum number of threads in the thread pool.
+        processThreadPoolMaximumSize = 1000
+        # Keep alive time of the threads in seconds
+        processThreadPoolKeepAliveTime = 200
+        # Throttle data cleanup task frequency in seconds.
+        cleanUpFrequency = 3600
 
     # ballerina logs
     [b7a.log]

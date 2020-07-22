@@ -58,6 +58,17 @@ data:
   #Expose custom metrics. Default-> observabilityEnabled: "false"
   observabilityEnabled: "false"
 
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: apim-secret
+  namespace: wso2-system
+type: Opaque
+data:
+  #Base64 encoded username and password for APIM
+  username: YWRtaW4=
+  password: YWRtaW4=
 
 ---
 apiVersion: v1
