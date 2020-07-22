@@ -29,14 +29,15 @@ const (
 	kanikoArgsConfigs   = "kaniko-arguments"
 
 	operatorModeConst             = "operatorMode"
+	istioMode                     = "Istio"
 	ingressMode                   = "Ingress"
 	routeMode                     = "Route"
 	observabilityEnabledConfigKey = "observabilityEnabled"
 
-	eventTypeError	=	"Error"
+	eventTypeError = "Error"
 
-	ingressHostName   = "ingressHostName"
-	routeHost         = "routeHost"
+	ingressHostName = "ingressHostName"
+	routeHost       = "routeHost"
 
 	sidecar                           = "sidecar"
 	apiCrdDefaultVersion              = "v1.0.0"

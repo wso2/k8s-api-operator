@@ -524,6 +524,16 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			return reconcile.Result{}, errHpa
 		}
 
+		// creating Istio virtual service
+		if operatorMode == istioMode {
+			vtlSvc := mgw.IstioVirtualService(instance, apiBasePathMap, *ownerRef)
+			if errVtlSvc := k8s.CreateIfNotExists(&r.client, &vtlSvc); errVtlSvc != nil {
+				reqLogger.Error(errVtlSvc, "Error creating the Istio virtual service",
+					"virtual_service", vtlSvc)
+				return reconcile.Result{}, errVtlSvc
+			}
+		}
+
 		for t := 24; t > 0; t -= 1 {
 			time.Sleep(5 * time.Second)
 			errSvc := k8s.Get(&r.client, request.NamespacedName, mgwSvc)
