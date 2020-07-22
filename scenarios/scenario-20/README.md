@@ -282,8 +282,8 @@ is products-api. So we should create the API with that name.
 
     Output:
     creating configmap with swagger definition
-    configmap/products-pj-swagger created
-    api.wso2.com/products-pj created
+    configmap/products-api-swagger created
+    api.wso2.com/products-api created
     ```
   
   **Note:** When you use the --override flag, it builds the docker image and pushes to the docker registry although it is available in the docker registry. If you are using AWS ECR as the registry type, delete the image of the API.
@@ -294,7 +294,7 @@ is products-api. So we should create the API with that name.
 
     Output:   
     NAME          AGE
-    products-pj   3m
+    products-api  3m
     ```
 
 #### 2.3. Test Sample
@@ -305,10 +305,10 @@ is products-api. So we should create the API with that name.
 
     Output:
     NAME                  TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)                         AGE
-    products-pj           LoadBalancer   10.99.134.132   <pending>     9095:32290/TCP,9090:30057/TCP   1s
+    products-api          LoadBalancer   10.99.134.132   <pending>     9095:32290/TCP,9090:30057/TCP   1s
     products-privatejet   ClusterIP      10.101.34.213   <none>        80/TCP                          45m
     ```
-    - You can see both the backend(products-privatejet) service and the managed API service(product-pj) is available.
+    - You can see both the backend(products-privatejet) service and the managed API service(product-api) is available.
     - Get the external IP of the managed API's service.
  
 - List the pods and check how the backend services and the managed API have been deployed
@@ -317,7 +317,7 @@ is products-api. So we should create the API with that name.
     >> apictl get pods        
 
     Output:
-    products-pj-699d65df7f-qt2vv           1/1     Running   0          5m12s
+    products-api-699d65df7f-qt2vv          1/1     Running   0          5m12s
     products-privatejet-6777d6f5bc-gqfg4   1/1     Running   0          25m
     products-privatejet-6777d6f5bc-k88sl   1/1     Running   0          25m
     ```
@@ -377,7 +377,7 @@ is products-api. So we should create the API with that name.
     >> apictl delete targetendpoints products-privatejet
 
     Output:
-    api.wso2.com "products-pj" deleted
+    api.wso2.com "products-api" deleted
     targetendpoint.wso2.com "products-privatejet" deleted
     ```
 
