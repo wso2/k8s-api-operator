@@ -58,6 +58,10 @@ type APISpec struct {
 	// +optional
 	Image       string `json:"image,omitempty"`
 	ApiEndPoint string `json:"apiEndPoint,omitempty"`
+	// Ingress Hostname that the API is being exposed.
+	// Default value "<empty>".
+	// +optional
+	IngressHostname string `json:"ingressHostname,omitempty"`
 }
 
 // APIStatus defines the observed state of API

@@ -25,6 +25,7 @@
     security.wso2.com/petstorejwt created
     secret/wso2am310-secret created
     ```
+Note: ***audience*** field can be provided in Security custom resource(CR) under securityConfig field, if you have any.
 
 - Prepared petstore swagger definition can be found within this directory.
 

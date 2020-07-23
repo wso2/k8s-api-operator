@@ -116,9 +116,12 @@ func (r *ReconcileSecurity) Reconcile(request reconcile.Request) (reconcile.Resu
 	userNamespace := instance.Namespace
 	if strings.EqualFold(instance.Spec.Type, "JWT") {
 		for _, securityConfig := range instance.Spec.SecurityConfig {
-			if securityConfig.Issuer == "" || securityConfig.Audience == "" {
+			if securityConfig.Issuer == "" {
 				reqLogger.Error(err, "Required fields are missing")
 				return reconcile.Result{}, err
+			}
+			if securityConfig.Audience == "" {
+				reqLogger.Info("Audience is not Provided")
 			}
 			certificateSecret := &corev1.Secret{}
 			errcertificate := r.client.Get(context.TODO(), types.NamespacedName{Name: securityConfig.Certificate, Namespace: userNamespace}, certificateSecret)

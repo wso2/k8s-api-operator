@@ -101,6 +101,10 @@ spec:
                 the values of `UpdateTimeStamp`, `Override`. Uses the given image
                 for the deployment. Default value "<empty>".
               type: string
+            ingressHostname:
+              description: Ingress Hostname that the API is being exposed. Default
+                value "<empty>".
+              type: string
             mode:
               description: Mode of the API. The mode from the swagger definition will
                 be overridden by this value. Supports "privateJet", "sidecar", "<empty>".

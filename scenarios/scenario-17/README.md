@@ -16,7 +16,7 @@
 - If you have already deployed the operator you have to update operatorMode to "ingress" and apply the changes using
   following command.
   ```
-  >> apictl apply -f api-operator/controller-artifacts/controler_conf.yaml
+  >> apictl apply -f api-operator/controller-artifacts/controller_conf.yaml
   ```
   
 #### Deploying the artifacts
@@ -74,6 +74,33 @@
    [Client] --- http/https —> [Ingress] --- https -—> [API Microgateway]
    ```
 <br>
+
+#### How to expose an API using a different Ingress Hostname
+
+- When you are creating the API you can define a hostname if required. If a hostname is not defined
+it takes the default ingress hostname (mgw.ingress.wso2.com).
+
+   ```
+        >> apictl add api -n hello-world-api --from-file=swagger.yaml --override --hostname=mgw.group1.wso2.com
+    
+    Output:
+    Processing swagger 1: swagger.yaml
+    creating configmap with swagger definition
+    configmap/hello-world-1-swagger created
+    creating API definition
+    api.wso2.com/hello-world created
+   ```
+   Note: ***--override*** flag is used to you want to rebuild the API image even if it exists in the configured docker repository
+
+- Get available Ingress service
+   
+   ```
+      >> apictl get ingress
+      
+      Output:
+      NAME                               HOSTS                  ADDRESS      PORTS     AGE
+      api-operator-ingress-hello-world   mgw.group1.wso2.com   34.67.56.7   80, 443   4m59s
+   ```
 
 #### Configure No TLS in ingress
 

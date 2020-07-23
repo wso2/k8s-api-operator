@@ -528,10 +528,37 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		}
 
 		// create horizontal pod auto-scalar
-		hpa := mgw.HPA(instance, mgwDeployment, ownerRef)
-		if errHpa := k8s.CreateIfNotExists(&r.client, hpa); errHpa != nil {
-			reqLogger.Error(errHpa, "Error creating the horizontal pod auto-scalar", "hpa_name", hpa.Name)
-			return reconcile.Result{}, errHpa
+		hpaV2beta1, hpaV2beta2 := mgw.HPA(&r.client, instance, mgwDeployment, ownerRef)
+		if hpaV2beta1 != nil && hpaV2beta2 == nil {
+			if errHpaV2beta1 := k8s.CreateIfNotExists(&r.client, hpaV2beta1); errHpaV2beta1 != nil {
+				reqLogger.Error(errHpaV2beta1, "Error creating the horizontal pod auto-scalar with HPA version v2beta1", "hpa_name", hpaV2beta1.Name)
+				return reconcile.Result{}, errHpaV2beta1
+			}
+		}
+		if hpaV2beta2 != nil && hpaV2beta1 == nil {
+			if errHpaV2beta2 := k8s.CreateIfNotExists(&r.client, hpaV2beta2); errHpaV2beta2 != nil {
+				reqLogger.Error(errHpaV2beta2, "Error creating the horizontal pod auto-scalar with HPA version v2beta2", "hpa_name", hpaV2beta2.Name)
+				return reconcile.Result{}, errHpaV2beta2
+			}
+		}
+
+		reqLogger.Info("Operator mode", "mode", operatorMode)
+		if strings.EqualFold(operatorMode, ingressMode) || instance.Spec.IngressHostname != "" {
+			errIng := mgw.ApplyIngressResource(&r.client, instance, apiBasePathMap, ownerRef)
+			r.recorder.Event(instance, corev1.EventTypeNormal, "Ingress", "Applying Ingress resources.")
+			if errIng != nil {
+				reqLogger.Error(errIng, "Error creating the ingress resource")
+				r.recorder.Event(instance, eventTypeError, "Ingress", "Error creating Ingress resources.")
+				return reconcile.Result{}, errIng
+			}
+		}
+		if strings.EqualFold(operatorMode, routeMode) {
+			rutErr := mgw.ApplyRouteResource(&r.client, instance, apiBasePathMap, ownerRef)
+			r.recorder.Event(instance, corev1.EventTypeNormal, "Route", "Applying Route resources.")
+			if rutErr != nil {
+				r.recorder.Event(instance, eventTypeError, "Route", "Error creating Route resources.")
+				return reconcile.Result{}, rutErr
+			}
 		}
 
 		// creating Istio virtual service
@@ -577,24 +604,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		err = r.client.Update(context.TODO(), instance)
 		log.Info("Final endpoint value after updating is", "apiEndpoint", instance.Spec.ApiEndPoint)
 
-		reqLogger.Info("Operator mode", "mode", operatorMode)
-		if strings.EqualFold(operatorMode, ingressMode) {
-			errIng := mgw.ApplyIngressResource(&r.client, instance, apiBasePathMap, ownerRef)
-			r.recorder.Event(instance, corev1.EventTypeNormal, "Ingress", "Applying Ingress resources.")
-			if errIng != nil {
-				reqLogger.Error(errIng, "Error creating the ingress resource")
-				r.recorder.Event(instance, eventTypeError, "Ingress", "Error creating Ingress resources.")
-				return reconcile.Result{}, errIng
-			}
-		}
-		if strings.EqualFold(operatorMode, routeMode) {
-			rutErr := mgw.ApplyRouteResource(&r.client, instance, apiBasePathMap, ownerRef)
-			r.recorder.Event(instance, corev1.EventTypeNormal, "Route", "Applying Route resources.")
-			if rutErr != nil {
-				r.recorder.Event(instance, eventTypeError, "Route", "Error creating Route resources.")
-				return reconcile.Result{}, rutErr
-			}
-		}
 		reqLogger.Info("Successfully deployed the API", "api_name", instance.Name)
 		r.recorder.Event(instance, corev1.EventTypeNormal, "Deploy",
 			fmt.Sprintf("Successfully deployed the API: %s.", instance.Name))

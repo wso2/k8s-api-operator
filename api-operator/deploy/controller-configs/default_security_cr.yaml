@@ -24,7 +24,6 @@ spec:
   securityConfig:
     - certificate: wso2am310-secret
       issuer: https://wso2apim:32001/oauth2/token
-      audience: http://org.wso2.apimgt/gateway
       validateSubscription: false
 
 ---

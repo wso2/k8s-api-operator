@@ -134,7 +134,7 @@ In this swagger definition, the rate limiting policy has been mentioned as follo
     - Go to https://wso2apim:32001/admin Admin Portal and log in giving "admin" as username and password.
     - Create an advanced policy with the same name ("fourreqpolicy") and details as the policy you used earlier. Refer the below screenshot.
 
-    ![Alt text](images/creating_policy.png?raw=true "Title")
+    ![Alt text](images/creating_ratelimit_policy.png?raw=true "Title")
 
     - Invoke the API as you did in the earlier case and observe that now only 4 requests are allowed per minute, and the 5th request is throttled out
 

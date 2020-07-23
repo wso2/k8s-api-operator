@@ -33,6 +33,7 @@ var logConf = log.Log.WithName("mgw.config")
 
 const (
 	apimConfName       = "apim-config"
+	apimSecretName	   = "apim-secret"
 	mgwConfMustache    = "mgw-conf-mustache"
 	wso2NameSpaceConst = "wso2-system"
 
@@ -101,6 +102,8 @@ type Configuration struct {
 	EnabledGlobalTMEventPublishing string
 	JmsConnectionProvider          string
 	ThrottleEndpoint               string
+	ApimUsername				   string
+	ApimPassword				   string
 
 	// token revocation
 	EnableRealtimeMessageRetrieval string
@@ -142,6 +145,7 @@ type JwtTokenConfig struct {
 	Issuer               string
 	Audience             string
 	ValidateSubscription bool
+	AudiencePresent      bool
 }
 
 type APIKeyTokenConfig struct {
@@ -175,6 +179,7 @@ var Configs = &Configuration{
 			Issuer:               "https://wso2apim.wso2:32001/oauth2/token",
 			Audience:             "http://org.wso2.apimgt/gateway",
 			ValidateSubscription: false,
+			AudiencePresent:      false,
 		},
 	},
 
@@ -192,6 +197,8 @@ var Configs = &Configuration{
 	EnabledGlobalTMEventPublishing: "false",
 	JmsConnectionProvider:          "wso2apim.wso2:5672",
 	ThrottleEndpoint:               "wso2apim.wso2:32001",
+	ApimUsername: 					"admin",
+	ApimPassword: 					"admin",
 
 	// token revocation
 	EnableRealtimeMessageRetrieval: "false",
@@ -247,10 +254,24 @@ func SetApimConfigs(client *client.Client) error {
 		}
 	}
 
+	apimSecret := k8s.NewSecret()
+	errorApimSecret := k8s.Get(client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: apimSecretName}, apimSecret)
+
+	if errorApimSecret != nil {
+		if errors.IsNotFound(errorApimSecret) {
+			logConf.Info("APIM secret is not found. Continue with default configs")
+		} else {
+			logConf.Error(errApim, "Error retrieving APIM secret configs")
+			return errorApimSecret
+		}
+	}
+
 	Configs.VerifyHostname = apimConfig.Data[verifyHostnameConst]
 	Configs.EnabledGlobalTMEventPublishing = apimConfig.Data[enabledGlobalTMEventPublishingConst]
 	Configs.JmsConnectionProvider = apimConfig.Data[jmsConnectionProviderConst]
 	Configs.ThrottleEndpoint = apimConfig.Data[throttleEndpointConst]
+	Configs.ApimUsername = string(apimSecret.Data["username"])
+	Configs.ApimPassword = string(apimSecret.Data["password"])
 	Configs.EnableRealtimeMessageRetrieval = apimConfig.Data[enableRealtimeMessageRetrievalConst]
 	Configs.EnableRequestValidation = apimConfig.Data[enableRequestValidationConst]
 	Configs.EnableResponseValidation = apimConfig.Data[enableResponseValidationConst]
