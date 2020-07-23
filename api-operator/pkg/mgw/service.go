@@ -25,6 +25,7 @@ import (
 )
 
 const (
+	defaultMode   = "Default"
 	ingressMode   = "Ingress"
 	routeMode     = "Route"
 	clusterIPMode = "ClusterIP"
