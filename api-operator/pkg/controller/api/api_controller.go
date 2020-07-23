@@ -231,6 +231,16 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		return reconcile.Result{}, err
 	}
 
+	// if operator mode is "Istio", validate istio configs
+	if strings.EqualFold(operatorMode, istioMode) {
+		// validate Istio configs and setting configs
+		if err := mgw.ValidateIstioConfigs(&r.client); err != nil {
+			// error has already logged inside the method
+			// Return and requeue request since config mismatch
+			return reconcile.Result{}, err
+		}
+	}
+
 	// if there aren't any ratelimiting objects deployed, new policy.yaml configmap will be created with default policies
 	if err := ratelimit.Handle(&r.client, userNamespace, operatorOwner); err != nil {
 		log.Error(err, "Error in creating default policy configmap")
@@ -548,6 +558,16 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			if rutErr != nil {
 				r.recorder.Event(instance, eventTypeError, "Route", "Error creating Route resources.")
 				return reconcile.Result{}, rutErr
+			}
+		}
+
+		// creating Istio virtual service
+		if strings.EqualFold(operatorMode, istioMode) {
+			vtlSvc := mgw.IstioVirtualService(instance, apiBasePathMap, *ownerRef)
+			if errVtlSvc := k8s.CreateIfNotExists(&r.client, vtlSvc); errVtlSvc != nil {
+				reqLogger.Error(errVtlSvc, "Error creating the Istio virtual service",
+					"virtual_service", vtlSvc)
+				return reconcile.Result{}, errVtlSvc
 			}
 		}
 

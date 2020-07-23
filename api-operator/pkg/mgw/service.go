@@ -28,6 +28,7 @@ const (
 	ingressMode   = "Ingress"
 	routeMode     = "Route"
 	clusterIPMode = "ClusterIP"
+	IstioMode     = "Istio"
 
 	httpConst              = "http"
 	httpsConst             = "https"
@@ -40,7 +41,7 @@ func Service(api *wso2v1alpha1.API, operatorMode string, owner []metav1.OwnerRef
 	serviceType = corev1.ServiceTypeLoadBalancer
 
 	if strings.EqualFold(operatorMode, ingressMode) || strings.EqualFold(operatorMode, clusterIPMode) ||
-		strings.EqualFold(operatorMode, routeMode) {
+		strings.EqualFold(operatorMode, routeMode) || strings.EqualFold(operatorMode, IstioMode) {
 		serviceType = corev1.ServiceTypeClusterIP
 	}
 

@@ -209,3 +209,32 @@ data:
   routeHost : "mgw.route.wso2.com"
   # TLS termination - passthrough, edge, reencrypt
   tlsTermination: ""
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: istio-configs
+  namespace: wso2-system
+data:
+  #Gateway name
+  gatewayName: "wso2-gateway"
+  #Gateway host
+  host: "internal.wso2.com"
+  #CORS policy
+  corsPolicy: |
+    allowOrigins:
+      - exact: https://localhost:9443
+    allowMethods:
+      - GET
+      - POST
+      - PUT
+      - DELETE
+    allowCredentials: true
+    allowHeaders:
+      - authorization
+      - Access-Control-Allow-Origin
+      - Content-Type
+      - SOAPAction
+      - apikey
+      - Authorization
