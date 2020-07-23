@@ -145,6 +145,7 @@ type JwtTokenConfig struct {
 	Issuer               string
 	Audience             string
 	ValidateSubscription bool
+	AudiencePresent      bool
 }
 
 type APIKeyTokenConfig struct {
@@ -178,6 +179,7 @@ var Configs = &Configuration{
 			Issuer:               "https://wso2apim.wso2:32001/oauth2/token",
 			Audience:             "http://org.wso2.apimgt/gateway",
 			ValidateSubscription: false,
+			AudiencePresent:      false,
 		},
 	},
 

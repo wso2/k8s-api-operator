@@ -118,7 +118,9 @@ data:
     {{range .JwtConfigs}}
     [[jwtTokenConfig]]
       issuer = "{{.Issuer}}"
+      {{ if .AudiencePresent }}
       audience = "{{.Audience}}"
+      {{ end }}
       certificateAlias = "{{.CertificateAlias}}"
       # Validate subscribed APIs
       validateSubscription = {{.ValidateSubscription}}
