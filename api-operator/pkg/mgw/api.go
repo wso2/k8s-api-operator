@@ -24,27 +24,33 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	"strings"
 )
 
 var logEp = logf.Log.WithName("endpoint.value")
 
-func ExternalIP (client *client.Client, apiInstance *wso2v1alpha1.API, operatorMode string, svc *corev1.Service,
+func ExternalIP(client *client.Client, apiInstance *wso2v1alpha1.API, operatorMode string, svc *corev1.Service,
 	ingressConfData map[string]string, openshiftConfData map[string]string) string {
 
 	logger := logEp.WithValues("namespace", apiInstance.Namespace, "apiName", apiInstance.Name)
-	var ip string
-	if operatorMode == "default" {
-		loadBalancerFound := svc.Status.LoadBalancer.Ingress
-		ip = ""
-		for _, elem := range loadBalancerFound {
-			ip += elem.IP
+	ipList := make(map[string]bool, 2) // to avoid duplicate IPs make ipList a map of strings -> bool
+
+	// default mode
+	if strings.EqualFold(operatorMode, defaultMode) {
+		ingresses := svc.Status.LoadBalancer.Ingress
+		for _, ingress := range ingresses {
+			if ingress.IP != "" {
+				ipList[ingress.IP] = true
+			} else if ingress.Hostname != "" {
+				ipList[ingress.Hostname] = true
+			}
 		}
-		apiInstance.Spec.ApiEndPoint = ip
-		logger.Info("IP value is :" + ip)
-		logger.Info("ENDPOINT value in default mode is ","apiEndpoint",apiInstance.Spec.ApiEndPoint)
 	}
-	if operatorMode == "ingress" {
+
+	// ingress mode
+	if strings.EqualFold(operatorMode, ingressMode) {
 		ingressHostConf := ingressConfData[ingressHostName]
+		ipList[ingressHostConf] = true
 		ingResource := &v1beta1.Ingress{}
 		errRes := k8s.Get(client,
 			types.NamespacedName{Namespace: apiInstance.Namespace, Name: ingressConfData[ingressResourceName] + "-" + apiInstance.Name},
@@ -52,27 +58,37 @@ func ExternalIP (client *client.Client, apiInstance *wso2v1alpha1.API, operatorM
 		if errRes != nil {
 			logger.Error(errRes, "Error getting the Ingress resources")
 		} else {
-			ingressIPFound := ingResource.Status.LoadBalancer.Ingress
-			for _, elem := range ingressIPFound {
-				ip += elem.IP
+			ingresses := ingResource.Status.LoadBalancer.Ingress
+			for _, ingress := range ingresses {
+				if ingress.IP != "" {
+					ipList[ingress.IP] = true
+				} else if ingress.Hostname != "" {
+					ipList[ingress.Hostname] = true
+				}
 			}
 		}
-		logger.Info("Ingress IP is: " + ip)
-		logger.Info("Host Name is: " + ingressHostConf)
-		apiInstance.Spec.ApiEndPoint = ingressHostConf + ", " + ip
-		logger.Info("ENDPOINT value in ingress mode is","apiEndpoint",apiInstance.Spec.ApiEndPoint)
-	}
-	if operatorMode == "route" {
-		routeHostConf := openshiftConfData[routeHost]
-		logger.Info("Host Name is :" + routeHostConf)
-		apiInstance.Spec.ApiEndPoint = routeHostConf
-		logger.Info("ENDPOINT value in route mode is","apiEndpoint",apiInstance.Spec.ApiEndPoint)
-		ip = "<pending>"
-	}
-	if apiInstance.Spec.ApiEndPoint == "" {
-		apiInstance.Spec.ApiEndPoint = "<pending>"
-		logger.Info("ENDPOINT value after updating is","apiEndpoint" ,apiInstance.Spec.ApiEndPoint)
 	}
 
-	return ip
+	// route mode
+	if strings.EqualFold(operatorMode, routeMode) {
+		routeHostConf := openshiftConfData[routeHost]
+		ipList[routeHostConf] = true
+	}
+
+	ips := make([]string, 0, len(ipList))
+	for ip, _ := range ipList {
+		ips = append(ips, ip)
+	}
+
+	// set ip to api instance
+	ipString := strings.Join(ips, ", ")
+	apiInstance.Spec.ApiEndPoint = ipString
+
+	// ip not found
+	if ipString == "" {
+		apiInstance.Spec.ApiEndPoint = "<pending>"
+	}
+
+	logger.Info("Setting API endpoint value", "api.endpoint", ipString)
+	return ipString
 }
