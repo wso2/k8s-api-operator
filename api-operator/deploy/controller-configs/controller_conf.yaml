@@ -213,8 +213,8 @@ data:
     allowOrigins:
       - exact: https://localhost:9443
     allowMethods:
-      - POST
       - GET
+      - POST
       - PUT
       - DELETE
     allowCredentials: true
