@@ -532,6 +532,25 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			}
 		}
 
+		reqLogger.Info("Operator mode", "mode", operatorMode)
+		if strings.EqualFold(operatorMode, ingressMode) || instance.Spec.IngressHostname != "" {
+			errIng := mgw.ApplyIngressResource(&r.client, instance, apiBasePathMap, ownerRef)
+			r.recorder.Event(instance, corev1.EventTypeNormal, "Ingress", "Applying Ingress resources.")
+			if errIng != nil {
+				reqLogger.Error(errIng, "Error creating the ingress resource")
+				r.recorder.Event(instance, eventTypeError, "Ingress", "Error creating Ingress resources.")
+				return reconcile.Result{}, errIng
+			}
+		}
+		if strings.EqualFold(operatorMode, routeMode) {
+			rutErr := mgw.ApplyRouteResource(&r.client, instance, apiBasePathMap, ownerRef)
+			r.recorder.Event(instance, corev1.EventTypeNormal, "Route", "Applying Route resources.")
+			if rutErr != nil {
+				r.recorder.Event(instance, eventTypeError, "Route", "Error creating Route resources.")
+				return reconcile.Result{}, rutErr
+			}
+		}
+
 		for t := 24; t > 0; t -= 1 {
 			time.Sleep(5 * time.Second)
 			errSvc := k8s.Get(&r.client, request.NamespacedName, mgwSvc)
@@ -565,24 +584,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		err = r.client.Update(context.TODO(), instance)
 		log.Info("Final endpoint value after updating is", "apiEndpoint", instance.Spec.ApiEndPoint)
 
-		reqLogger.Info("Operator mode", "mode", operatorMode)
-		if strings.EqualFold(operatorMode, ingressMode) || instance.Spec.IngressHostname != "" {
-			errIng := mgw.ApplyIngressResource(&r.client, instance, apiBasePathMap, ownerRef)
-			r.recorder.Event(instance, corev1.EventTypeNormal, "Ingress", "Applying Ingress resources.")
-			if errIng != nil {
-				reqLogger.Error(errIng, "Error creating the ingress resource")
-				r.recorder.Event(instance, eventTypeError, "Ingress", "Error creating Ingress resources.")
-				return reconcile.Result{}, errIng
-			}
-		}
-		if strings.EqualFold(operatorMode, routeMode) {
-			rutErr := mgw.ApplyRouteResource(&r.client, instance, apiBasePathMap, ownerRef)
-			r.recorder.Event(instance, corev1.EventTypeNormal, "Route", "Applying Route resources.")
-			if rutErr != nil {
-				r.recorder.Event(instance, eventTypeError, "Route", "Error creating Route resources.")
-				return reconcile.Result{}, rutErr
-			}
-		}
 		reqLogger.Info("Successfully deployed the API", "api_name", instance.Name)
 		r.recorder.Event(instance, corev1.EventTypeNormal, "Deploy",
 			fmt.Sprintf("Successfully deployed the API: %s.", instance.Name))

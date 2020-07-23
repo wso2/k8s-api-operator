@@ -18,7 +18,10 @@ package mgw
 
 import (
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/api/extensions/v1beta1"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
@@ -42,10 +45,22 @@ func ExternalIP (client *client.Client, apiInstance *wso2v1alpha1.API, operatorM
 	}
 	if operatorMode == "ingress" {
 		ingressHostConf := ingressConfData[ingressHostName]
-		logger.Info("Host Name is :" + ingressHostConf)
-		apiInstance.Spec.ApiEndPoint = ingressHostConf
+		ingResource := &v1beta1.Ingress{}
+		errRes := k8s.Get(client,
+			types.NamespacedName{Namespace: apiInstance.Namespace, Name: ingressConfData[ingressResourceName] + "-" + apiInstance.Name},
+			ingResource)
+		if errRes != nil {
+			logger.Error(errRes, "Error getting the Ingress resources")
+		} else {
+			ingressIPFound := ingResource.Status.LoadBalancer.Ingress
+			for _, elem := range ingressIPFound {
+				ip += elem.IP
+			}
+		}
+		logger.Info("Ingress IP is: " + ip)
+		logger.Info("Host Name is: " + ingressHostConf)
+		apiInstance.Spec.ApiEndPoint = ingressHostConf + ", " + ip
 		logger.Info("ENDPOINT value in ingress mode is","apiEndpoint",apiInstance.Spec.ApiEndPoint)
-		ip = "<pending>"
 	}
 	if operatorMode == "route" {
 		routeHostConf := openshiftConfData[routeHost]
