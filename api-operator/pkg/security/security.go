@@ -124,6 +124,7 @@ func Handle(client *client.Client, securityMap map[string][]string, userNameSpac
 					jwtConf.Issuer = securityConf.Issuer
 				}
 				if securityConf.Audience != "" {
+					jwtConf.AudiencePresent = true
 					jwtConf.Audience = securityConf.Audience
 				}
 
