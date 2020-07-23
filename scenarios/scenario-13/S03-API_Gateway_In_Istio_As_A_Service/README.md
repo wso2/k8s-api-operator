@@ -58,7 +58,7 @@ This works in Istio permissive mode and Strict MTLS mode.
 - Enter username and the password
 - Confirm configuration are correct with entering "Y"
 
-    ```
+    ```sh
     >> apictl install api-operator
     Choose registry type:
     1: Docker Hub
@@ -78,7 +78,7 @@ This works in Istio permissive mode and Strict MTLS mode.
     ```
 
     Output:
-    ```
+    ```sh
     customresourcedefinition.apiextensions.k8s.io/apis.wso2.com created
     customresourcedefinition.apiextensions.k8s.io/ratelimitings.wso2.com created
     ...
@@ -133,9 +133,10 @@ following changes.
     ```
 
 - Apply changes.
-```sh
->> apictl apply -f <K8S_API_OPERATOR_HOME>/api-operator/controller-artifacts/controller_conf.yaml
-```
+    ```sh
+    >> apictl apply -f <K8S_API_OPERATOR_HOME>/api-operator/controller-artifacts/controller_conf.yaml
+    ```
+<br />
 
 #### Step 4: Setting up TLS for Istio Ingress Gateway
 
@@ -144,33 +145,28 @@ This guide is based on https://istio.io/docs/tasks/traffic-management/ingress/se
 - Create a root certificate and private key to sign the certificates for your services.
     ```sh
     >> openssl req -x509 -sha256 -nodes -days 365 -newkey rsa:2048 \
-        -subj '/O=wso2 Inc./CN=wso2.com' \
-        -keyout wso2.com.key \
-        -out wso2.com.crt
+            -subj '/O=wso2 Inc./CN=wso2.com' \
+            -keyout wso2.com.key \
+            -out wso2.com.crt
     ```
 
 - Create a certificate and a private key.
     ```sh
     >> openssl req -out internal.wso2.com.csr -newkey rsa:2048 -nodes \
-        -keyout internal.wso2.com.key \
-        -subj "/CN=internal.wso2.com/O=httpbin organization"
+            -keyout internal.wso2.com.key \
+            -subj "/CN=internal.wso2.com/O=httpbin organization"
     >> openssl x509 -req -days 365 -set_serial 0 -in internal.wso2.com.csr \
-        -CAkey wso2.com.key \
-        -CA wso2.com.crt \
-        -out internal.wso2.com.crt
+            -CAkey wso2.com.key \
+            -CA wso2.com.crt \
+            -out internal.wso2.com.crt
     ```
 
 - Create a secret in K8s
     ```sh
     >> apictl create secret tls internal-wso2-credential \
-        --key internal.wso2.com.key \
-        --cert internal.wso2.com.crt \
-        -n istio-system
-    ```
-- Deploy the gateway in Istio.
-
-    ```
-    >> apictl apply -f gateway.yaml
+            --key internal.wso2.com.key \
+            --cert internal.wso2.com.crt \
+            -n istio-system
     ```
 <br />
 
@@ -198,21 +194,33 @@ This guide is based on https://istio.io/docs/tasks/traffic-management/ingress/se
    
     ```sh
     >> apictl add api -n online-store-api-sc \
-        --from-file=./swagger.yaml \
-        --namespace=micro
+            --from-file=./swagger.yaml \
+            --namespace=micro
     ```
 
   Wait for some minutes to build and deploy the API.
     ```sh
-    >> apictl get pods -n wso2
+    >> apictl get pods -n micro
     Output:
-    NAME                                                        READY   STATUS      RESTARTS   AGE
-    online-store-api-sc-5748695f7b-jxnpf                           2/2     Running     0          3m
-    online-store-api-sc-kaniko-b5hqb                               0/1     Completed   0          3m
+    NAME                                   READY   STATUS      RESTARTS   AGE
+    inventory-6dd5c6dbcd-jm4v6             2/2     Running     0          2m6s
+    online-store-api-sc-64b9c78b85-mzn4r   2/2     Running     0          21s
+    online-store-api-sc-kaniko-qd9sb       0/1     Completed   0          105s
+    products-597b4559b4-rkzz2              2/2     Running     0          2m6s
+    review-788d94d5b6-x4l6r                2/2     Running     0          2m6s
     ```
 <br />
 
-#### Step 7: Invoke the API
+#### Step 7: Deploy Gateway
+
+- Deploy the gateway in Istio.
+
+    ```sh
+    >> apictl apply -f gateway.yaml
+    ```
+<br />
+
+#### Step 8: Invoke the API
 
 - Retrieve the IP address of the Ingress gateway.
 
@@ -241,19 +249,17 @@ This guide is based on https://istio.io/docs/tasks/traffic-management/ingress/se
      Copy and paste the above token in the command line. Now you can invoke the API using the cURL command as below.
      
      ```sh
-     Format: 
-     
      >> curl -X GET "https://internal.wso2.com/storemep/v1.0.0/products" -H "Authorization:Bearer $TOKEN" -k
-     >> curl -X GET "https://api.wso2.com/storemep/v1.0.0/products/101" -H "Authorization:Bearer $TOKEN" -k
-     >> curl -X GET "https://api.wso2.com/storemep/v1.0.0/inventory/101" -H "Authorization:Bearer $TOKEN" -k
-     >> curl -X GET "https://api.wso2.com/storemep/v1.0.0/review/101" -H "Authorization:Bearer $TOKEN" -k
+     >> curl -X GET "https://internal.wso2.com/storemep/v1.0.0/products/101" -H "Authorization:Bearer $TOKEN" -k
+     >> curl -X GET "https://internal.wso2.com/storemep/v1.0.0/inventory/101" -H "Authorization:Bearer $TOKEN" -k
+     >> curl -X GET "https://internal.wso2.com/storemep/v1.0.0/review/101" -H "Authorization:Bearer $TOKEN" -k
      ```
 
     **Note:** In the microgateway, only 1 API is exposed in this sample. Like in the example, you can deploy multiple
     microservices in Istio. Then you can expose those microservices via the API microgateway.
 <br />
 
-#### Step 8: Deploy API in API Manager as a private API
+#### Step 9: Deploy API in API Manager
 
 - Create a label in API Manager using the admin portal
     |  Label   | Description      |   Gateway Host            |
@@ -264,7 +270,9 @@ This guide is based on https://istio.io/docs/tasks/traffic-management/ingress/se
 
 - Initialize a API project with the swagger definition.
     ```sh
-    >> apictl init online-store-api-sc --oas=./swagger.yaml --initial-state=PUBLISHED
+    >> apictl init online-store-api-sc \
+              --oas=./swagger.yaml \
+              --initial-state=PUBLISHED
     ```
 
 - Edit the `online-store-api-sc/Meta-information/api.yaml` with adding `gatewayLabels` as follows.
@@ -274,13 +282,17 @@ This guide is based on https://istio.io/docs/tasks/traffic-management/ingress/se
     ```
 
 - Import the API to API Manager
-```sh
->> apictl add-env -e dev --apim https://localhost:9443 --token https://localhost:9443/oauth2/token
->> apictl import-api -f online-store-api/ -e dev -k 
-```
+    ```sh
+    >> apictl add-env \
+            -e dev \
+            --apim https://localhost:9443 \
+            --token https://localhost:9443/oauth2/token
+  
+    >> apictl import-api -f online-store-api/ -e dev -k 
+    ```
 <br />
 
-#### Step 9: Try out in Dev Portal
+#### Step 10: Try out in Dev Portal
 
 - Select the API in [Dev Portal](https://localhost:9443/devportal/apis)
 - Subscribe to an Application.
