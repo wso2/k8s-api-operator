@@ -20,3 +20,4 @@
 1. [Sample 18: Expose an API using Openshift Route](scenario-18)
 1. [Sample 19: Deploy petstore service as a managed API secured with API Key Authentication](scenario-19)
 1. [Sample 20: Horizontal pod auto-scaling with custom-metrics](scenario-20)
+1. [Sample 21: Deploy a service as a managed API using WSO2 API Manager locally](scenario-21)
