@@ -53,7 +53,7 @@ data:
   #Stop at docker image creation or continue to deploy kubernetes artifact.
   #Default->  generatekubernbetesartifactsformgw: "true"
   generatekubernbetesartifactsformgw: "true"
-  #Available modes - ingress, default , route and clusterIP
+  #Available modes - ingress, default , route and clusterIP, istio
   operatorMode: "default"
   #Expose custom metrics. Default-> observabilityEnabled: "false"
   observabilityEnabled: "false"
