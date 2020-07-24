@@ -35,17 +35,17 @@ In this document, we will walk through on the following.
 
 - An account in DockerHub or private docker registry
 
-- Download [k8s-api-operator-1.2.0-alpha.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.2.0-alpha/k8s-api-operator-1.2.0-alpha.zip)
+- Download [k8s-api-operator-1.2.0-beta.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.2.0-beta/k8s-api-operator-1.2.0-beta.zip)
 and extract the zip
 
     1. This zip contains the artifacts that required to deploy in Kubernetes.
-    2. Extract k8s-api-operator-1.2.0-alpha.zip
+    2. Extract k8s-api-operator-1.2.0-beta.zip
     
     ```sh
-    >> cd k8s-api-operator-1.2.0-alpha
+    >> cd k8s-api-operator-1.2.0-beta
     ```
  
-    **_Note:_** You need to run all commands from within the ***k8s-api-operator-1.2.0-alpha*** directory.
+    **_Note:_** You need to run all commands from within the ***k8s-api-operator-1.2.0-beta*** directory.
 
 <br />
 
@@ -133,9 +133,9 @@ This will deploy a pod and service for the sample service.
 
 #### Step 3: Install API Operator
 
-- Set the operator version as `v1.2.0-alpha` by executing following in a terminal.
+- Set the operator version as `v1.2.0-beta` by executing following in a terminal.
     ```sh
-    >> export WSO2_API_OPERATOR_VERSION=v1.2.0-alpha
+    >> export WSO2_API_OPERATOR_VERSION=v1.2.0-beta
     ```
 - Execute the following command to install API Operator interactively and configure repository to push the built managed
 API image.

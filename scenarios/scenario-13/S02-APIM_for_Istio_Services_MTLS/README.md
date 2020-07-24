@@ -19,13 +19,13 @@ This works in Istio permissive mode and Strict MTLS mode.
 
 - An account in DockerHub or private docker registry
 
-- Download [k8s-api-operator-1.2.0-alpha.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.2.0-alpha/k8s-api-operator-1.2.0-alpha.zip) and extract the zip
+- Download [k8s-api-operator-1.2.0-beta.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.2.0-beta/k8s-api-operator-1.2.0-beta.zip) and extract the zip
 
     1. This zip contains the artifacts that required to deploy in Kubernetes.
-    2. Extract k8s-api-operator-1.2.0-alpha.zip
+    2. Extract k8s-api-operator-1.2.0-beta.zip
     
     ```
-    cd k8s-api-operator-1.2.0-alpha/scenarios/scenario-13/S02-APIM_for_Istio_Services_MTLS
+    cd k8s-api-operator-1.2.0-beta/scenarios/scenario-13/S02-APIM_for_Istio_Services_MTLS
     ```
  
     **_Note:_** You need to run all commands from within the ```S02-APIM_for_Istio_Services_MTLS``` directory.
@@ -34,9 +34,7 @@ This works in Istio permissive mode and Strict MTLS mode.
 
 #### Step 1: Configure API Controller
 
-- Download API controller v3.1.0 or the latest v3.1.x from the [API Manager Tooling web site](https://wso2.com/api-management/tooling/)
-    
-    - Under Dev-Ops Tooling section, you can download the tool based on your operating system.
+- Download [API controller v3.2.0-beta](https://github.com/wso2/product-apim-tooling/releases/tag/v3.2.0-beta).
 
 - Extract the API controller distribution and navigate inside the extracted folder using the command-line tool
 
@@ -44,7 +42,7 @@ This works in Istio permissive mode and Strict MTLS mode.
 
 - You can find available operations using the below command.
     
-  ```
+  ```sh
   >> apictl --help
   ```
 <br />
