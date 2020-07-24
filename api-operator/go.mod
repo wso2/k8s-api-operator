@@ -8,7 +8,7 @@ require (
 	github.com/emicklei/go-restful v2.13.0+incompatible // indirect
 	github.com/getkin/kin-openapi v0.2.0
 	github.com/go-openapi/spec v0.19.4
-	github.com/gogo/protobuf v1.3.1
+	github.com/gogo/protobuf v1.3.1 // indirect
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/heroku/docker-registry-client v0.0.0-20181004091502-47ecf50fd8d4
