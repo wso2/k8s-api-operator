@@ -28,24 +28,24 @@ In this document, we will walk through on the following.
 
 - [Kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
 
-- [Kubernetes v1.12 or above](https://Kubernetes.io/docs/setup/) <br>
+- [Kubernetes v1.14 or above](https://Kubernetes.io/docs/setup/) <br>
 
     - Minimum CPU : 6vCPU
     - Minimum Memory : 6GB
 
 - An account in DockerHub or private docker registry
 
-- Download [k8s-api-operator-1.2.0-alpha.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.2.0-alpha/k8s-api-operator-1.2.0-alpha.zip)
+- Download [k8s-api-operator-1.2.0-beta.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.2.0-beta/k8s-api-operator-1.2.0-beta.zip)
 and extract the zip
 
     1. This zip contains the artifacts that required to deploy in Kubernetes.
-    2. Extract k8s-api-operator-1.2.0-alpha.zip
+    2. Extract k8s-api-operator-1.2.0-beta.zip
     
     ```sh
-    >> cd k8s-api-operator-1.2.0-alpha
+    >> cd k8s-api-operator-1.2.0-beta
     ```
  
-    **_Note:_** You need to run all commands from within the ***k8s-api-operator-1.2.0-alpha*** directory.
+    **_Note:_** You need to run all commands from within the ***k8s-api-operator-1.2.0-beta*** directory.
 
 <br />
 
@@ -133,9 +133,9 @@ This will deploy a pod and service for the sample service.
 
 #### Step 3: Install API Operator
 
-- Set the operator version as `v1.2.0-alpha` by executing following in a terminal.
+- Set the operator version as `v1.2.0-beta` by executing following in a terminal.
     ```sh
-    >> export WSO2_API_OPERATOR_VERSION=v1.2.0-alpha
+    >> export WSO2_API_OPERATOR_VERSION=v1.2.0-beta
     ```
 - Execute the following command to install API Operator interactively and configure repository to push the built managed
 API image.
@@ -235,12 +235,22 @@ the scenario/scenario-1/products-swagger.yaml.
 
 The endpoint of our microservice is referred in the API definition.
 
-- Deploy the API using the following command
+- Deploy the API using the following command.
+
+    **Note:** For this sample, using the flag `--override` to update configs, if there are images in the docker registry
+    which where created during older versions of API Operator.
 
     ```sh
-    >> apictl add api -n <API_NAME> --from-file=<LOCATION_TO_THE_OPEN_API_DEFINITION>
+    >> apictl add api \
+                -n <API_NAME> \
+                --from-file=<LOCATION_TO_THE_OPEN_API_DEFINITION_1> \
+                --from-file=<LOCATION_TO_THE_OPEN_API_DEFINITION_2> \
+                --override
     
-    >> apictl add api -n online-store --from-file=scenarios/scenario-1/products_swagger.yaml
+    >> apictl add api \
+                -n online-store \
+                --from-file=scenarios/scenario-1/products_swagger.yaml \
+                --override
     
     Output:
     creating configmap with swagger definition
@@ -252,13 +262,23 @@ The endpoint of our microservice is referred in the API definition.
     Optional Parameters
     
     ```sh
-    --replicas=3          Number of replicas
-    --namespace=wso2      Namespace to deploy the API
+    --namespace           Namespace to deploy the API
+    --replicas            Number of replicas
     --override            Overwrite the docker image creation for already created docker image
+    --mode                Property to override the deploying mode. Available modes: privateJet, sidecar
+    --version             Property to override the API version
+    --env                 Environment variables to be passed to deployment
+    --image               Image of the API. If specified, ignores the value of --override
     
-    >> apictl add api -n <API_NAME> --from-file=<LOCATION_TO_THE_OPEN_API_DEFINITION> \
-        --replicas=<NUMBER_OF_REPLICAS> \
-        --namespace=<DESIRED_NAMESPACE>
+    >> apictl add api \
+            -n <API_NAME> \
+            --from-file=<LOCATION_TO_THE_OPEN_API_DEFINITION> \
+            --replicas=<NUMBER_OF_REPLICAS> \
+            --namespace=<DESIRED_NAMESPACE> \
+            --mode=<DEPLOY_MODE> \
+            --version=<OVERRIDE_VERSION> \
+            --env=<KEY_1>=<VALUE_1> --env=<KEY_2>=<VALUE_2> \
+            --image=<EXISTING_IMAGE>
     ```
 
     **_Note:_** Namespace and replicas are optional parameters. If they are not provided, the default namespace

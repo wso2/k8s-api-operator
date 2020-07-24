@@ -75,6 +75,11 @@ func ExternalIP(client *client.Client, apiInstance *wso2v1alpha1.API, operatorMo
 		ipList[routeHostConf] = true
 	}
 
+	// istio mode
+	if strings.EqualFold(operatorMode, IstioMode) {
+		ipList[istioConfigs.Host] = true
+	}
+
 	ips := make([]string, 0, len(ipList))
 	for ip, _ := range ipList {
 		ips = append(ips, ip)

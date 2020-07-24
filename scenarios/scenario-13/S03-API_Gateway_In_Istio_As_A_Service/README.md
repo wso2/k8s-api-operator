@@ -10,10 +10,10 @@ This works in Istio permissive mode and Strict MTLS mode.
 
 - [Kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
 
-- [Kubernetes v1.12 or above](https://Kubernetes.io/docs/setup/) <br>
+- [Kubernetes v1.14 or above](https://Kubernetes.io/docs/setup/) <br>
 
-    - Minimum CPU : 8vCPU
-    - Minimum Memory : 12GB
+    - Minimum CPU : 6vCPU
+    - Minimum Memory : 6GB
     
 - [Istio v1.3.x or above](https://istio.io/docs/setup/platform-setup/)
 
@@ -35,13 +35,11 @@ This works in Istio permissive mode and Strict MTLS mode.
 
 #### Step 1: Configure API Controller
 
-- Download API controller v3.2.0 or the latest v3.2.x from the [API Manager Tooling web site](https://wso2.com/api-management/tooling/)
-    
-    - Under Dev-Ops Tooling section, you can download the tool based on your operating system.
+- Download [API controller v3.2.0-beta](https://github.com/wso2/product-apim-tooling/releases/tag/v3.2.0-beta).
 
 - Extract the API controller distribution and navigate inside the extracted folder using the command-line tool
 
-- Add the location of the extracted folder to your system's `$PATH` variable to be able to access the executable from anywhere.
+- Add the location of the extracted folder to your system's $PATH variable to be able to access the executable from anywhere.
 
 - You can find available operations using the below command.
     
