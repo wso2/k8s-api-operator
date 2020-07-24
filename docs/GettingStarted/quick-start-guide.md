@@ -28,7 +28,7 @@ In this document, we will walk through on the following.
 
 - [Kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
 
-- [Kubernetes v1.12 or above](https://Kubernetes.io/docs/setup/) <br>
+- [Kubernetes v1.14 or above](https://Kubernetes.io/docs/setup/) <br>
 
     - Minimum CPU : 6vCPU
     - Minimum Memory : 6GB

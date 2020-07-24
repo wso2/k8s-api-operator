@@ -10,10 +10,10 @@ This works only in Istio permissive mode.
 
 - [Kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
 
-- [Kubernetes v1.12 or above](https://Kubernetes.io/docs/setup/) <br>
+- [Kubernetes v1.14 or above](https://Kubernetes.io/docs/setup/) <br>
 
-    - Minimum CPU : 8vCPU
-    - Minimum Memory : 12GB
+    - Minimum CPU : 6vCPU
+    - Minimum Memory : 6GB
 
 - [Istio v1.3.x or above](https://istio.io/docs/setup/platform-setup/)
 
