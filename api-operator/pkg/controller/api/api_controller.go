@@ -234,7 +234,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	// if operator mode is "Istio", validate istio configs
 	if strings.EqualFold(operatorMode, istioMode) {
 		// validate Istio configs and setting configs
-		if err := mgw.ValidateIstioConfigs(&r.client); err != nil {
+		if err := mgw.ValidateIstioConfigs(&r.client, instance); err != nil {
 			// error has already logged inside the method
 			// Return and requeue request since config mismatch
 			return reconcile.Result{}, err

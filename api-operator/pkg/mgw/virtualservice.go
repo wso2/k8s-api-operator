@@ -104,7 +104,7 @@ func IstioVirtualService(api *wso2v1alpha1.API, apiBasePathMap map[string]string
 
 // ValidateIstioConfigs validate the Istio yaml config read from config map "istio-configs"
 // and setting values
-func ValidateIstioConfigs(client *client.Client) error {
+func ValidateIstioConfigs(client *client.Client, api *wso2v1alpha1.API) error {
 	istioConfigMap := k8s.NewConfMap()
 	if err := k8s.Get(client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: istioConfMapName},
 		istioConfigMap); err != nil {
@@ -121,13 +121,17 @@ func ValidateIstioConfigs(client *client.Client) error {
 	istioConfigs.GatewayName = istioConfigMap.Data[istioGatewayConfKey]
 
 	// host
-	if istioConfigMap.Data[istioHostConfKey] == "" {
+	// set host from API spec if given or from configmap
+	if api.Spec.IngressHostname != "" {
+		istioConfigs.Host = api.Spec.IngressHostname
+	} else if istioConfigMap.Data[istioHostConfKey] == "" {
 		err := errors.New("istio gateway host config is empty")
 		logVsc.Error(err, "Istio gateway host config is empty", "configmap", istioConfMapName,
 			"key", istioHostConfKey)
 		return err
+
+		istioConfigs.Host = istioConfigMap.Data[istioHostConfKey]
 	}
-	istioConfigs.Host = istioConfigMap.Data[istioHostConfKey]
 
 	// CORS policy
 	cors := &istioapi.CorsPolicy{}
