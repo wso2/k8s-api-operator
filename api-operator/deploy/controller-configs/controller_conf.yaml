@@ -109,6 +109,45 @@ data:
   #Provide the list of allowed APIs by the generated API Key
   allowedAPIs: |
   # - API name given in the API Definition: Allowed versions
+
+  #JWT header when forwarding the request to the backend
+  jwtHeader: "X-JWT-Assertion"
+
+  #JWT Generator configurations
+  #Enable jwt generator
+  enabledJwtGenerator: "false"
+  #Dialect prefix that can be added to the claims
+  jwtClaimDialect: "http://wso2.org/claims"
+  #Signature algorithm used to sign the JWT token (only SHA256withRSA and NONE is supported)
+  jwtSigningAlgorithm: "SHA256withRSA"
+  #Certificate alias from the keystore
+  jwtCertificateAlias: "ballerina"
+  #Private key alias from the keystore
+  jwtPrivateKeyAlias: "ballerina"
+  #JWT token expiry time - ms (valid only if the jwt generator caching mechanism is disabled)
+  jwtTokenExpiry: "900000"
+  #Restricted claims as a list that should not be included in the backend JWT token
+  jwtRestrictedClaims: |
+  # claim1  (This is an example)
+
+  #Token issuer standard claim
+  jwtIssuer: "wso2.org/products/am"
+  #Token audience standard claim as a list
+  jwtAudience: |
+  # http://org.wso2.apimgt/gateway (This is an example)
+
+  #JWT token generator implementation
+  jwtGeneratorImpl: "org.wso2.micro.gateway.jwt.generator.MGWJWTGeneratorImpl"
+  #JWT Generator cache configurations
+  #Enable jwt generator token caching
+  jwtTokenCacheEnable: "true"
+  #Token cache expiry time (ms)
+  jwtTokenCacheExpiryTime: "900000"
+  #Token cache capacity
+  jwtTokenCacheCapacity: "10000"
+  #Token cache eviction factor
+  jwtTokenCacheEvictionFactor: "0.25"
+
 ---
 apiVersion: v1
 kind: ConfigMap

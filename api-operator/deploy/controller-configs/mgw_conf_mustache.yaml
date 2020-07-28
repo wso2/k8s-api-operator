@@ -65,7 +65,7 @@ data:
     # API JWT Authorization security for backend
     [jwtConfig]
       # JWT header when forwarding the request to the backend
-      header = "X-JWT-Assertion"
+      header = "{{$.JwtHeader}}"
 
     # Key manager configurations
     [keyManager]
@@ -247,6 +247,40 @@ data:
           versions = "{{$allowedAPIVersions}}"
           {{end}}
         {{end}}
+
+    # JWT Generator configurations
+    [jwtGeneratorConfig]
+      # Enable jwt generator
+      jwtGeneratorEnabled = {{$.EnabledJwtGenerator}}
+      # Dialect prefix that can be added to the claims
+      claimDialect = "{{$.JwtClaimDialect}}"
+      # Signature algorithm used to sign the JWT token (only SHA256withRSA and NONE is supported)
+      signingAlgorithm = "{{$.JwtSigningAlgorithm}}"
+      # Certificate alias from the keystore
+      certificateAlias = "{{$.JwtCertificateAlias}}"
+      # Private key alias from the keystore
+      privateKeyAlias = "{{$.JwtPrivateKeyAlias}}"
+      # JWT token expiry time - ms (valid only if the jwt generator caching mechanism is disabled)
+      tokenExpiry = {{$.JwtTokenExpiry}}
+      # Restricted claims as an array that should not be included in the backend JWT token
+      # Example: restrictedClaims=["claim1","claim2","claim3"]
+      restrictedClaims = {{$.JwtRestrictedClaims}}
+      # Token issuer standard claim
+      issuer = "{{$.JwtIssuer}}"
+      # Token audience standard claim
+      audience = {{$.JwtAudience}}
+      # JWT token generator implementation
+      generatorImpl = "{{$.JwtGeneratorImpl}}"
+      # JWT Generator cache configurations
+      [jwtGeneratorConfig.jwtGeneratorCaching]
+        # Enable jwt generator token caching
+        tokenCacheEnable = {{$.JwtTokenCacheEnable}}
+        # Token cache expiry time (ms)
+        tokenCacheExpiryTime = {{$.JwtTokenCacheExpiryTime}}
+        # Token cache capacity
+        tokenCacheCapacity = {{$.JwtTokenCacheCapacity}}
+        # Token cache eviction factor
+        tokenCacheEvictionFactor = {{$.JwtTokenCacheEvictionFactor}}
 
     # Throttling configurations
     [throttlingConfig]
