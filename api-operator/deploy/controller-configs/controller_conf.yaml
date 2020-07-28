@@ -128,13 +128,13 @@ data:
   jwtTokenExpiry: "900000"
   #Restricted claims as a list that should not be included in the backend JWT token
   jwtRestrictedClaims: |
-  # claim1  (This is an example)
+  # "claim1","claim2"
 
   #Token issuer standard claim
   jwtIssuer: "wso2.org/products/am"
   #Token audience standard claim as a list
   jwtAudience: |
-  # http://org.wso2.apimgt/gateway (This is an example)
+  # "http://org.wso2.apimgt/gateway"
 
   #JWT token generator implementation
   jwtGeneratorImpl: "org.wso2.micro.gateway.jwt.generator.MGWJWTGeneratorImpl"
