@@ -27,13 +27,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"strconv"
+	"strings"
 )
 
 var logConf = log.Log.WithName("mgw.config")
 
 const (
 	apimConfName       = "apim-config"
-	apimSecretName	   = "apim-secret"
+	apimSecretName     = "apim-secret"
 	mgwConfMustache    = "mgw-conf-mustache"
 	wso2NameSpaceConst = "wso2-system"
 
@@ -48,6 +49,11 @@ const (
 	validityTimeValConst = -1
 
 	observabilityPrometheusPort = 9797
+
+	jwtTokenExpiryValConst              = 900000
+	jwtTokenCacheExpiryTimeValConst     = 900000
+	jwtTokenCacheCapacityValConst       = 10000
+	jwtTokenCacheEvictionFactorValConst = 0.25
 )
 
 const (
@@ -68,6 +74,21 @@ const (
 	apiKeyIssuerCertificateAliasConst   = "apiKeyIssuerCertificateAlias"
 	validityTimeConst                   = "validityTime"
 	allowedAPIsConst                    = "allowedAPIs"
+	jwtHeaderConst                      = "jwtHeader"
+	enabledJwtGeneratorConst            = "enabledJwtGenerator"
+	jwtClaimDialectConst                = "jwtClaimDialect"
+	jwtSigningAlgorithmConst            = "jwtSigningAlgorithm"
+	jwtCertificateAliasConst            = "jwtCertificateAlias"
+	jwtPrivateKeyAliasConst             = "jwtPrivateKeyAlias"
+	jwtTokenExpiryConst                 = "jwtTokenExpiry"
+	jwtRestrictedClaimsConst            = "jwtRestrictedClaims"
+	jwtIssuerConst                      = "jwtIssuer"
+	jwtAudienceConst                    = "jwtAudience"
+	jwtGeneratorImplConst               = "jwtGeneratorImpl"
+	jwtTokenCacheEnableConst            = "jwtTokenCacheEnable"
+	jwtTokenCacheExpiryTimeConst        = "jwtTokenCacheExpiryTime"
+	jwtTokenCacheCapacityConst          = "jwtTokenCacheCapacity"
+	jwtTokenCacheEvictionFactorConst    = "jwtTokenCacheEvictionFactor"
 )
 
 // Configuration represents configurations for MGW
@@ -102,8 +123,8 @@ type Configuration struct {
 	EnabledGlobalTMEventPublishing string
 	JmsConnectionProvider          string
 	ThrottleEndpoint               string
-	ApimUsername				   string
-	ApimPassword				   string
+	ApimUsername                   string
+	ApimPassword                   string
 
 	// token revocation
 	EnableRealtimeMessageRetrieval string
@@ -138,6 +159,25 @@ type Configuration struct {
 
 	// enable observability of MGW
 	ObservabilityEnabled bool
+
+	// JWT Header Configs
+	JwtHeader string
+
+	// JWT Generator Configs
+	EnabledJwtGenerator         string
+	JwtClaimDialect             string
+	JwtSigningAlgorithm         string
+	JwtCertificateAlias         string
+	JwtPrivateKeyAlias          string
+	JwtTokenExpiry              int32
+	JwtRestrictedClaims         []string
+	JwtIssuer                   string
+	JwtAudience                 []string
+	JwtGeneratorImpl            string
+	JwtTokenCacheEnable         string
+	JwtTokenCacheExpiryTime     int32
+	JwtTokenCacheCapacity       int32
+	JwtTokenCacheEvictionFactor float64
 }
 
 type JwtTokenConfig struct {
@@ -197,8 +237,8 @@ var Configs = &Configuration{
 	EnabledGlobalTMEventPublishing: "false",
 	JmsConnectionProvider:          "wso2apim.wso2:5672",
 	ThrottleEndpoint:               "wso2apim.wso2:32001",
-	ApimUsername: 					"admin",
-	ApimPassword: 					"admin",
+	ApimUsername:                   "admin",
+	ApimPassword:                   "admin",
 
 	// token revocation
 	EnableRealtimeMessageRetrieval: "false",
@@ -237,6 +277,23 @@ var Configs = &Configuration{
 
 	// enable observability of MGW
 	ObservabilityEnabled: false,
+
+	// JWT Header Configs
+	JwtHeader: "X-JWT-Assertion",
+
+	// JWT Generator Configs
+	EnabledJwtGenerator:         "false",
+	JwtClaimDialect:             "http://wso2.org/claims",
+	JwtSigningAlgorithm:         "SHA256withRSA",
+	JwtCertificateAlias:         "ballerina",
+	JwtPrivateKeyAlias:          "ballerina",
+	JwtTokenExpiry:              900000,
+	JwtIssuer:                   "wso2.org/products/am",
+	JwtGeneratorImpl:            "org.wso2.micro.gateway.jwt.generator.MGWJWTGeneratorImpl",
+	JwtTokenCacheEnable:         "true",
+	JwtTokenCacheExpiryTime:     900000,
+	JwtTokenCacheCapacity:       10000,
+	JwtTokenCacheEvictionFactor: 0.25,
 }
 
 // SetApimConfigs sets the MGW configs from APIM configmap
@@ -305,6 +362,58 @@ func SetApimConfigs(client *client.Client) error {
 		Configs.HttpsPort = httpsPortValConst
 	} else {
 		Configs.HttpsPort = int32(httpsPort)
+	}
+	Configs.JwtHeader = apimConfig.Data[jwtHeaderConst]
+	Configs.EnabledJwtGenerator = apimConfig.Data[enabledJwtGeneratorConst]
+	Configs.JwtClaimDialect = apimConfig.Data[jwtClaimDialectConst]
+	Configs.JwtSigningAlgorithm = apimConfig.Data[jwtSigningAlgorithmConst]
+	Configs.JwtCertificateAlias = apimConfig.Data[jwtCertificateAliasConst]
+	Configs.JwtPrivateKeyAlias = apimConfig.Data[jwtPrivateKeyAliasConst]
+	jwtTokenExpiry, err := strconv.Atoi(apimConfig.Data[jwtTokenExpiryConst])
+	if err != nil {
+		logConf.Error(err, "Provided JWT token Expiry time is invalid. Using the default JWT token expiry time")
+		Configs.JwtTokenExpiry = jwtTokenExpiryValConst
+	} else {
+		Configs.JwtTokenExpiry = int32(jwtTokenExpiry)
+	}
+	Configs.JwtIssuer = apimConfig.Data[jwtIssuerConst]
+	Configs.JwtGeneratorImpl = apimConfig.Data[jwtGeneratorImplConst]
+	Configs.JwtTokenCacheEnable = apimConfig.Data[jwtTokenCacheEnableConst]
+	jwtTokenCacheExpiryTime, err := strconv.Atoi(apimConfig.Data[jwtTokenCacheExpiryTimeConst])
+	if err != nil {
+		logConf.Error(err, "Provided JWT Token cache expiry time is invalid. Using the default JWT token cache"+
+			"expiry time")
+		Configs.JwtTokenCacheExpiryTime = jwtTokenCacheExpiryTimeValConst
+	} else {
+		Configs.JwtTokenCacheExpiryTime = int32(jwtTokenCacheExpiryTime)
+	}
+	jwtRestrictedClaims := strings.Split(apimConfig.Data[jwtRestrictedClaimsConst], "\n")
+	for i, element := range jwtRestrictedClaims {
+		if element != "" {
+			Configs.JwtRestrictedClaims[i] = element
+		}
+	}
+	jwtAudience := strings.Split(apimConfig.Data[jwtAudienceConst], "\n")
+	for i, element := range jwtAudience {
+		if element != "" {
+			Configs.JwtAudience[i] = element
+		}
+	}
+	jwtTokenCacheCapacity, err := strconv.Atoi(apimConfig.Data[jwtTokenCacheCapacityConst])
+	if err != nil {
+		logConf.Error(err, "Provided JWT Token cache capacity is invalid. Using the default JWT token cache"+
+			"capacity")
+		Configs.JwtTokenCacheCapacity = jwtTokenCacheCapacityValConst
+	} else {
+		Configs.JwtTokenCacheCapacity = int32(jwtTokenCacheCapacity)
+	}
+	jwtTokenCacheEvictionFactor, err := strconv.ParseFloat(apimConfig.Data[jwtTokenCacheEvictionFactorConst], 64)
+	if err != nil {
+		logConf.Error(err, "Provided JWT Token cache eviction factor is invalid. Using the default JWT token cache"+
+			"eviction factor")
+		Configs.JwtTokenCacheEvictionFactor = jwtTokenCacheEvictionFactorValConst
+	} else {
+		Configs.JwtTokenCacheEvictionFactor = jwtTokenCacheEvictionFactor
 	}
 
 	return nil
