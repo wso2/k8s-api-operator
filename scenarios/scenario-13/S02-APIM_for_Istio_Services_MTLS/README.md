@@ -108,15 +108,22 @@ This works in Istio permissive mode and Strict MTLS mode.
 #### Step 4: Deploy an API for the microservices
 
 - We are creating a namespace called wso2 and deploy our API there. In this namespace, we have not enabled Istio sidecar injection.
+
+    **Note:** For this sample, using the flag `--override` to update configs, if there are images in the docker registry
+    which where created during older versions of API Operator.
    
     ```
     >> apictl create ns wso2
-    >> apictl add api -n online-store-api-mlts --from-file=./swagger.yaml --namespace=wso2
+    >> apictl add api \
+                -n online-store-api-mlts \
+                --from-file=./swagger.yaml \
+                --namespace=wso2 \
+                --override
     
     >> apictl get pods -n wso2
   
     Output:
-    NAME                                                        READY   STATUS      RESTARTS   AGE
+    NAME                                                             READY   STATUS      RESTARTS   AGE
     online-store-api-mlts-5748695f7b-jxnpf                           1/1     Running     0          14m
     online-store-api-mlts-kaniko-b5hqb                               0/1     Completed   0          14m
     ```

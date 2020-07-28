@@ -110,10 +110,17 @@ This works only in Istio permissive mode.
 #### Step 4: Deploy an API for the microservices
  
 - We are creating a namespace called wso2 and deploy our API there. In this namespace, we have not enabled Istio sidecar injection.
+
+    **Note:** For this sample, using the flag `--override` to update configs, if there are images in the docker registry
+    which where created during older versions of API Operator.
    
    ```
     >> apictl create ns wso2
-    >> apictl add api -n online-store-api --from-file=./swagger.yaml --namespace=wso2
+    >> apictl add api \
+                -n online-store-api \
+                --from-file=./swagger.yaml \
+                --namespace=wso2 \
+                --override
    ```
 
     ```

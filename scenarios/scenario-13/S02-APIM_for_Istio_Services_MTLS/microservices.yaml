@@ -32,9 +32,9 @@ metadata:
 spec:
   applicationProtocol: http
   ports:
-      - name: prod-ep
-        port: 80
-        targetPort: 9090
+    - name: prod-ep
+      port: 80
+      targetPort: 9090
   deploy:
     name: products
     dockerImage: pubudu/products:1.0.0
@@ -53,9 +53,9 @@ metadata:
 spec:
   applicationProtocol: http
   ports:
-      - name: inv-ep
-        port: 80
-        targetPort: 80
+    - name: inv-ep
+      port: 80
+      targetPort: 80
   deploy:
     name: inventory
     dockerImage: pubudu/inventory:1.0.0
@@ -71,9 +71,9 @@ metadata:
 spec:
   applicationProtocol: http
   ports:
-      - name: rev-ep
-        port: 8080
-        targetPort: 8080
+    - name: rev-ep
+      port: 8080
+      targetPort: 8080
   deploy:
     name: review
     dockerImage: pubudu/review:1.0.0

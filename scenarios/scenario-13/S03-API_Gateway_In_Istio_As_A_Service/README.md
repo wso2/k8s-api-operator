@@ -189,11 +189,16 @@ This guide is based on https://istio.io/docs/tasks/traffic-management/ingress/se
 #### Step 6: Deploy an API for the microservices
 
 - We are deploying the API in the micro namespace where the sidecar injection is enabled.
+
+    **Note:** For this sample, using the flag `--override` to update configs, if there are images in the docker registry
+    which where created during older versions of API Operator.
    
     ```sh
-    >> apictl add api -n online-store-api-sc \
+    >> apictl add api \
+            -n online-store-api-sc \
             --from-file=./swagger.yaml \
-            --namespace=micro
+            --namespace=micro \
+            --override
     ```
 
   Wait for some minutes to build and deploy the API.

@@ -129,7 +129,7 @@ func ValidateIstioConfigs(client *client.Client, api *wso2v1alpha1.API) error {
 		logVsc.Error(err, "Istio gateway host config is empty", "configmap", istioConfMapName,
 			"key", istioHostConfKey)
 		return err
-
+	} else {
 		istioConfigs.Host = istioConfigMap.Data[istioHostConfKey]
 	}
 
