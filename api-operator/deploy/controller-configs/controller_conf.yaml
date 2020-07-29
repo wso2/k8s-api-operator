@@ -158,7 +158,7 @@ data:
   # Horizontal Pod Auto-Scaling for Micro-Gateways
   # Maximum number of replicas for the Horizontal Pod Auto-scale. Default->  maxReplicas: "5"
   mgwMaxReplicas: "5"
-  # Metrics configurations
+  # Metrics configurations for v2beta2
   mgwMetrics: |
     - type: Resource
       resource:
@@ -185,10 +185,17 @@ data:
     #       type: Value
     #       value: 10k
 
+  # Metrics Configurations for v2beta1
+  mgwMetricsV2beta1: |
+    - type: Resource
+      resource:
+        name: cpu
+        targetAverageUtilization: 50
+
   # Horizontal Pod Auto-Scaling for Target-Endpoints
   # Maximum number of replicas for the Horizontal Pod Auto-scale. Default->  maxReplicas: "5"
   targetEndpointMaxReplicas: "5"
-  # Metrics configurations
+  # Metrics configurations for v2beta2
   targetEndpointMetrics: |
     - type: Resource
       resource:
@@ -196,6 +203,14 @@ data:
         target:
           type: Utilization
           averageUtilization: 50
+
+  # Metrics Configurations for v2beta1
+  targetEndpointMetricsV2beta1: |
+    - type: Resource
+      resource:
+        name: cpu
+        targetAverageUtilization: 50
+
   # HPA version. For custom metrics HPA version should be v2beta2. Default-> v2beta1
   hpaVersion: "v2beta1"
 

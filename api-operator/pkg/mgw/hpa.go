@@ -36,10 +36,11 @@ var metricsHpaV2beta2 *[]v2beta2.MetricSpec
 var hpaMaxReplicas int32
 
 const (
-	hpaConfigMapName     = "hpa-configs"
-	metricsConfigKey     = "mgwMetrics"
-	maxReplicasConfigKey = "mgwMaxReplicas"
-	hpaVersionConst      = "hpaVersion"
+	hpaConfigMapName        = "hpa-configs"
+	metricsConfigKey        = "mgwMetrics"
+	metricsConfigKeyV2beta1 = "mgwMetricsV2beta1"
+	maxReplicasConfigKey    = "mgwMaxReplicas"
+	hpaVersionConst         = "hpaVersion"
 )
 
 // HPA checks whether the HPA version is v2beta1 or v2beta2
@@ -140,7 +141,7 @@ func ValidateHpaConfigs(client *client.Client) error {
 	if hpaConfMap.Data[hpaVersionConst] == "v2beta1" {
 		// parse hpa config yaml
 		metricsHpaV2beta1 = []v2beta1.MetricSpec{}
-		yamlErr := yaml.Unmarshal([]byte(hpaConfMap.Data[metricsConfigKey]), metricsHpaV2beta1)
+		yamlErr := yaml.Unmarshal([]byte(hpaConfMap.Data[metricsConfigKeyV2beta1]), metricsHpaV2beta1)
 		if yamlErr != nil {
 			logHpa.Error(err, "Error marshalling HPA config yaml", "configmap", hpaConfMap)
 			return yamlErr
