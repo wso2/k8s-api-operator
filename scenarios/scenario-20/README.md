@@ -189,7 +189,14 @@ as follows.
     #Expose custom metrics. Default-> observabilityEnabled: "false"
     observabilityEnabled: "true"
     ```
-  
+- Change the hpa version to "v2beta2" for custom metrics. Edit `<K8S_API_OPERATOR_HOME>controller-configs/controller_conf.yaml`
+ as follows.
+     ```yaml
+      # HPA version. For custom metrics HPA version should be v2beta2. Default-> v2beta1
+       hpaVersion: "v2beta2"
+     ```
+
+- Apply the changes
     ```sh
     >> apictl apply -f <K8S_API_OPERATOR_HOME>controller-configs/controller_conf.yaml
     ```

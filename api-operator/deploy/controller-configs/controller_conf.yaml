@@ -128,13 +128,13 @@ data:
   jwtTokenExpiry: "900000"
   #Restricted claims as a list that should not be included in the backend JWT token
   jwtRestrictedClaims: |
-  # claim1  (This is an example)
+  # "claim1","claim2"
 
   #Token issuer standard claim
   jwtIssuer: "wso2.org/products/am"
   #Token audience standard claim as a list
   jwtAudience: |
-  # http://org.wso2.apimgt/gateway (This is an example)
+  # "http://org.wso2.apimgt/gateway"
 
   #JWT token generator implementation
   jwtGeneratorImpl: "org.wso2.micro.gateway.jwt.generator.MGWJWTGeneratorImpl"
@@ -158,7 +158,7 @@ data:
   # Horizontal Pod Auto-Scaling for Micro-Gateways
   # Maximum number of replicas for the Horizontal Pod Auto-scale. Default->  maxReplicas: "5"
   mgwMaxReplicas: "5"
-  # Metrics configurations
+  # Metrics configurations for v2beta2
   mgwMetrics: |
     - type: Resource
       resource:
@@ -185,10 +185,17 @@ data:
     #       type: Value
     #       value: 10k
 
+  # Metrics Configurations for v2beta1
+  mgwMetricsV2beta1: |
+    - type: Resource
+      resource:
+        name: cpu
+        targetAverageUtilization: 50
+
   # Horizontal Pod Auto-Scaling for Target-Endpoints
   # Maximum number of replicas for the Horizontal Pod Auto-scale. Default->  maxReplicas: "5"
   targetEndpointMaxReplicas: "5"
-  # Metrics configurations
+  # Metrics configurations for v2beta2
   targetEndpointMetrics: |
     - type: Resource
       resource:
@@ -196,6 +203,14 @@ data:
         target:
           type: Utilization
           averageUtilization: 50
+
+  # Metrics Configurations for v2beta1
+  targetEndpointMetricsV2beta1: |
+    - type: Resource
+      resource:
+        name: cpu
+        targetAverageUtilization: 50
+
   # HPA version. For custom metrics HPA version should be v2beta2. Default-> v2beta1
   hpaVersion: "v2beta1"
 

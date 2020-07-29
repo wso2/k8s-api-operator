@@ -516,7 +516,7 @@ func createHPAv2beta1(client *client.Client, targetEp *wso2v1alpha1.TargetEndpoi
 
 	// parse hpa config yaml
 	var metricsHpa []v2beta1.MetricSpec
-	yamlErr := yaml.Unmarshal([]byte(hpaConfMap.Data[metricsConfigKey]), &metricsHpa)
+	yamlErr := yaml.Unmarshal([]byte(hpaConfMap.Data[metricsConfigKeyV2beta1]), &metricsHpa)
 	if yamlErr != nil {
 		log.Error(err, "Error marshalling HPA config yaml", "configmap", hpaConfMap)
 		return nil, yamlErr

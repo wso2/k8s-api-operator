@@ -17,6 +17,7 @@
 package mgw
 
 import (
+	"errors"
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	appsv1 "k8s.io/api/apps/v1"
@@ -28,6 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/yaml"
 	"strconv"
+	"strings"
 )
 
 var logHpa = log.Log.WithName("mgw.hpa")
@@ -36,10 +38,11 @@ var metricsHpaV2beta2 *[]v2beta2.MetricSpec
 var hpaMaxReplicas int32
 
 const (
-	hpaConfigMapName     = "hpa-configs"
-	metricsConfigKey     = "mgwMetrics"
-	maxReplicasConfigKey = "mgwMaxReplicas"
-	hpaVersionConst      = "hpaVersion"
+	hpaConfigMapName        = "hpa-configs"
+	metricsConfigKey        = "mgwMetrics"
+	metricsConfigKeyV2beta1 = "mgwMetricsV2beta1"
+	maxReplicasConfigKey    = "mgwMaxReplicas"
+	hpaVersionConst         = "hpaVersion"
 )
 
 // HPA checks whether the HPA version is v2beta1 or v2beta2
@@ -137,16 +140,15 @@ func ValidateHpaConfigs(client *client.Client) error {
 		return err
 	}
 	hpaMaxReplicas = int32(maxReplicasInt64)
-	if hpaConfMap.Data[hpaVersionConst] == "v2beta1" {
+	if strings.EqualFold("v2beta1", hpaConfMap.Data[hpaVersionConst]) {
 		// parse hpa config yaml
 		metricsHpaV2beta1 = []v2beta1.MetricSpec{}
-		yamlErr := yaml.Unmarshal([]byte(hpaConfMap.Data[metricsConfigKey]), metricsHpaV2beta1)
+		yamlErr := yaml.Unmarshal([]byte(hpaConfMap.Data[metricsConfigKeyV2beta1]), metricsHpaV2beta1)
 		if yamlErr != nil {
 			logHpa.Error(err, "Error marshalling HPA config yaml", "configmap", hpaConfMap)
 			return yamlErr
 		}
-	}
-	if hpaConfMap.Data[hpaVersionConst] == "v2beta2" {
+	} else if strings.EqualFold("v2beta2", hpaConfMap.Data[hpaVersionConst]) {
 		// parse hpa config yaml
 		metricsHpaV2beta2 = &[]v2beta2.MetricSpec{}
 		yamlErr := yaml.Unmarshal([]byte(hpaConfMap.Data[metricsConfigKey]), metricsHpaV2beta2)
@@ -154,6 +156,11 @@ func ValidateHpaConfigs(client *client.Client) error {
 			logHpa.Error(err, "Error marshalling HPA config yaml", "configmap", hpaConfMap)
 			return yamlErr
 		}
+	} else {
+		err = errors.New("invalid HPA Version")
+		logHpa.Error(err, "Error getting the HPA version. HPA version is invalid")
+		return err
+
 	}
 	return nil
 }
