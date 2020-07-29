@@ -157,8 +157,9 @@ func ValidateHpaConfigs(client *client.Client) error {
 			return yamlErr
 		}
 	} else {
+		err = errors.New("invalid HPA Version")
 		logHpa.Error(err, "Error getting the HPA version. HPA version is invalid")
-		return errors.New("invalid HPA Version")
+		return err
 
 	}
 	return nil
