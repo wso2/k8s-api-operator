@@ -23,8 +23,7 @@ spec:
   securityConfig:
     - certificate: wso2am310-secret
       issuer: https://localhost:9443/oauth2/token
-      audience: http://org.wso2.apimgt/gateway
-      validateSubscription: true
+      validateSubscription: false
 
 ---
 apiVersion: v1
