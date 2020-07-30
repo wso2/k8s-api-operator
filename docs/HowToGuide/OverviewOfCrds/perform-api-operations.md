@@ -44,13 +44,17 @@ Optional Parameters
 --override      	  Overwrite the docker image creation for already created docker image
 --mode                Overwrite the deploying mode when multiple open API definitions provided. Available modes: privateJet, sidecar
 --version             Overwrite the deploying version when multiple open API definitions provided
+--env                 Environment variables to be passed to deployment
+--image               Image of the API. If specified, ignores the value of --override
 
 Format:
 >> apictl add api -n <API_NAME> --from-file=<PATH_TO_OPEN_API_DEFINITION_1> --from-file=<PATH_TO_API_INIT_PROJECT_1> ... \
-    --replicas=<NUMBER_OF_REPLICAS> \
-    --namespace=<DESIRED_NAMESPACE> \
-    --mode=<DEPLOY_MODE> \
-    --version=<DEPLOY_VERSION>
+        --replicas=<NUMBER_OF_REPLICAS> \
+        --namespace=<DESIRED_NAMESPACE> \
+        --mode=<DEPLOY_MODE> \
+        --version=<DEPLOY_VERSION> \
+        --env=<KEY_1>=<VALUE_1> --env=<KEY_2>=<VALUE_2> \
+        --image=<EXISTING_IMAGE>
 ```
 
 ***NOTE:*** Flags `--mode` and `--version` only supports in multiple open API definitions mode. If these values are not provided default mode: `privateJet` and default version: `v1.0.0.` are used.

@@ -19,8 +19,11 @@
      labels:
        app: wso2
    spec:
-     protocol: <https_OR_http>
-     port: <PORT>
+     applicationProtocol: <https_OR_http>
+     ports:
+       - name: <PORT_NAME>
+         port: <PORT>
+         targetPort: <PORT>
      targetPort: <TARGET_PORT>
      mode: <privateJet_OR_sidecar>
      deploy:
@@ -77,42 +80,46 @@
     
    ```yaml
    spec:
-     protocol: <https_OR_http>        // Specify the protocol that service should be exposed
-     port: <PORT>                     // If the port and target port do not specified, depend on the protocol type
-     targetPort: <TARGET_PORT>        // Port and target port will be assigned. https associated with port 443 and target port 443 and
-                                      // http associated with port 80 and target port 80
-     mode: <privateJet_OR_sidecar>    // Mode is very important paramets in the target endpoint kind. If the mode is set to privateJet
-                                      // Target endpoint controller will create the endpoint deployment along with the service.
-                                      // In sidecar mode, target endpoint controller only add the endpoint definition but no deployment will be created
+     applicationProtocol: <https_OR_http>    // Specify the protocol that service should be exposed
+     ports:                                  // Ports of the target endpoint
+       - name: <PORT_NAME>                   // Name of the port
+         port: <PORT>                        // The port that will be exposed by this service
+         targetPort: <PORT>                  // Port that is targeted to expose
+     mode: <privateJet_OR_sidecar>           // Mode is very important paramets in the target endpoint kind.
+                                             // If the mode is set to privateJet, Target endpoint controller will create
+                                             // the endpoint deployment along with the service.
+                                             // In sidecar mode, target endpoint controller only add the endpoint
+                                             // definition but no deployment will be created
      deploy:
-       name: <DEPLOYMENT_NAME>        // Name of the deployment
-       dockerImage: <DOCKER_IMAGE>    // Docker image to deploy
-       minReplicas: <MINIMUM_REPLICA_COUNT>    // Number of minimum replicas that should be deployed
-       maxReplicas: <MAXIMUM_REPLICA_COUNT>    // Number of maximum replicas that should be deployed
-       requestCPU: <REQUEST_CPU>      // Minimum CPU required to deploy the pod
-       reqMemory: <REQUEST_MEMORY>    // Minimum memory required to deploy the pod
-       cpuLimit: <CPU_LIMIT>          // Maximum CPU value for the pod can survive
-       memoryLimit: <MEMORY_LIMIT>    // Maximum memory value for the pod can survive
+       name: <DEPLOYMENT_NAME>               // Name of the deployment
+       dockerImage: <DOCKER_IMAGE>           // Docker image to deploy
+       minReplicas: <MINIMUM_REPLICA_COUNT>  // Number of minimum replicas that should be deployed
+       maxReplicas: <MAXIMUM_REPLICA_COUNT>  // Number of maximum replicas that should be deployed
+       requestCPU: <REQUEST_CPU>             // Minimum CPU required to deploy the pod
+       reqMemory: <REQUEST_MEMORY>           // Minimum memory required to deploy the pod
+       cpuLimit: <CPU_LIMIT>                 // Maximum CPU value for the pod can survive
+       memoryLimit: <MEMORY_LIMIT>           // Maximum memory value for the pod can survive
    ```
     
 1. How target endpoint works
     
-    Using apim operator provide greater flexibility to deploy APIs in Kurbenetes. Target endpoint can be deployed in two modes. Target endpoint
-    default mode is set to privateJet which means target endpoint controller will create the deployment and service for the endpoint using the
-    docker image specified in the endpoint definition. 
+    API Operator provides greater flexibility to deploy APIs in Kubernetes. Target endpoint can be deployed in two
+    modes. Target endpoint's default mode is set to **privateJet** which means target endpoint controller will create
+    the deployment and service for the endpoint using the specified docker image in the endpoint definition. 
     
-    When mode is set to sidecar, target endpoint controller will only add the definition to kubernetes registry and will not create the deployment
-    as operated in the privatejet mode. In the sidecar mode, user can specify the name of the endpoint service and mode in swagger definition as follow.
+    When mode is set to **sidecar**, target endpoint controller will only add the definition to kubernetes registry
+    and will not create the deployment as operated in the privatejet mode. In the sidecar mode, user can specify
+    the name of the endpoint service and mode in swagger definition as follow.
       
     Eg :<br>
     
-    ```
-    x-wso2-production-endpoints: simple-endpoint-service 
-    
-    x-wso2-mode: sidecar   
+    ```yaml
+    x-wso2-production-endpoints: simple-endpoint-service
+    x-wso2-mode: sidecar
     ```    
-    At the time of the API is deployed, api-operator will identify the endpoint service and create the target endpoint deployment along with the
-    service. The deployed API will act as a sidecar to the deployed endpoint.
-
-   - Sample target endpoint definitions are provided in `<k8s-api-operator-home>/api-operator/deploy/sample-definitions/wso2_v1alpha1_targetendpoint_cr.yaml`
-   - Sample scenarios using the target endpoint provided in `<k8s-api-operator-home>/scenarios/scenario-7` and `<k8s-api-operator-home>/scenarios/scenario-8`
+    At the time of the API is deployed, API Operator will identify the endpoint service and create the target endpoint
+    deployment along with the service. The deployed API will act as a sidecar to the deployed endpoint.
+    
+    - Sample target endpoint definitions are provided in `<k8s-api-operator-home>/api-operator/deploy/sample-definitions/wso2_v1alpha1_targetendpoint_cr.yaml`
+    - Sample scenarios using the target endpoint provided in `<k8s-api-operator-home>/scenarios/scenario-7` and
+      `<k8s-api-operator-home>/scenarios/scenario-8`

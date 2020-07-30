@@ -1,6 +1,7 @@
 # API Management for Istio Services
 
-In this scenario, we have several microservices which are deployed in Istio. For applying API management for those microservices, we can expose an API for those microservices. 
+In this scenario, we have several microservices which are deployed in Istio. For applying API management for
+those microservices, we can expose an API for those microservices. 
 
 This works only in Istio permissive mode.
 
@@ -90,7 +91,8 @@ This works only in Istio permissive mode.
 
 #### Step 3: Deploy Microservices
 
-- When you execute this command, it creates a namespace called micro and enable Istio sidecar injection for that namespace. Also this deploys 3 microservices.
+- When you execute this command, it creates a namespace called micro and enable Istio sidecar injection
+  for that namespace. Also this deploys 3 microservices.
 
     ```sh
     >> apictl create -f microservices.yaml
@@ -109,7 +111,8 @@ This works only in Istio permissive mode.
 
 #### Step 4: Deploy an API for the microservices
  
-- We are creating a namespace called wso2 and deploy our API there. In this namespace, we have not enabled Istio sidecar injection.
+- We are creating a namespace called wso2 and deploy our API there. In this namespace, we have not enabled
+  Istio sidecar injection.
 
     **Note:** For this sample, using the flag `--override` to update configs, if there are images in the docker registry
     which where created during older versions of API Operator.
@@ -137,7 +140,8 @@ This works only in Istio permissive mode.
  
  - Retrieve the API service endpoint details
  
-     The API service is exposed as the Load Balancer service type. You can get the API service endpoint details by using the following command.
+     The API service is exposed as the Load Balancer service type. You can get the API service endpoint details
+     by using the following command.
  
      ```sh
      >> apictl get services -n wso2
@@ -150,7 +154,8 @@ This works only in Istio permissive mode.
  <details><summary>If you are using Minikube click here</summary>
  <p>
  
- **_Note:_**  By default API operator requires the LoadBalancer service type which is not supported in Minikube by default. Here is how you can enable it on Minikube.
+ **_Note:_**  By default API operator requires the LoadBalancer service type which is not supported in
+ Minikube by default. Here is how you can enable it on Minikube.
  
  - On Minikube, the LoadBalancer type makes the Service accessible through the minikube service command.
  

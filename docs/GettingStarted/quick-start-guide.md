@@ -320,7 +320,7 @@ The endpoint of our microservice is referred in the API definition.
     online-store       LoadBalancer   10.83.9.142    35.232.188.134   9095:31055/TCP,9090:32718/TCP   57s
     ```
 
-    You now have a microgateway deployed in Kubernetes that runs your API for the microservice.
+    You now have a Microgateway deployed in Kubernetes that runs your API for the microservice.
 
 <br />
 

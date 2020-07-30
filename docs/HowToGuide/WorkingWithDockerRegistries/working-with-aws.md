@@ -4,7 +4,8 @@ You can install the WSO2 API Operator in AWS EKS cluster.
 
 ## Configure Kubectl with the EKS cluster
 
-Use the AWS CLI command: [update-kubeconfig](https://docs.aws.amazon.com/cli/latest/reference/eks/update-kubeconfig.html) to configure the `kubectl` so that you can connect to an Amazon EKS cluster. 
+Use the AWS CLI command: [update-kubeconfig](https://docs.aws.amazon.com/cli/latest/reference/eks/update-kubeconfig.html)
+to configure the `kubectl` so that you can connect to an Amazon EKS cluster. 
 
 ```sh
 >> aws eks --region <REGION> update-kubeconfig --name <CLUSTER_NAME>
@@ -27,20 +28,23 @@ NAME         TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
 kubernetes   ClusterIP   10.100.0.1   <none>        443/TCP   1m
 ```
 
-Verify that you have running Node Groups with following command. Otherwise launch a [Managed Node Group](https://docs.aws.amazon.com/eks/latest/userguide/managed-node-groups.html).
+Verify that you have running Node Groups with following command. Otherwise launch a
+[Managed Node Group](https://docs.aws.amazon.com/eks/latest/userguide/managed-node-groups.html).
 ```sh
 >> kubectl get nodes
 ```
 
 ## Create an Amazon ECR repository.
 
-You can use Amazon ECR as the registry or other registry type. Following [Install API Operator](#install-api-operator) section describes using an Amazon ECR registry type. It also works with other registry types.
+You can use Amazon ECR as the registry or other registry type. Following [Install API Operator](#install-api-operator)
+section describes using an Amazon ECR registry type. It also works with other registry types.
 
 ![Amazon ECR repo](../../images/aws-ecr-repo.png)
 
 ## Install API Operator
 
-- Execute the following command to install API Operator interactively and configure repository to push the microgateway image.
+- Execute the following command to install API Operator interactively and configure repository to push the
+  Microgateway image.
 - Select "Amazon ECR" as the repository type.
 - Enter repository uri which is highlighted in the above image.
 - Enter the file path for aws credentials file. Default is `<USER_HOME>/.aws/credentials`.

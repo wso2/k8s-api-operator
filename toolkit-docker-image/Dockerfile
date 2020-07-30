@@ -30,7 +30,7 @@ ARG JMS_MODULE_PATH=/root/.ballerina
 
 # build arguments for WSO2 product installation
 ARG WSO2_SERVER_NAME=wso2am-micro-gw-toolkit-linux
-ARG WSO2_SERVER_VERSION=3.2.0-alpha
+ARG WSO2_SERVER_VERSION=3.2.0
 ARG WSO2_SERVER=${WSO2_SERVER_NAME}-${WSO2_SERVER_VERSION}
 ARG WSO2_SERVER_HOME=${USER_HOME}/${WSO2_SERVER}
 ARG WSO2_SERVER_DIST_URL=https://github.com/wso2/product-microgateway/releases/download/v${WSO2_SERVER_VERSION}/${WSO2_SERVER}.zip
