@@ -23,8 +23,7 @@
      ports:
        - name: <PORT_NAME>
          port: <PORT>
-         targetPort: <PORT>
-     targetPort: <TARGET_PORT>
+         targetPort: <TARGET_PORT>
      mode: <privateJet_OR_sidecar>
      deploy:
        name: <DEPLOYMENT_NAME>
@@ -84,7 +83,7 @@
      ports:                                  // Ports of the target endpoint
        - name: <PORT_NAME>                   // Name of the port
          port: <PORT>                        // The port that will be exposed by this service
-         targetPort: <PORT>                  // Port that is targeted to expose
+         targetPort: <TARGET_PORT>           // Port that is targeted to expose
      mode: <privateJet_OR_sidecar>           // Mode is very important paramets in the target endpoint kind.
                                              // If the mode is set to privateJet, Target endpoint controller will create
                                              // the endpoint deployment along with the service.

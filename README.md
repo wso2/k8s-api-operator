@@ -428,7 +428,9 @@ Commands of the API Controller can be found [here](https://github.com/wso2/produ
 - Add the API portal as an environment to the API controller using the following command.
 
     ```sh
-    >> apictl add-env -e k8s --apim https://wso2apim:32001 --token https://wso2apim:32001/oauth2/token
+    >> apictl add-env -e k8s \
+                --apim https://wso2apim:32001 \
+                --token https://wso2apim:32001/oauth2/token
     
     Output:
     Successfully added environment 'k8s'
@@ -437,7 +439,9 @@ Commands of the API Controller can be found [here](https://github.com/wso2/produ
 - Initialize the API project using API Controller
 
     ```sh
-    >> apictl init online-store --oas=./scenarios/scenario-1/products_swagger.yaml --initial-state=PUBLISHED
+    >> apictl init online-store \
+                --oas=./scenarios/scenario-1/products_swagger.yaml \
+                --initial-state=PUBLISHED
     
     Output:
     Initializing a new WSO2 API Manager project in /home/wso2/k8s-api-operator/scenarios/scenario-1/online-store

@@ -28,7 +28,8 @@ You can also provide multiple open API definitions for a API
 
 ```sh
 Format:
->> apictl add api -n <API_NAME> --from-file=<PATH_TO_OPEN_API_DEFINITION_1> \
+>> apictl add api -n <API_NAME> \
+        --from-file=<PATH_TO_OPEN_API_DEFINITION_1> \
         --from-file=<PATH_TO_OPEN_API_DEFINITION_2> \
         ... --from-file=<PATH_TO_OPEN_API_DEFINITION_m> \
         --from-file=<PATH_TO_API_PROJECT_1> \
