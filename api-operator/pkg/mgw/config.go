@@ -387,18 +387,22 @@ func SetApimConfigs(client *client.Client) error {
 	} else {
 		Configs.JwtTokenCacheExpiryTime = int32(jwtTokenCacheExpiryTime)
 	}
-	jwtRestrictedClaims := strings.Split(apimConfig.Data[jwtRestrictedClaimsConst], "\n")
-	for i, element := range jwtRestrictedClaims {
+	var jwtRestrictedClaims []string
+	jwtRestrictedClaimsArray := strings.Split(apimConfig.Data[jwtRestrictedClaimsConst], ",")
+	for _, element := range jwtRestrictedClaimsArray {
 		if element != "" {
-			Configs.JwtRestrictedClaims[i] = element
+			jwtRestrictedClaims = append(jwtRestrictedClaims, element)
 		}
 	}
-	jwtAudience := strings.Split(apimConfig.Data[jwtAudienceConst], "\n")
-	for i, element := range jwtAudience {
+	Configs.JwtRestrictedClaims = jwtRestrictedClaims
+	var jwtAudience []string
+	jwtAudienceArray := strings.Split(apimConfig.Data[jwtAudienceConst], ",")
+	for _, element := range jwtAudienceArray {
 		if element != "" {
-			Configs.JwtAudience[i] = element
+			jwtAudience = append(jwtAudience, element)
 		}
 	}
+	Configs.JwtAudience = jwtAudience
 	jwtTokenCacheCapacity, err := strconv.Atoi(apimConfig.Data[jwtTokenCacheCapacityConst])
 	if err != nil {
 		logConf.Error(err, "Provided JWT Token cache capacity is invalid. Using the default JWT token cache"+

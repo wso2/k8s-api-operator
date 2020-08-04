@@ -527,6 +527,7 @@ and configurations related to API operator and API portal.
 1. [Sample 19: Deploy petstore service as a managed API secured with API Key Authentication](scenarios/scenario-19)
 1. [Sample 20: Horizontal pod auto-scaling with custom-metrics](scenarios/scenario-20)
 1. [Sample 21: Deploy a service as a managed API using WSO2 API Manager locally](scenarios/scenario-21)
+1. [Sample 22: Generating Backend JWT](scenarios/scenario-22)
 
 
 ### Troubleshooting Guide
