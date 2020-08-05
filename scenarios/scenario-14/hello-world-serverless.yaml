@@ -24,9 +24,9 @@ metadata:
 spec:
   applicationProtocol: http
   ports:
-      - name: http1
-        port: 80
-        targetPort: 8080
+    - name: http1
+      port: 80
+      targetPort: 8080
   deploy:
     name: helloworld-service
     dockerImage: gcr.io/knative-samples/helloworld-go
