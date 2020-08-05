@@ -2,7 +2,7 @@
 
 #### Prerequisites
 
-- [Kubernetes v1.12 or above](https://Kubernetes.io/docs/setup/) <br>
+- [Kubernetes v1.14 or above](https://Kubernetes.io/docs/setup/) <br>
 
     - Minimum CPU : 6vCPU
     - Minimum Memory : 6GB
@@ -23,26 +23,26 @@
 <br />
 
 - Install OLM
-```
-kubectl apply -f https://github.com/operator-framework/operator-lifecycle-manager/releases/download/0.10.0/crds.yaml
-kubectl apply -f https://github.com/operator-framework/operator-lifecycle-manager/releases/download/0.10.0/olm.yaml
+```shell script
+kubectl apply -f https://github.com/operator-framework/operator-lifecycle-manager/releases/download/0.15.1/crds.yaml
+kubectl apply -f https://github.com/operator-framework/operator-lifecycle-manager/releases/download/0.15.1/olm.yaml
 ```
 
 - Deploy operator-marketplace. (operator-marketplace operator is needed only for local testing)
-```
+```shell script
 git clone https://github.com/operator-framework/operator-marketplace.git
 kubectl apply -f operator-marketplace/deploy/upstream/
 ```
 - Deploy other resources
-```
+```shell script
 kubectl apply -f install.yaml 
 ```
 
 **API operator will be deployed in kubernetes after some time (in the marketplace namespace for this example)**
 
-### Checking the resources deployed
+#### Checking the resources deployed
 
-```
+```shell script
 >> kubectl get catalogsource -n marketplace
 NAME                           NAME                           TYPE   PUBLISHER   AGE
 wso2am-operators                                              grpc               18s
@@ -73,10 +73,10 @@ upstream-community-operators-5897c5d54-kqcwr   1/1     Running   0          115s
 ```
 api-operator is deployed and is running in marketplace namespace.
 
-## How to preview the operator
+#### How to preview the operator
 
 Go to  https://operatorhub.io/preview and upload [csv file](api-operator/1.1.0/api-operator.v1.1.0.clusterserviceversion.yaml)
 
-### Operator bundle
+#### Operator bundle
 
-https://quay.io/application/rameshakaru/api-operator?tab=releases
+https://quay.io/application/wso2am/api-operator?tab=releases

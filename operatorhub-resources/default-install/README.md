@@ -32,12 +32,12 @@ Note:
 
 #### Step 1: Install Operator Lifecycle manager
 
-```
-curl -sL https://github.com/operator-framework/operator-lifecycle-manager/releases/download/0.13.0/install.sh | bash -s 0.13.0
+```shell script
+curl -sL https://github.com/operator-framework/operator-lifecycle-manager/releases/download/0.15.1/install.sh | bash -s 0.13.0
 ```
 #### Step 2: Install the API Operator
 
-```
+```shell script
 >> kubectl create -f https://operatorhub.io/install/api-operator.yaml
 ```
 
@@ -61,14 +61,14 @@ curl -sL https://github.com/operator-framework/operator-lifecycle-manager/releas
 
 - A ClusterServiceVersion (CSV) is a YAML manifest created from Operator metadata that assists the Operator Lifecycle Manager (OLM) in running the Operator in a cluster. It contains the metadata such as name, version, icon, required resources, installation, etc.
 
-- Once the above suscription is deployed, the required CRDs and CSV of the API Operator will be deployed in "operators" namespace, which will install the API Operator deployment with neccessary roles and bindings.
+- Once the above subscription is deployed, the required CRDs and CSV of the API Operator will be deployed in "operators" namespace, which will install the API Operator deployment with neccessary roles and bindings.
 
 - You can check if the CSV has been properly deployed in operators namespace by executing the below command.
-    ```
+    ```shell script
     >> kubectl get csv -n wso2-system
     ```
 - You can check if the operator is running by executing the below command
-    ```
+    ```shell script
     >> kubectl get pods -n wso2-system
     ```
 
@@ -86,14 +86,14 @@ curl -sL https://github.com/operator-framework/operator-lifecycle-manager/releas
 
 - You can find available operations using the below command.
     
-    ```
+    ```shell script
     >> apictl --help
     ```
   
 - By default API controller does not support kubectl command.
 
 - Set the API Controller’s mode to Kubernetes to be compatible with kubectl commands
-    ```
+    ```shell script
     >> apictl set --mode k8s 
     ```
 
@@ -103,12 +103,12 @@ curl -sL https://github.com/operator-framework/operator-lifecycle-manager/releas
   1. This zip contains the artifacts that required to deploy in Kubernetes.
   2. Extract k8s-api-operator-1.1.0.zip
   
-    ```
+    ```shell script
     cd k8s-api-operator-1.1.0
     ```     
 * Create a namespace and deploy the controller level configurations 
 
-    ```
+    ```shell script
     >> apictl apply -f api-operator/operatorhub-controller-configs/
     
     namespace/wso2-system created
@@ -126,16 +126,18 @@ curl -sL https://github.com/operator-framework/operator-lifecycle-manager/releas
   
 *  When you create an API, a docker image of it will be created and pushed to a docker registry. For this, credentials for your docker registry are required.
   
-    ```
+    ```shell script
     >>  apictl change registry
         
     Choose registry type:
-    1: Docker Hub (Or others, quay.io, HTTPS registry)
+    1: Docker Hub
     2: Amazon ECR
     3: GCR
     4: HTTP Private Registry
+    5: HTTPS Private Registry
+    6: Quay.io
     Choose a number: 1: 1
-    Enter repository name (docker.io/john | quay.io/mark | 10.100.5.225:5000/jennifer): docker.io/jennifer
+    Enter repository name: docker.io/jennifer
     Enter username: jennifer
     Enter password: *******
     Repository: docker.io/jennifer

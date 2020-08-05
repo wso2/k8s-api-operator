@@ -2,7 +2,9 @@
 
 #### Prerequisites
 
-[quay.io](https://quay.io/) account 
+[quay.io](https://quay.io/) account
+
+[operator-sdk v0.18.2](https://github.com/operator-framework/operator-sdk/releases/tag/v0.18.2) 
 
 #### Steps
 
@@ -13,6 +15,14 @@
 - Include a quadratic image of the logo
 - This will create a cluster service version (csv is inside the operator bundle)
 - Download the operator bundle
+
+This can also be done using the operator-sdk commands using command line. Navigate into the `api-operator` directory and execute the following command.
+
+```shell script
+>> operator-sdk generate bundle --version 1.2.0
+```
+This is the basic command to create a bundle.
+More information regarding addintional commands and flags can be found [here](https://sdk.operatorframework.io/docs/olm-integration/legacy/generating-a-csv/). 
 
 2. You can preview the csv file created in the 1st step using [this](https://operatorhub.io/preview)
 
@@ -37,7 +47,7 @@
 Note:
 - api-operator.package.yaml contains the channels and the latest version available in those channel.
 If you want to make few versions available (Ex: 1.0.1 and 1.0.2 to be available to download), then you can put the new version under a new channel like below.
-```
+```yaml
 packageName: api-operator
 channels:
   - name: stable
@@ -51,23 +61,23 @@ defaultChannel: stable
 - If you are creating a new channel remove the 'replaces' field in the csv
  
 4. Install OLM
-```
->> kubectl apply -f https://github.com/operator-framework/operator-lifecycle-manager/releases/download/0.13.0/crds.yaml
->> kubectl apply -f https://github.com/operator-framework/operator-lifecycle-manager/releases/download/0.13.0/olm.yaml
+```shell script
+>> kubectl apply -f https://github.com/operator-framework/operator-lifecycle-manager/releases/download/0.15.1/crds.yaml
+>> kubectl apply -f https://github.com/operator-framework/operator-lifecycle-manager/releases/download/0.15.1/olm.yaml
 ```
 
 5. Deploy operator-marketplace. (operator-marketplace operator is needed only for local testing)
-```
+```shell script
 >> git clone https://github.com/operator-framework/operator-marketplace.git
 >> kubectl apply -f operator-marketplace/deploy/upstream/
 ```
 5. Install operator courier
-```
+```shell script
 >> pip3 install operator-courier
 ```
 
 6. Verify your bundle
-```
+```shell script
 >> operator-courier --verbose verify --ui_validate_io api-operator
 
 INFO:operatorcourier.verified_manifest:The source directory is in nested structure.
@@ -89,7 +99,7 @@ INFO: Evaluating csv api-operator.v1.1.0 [api-operator/api-operator.package.yaml
 
 7. Login to quay.io account
 
-```
+```shell script
 $ ./operator-courier/scripts/get-quay-token
 Username: johndoe
 Password:
@@ -99,7 +109,7 @@ export QUAY_TOKEN="basic abcdefghijkl=="
 ```
 8. Push the bundle to quay.io
 
-```
+```shell script
 export OPERATOR_DIR=api-operator/
 export QUAY_NAMESPACE=johndoe
 export PACKAGE_NAME=api-operator
