@@ -4,11 +4,13 @@ You can use Google Container Registry as a registry to push the built micro-gate
 
 ## Download Service Account Key JSON File
 
-Follow the [cloud.google.com documentation](https://cloud.google.com/docs/authentication/getting-started#creating_a_service_account) to create a service account key JSON File and download it to your local file system.
+Follow the [cloud.google.com documentation](https://cloud.google.com/docs/authentication/getting-started#creating_a_service_account)
+to create a service account key JSON File and download it to your local file system.
 
 ## Install API Operator
 
-- Execute the following command to install API Operator interactively and configure repository to push the microgateway image.
+- Execute the following command to install API Operator interactively and configure repository to push the
+  Microgateway image.
 - Select "GCR" as the repository type.
 - Enter the file path of the downloaded service account key JSON File.
 - Confirm configuration are correct with entering "Y"

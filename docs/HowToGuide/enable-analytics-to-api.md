@@ -1,6 +1,7 @@
 ### Incorporating analytics to the k8s operator
 
-By changing the following artifacts, you can point the API Operator to use the API Analytics which is deployed outside the Kuberentes cluster or anywhere which is accessible to the API Operator running Kubernetes cluster.
+By changing the following artifacts, you can point the API Operator to use the API Analytics which is deployed outside
+the Kubernetes cluster or anywhere which is accessible to the API Operator running Kubernetes cluster.
 
 - Create two secrets for the analytics server as follows.
 

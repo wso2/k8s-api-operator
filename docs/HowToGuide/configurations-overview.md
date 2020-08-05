@@ -34,7 +34,7 @@
 
 - Default configurations
 
-    Default configurations related to microgateway can be found in \<k8s-api-operator-home>/api-operator/controller-configs/controller_conf.yaml.
+    Default configurations related to Microgateway can be found in \<k8s-api-operator-home>/api-operator/controller-configs/controller_conf.yaml.
     You can change these configurations depending on the availability of resources.
     
     ```yaml
@@ -114,7 +114,8 @@
 
 - ##### Ingress Mode
 
-    To use the Ingress controller, change the operator mode to "ingress". This can be found under default configurations for microgateway.
+    To use the Ingress controller, change the operator mode to "ingress". This can be found under default
+    configurations for Microgateway.
     
     Ingress specific configurations can also be changed in controller_conf.yaml.
     
@@ -123,6 +124,10 @@
         nginx.ingress.kubernetes.io/backend-protocol: HTTPS
         kubernetes.io/ingress.class: nginx
         nginx.ingress.kubernetes.io/ssl-redirect: false
+        nginx.ingress.kubernetes.io/enable-cors: true
+        nginx.ingress.kubernetes.io/cors-allow-origin: *
+        nginx.ingress.kubernetes.io/cors-allow-methods: GET, PUT, POST, DELETE, PATCH, OPTIONS
+        nginx.ingress.kubernetes.io/cors-allow-headers: authorization, Access-Control-Allow-Origin, Content-Type, SOAPAction, apikey, Authorization
     ingressResourceName: "api-operator-ingress"
     #Define whether ingress to use http or https endpoint of operator deployment
     ingressTransportMode: "https"
@@ -134,7 +139,8 @@
   
 - ##### Route Mode
     
-    To expose an API using Openshift Route, change the operator mode to "route". This can be found under default configurations for microgateway.
+    To expose an API using Openshift Route, change the operator mode to "route". This can be found under default
+    configurations for Microgateway.
     
     Route specific configurations can also be changed in controller_conf.yaml
     
@@ -149,6 +155,38 @@
     # TLS termination - passthrough, edge, reencrypt
     tlsTermination: ""
     ``` 
+
+- ##### Istio Mode
+    
+    For applying API management for microservices that are deployed in Istio, change the operator mode to "istio". 
+    This can be found under default configurations for Microgateway.
+    
+    Istio specific configurations can also be changed in controller_conf.yaml
+    
+    ```yaml
+    #Gateway name
+    gatewayName: "wso2-gateway"
+    #Gateway host
+    host: "internal2.wso2.com"
+    #CORS policy
+    corsPolicy: |
+    allowOrigins:
+      - exact: https://localhost:9443
+    allowMethods:
+      - GET
+      - POST
+      - PUT
+      - DELETE
+    allowCredentials: true
+    allowHeaders:
+      - authorization
+      - Access-Control-Allow-Origin
+      - Content-Type
+      - SOAPAction
+      - apikey
+      - Authorization
+    ``` 
+
 Once you have done any changes to above configs, you have to execute the following command to apply changes to the cluster.
 
 ```shell script
@@ -157,7 +195,7 @@ Once you have done any changes to above configs, you have to execute the followi
 
 - ##### Advanced Configurations
 
-    You can further change the configurations related to microgateway by changing the
+    You can further change the configurations related to Microgateway by changing the
     /<k8s-api-operator-home>/api-operator/controller-configs/mgw_conf_mustache.yaml file.
     
     Make sure to execute following command for your changes to take effect in the cluster.
@@ -173,49 +211,66 @@ Once you have done any changes to above configs, you have to execute the followi
 - HPA will be populated from the default values.
 - These configurations reside in the \<k8s-api-operator-home>/api-operator/controller-configs/controller_conf.yaml
     - Find the default values below.
-    ```yaml
-  # Horizontal Pod Auto-Scaling for Micro-Gateways
-    # Maximum number of replicas for the Horizontal Pod Auto-scale. Default->  maxReplicas: "5"
-    mgwMaxReplicas: "5"
-    # Metrics configurations
-    mgwMetrics: |
-      - type: Resource
-        resource:
-          name: cpu
-          target:
-            type: Utilization
-            averageUtilization: 50
-      # - type: Pods
-      #   pods:
-      #     metric:
-      #       name: http_requests_total_value_per_second
-      #     target:
-      #       type: AverageValue
-      #       averageValue: 100m
-      # - type: Object
-      #   object:
-      #     metric:
-      #       name: requests-per-second
-      #     describedObject:
-      #       apiVersion: networking.k8s.io/v1beta1
-      #       kind: Ingress
-      #       name: main-route
-      #     target:
-      #       type: Value
-      #       value: 10k
-  
-    # Horizontal Pod Auto-Scaling for Target-Endpoints
-    # Maximum number of replicas for the Horizontal Pod Auto-scale. Default->  maxReplicas: "5"
-    targetEndpointMaxReplicas: "5"
-    # Metrics configurations
-    targetEndpointMetrics: |
-      - type: Resource
-        resource:
-          name: cpu
-          target:
-            type: Utilization
-            averageUtilization: 50
-    ```
+      ```yaml
+      # Horizontal Pod Auto-Scaling for Micro-Gateways
+      # Maximum number of replicas for the Horizontal Pod Auto-scale. Default->  maxReplicas: "5"
+      mgwMaxReplicas: "5"
+      # Metrics configurations for v2beta2
+      mgwMetrics: |
+        - type: Resource
+          resource:
+            name: cpu
+            target:
+              type: Utilization
+              averageUtilization: 50
+        # - type: Pods
+        #   pods:
+        #     metric:
+        #       name: http_requests_total_value_per_second
+        #     target:
+        #       type: AverageValue
+        #       averageValue: 100m
+        # - type: Object
+        #   object:
+        #     metric:
+        #       name: requests-per-second
+        #     describedObject:
+        #       apiVersion: networking.k8s.io/v1beta1
+        #       kind: Ingress
+        #       name: main-route
+        #     target:
+        #       type: Value
+        #       value: 10k
+    
+      # Metrics Configurations for v2beta1
+      mgwMetricsV2beta1: |
+        - type: Resource
+          resource:
+            name: cpu
+            targetAverageUtilization: 50
+    
+      # Horizontal Pod Auto-Scaling for Target-Endpoints
+      # Maximum number of replicas for the Horizontal Pod Auto-scale. Default->  maxReplicas: "5"
+      targetEndpointMaxReplicas: "5"
+      # Metrics configurations for v2beta2
+      targetEndpointMetrics: |
+        - type: Resource
+          resource:
+            name: cpu
+            target:
+              type: Utilization
+              averageUtilization: 50
+    
+      # Metrics Configurations for v2beta1
+      targetEndpointMetricsV2beta1: |
+        - type: Resource
+          resource:
+            name: cpu
+            targetAverageUtilization: 50
+    
+      # HPA version. For custom metrics HPA version should be v2beta2. Default-> v2beta1
+      hpaVersion: "v2beta1"
+      ```
     - Depending on your requirements and infrastructure availability, you may change the above values.
 - Once you done these changed you have to execute the following command to apply these changed in the Kubernetes cluster.
     ```sh

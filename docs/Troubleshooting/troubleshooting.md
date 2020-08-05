@@ -27,8 +27,10 @@
 
 #### Identifying Kaniko job related pod and errors
 
-- Kaniko job is responsible to create the API microgateway image and push it to the registry configured during the API operator installation.
-- If the API microgateway image belongs to a particular API definition is not available in the docker repository, it will build the image using the Kaniko job.
+- Kaniko job is responsible to create the API Microgateway image and push it to the registry configured during the
+  API operator installation.
+- If the API Microgateway image belongs to a particular API definition is not available in the docker repository,
+  it will build the image using the Kaniko job.
 - If you are creating an API name "online-store", the Kaniko pod related to that would look like below. <br>
     `<API_NAME>-kaniko-xxxxxx-xxxx`
 - Example:
@@ -43,7 +45,9 @@
     online-storee-kaniko-6dvb8             1/1     Running   0          5s
     ```
 
-- If it's in the running "status", it's working fine. If it says "Err", most possibly it can be due to configuration issue related to docker registry credentials or connection to the registry. Hence pushing the image may leads the kaniko pod to a erroneous state.
+- If it's in the running "status", it's working fine. If it says "Err", most possibly it can be due to configuration
+  issue related to docker registry credentials or connection to the registry. Hence pushing the image may leads
+  the kaniko pod to a erroneous state.
 
 - Find the logs in the Kaniko job for more information and get description about the pod that runs the Kaniko job.
     ```sh
@@ -51,7 +55,8 @@
     >> apictl logs -f <POD_NAME_OF_KANIKO_JOB>
     ```
 
-- If the error is related to authentication, reconfigure registry credentials using `apictl` tool. Go through the interactive session to reconfigure credentials.
+- If the error is related to authentication, reconfigure registry credentials using `apictl` tool. Go through the
+  interactive session to reconfigure credentials.
     ```sh
     >> apictl change registry
     ```
@@ -83,7 +88,8 @@
 #### How to enable debug logs for the API
 
 - If you want to analyze logs in depth, enable the debug logs.
-- For this, you need to update the `logLevel` field of the configmap: `apim-config` in the file ***\<k8s-api-operator-home>/api-operator/deploy/controller-configs/controller_conf.yaml*** to "DEBUG".
+- For this, you need to update the `logLevel` field of the configmap: `apim-config` in the file
+  ***\<k8s-api-operator-home>/api-operator/deploy/controller-configs/controller_conf.yaml*** to "DEBUG".
     ```yaml
     apiVersion: v1
     kind: ConfigMap

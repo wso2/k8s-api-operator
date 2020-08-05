@@ -72,25 +72,33 @@ You can use a HTTP, insecure registry or HTTPS, secure registry to push the buil
     ```
 1. Instruct every Docker daemon to trust that certificate. The way to do this depends on your OS.
    
-   - Linux: Copy the domain.crt file to `/etc/docker/certs.d/myregistrydomain.com:5002/ca.crt` on every Docker host. You do not need to restart Docker.
+   - Linux: Copy the domain.crt file to `/etc/docker/certs.d/myregistrydomain.com:5002/ca.crt` on every Docker host.
+     You do not need to restart Docker.
    
    - Windows Server:
-       1. Open Windows Explorer, right-click the domain.crt file, and choose Install certificate. When prompted, select the following options:
+       1. Open Windows Explorer, right-click the domain.crt file, and choose Install certificate. When prompted,
+          select the following options:
           - Store location: local machine
           - Place all certificates in the following store: selected
        1. Click Browser and select Trusted Root Certificate Authorities.
        
        1. Click Finish. Restart Docker.
    
-   - Docker Desktop for Mac: Follow the instructions on [Adding custom CA certificates](https://docs.docker.com/docker-for-mac/faqs/#how-do-i-add-custom-ca-certificates). Restart Docker.
+   - Docker Desktop for Mac: Follow the instructions on
+     [Adding custom CA certificates](https://docs.docker.com/docker-for-mac/faqs/#how-do-i-add-custom-ca-certificates).
+     Restart Docker.
    
-   - Docker Desktop for Windows: Follow the instructions on [Adding custom CA certificates](https://docs.docker.com/docker-for-windows/faqs/#how-do-i-add-custom-ca-certificates). Restart Docker.
+   - Docker Desktop for Windows: Follow the instructions on
+     [Adding custom CA certificates](https://docs.docker.com/docker-for-windows/faqs/#how-do-i-add-custom-ca-certificates).
+     Restart Docker.
 
-Follow the documentation https://docs.docker.com/registry/deploying for more information on deploying a HTTP/HTTPS registry.
+Follow the documentation https://docs.docker.com/registry/deploying for more information on deploying
+a HTTP/HTTPS registry.
 
 ## Install API Operator
 
-- Execute the following command to install API Operator interactively and configure the repository to push the microgateway image.
+- Execute the following command to install API Operator interactively and configure the repository to push the
+  Microgateway image.
 - Select the registry type.
   - Select "HTTP Private Registry" as the repository type for HTTP registry.
   - Select "Docker Hub" as the repository type for HTTPS registry.

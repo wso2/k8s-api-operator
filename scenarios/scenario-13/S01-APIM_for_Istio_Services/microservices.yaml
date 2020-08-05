@@ -71,7 +71,7 @@ metadata:
 spec:
   applicationProtocol: http
   ports:
-    - name: rew-ep
+    - name: rev-ep
       port: 8080
       targetPort: 8080
   deploy:
