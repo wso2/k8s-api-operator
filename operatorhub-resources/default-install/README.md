@@ -118,7 +118,7 @@ curl -sL https://github.com/operator-framework/operator-lifecycle-manager/releas
     configmap/kaniko-arguments created
     configmap/route-configs created
     security.wso2.com/default-security-jwt created
-    secret/wso2am310-secret created
+    secret/wso2am320-secret created
     configmap/docker-registry-config ceated
     configmap/dockerfile-template created
     configmap/mgw-conf-mustache unchanged

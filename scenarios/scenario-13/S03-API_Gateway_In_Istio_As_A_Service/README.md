@@ -264,6 +264,8 @@ This guide is based on https://istio.io/docs/tasks/traffic-management/ingress/se
 
 #### Step 9: Deploy API in API Manager
 
+- Run WSO2 API Manager locally
+
 - Create a label in API Manager using the admin portal
     |  Label   | Description      |   Gateway Host            |
     | :------: |:----------------:|:-------------------------:|

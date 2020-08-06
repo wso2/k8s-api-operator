@@ -30,7 +30,7 @@ spec:
     - issuer: https://wso2apim:32001/oauth2/token
       audience: http://org.wso2.apimgt/gateway
       #create secret with certificate and add secret name
-      certificate: wso2am310-secret
+      certificate: wso2am320-secret
       validateSubscription: false
 ```
 
