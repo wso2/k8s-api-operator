@@ -23,7 +23,7 @@
     
     Output:
     security.wso2.com/petstorejwt created
-    secret/wso2am310-secret created
+    secret/wso2am320-secret created
     ```
 Note: ***audience*** field can be provided in Security custom resource(CR) under securityConfig field, if you have any.
 
@@ -105,7 +105,7 @@ In this swagger definition, the security schema of the "petstore" service has be
      
      Output:
      security.wso2.com/petstorejwt created
-     secret/wso2am310-secret created
+     secret/wso2am320-secret created
      secret/jwt-secret created
      ```
 - Created security CR name should be refer in the swagger definition under security as follows.

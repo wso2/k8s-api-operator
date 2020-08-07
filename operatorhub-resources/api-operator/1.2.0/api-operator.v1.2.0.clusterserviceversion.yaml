@@ -14,7 +14,7 @@ metadata:
           "spec": {
             "securityConfig": [
               {
-                "certificate": "wso2am310-secret",
+                "certificate": "wso2am320-secret",
                 "issuer": "https://wso2apim:32001/oauth2/token",
                 "validateSubscription": false
               }
@@ -31,7 +31,7 @@ metadata:
           "spec": {
             "securityConfig": [
               {
-                "certificate": "wso2am310-secret",
+                "certificate": "wso2am320-secret",
                 "credentials": "oauth-credentials",
                 "endpoint": "https://wso2apim.wso2:9443"
               }
@@ -64,7 +64,7 @@ metadata:
             "securityConfig": [
               {
                 "audience": "http://org.wso2.apimgt/gateway",
-                "certificate": "wso2am310-secret",
+                "certificate": "wso2am320-secret",
                 "issuer": "https://wso2apim:32001/oauth2/token",
                 "validateSubscription": false
               }
@@ -304,7 +304,7 @@ spec:
         configmap/kaniko-arguments created
         configmap/route-configs created
         security.wso2.com/default-security-jwt created
-        secret/wso2am310-secret created
+        secret/wso2am320-secret created
         configmap/docker-registry-config ceated
         configmap/dockerfile-template created
         configmap/mgw-conf-mustache unchanged

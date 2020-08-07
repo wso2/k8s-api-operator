@@ -28,7 +28,7 @@
   
     Output:
     security.wso2.com/petstoreoauth created
-    secret/wso2am310-secret created
+    secret/wso2am320-secret created
     ```
 
 - Prepared petstore swagger definition can be found within this directory.
