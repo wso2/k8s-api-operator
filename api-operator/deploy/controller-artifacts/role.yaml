@@ -111,3 +111,15 @@ rules:
   - delete
   - patch
   - watch
+- apiGroups:
+  - networking.istio.io
+  resources:
+  - "*"
+  verbs:
+  - get
+  - list
+  - create
+  - update
+  - delete
+  - patch
+  - watch
