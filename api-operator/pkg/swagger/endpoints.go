@@ -19,6 +19,7 @@ package swagger
 import (
 	"encoding/json"
 	errs "errors"
+	"fmt"
 	"github.com/getkin/kin-openapi/openapi3"
 	v1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/serving/v1alpha1"
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
@@ -126,20 +127,29 @@ func HandleMgwEndpoints(client *client.Client, swagger *openapi3.Swagger, mode s
 				if errUrl == nil { // Target EP is a valid URL
 					epUrlList[index] = prodEpUrl.RequestURI()
 				} else { // Target EP is a name of Target EP CR
+					epNamespace := apiNamespace // namespace of the endpoint
+					if namespacedEp := strings.Split(prodEpVal, "."); len(namespacedEp) == 2 {
+						epNamespace = namespacedEp[1]
+						prodEpVal = namespacedEp[0]
+					}
+
 					targetEpCr := &wso2v1alpha1.TargetEndpoint{} // CR of the Target Endpoint
-					erCr := k8s.Get(client, types.NamespacedName{Namespace: apiNamespace, Name: prodEpVal}, targetEpCr)
+					erCr := k8s.Get(client, types.NamespacedName{Namespace: epNamespace, Name: prodEpVal}, targetEpCr)
 					if erCr != nil {
 						return nil, erCr
 					}
 
 					protocol := targetEpCr.Spec.ApplicationProtocol
 					port := strconv.Itoa(int(targetEpCr.Spec.Ports[0].Port))
-					if strings.EqualFold(mode, Sidecar) {
-						sidecarUrl := protocol + "://" + "localhost:" + port
+					if strings.EqualFold(mode, Sidecar) { // sidecar mode
+						sidecarUrl := fmt.Sprintf("%v://localhost:%v", protocol, port)
 						sideCarEndpoints[prodEpVal] = sidecarUrl
 						epUrlList[index] = sidecarUrl
+					} else if strings.EqualFold(mode, ServerLess) {
+						prodEpVal = fmt.Sprintf("%v://%v.%v.svc.cluster.local", protocol, prodEpVal, epNamespace)
+						epUrlList[index] = prodEpVal
 					} else {
-						prodEpVal = protocol + "://" + prodEpVal + ":" + port
+						prodEpVal = fmt.Sprintf("%v://%v.%v:%v", protocol, prodEpVal, epNamespace, port)
 						epUrlList[index] = prodEpVal
 					}
 				}
