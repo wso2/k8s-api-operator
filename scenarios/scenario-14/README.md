@@ -43,7 +43,9 @@ You must mention the TargetEndpoint namespace with the endpoint name as follows 
 The mode of managed API which is Serverless also has to be mentioned in the swagger with the "x-wso2-mode" extension.
 In this swagger definition, the backend service of the "hello-world-serverless" service and the managed API mode have been mentioned as follows.
     ```
-    x-wso2-production-endpoints: hello-world-serverless.micro
+    x-wso2-production-endpoints:
+      urls:
+        - hello-world-serverless.micro
     x-wso2-mode: Serverless
     ```
   

@@ -20,7 +20,9 @@ info:
   version: 1.0.0
   description: This API contains operations related to node service.
 x-wso2-basePath: /node/{version}
-x-wso2-production-endpoints: hello-world-service
+x-wso2-production-endpoints:
+  urls:
+    - hello-world-service
 x-wso2-mode: privateJet
 paths:
   /hello/node:

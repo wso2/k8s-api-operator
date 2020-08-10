@@ -48,7 +48,9 @@ Backend endpoint of the API should be mentioned in the swagger file with the "x-
         ```
         /products:
             get:
-              x-wso2-production-endpoints: products-ep
+              x-wso2-production-endpoints:
+                urls:
+                  - products-ep
               responses:
                 "200":
                   description: ""
@@ -61,7 +63,9 @@ Backend endpoint of the API should be mentioned in the swagger file with the "x-
                   required: true
                   schema:
                     type: string
-              x-wso2-production-endpoints: products-ep
+              x-wso2-production-endpoints:
+                urls:
+                  - products-ep
               responses:
                 "200":
                   description: ""
@@ -77,7 +81,9 @@ Backend endpoint of the API should be mentioned in the swagger file with the "x-
                   required: true
                   schema:
                     type: string
-              x-wso2-production-endpoints: inventory-ep
+              x-wso2-production-endpoints:
+                urls:
+                  - inventory-ep
               responses:
                 "200":
                   description: ""
@@ -88,7 +94,9 @@ Backend endpoint of the API should be mentioned in the swagger file with the "x-
                   required: true
                   schema:
                     type: string
-              x-wso2-production-endpoints: inventory-ep
+              x-wso2-production-endpoints:
+                urls:
+                  - inventory-ep
               requestBody:
                 content:
                   application/json:
@@ -113,7 +121,9 @@ Backend endpoint of the API should be mentioned in the swagger file with the "x-
                 required: true
                 schema:
                   type: string
-            x-wso2-production-endpoints: review-ep
+            x-wso2-production-endpoints:
+              urls:
+                - review-ep
             responses:
               "200":
                 description: ""

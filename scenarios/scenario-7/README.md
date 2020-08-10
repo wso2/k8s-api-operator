@@ -23,7 +23,9 @@ Backend endpoint of the API should be mentioned in the swagger file with the "x-
 The mode of managed API (private jet or sidecar) also has to be mentioned in the swagger with the "x-wso2-mode" extension.
 In this swagger definition, the backend service of the "products" service and the managed API mode have been mentioned as follows.
     ```
-    x-wso2-production-endpoints: products-privatejet
+    x-wso2-production-endpoints:
+      urls:
+        - products-privatejet
     x-wso2-mode: privateJet
     ```
 
