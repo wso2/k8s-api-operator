@@ -53,7 +53,6 @@ func HandleMgwEndpoints(client *client.Client, swagger *openapi3.Swagger, mode s
 	map[string]string, error) {
 	sideCarEndpoints := make(map[string]string) // map endpoint name -> endpoint URL
 	// TODO: ~rnk `sideCarEndpoints` can be converted to array of str - no need endpoint URL
-	var checkt []string
 
 	// API level endpoint
 	endpointData, checkEndpoint := swagger.Extensions[EndpointExtension]
@@ -65,102 +64,50 @@ func HandleMgwEndpoints(client *client.Client, swagger *openapi3.Swagger, mode s
 				"Invalid format of Target Endpoint definition in swagger")
 		}
 
-		var endPoint string
 		prodEp := XMgwProductionEndpoint{}
-		if err := json.Unmarshal(endpointJson, &endPoint); err == nil { // if endpoint is given as a string
-			logEp.Info("Parsing endpoints and not available root service endpoint")
-
-			extractData := strings.Split(endPoint, ".")
-			if len(extractData) == 2 {
-				apiNamespace = extractData[1]
-				endPoint = extractData[0]
-			}
-
-			targetEndpointCr := &wso2v1alpha1.TargetEndpoint{}
-			erCr := k8s.Get(client, types.NamespacedName{Namespace: apiNamespace, Name: endPoint}, targetEndpointCr)
-
-			if erCr != nil && errors.IsNotFound(erCr) {
-				logEp.Error(err, "TargetEndpoint CRD object is not found")
-			} else if erCr != nil {
-				logEp.Error(err, "Error in getting TargetEndpoint CRD object")
-			}
-
-			// Server-Less mode
-			if strings.EqualFold(targetEndpointCr.Spec.Mode.String(), ServerLess) {
-				currentService := &v1.Service{}
-				err = k8s.Get(client, types.NamespacedName{Namespace: apiNamespace,
-					Name: endPoint}, currentService)
-			} else {
-				currentService := &corev1.Service{}
-				err = k8s.Get(client, types.NamespacedName{Namespace: apiNamespace,
-					Name: endPoint}, currentService)
-			}
-
-			if err != nil && errors.IsNotFound(err) && mode != Sidecar {
-				logEp.Error(err, "service not found")
-			} else if err != nil && mode != Sidecar {
-				logEp.Error(err, "Error in getting service")
-			} else {
-				protocol := targetEndpointCr.Spec.ApplicationProtocol
-				if mode == Sidecar {
-					sidecarUrl := protocol + "://" + "localhost:" + strconv.Itoa(int(targetEndpointCr.Spec.Ports[0].Port))
-					sideCarEndpoints[targetEndpointCr.Name] = sidecarUrl
-					checkt = append(checkt, sidecarUrl)
-				}
-				if strings.EqualFold(targetEndpointCr.Spec.Mode.String(), ServerLess) {
-
-					endPoint = protocol + "://" + endPoint + "." + apiNamespace + ".svc.cluster.local"
-					checkt = append(checkt, endPoint)
-
-				} else {
-					endPoint = protocol + "://" + endPoint + "." + apiNamespace + ":" + strconv.Itoa(int(targetEndpointCr.Spec.Ports[0].Port))
-					checkt = append(checkt, endPoint)
-				}
-				prodEp.Urls = checkt
-				swagger.Extensions[EndpointExtension] = prodEp
-			}
-		} else if err := json.Unmarshal(endpointJson, &prodEp); err == nil { // if endpoint is given as `urls: []string`
-			epUrlList := make([]string, len(prodEp.Urls)) // URL list to update swagger definition
-
-			for index, prodEpVal := range prodEp.Urls {
-				prodEpUrl, errUrl := url.ParseRequestURI(prodEpVal)
-				if errUrl == nil { // Target EP is a valid URL
-					epUrlList[index] = prodEpUrl.RequestURI()
-				} else { // Target EP is a name of Target EP CR
-					epNamespace := apiNamespace // namespace of the endpoint
-					if namespacedEp := strings.Split(prodEpVal, "."); len(namespacedEp) == 2 {
-						epNamespace = namespacedEp[1]
-						prodEpVal = namespacedEp[0]
-					}
-
-					targetEpCr := &wso2v1alpha1.TargetEndpoint{} // CR of the Target Endpoint
-					erCr := k8s.Get(client, types.NamespacedName{Namespace: epNamespace, Name: prodEpVal}, targetEpCr)
-					if erCr != nil {
-						return nil, erCr
-					}
-
-					protocol := targetEpCr.Spec.ApplicationProtocol
-					port := strconv.Itoa(int(targetEpCr.Spec.Ports[0].Port))
-					if strings.EqualFold(mode, Sidecar) { // sidecar mode
-						sidecarUrl := fmt.Sprintf("%v://localhost:%v", protocol, port)
-						sideCarEndpoints[prodEpVal] = sidecarUrl
-						epUrlList[index] = sidecarUrl
-					} else if strings.EqualFold(mode, ServerLess) {
-						prodEpVal = fmt.Sprintf("%v://%v.%v.svc.cluster.local", protocol, prodEpVal, epNamespace)
-						epUrlList[index] = prodEpVal
-					} else {
-						prodEpVal = fmt.Sprintf("%v://%v.%v:%v", protocol, prodEpVal, epNamespace, port)
-						epUrlList[index] = prodEpVal
-					}
-				}
-			}
-
-			// update swagger definition
-			prodEp.Urls = epUrlList
-			swagger.Extensions[EndpointExtension] = prodEp
-		} else {
+		if err := json.Unmarshal(endpointJson, &prodEp); err != nil {
 			logEp.Error(err, "Invalid format of Target Endpoint definition in swagger")
 		}
+
+		// URL list to update swagger definition
+		epUrlsForSwg := make([]string, len(prodEp.Urls))
+
+		for index, prodEpVal := range prodEp.Urls {
+			prodEpUrl, errUrl := url.ParseRequestURI(prodEpVal)
+			if errUrl == nil { // Target EP is a valid URL
+				epUrlsForSwg[index] = prodEpUrl.RequestURI()
+			} else { // Target EP is a name of Target EP CR
+				epNamespace := apiNamespace // namespace of the endpoint
+				if namespacedEp := strings.Split(prodEpVal, "."); len(namespacedEp) == 2 {
+					epNamespace = namespacedEp[1]
+					prodEpVal = namespacedEp[0]
+				}
+
+				targetEpCr := &wso2v1alpha1.TargetEndpoint{} // CR of the Target Endpoint
+				erCr := k8s.Get(client, types.NamespacedName{Namespace: epNamespace, Name: prodEpVal}, targetEpCr)
+				if erCr != nil {
+					return nil, erCr
+				}
+
+				protocol := targetEpCr.Spec.ApplicationProtocol
+				port := strconv.Itoa(int(targetEpCr.Spec.Ports[0].Port))
+				if strings.EqualFold(mode, Sidecar) { // sidecar mode
+					sidecarUrl := fmt.Sprintf("%v://localhost:%v", protocol, port)
+					sideCarEndpoints[prodEpVal] = sidecarUrl
+					epUrlsForSwg[index] = sidecarUrl
+				} else if strings.EqualFold(mode, ServerLess) {
+					prodEpVal = fmt.Sprintf("%v://%v.%v.svc.cluster.local", protocol, prodEpVal, epNamespace)
+					epUrlsForSwg[index] = prodEpVal
+				} else {
+					prodEpVal = fmt.Sprintf("%v://%v.%v:%v", protocol, prodEpVal, epNamespace, port)
+					epUrlsForSwg[index] = prodEpVal
+				}
+			}
+		}
+
+		// update swagger definition
+		prodEp.Urls = epUrlsForSwg
+		swagger.Extensions[EndpointExtension] = prodEp
 	}
 
 	//resource level endpoint
