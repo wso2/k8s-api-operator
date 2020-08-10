@@ -120,10 +120,13 @@ In this swagger definition, the backend service of the "hello-world-serverless" 
     Output:
     hello-world-serverless-cbjfs-deployment-76447c984c-7wfbd   2/2     Running   0          9s
     ```
-- Delete the API <br /> 
+- Clean up all resources <br />
     ```sh
-    >> apictl delete api hello-world
+    >> apictl delete ns api micro istio-system knative-serving
  
     Output:
-    api.wso2.com "hello-world" deleted
+    namespace "api" deleted
+    namespace "micro" deleted
+    namespace "istio-system" deleted
+    namespace "knative-serving" deleted
     ```

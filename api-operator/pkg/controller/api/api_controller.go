@@ -282,9 +282,9 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		}
 
 		apiVersion = swaggerDoc.Info.Version
-		endpointNames, errSwgHndle := swagger.HandleMgwEndpoints(&r.client, swaggerDoc, epDeployMode, userNamespace)
-		if errSwgHndle != nil {
-			return reconcile.Result{}, errSwgHndle
+		endpointNames, errSwgHdl := swagger.HandleMgwEndpoints(&r.client, swaggerDoc, epDeployMode, userNamespace)
+		if errSwgHdl != nil {
+			return reconcile.Result{}, errSwgHdl
 		}
 
 		apiBasePath := swagger.ApiBasePath(swaggerDoc)

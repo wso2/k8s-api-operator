@@ -47,9 +47,9 @@ type XMgwProductionEndpoint struct {
 // HandleMgwEndpoints gets endpoint from swagger and replace it with targetendpoint kind service endpoint and
 // returns a map of sidecar endpoints
 func HandleMgwEndpoints(client *client.Client, swagger *openapi3.Swagger, mode string, apiNamespace string) (
-	map[string]string, error) {
-	// map endpoint name -> endpoint URL
-	sideCarEndpoints := make(map[string]string)
+	map[string]bool, error) {
+	// map endpoint name -> exists (bool)
+	sideCarEndpoints := make(map[string]bool)
 
 	// API level endpoint
 	if err := updateSwaggerWithProdEPs(client, swagger.Extensions, sideCarEndpoints, apiNamespace, mode); err != nil {
@@ -106,8 +106,8 @@ func HandleMgwEndpoints(client *client.Client, swagger *openapi3.Swagger, mode s
 }
 
 // updateSwaggerWithProdEPs replaces production endpoints with Target Endpoints CR values
-func updateSwaggerWithProdEPs(client *client.Client, swaggerExtensions map[string]interface{}, sideCarEndpoints map[string]string,
-	apiNamespace string, mode string) error {
+func updateSwaggerWithProdEPs(client *client.Client, swaggerExtensions map[string]interface{},
+	sideCarEndpoints map[string]bool, apiNamespace string, mode string) error {
 	swaggerEpAPI, checkEndpoint := swaggerExtensions[EndpointExtension]
 	// if not production endpoints defined return
 	if !checkEndpoint {
@@ -132,9 +132,9 @@ func updateSwaggerWithProdEPs(client *client.Client, swaggerExtensions map[strin
 	updatedEndpoint := XMgwProductionEndpoint{Urls: make([]string, len(prodEp.Urls))}
 
 	for index, prodEpVal := range prodEp.Urls {
-		prodEpUrl, errUrl := url.ParseRequestURI(prodEpVal)
+		_, errUrl := url.ParseRequestURI(prodEpVal)
 		if errUrl == nil { // Target EP is a valid URL
-			updatedEndpoint.Urls[index] = prodEpUrl.RequestURI()
+			updatedEndpoint.Urls[index] = prodEpVal
 		} else { // Target EP is a name of Target EP CR
 			epNamespace := apiNamespace // namespace of the endpoint
 			if namespacedEp := strings.Split(prodEpVal, "."); len(namespacedEp) == 2 {
@@ -152,7 +152,7 @@ func updateSwaggerWithProdEPs(client *client.Client, swaggerExtensions map[strin
 			port := strconv.Itoa(int(targetEpCr.Spec.Ports[0].Port))
 			if strings.EqualFold(mode, Sidecar) { // sidecar mode
 				sidecarUrl := fmt.Sprintf("%v://localhost:%v", protocol, port)
-				sideCarEndpoints[prodEpVal] = sidecarUrl
+				sideCarEndpoints[prodEpVal] = true
 				updatedEndpoint.Urls[index] = sidecarUrl
 			} else if strings.EqualFold(mode, ServerLess) {
 				prodEpVal = fmt.Sprintf("%v://%v.%v.svc.cluster.local", protocol, prodEpVal, epNamespace)
