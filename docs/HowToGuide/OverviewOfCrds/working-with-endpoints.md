@@ -113,7 +113,9 @@
     Eg :<br>
     
     ```yaml
-    x-wso2-production-endpoints: simple-endpoint-service
+    x-wso2-production-endpoints:
+      urls:
+        - simple-endpoint-service
     x-wso2-mode: sidecar
     ```    
     At the time of the API is deployed, API Operator will identify the endpoint service and create the target endpoint

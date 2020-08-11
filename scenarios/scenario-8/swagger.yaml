@@ -22,7 +22,9 @@ info:
 servers:
   - url: http://products
 x-wso2-basePath: /storesc/{version}
-x-wso2-production-endpoints: inventory-sidecar
+x-wso2-production-endpoints:
+  urls:
+    - inventory-sidecar
 x-wso2-mode: sidecar
 paths:
   "/inventory/{productId}":

@@ -29,16 +29,16 @@ import (
 
 var logger = log.Log.WithName("endpoints.sidecar")
 
-func AddSidecarContainers(client *client.Client, apiNamespace string, endpointNames *map[string]string) error {
-	containerList := make([]corev1.Container, 0, len(*endpointNames))
+func AddSidecarContainers(client *client.Client, apiNamespace string, sidecarEpNames *map[string]bool) error {
+	containerList := make([]corev1.Container, 0, len(*sidecarEpNames))
 	isAdded := make(map[string]bool)
 
-	for endpointName := range *endpointNames {
+	for sidecarEpName := range *sidecarEpNames {
 		// deploy sidecar only if endpoint name is not empty and not already deployed
-		if endpointName != "" && !isAdded[endpointName] {
+		if sidecarEpName != "" && !isAdded[sidecarEpName] {
 			targetEndpointCr := &wso2v1alpha1.TargetEndpoint{}
 			erCr := k8s.Get(client,
-				types.NamespacedName{Namespace: apiNamespace, Name: endpointName}, targetEndpointCr)
+				types.NamespacedName{Namespace: apiNamespace, Name: sidecarEpName}, targetEndpointCr)
 			if erCr == nil && targetEndpointCr.Spec.Deploy.DockerImage != "" {
 				// set container ports
 				containerPorts := make([]corev1.ContainerPort, 0, len(targetEndpointCr.Spec.Ports))
@@ -55,16 +55,16 @@ func AddSidecarContainers(client *client.Client, apiNamespace string, endpointNa
 					Ports: containerPorts,
 				}
 				logger.Info("Added sidecar container to the list of containers to be deployed",
-					"endpoint_name", endpointName, "docker_image", targetEndpointCr.Spec.Deploy.DockerImage)
+					"endpoint_name", sidecarEpName, "docker_image", targetEndpointCr.Spec.Deploy.DockerImage)
 				containerList = append(containerList, sidecarContainer)
-				isAdded[endpointName] = true
+				isAdded[sidecarEpName] = true
 			} else {
 				err := erCr
 				if erCr == nil {
 					err = errors.New("docker image of the endpoint is empty")
 				}
 
-				logger.Error(err, "Failed to deploy the sidecar endpoint", "endpoint_name", endpointName)
+				logger.Error(err, "Failed to deploy the sidecar endpoint", "endpoint_name", sidecarEpName)
 				return err
 			}
 		}

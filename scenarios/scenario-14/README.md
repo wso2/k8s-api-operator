@@ -43,7 +43,9 @@ You must mention the TargetEndpoint namespace with the endpoint name as follows 
 The mode of managed API which is Serverless also has to be mentioned in the swagger with the "x-wso2-mode" extension.
 In this swagger definition, the backend service of the "hello-world-serverless" service and the managed API mode have been mentioned as follows.
     ```
-    x-wso2-production-endpoints: hello-world-serverless.micro
+    x-wso2-production-endpoints:
+      urls:
+        - hello-world-serverless.micro
     x-wso2-mode: Serverless
     ```
   
@@ -118,10 +120,13 @@ In this swagger definition, the backend service of the "hello-world-serverless" 
     Output:
     hello-world-serverless-cbjfs-deployment-76447c984c-7wfbd   2/2     Running   0          9s
     ```
-- Delete the API <br /> 
+- Clean up all resources <br />
     ```sh
-    >> apictl delete api hello-world
+    >> apictl delete ns api micro istio-system knative-serving
  
     Output:
-    api.wso2.com "hello-world" deleted
+    namespace "api" deleted
+    namespace "micro" deleted
+    namespace "istio-system" deleted
+    namespace "knative-serving" deleted
     ```

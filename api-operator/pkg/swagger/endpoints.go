@@ -18,12 +18,11 @@ package swagger
 
 import (
 	"encoding/json"
+	errs "errors"
+	"fmt"
 	"github.com/getkin/kin-openapi/openapi3"
-	v1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/serving/v1alpha1"
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"net/url"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -45,318 +44,127 @@ type XMgwProductionEndpoint struct {
 	Urls []string `yaml:"urls" json:"urls"`
 }
 
-// HandleMgwEndpoints gets endpoint from swagger and replace it with targetendpoint kind service endpoint
-func HandleMgwEndpoints(client *client.Client, swagger *openapi3.Swagger, mode string, apiNamespace string) map[string]string {
-	endpointNames := make(map[string]string)
-	var checkt []string
-	//api level endpoint
-	endpointData, checkEndpoint := swagger.Extensions[EndpointExtension]
-	if checkEndpoint {
-		prodEp := XMgwProductionEndpoint{}
-		var endPoint string
-		endpointJson, checkJsonRaw := endpointData.(json.RawMessage)
-		if checkJsonRaw {
-			err := json.Unmarshal(endpointJson, &endPoint)
-			if err == nil {
-				logEp.Info("Parsing endpoints and not available root service endpoint")
-				//check if service & targetendpoint cr object are available
-				extractData := strings.Split(endPoint, ".")
-				if len(extractData) == 2 {
-					apiNamespace = extractData[1]
-					endPoint = extractData[0]
-				}
-				targetEndpointCr := &wso2v1alpha1.TargetEndpoint{}
-				erCr := k8s.Get(client, types.NamespacedName{Namespace: apiNamespace, Name: endPoint}, targetEndpointCr)
+// HandleMgwEndpoints gets endpoint from swagger and replace it with targetendpoint kind service endpoint and
+// returns a map of sidecar endpoints
+func HandleMgwEndpoints(client *client.Client, swagger *openapi3.Swagger, mode string, apiNamespace string) (
+	map[string]bool, error) {
+	// map endpoint name -> exists (bool)
+	sideCarEndpoints := make(map[string]bool)
 
-				if erCr != nil && errors.IsNotFound(erCr) {
-					logEp.Error(err, "targetEndpoint CRD object is not found")
-				} else if erCr != nil {
-					logEp.Error(err, "Error in getting targetendpoint CRD object")
-				}
-
-				if strings.EqualFold(targetEndpointCr.Spec.Mode.String(), ServerLess) {
-					currentService := &v1.Service{}
-					err = k8s.Get(client, types.NamespacedName{Namespace: apiNamespace,
-						Name: endPoint}, currentService)
-				} else {
-					currentService := &corev1.Service{}
-					err = k8s.Get(client, types.NamespacedName{Namespace: apiNamespace,
-						Name: endPoint}, currentService)
-				}
-				if err != nil && errors.IsNotFound(err) && mode != Sidecar {
-					logEp.Error(err, "service not found")
-				} else if err != nil && mode != Sidecar {
-					logEp.Error(err, "Error in getting service")
-				} else {
-					protocol := targetEndpointCr.Spec.ApplicationProtocol
-					if mode == Sidecar {
-						endPointSidecar := protocol + "://" + "localhost:" + strconv.Itoa(int(targetEndpointCr.Spec.Ports[0].Port))
-						endpointNames[targetEndpointCr.Name] = endPointSidecar
-						checkt = append(checkt, endPointSidecar)
-					}
-					if strings.EqualFold(targetEndpointCr.Spec.Mode.String(), ServerLess) {
-
-						endPoint = protocol + "://" + endPoint + "." + apiNamespace + ".svc.cluster.local"
-						checkt = append(checkt, endPoint)
-
-					} else {
-						endPoint = protocol + "://" + endPoint + "." + apiNamespace + ":" + strconv.Itoa(int(targetEndpointCr.Spec.Ports[0].Port))
-						checkt = append(checkt, endPoint)
-					}
-					prodEp.Urls = checkt
-					swagger.Extensions[EndpointExtension] = prodEp
-				}
-			} else {
-				err := json.Unmarshal(endpointJson, &prodEp)
-				if err == nil {
-					lengthOfUrls := len(prodEp.Urls)
-					endpointList := make([]string, lengthOfUrls)
-					isServiceDef := false
-					for index, urlVal := range prodEp.Urls {
-						endpointUrl, err := url.Parse(urlVal)
-						if err != nil {
-							currentService := &corev1.Service{}
-							targetEndpointCr := &wso2v1alpha1.TargetEndpoint{}
-							err = k8s.Get(client, types.NamespacedName{Namespace: apiNamespace,
-								Name: urlVal}, currentService)
-							erCr := k8s.Get(client, types.NamespacedName{Namespace: apiNamespace, Name: urlVal}, targetEndpointCr)
-							if err == nil && erCr == nil {
-								protocol := targetEndpointCr.Spec.ApplicationProtocol
-								urlVal = protocol + "://" + urlVal + ":" + strconv.Itoa(int(targetEndpointCr.Spec.Ports[0].Port))
-								if mode == Sidecar {
-									urlValSidecar := protocol + "://" + "localhost:" + strconv.Itoa(int(targetEndpointCr.Spec.Ports[0].Port))
-									endpointNames[urlVal] = urlValSidecar
-									endpointList[index] = urlValSidecar
-								} else {
-									endpointList[index] = urlVal
-								}
-								isServiceDef = true
-							}
-						} else {
-							endpointNames[endpointUrl.Hostname()] = endpointUrl.Hostname()
-						}
-					}
-
-					if isServiceDef {
-						prodEp.Urls = endpointList
-						swagger.Extensions[EndpointExtension] = prodEp
-					}
-				} else {
-					logEp.Info("error unmarshal endpoint")
-				}
-			}
-		}
+	// API level endpoint
+	if err := updateSwaggerWithProdEPs(client, swagger.Extensions, sideCarEndpoints, apiNamespace, mode); err != nil {
+		return nil, err
 	}
 
-	//resource level endpoint
-	for pathName, path := range swagger.Paths {
+	//  Resource level endpoint
+	for _, path := range swagger.Paths {
 		if path.Get != nil {
-			getEp, gcep := path.Get.Extensions[EndpointExtension]
-			eps := resolveEps(client, pathName, getEp, endpointNames, gcep, apiNamespace, mode)
-			assignGetEps(swagger, eps)
+			err := updateSwaggerWithProdEPs(client, path.Get.Extensions, sideCarEndpoints, apiNamespace, mode)
+			if err != nil {
+				return nil, err
+			}
 		}
 		if path.Post != nil {
-			postEp, pocep := path.Post.Extensions[EndpointExtension]
-			eps := resolveEps(client, pathName, postEp, endpointNames, pocep, apiNamespace, mode)
-			assignPostEps(swagger, eps)
+			err := updateSwaggerWithProdEPs(client, path.Post.Extensions, sideCarEndpoints, apiNamespace, mode)
+			if err != nil {
+				return nil, err
+			}
 		}
 		if path.Put != nil {
-			putEp, pucep := path.Put.Extensions[EndpointExtension]
-			eps := resolveEps(client, pathName, putEp, endpointNames, pucep, apiNamespace, mode)
-			assignPutEps(swagger, eps)
+			err := updateSwaggerWithProdEPs(client, path.Put.Extensions, sideCarEndpoints, apiNamespace, mode)
+			if err != nil {
+				return nil, err
+			}
 		}
 		if path.Delete != nil {
-			deleteEp, dcep := path.Delete.Extensions[EndpointExtension]
-			eps := resolveEps(client, pathName, deleteEp, endpointNames, dcep, apiNamespace, mode)
-			assignDeleteEps(swagger, eps)
+			err := updateSwaggerWithProdEPs(client, path.Delete.Extensions, sideCarEndpoints, apiNamespace, mode)
+			if err != nil {
+				return nil, err
+			}
 		}
 		if path.Patch != nil {
-			pEp, pAvl := path.Patch.Extensions[EndpointExtension]
-			eps := resolveEps(client, pathName, pEp, endpointNames, pAvl, apiNamespace, mode)
-			assignPatchEps(swagger, eps)
+			err := updateSwaggerWithProdEPs(client, path.Patch.Extensions, sideCarEndpoints, apiNamespace, mode)
+			if err != nil {
+				return nil, err
+			}
 		}
 		if path.Head != nil {
-			pEp, pAvl := path.Head.Extensions[EndpointExtension]
-			eps := resolveEps(client, pathName, pEp, endpointNames, pAvl, apiNamespace, mode)
-			assignHeadEps(swagger, eps)
+			err := updateSwaggerWithProdEPs(client, path.Head.Extensions, sideCarEndpoints, apiNamespace, mode)
+			if err != nil {
+				return nil, err
+			}
 		}
 		if path.Options != nil {
-			pEp, pAvl := path.Options.Extensions[EndpointExtension]
-			eps := resolveEps(client, pathName, pEp, endpointNames, pAvl, apiNamespace, mode)
-			assignOptionsEps(swagger, eps)
-		}
-	}
-	return endpointNames
-}
-
-func assignGetEps(swagger *openapi3.Swagger, resLevelEp map[string]XMgwProductionEndpoint) {
-	for pathName, path := range swagger.Paths {
-		for mapPath, value := range resLevelEp {
-			if strings.EqualFold(pathName, mapPath) {
-				path.Get.Extensions[EndpointExtension] = value
+			err := updateSwaggerWithProdEPs(client, path.Options.Extensions, sideCarEndpoints, apiNamespace, mode)
+			if err != nil {
+				return nil, err
 			}
 		}
 	}
+
+	return sideCarEndpoints, nil
 }
 
-func assignPutEps(swagger *openapi3.Swagger, resLevelEp map[string]XMgwProductionEndpoint) {
-	for pathName, path := range swagger.Paths {
-		for mapPath, value := range resLevelEp {
-			if strings.EqualFold(pathName, mapPath) {
-				path.Put.Extensions[EndpointExtension] = value
-			}
-		}
+// updateSwaggerWithProdEPs replaces production endpoints with Target Endpoints CR values
+func updateSwaggerWithProdEPs(client *client.Client, swaggerExtensions map[string]interface{},
+	sideCarEndpoints map[string]bool, apiNamespace string, mode string) error {
+	swaggerEpAPI, checkEndpoint := swaggerExtensions[EndpointExtension]
+	// if not production endpoints defined return
+	if !checkEndpoint {
+		return nil
 	}
-}
 
-func assignPostEps(swagger *openapi3.Swagger, resLevelEp map[string]XMgwProductionEndpoint) {
-	for pathName, path := range swagger.Paths {
-		for mapPath, value := range resLevelEp {
-			if strings.EqualFold(pathName, mapPath) {
-				path.Post.Extensions[EndpointExtension] = value
-			}
-		}
+	// check json format
+	endpointJson, checkJsonRaw := swaggerEpAPI.(json.RawMessage)
+	if !checkJsonRaw {
+		err := errs.New("value is not a json.RawMessage")
+		logEp.Error(err,
+			"Invalid format of Target Endpoint definition in swagger")
+		return err
 	}
-}
 
-func assignDeleteEps(swagger *openapi3.Swagger, resLevelEp map[string]XMgwProductionEndpoint) {
-	for pathName, path := range swagger.Paths {
-		for mapPath, value := range resLevelEp {
-			if strings.EqualFold(pathName, mapPath) {
-				path.Delete.Extensions[EndpointExtension] = value
-			}
-		}
+	prodEp := XMgwProductionEndpoint{}
+	if err := json.Unmarshal(endpointJson, &prodEp); err != nil {
+		logEp.Error(err, "Invalid format of Target Endpoint definition in swagger")
 	}
-}
 
-func assignPatchEps(swagger *openapi3.Swagger, resLevelEp map[string]XMgwProductionEndpoint) {
-	for pathName, path := range swagger.Paths {
-		for mapPath, value := range resLevelEp {
-			if strings.EqualFold(pathName, mapPath) {
-				path.Patch.Extensions[EndpointExtension] = value
+	// Updated URLs
+	updatedEndpoint := XMgwProductionEndpoint{Urls: make([]string, len(prodEp.Urls))}
+
+	for index, prodEpVal := range prodEp.Urls {
+		_, errUrl := url.ParseRequestURI(prodEpVal)
+		if errUrl == nil { // Target EP is a valid URL
+			updatedEndpoint.Urls[index] = prodEpVal
+		} else { // Target EP is a name of Target EP CR
+			epNamespace := apiNamespace // namespace of the endpoint
+			if namespacedEp := strings.Split(prodEpVal, "."); len(namespacedEp) == 2 {
+				epNamespace = namespacedEp[1]
+				prodEpVal = namespacedEp[0]
 			}
-		}
-	}
-}
 
-func assignHeadEps(swagger *openapi3.Swagger, resLevelEp map[string]XMgwProductionEndpoint) {
-	for pathName, path := range swagger.Paths {
-		for mapPath, value := range resLevelEp {
-			if strings.EqualFold(pathName, mapPath) {
-				path.Head.Extensions[EndpointExtension] = value
+			targetEpCr := &wso2v1alpha1.TargetEndpoint{} // CR of the Target Endpoint
+			erCr := k8s.Get(client, types.NamespacedName{Namespace: epNamespace, Name: prodEpVal}, targetEpCr)
+			if erCr != nil {
+				return erCr
 			}
-		}
-	}
-}
 
-func assignOptionsEps(swagger *openapi3.Swagger, resLevelEp map[string]XMgwProductionEndpoint) {
-	for pathName, path := range swagger.Paths {
-		for mapPath, value := range resLevelEp {
-			if strings.EqualFold(pathName, mapPath) {
-				path.Options.Extensions[EndpointExtension] = value
-			}
-		}
-	}
-}
-
-func resolveEps(client *client.Client, pathName string, resourceGetEp interface{}, endpointNames map[string]string, checkResourceEP bool,
-	userNameSpace string, mode string) map[string]XMgwProductionEndpoint {
-	var checkr []string
-	var resLevelEp = make(map[string]XMgwProductionEndpoint)
-
-	//resourceGetEp, checkResourceEP := path.Get.Extensions[endpointExtension]
-	if checkResourceEP {
-		prodEp := XMgwProductionEndpoint{}
-		var endPoint string
-		ResourceEndpointJson, checkJsonResource := resourceGetEp.(json.RawMessage)
-		if checkJsonResource {
-			err := json.Unmarshal(ResourceEndpointJson, &endPoint)
-			if err == nil {
-
-				extractData := strings.Split(endPoint, ".")
-				if len(extractData) == 2 {
-					userNameSpace = extractData[1]
-					endPoint = extractData[0]
-				}
-				targetEndpointCr := &wso2v1alpha1.TargetEndpoint{}
-				erCr := k8s.Get(client, types.NamespacedName{Namespace: userNameSpace, Name: endPoint}, targetEndpointCr)
-
-				if erCr != nil && errors.IsNotFound(erCr) {
-					logEp.Error(err, "targetEndpoint CRD object is not found")
-				} else if erCr != nil {
-					logEp.Error(err, "Error in getting targetendpoint CRD object")
-				}
-				if strings.EqualFold(targetEndpointCr.Spec.Mode.String(), ServerLess) {
-					currentService := &v1.Service{}
-					err = k8s.Get(client, types.NamespacedName{Namespace: userNameSpace,
-						Name: endPoint}, currentService)
-				} else {
-					currentService := &corev1.Service{}
-					err = k8s.Get(client, types.NamespacedName{Namespace: userNameSpace,
-						Name: endPoint}, currentService)
-				}
-				if err != nil && errors.IsNotFound(err) && mode != Sidecar {
-					logEp.Error(err, "service not found")
-				} else if err != nil && mode != Sidecar {
-					logEp.Error(err, "Error in getting service")
-				} else {
-					protocol := targetEndpointCr.Spec.ApplicationProtocol
-					if mode == Sidecar {
-						endPointSidecar := protocol + "://" + "localhost:" + strconv.Itoa(int(targetEndpointCr.Spec.Ports[0].Port))
-						endpointNames[targetEndpointCr.Name] = endPointSidecar
-						checkr = append(checkr, endPointSidecar)
-					}
-					if strings.EqualFold(targetEndpointCr.Spec.Mode.String(), ServerLess) {
-
-						endPoint = protocol + "://" + endPoint + "." + userNameSpace + ".svc.cluster.local"
-						checkr = append(checkr, endPoint)
-
-					} else {
-						endPoint = protocol + "://" + endPoint + "." + userNameSpace + ":" + strconv.Itoa(int(targetEndpointCr.Spec.Ports[0].Port))
-						checkr = append(checkr, endPoint)
-					}
-					prodEp.Urls = checkr
-					resLevelEp[pathName] = prodEp
-				}
+			protocol := targetEpCr.Spec.ApplicationProtocol
+			port := strconv.Itoa(int(targetEpCr.Spec.Ports[0].Port))
+			if strings.EqualFold(mode, Sidecar) { // sidecar mode
+				sidecarUrl := fmt.Sprintf("%v://localhost:%v", protocol, port)
+				sideCarEndpoints[prodEpVal] = true
+				updatedEndpoint.Urls[index] = sidecarUrl
+			} else if strings.EqualFold(mode, ServerLess) {
+				prodEpVal = fmt.Sprintf("%v://%v.%v.svc.cluster.local", protocol, prodEpVal, epNamespace)
+				updatedEndpoint.Urls[index] = prodEpVal
 			} else {
-				err := json.Unmarshal(ResourceEndpointJson, &prodEp)
-				if err == nil {
-					lengthOfUrls := len(prodEp.Urls)
-					endpointList := make([]string, lengthOfUrls)
-					isServiceDef := false
-					for index, urlVal := range prodEp.Urls {
-						endpointUrl, err := url.Parse(urlVal)
-						if err != nil {
-							currentService := &corev1.Service{}
-							targetEndpointCr := &wso2v1alpha1.TargetEndpoint{}
-							err = k8s.Get(client, types.NamespacedName{Namespace: userNameSpace,
-								Name: urlVal}, currentService)
-							erCr := k8s.Get(client, types.NamespacedName{Namespace: userNameSpace, Name: urlVal}, targetEndpointCr)
-							if err == nil && erCr == nil || mode == Sidecar {
-								endpointNames[urlVal] = urlVal
-								protocol := targetEndpointCr.Spec.ApplicationProtocol
-								if mode == Sidecar {
-									urlValSidecar := protocol + "://" + "localhost:" + strconv.Itoa(int(targetEndpointCr.Spec.Ports[0].Port))
-									endpointNames[urlVal] = urlValSidecar
-									endpointList[index] = urlValSidecar
-								} else {
-									urlVal = protocol + "://" + urlVal + ":" + strconv.Itoa(int(targetEndpointCr.Spec.Ports[0].Port))
-									endpointList[index] = urlVal
-								}
-								isServiceDef = true
-							}
-						} else {
-							endpointNames[endpointUrl.Hostname()] = endpointUrl.Hostname()
-						}
-					}
-
-					if isServiceDef {
-						prodEp.Urls = endpointList
-						resLevelEp[pathName] = prodEp
-					}
-				}
+				prodEpVal = fmt.Sprintf("%v://%v.%v:%v", protocol, prodEpVal, epNamespace, port)
+				updatedEndpoint.Urls[index] = prodEpVal
 			}
 		}
 	}
-	return resLevelEp
+
+	// update swagger definition
+	swaggerExtensions[EndpointExtension] = updatedEndpoint
+	return nil
 }

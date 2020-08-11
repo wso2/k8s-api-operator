@@ -22,7 +22,9 @@ info:
 servers:
   - url: http://prodapi
 x-wso2-basePath: /prodapi/{version}
-x-wso2-production-endpoints: products-privatejet
+x-wso2-production-endpoints:
+  urls:
+    - products-privatejet
 x-wso2-mode: privateJet
 paths:
   /products:
