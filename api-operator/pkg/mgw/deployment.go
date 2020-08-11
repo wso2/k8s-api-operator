@@ -68,7 +68,7 @@ type DeploymentConfig struct {
 	Namespace     string `yaml:"namespace,omitempty"`
 }
 
-var logDeploy = log.Log.WithName("mgw.hpa")
+var logDeploy = log.Log.WithName("mgw.deployment")
 
 var (
 	ContainerList *[]corev1.Container
@@ -85,7 +85,7 @@ func AddContainers(containers *[]corev1.Container) {
 
 // Deployment returns a MGW deployment for the given API definition
 func Deployment(client *client.Client, api *wso2v1alpha1.API, controlConfigData map[string]string,
-	owner *[]metav1.OwnerReference) *appsv1.Deployment {
+	owner *[]metav1.OwnerReference) (*appsv1.Deployment, error) {
 	regConfig := registry.GetConfig()
 	labels := map[string]string{"app": api.Name}
 	var deployVolume []corev1.Volume
@@ -99,20 +99,13 @@ func Deployment(client *client.Client, api *wso2v1alpha1.API, controlConfigData 
 		//retrieve mgw deployment configs from wso2-system namespace
 		err := k8s.Get(client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: mgwDeploymentConfigMapName},
 			mgwDeploymentConfMap)
-		if err != nil {
+		if err != nil && !errors.IsNotFound(err) {
 			logDeploy.Error(err, "MGW Deployment configs not defined")
-			return nil
+			return nil, err
 		}
 	} else if errGetDeploy != nil {
 		logDeploy.Error(errGetDeploy, "Error getting mgw deployment configs from user namespace")
-	} else {
-		//retrieve mgw deployment configs from user namespace
-		err := k8s.Get(client, types.NamespacedName{Namespace: api.Namespace, Name: mgwDeploymentConfigMapName},
-			mgwDeploymentConfMap)
-		if err != nil {
-			logDeploy.Error(err, "MGW Deployment configs not defined")
-			return nil
-		}
+		return nil, errGetDeploy
 	}
 
 	liveDelay, _ := strconv.ParseInt(controlConfigData[livenessProbeInitialDelaySeconds], 10, 32)
@@ -136,13 +129,13 @@ func Deployment(client *client.Client, api *wso2v1alpha1.API, controlConfigData 
 	var deploymentConfigMaps []DeploymentConfig
 	yamlErrDeploymentConfigMaps := yaml.Unmarshal([]byte(mgwDeploymentConfMap.Data[mgwConfigMaps]), &deploymentConfigMaps)
 	if yamlErrDeploymentConfigMaps != nil {
-		logHpa.Error(yamlErrDeploymentConfigMaps, "Error marshalling mgw config maps yaml",
+		logDeploy.Error(yamlErrDeploymentConfigMaps, "Error marshalling mgw config maps yaml",
 			"configmap", mgwDeploymentConfMap)
 	}
 	var deploymentSecrets []DeploymentConfig
 	yamlErrDeploymentSecrets := yaml.Unmarshal([]byte(mgwDeploymentConfMap.Data[mgwSecrets]), &deploymentSecrets)
 	if yamlErrDeploymentSecrets != nil {
-		logHpa.Error(yamlErrDeploymentSecrets, "Error marshalling mgw secrets yaml", "configmap",
+		logDeploy.Error(yamlErrDeploymentSecrets, "Error marshalling mgw secrets yaml", "configmap",
 			mgwDeploymentConfMap)
 	}
 	// mount the MGW config maps to volume
@@ -308,7 +301,7 @@ func Deployment(client *client.Client, api *wso2v1alpha1.API, controlConfigData 
 			},
 		},
 	}
-	return deploy
+	return deploy, nil
 }
 
 // CopyMgwConfigMap returns a copied configMap object with given namespacedName
