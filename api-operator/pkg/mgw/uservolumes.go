@@ -62,7 +62,7 @@ func UserDeploymentVolume(client *client.Client, api *wso2v1alpha1.API) ([]corev
 		err := k8s.Get(client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: mgwDeploymentConfigMapName},
 			mgwDeploymentConfMap)
 		if err != nil && !errors.IsNotFound(err) {
-			logDeploy.Error(err, "MGW Deployment configs not defined")
+			logDeploy.Error(err, "Error while reading user volumes config")
 			return nil, nil, err
 		}
 	} else if errGetDeploy != nil {
