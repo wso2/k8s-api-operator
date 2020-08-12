@@ -232,9 +232,11 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	// if operator mode is "Istio", validate istio configs
+	var istioConfigs *mgw.IstioConfigs
 	if strings.EqualFold(operatorMode, istioMode) {
 		// validate Istio configs and setting configs
-		if err := mgw.ValidateIstioConfigs(&r.client, instance); err != nil {
+		istioConfigs, err = mgw.ValidateIstioConfigs(&r.client, instance)
+		if err != nil {
 			// error has already logged inside the method
 			// Return and requeue request since config mismatch
 			return reconcile.Result{}, err
@@ -567,7 +569,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 		// creating Istio virtual service
 		if strings.EqualFold(operatorMode, istioMode) {
-			vtlSvc := mgw.IstioVirtualService(instance, apiBasePathMap, *ownerRef)
+			vtlSvc := mgw.IstioVirtualService(istioConfigs, instance, apiBasePathMap, *ownerRef)
 			if errVtlSvc := k8s.CreateIfNotExists(&r.client, vtlSvc); errVtlSvc != nil {
 				reqLogger.Error(errVtlSvc, "Error creating the Istio virtual service",
 					"virtual_service", vtlSvc)
@@ -581,7 +583,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			if errSvc != nil {
 				reqLogger.Error(errSvc, "Error getting the mgw service")
 			}
-			getEndPointValue := mgw.ExternalIP(&r.client, instance, operatorMode, mgwSvc, controlIngressData, controlOpenshiftConf)
+			getEndPointValue := mgw.ExternalIP(&r.client, instance, operatorMode, mgwSvc, controlIngressData,
+				controlOpenshiftConf, istioConfigs)
 			err = r.client.Update(context.TODO(), instance)
 			if getEndPointValue == "" {
 				instance.Spec.ApiEndPoint = "<pending>"
@@ -590,7 +593,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 				break
 			}
 		}
-		getEndPointValue := mgw.ExternalIP(&r.client, instance, operatorMode, mgwSvc, controlIngressData, controlOpenshiftConf)
+		getEndPointValue := mgw.ExternalIP(&r.client, instance, operatorMode, mgwSvc, controlIngressData,
+			controlOpenshiftConf, istioConfigs)
 		err = r.client.Update(context.TODO(), instance)
 
 		if getEndPointValue != "" {

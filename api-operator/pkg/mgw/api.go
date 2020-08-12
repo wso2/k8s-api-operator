@@ -30,7 +30,7 @@ import (
 var logEp = logf.Log.WithName("endpoint.value")
 
 func ExternalIP(client *client.Client, apiInstance *wso2v1alpha1.API, operatorMode string, svc *corev1.Service,
-	ingressConfData map[string]string, openshiftConfData map[string]string) string {
+	ingressConfData map[string]string, openshiftConfData map[string]string, istioConfigs *IstioConfigs) string {
 
 	logger := logEp.WithValues("namespace", apiInstance.Namespace, "apiName", apiInstance.Name)
 	ipList := make(map[string]bool, 2) // to avoid duplicate IPs make ipList a map of strings -> bool
@@ -81,7 +81,7 @@ func ExternalIP(client *client.Client, apiInstance *wso2v1alpha1.API, operatorMo
 	}
 
 	ips := make([]string, 0, len(ipList))
-	for ip, _ := range ipList {
+	for ip := range ipList {
 		ips = append(ips, ip)
 	}
 

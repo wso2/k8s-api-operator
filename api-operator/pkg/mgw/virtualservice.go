@@ -47,14 +47,14 @@ type IstioConfigs struct {
 }
 
 type tlsRoutesConfigs struct {
-	Enable bool `yaml:"enable"`
-	Port   int  `yaml:"port"`
+	Enabled bool `yaml:"enabled"`
+	Port    int  `yaml:"port"`
 }
 
-var istioConfigs IstioConfigs
 var logVsc = log.Log.WithName("mgw.virtualservice")
 
-func IstioVirtualService(api *wso2v1alpha1.API, apiBasePathMap map[string]string, owner []metav1.OwnerReference) *istioclient.VirtualService {
+func IstioVirtualService(istioConfigs *IstioConfigs, api *wso2v1alpha1.API, apiBasePathMap map[string]string,
+	owner []metav1.OwnerReference) *istioclient.VirtualService {
 	// labels
 	labels := map[string]string{
 		"app": api.Name,
@@ -65,10 +65,10 @@ func IstioVirtualService(api *wso2v1alpha1.API, apiBasePathMap map[string]string
 	var tlsRoutes []*istioapi.TLSRoute
 
 	// select route mode TLS/HTTP
-	if istioConfigs.Tls.Enable { // TLS mode
-		tlsRoutes = getTlsRoutes(api)
+	if istioConfigs.Tls.Enabled { // TLS mode
+		tlsRoutes = getTlsRoutes(istioConfigs, api)
 	} else { // HTTP mode
-		httpRoutes = getHttpRoutes(api, apiBasePathMap)
+		httpRoutes = getHttpRoutes(istioConfigs, api, apiBasePathMap)
 	}
 
 	// Istio virtual service
@@ -91,7 +91,7 @@ func IstioVirtualService(api *wso2v1alpha1.API, apiBasePathMap map[string]string
 	return &virtualService
 }
 
-func getHttpRoutes(api *wso2v1alpha1.API, apiBasePathMap map[string]string) []*istioapi.HTTPRoute {
+func getHttpRoutes(istioConfigs *IstioConfigs, api *wso2v1alpha1.API, apiBasePathMap map[string]string) []*istioapi.HTTPRoute {
 	// http route matches
 	var httpRouteMatches []*istioapi.HTTPMatchRequest
 	for basePath, version := range apiBasePathMap {
@@ -125,7 +125,7 @@ func getHttpRoutes(api *wso2v1alpha1.API, apiBasePathMap map[string]string) []*i
 	return httpRoutes
 }
 
-func getTlsRoutes(api *wso2v1alpha1.API) []*istioapi.TLSRoute {
+func getTlsRoutes(istioConfigs *IstioConfigs, api *wso2v1alpha1.API) []*istioapi.TLSRoute {
 	tlsRoutes := []*istioapi.TLSRoute{
 		{
 			Match: []*istioapi.TLSMatchAttributes{{
@@ -148,11 +148,13 @@ func getTlsRoutes(api *wso2v1alpha1.API) []*istioapi.TLSRoute {
 
 // ValidateIstioConfigs validate the Istio yaml config read from config map "istio-configs"
 // and setting values
-func ValidateIstioConfigs(client *client.Client, api *wso2v1alpha1.API) error {
+func ValidateIstioConfigs(client *client.Client, api *wso2v1alpha1.API) (*IstioConfigs, error) {
+	istioConfigs := &IstioConfigs{}
+
 	istioConfigMap := k8s.NewConfMap()
 	if err := k8s.Get(client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: istioConfMapName},
 		istioConfigMap); err != nil {
-		return err
+		return nil, err
 	}
 
 	// gateway
@@ -160,7 +162,7 @@ func ValidateIstioConfigs(client *client.Client, api *wso2v1alpha1.API) error {
 		err := errors.New("istio gateway config is empty")
 		logVsc.Error(err, "Istio gateway config is empty", "configmap", istioConfMapName,
 			"key", istioGatewayConfKey)
-		return err
+		return nil, err
 	}
 	istioConfigs.GatewayName = istioConfigMap.Data[istioGatewayConfKey]
 
@@ -172,7 +174,7 @@ func ValidateIstioConfigs(client *client.Client, api *wso2v1alpha1.API) error {
 		err := errors.New("istio gateway host config is empty")
 		logVsc.Error(err, "Istio gateway host config is empty", "configmap", istioConfMapName,
 			"key", istioHostConfKey)
-		return err
+		return nil, err
 	} else {
 		istioConfigs.Host = istioConfigMap.Data[istioHostConfKey]
 	}
@@ -182,11 +184,11 @@ func ValidateIstioConfigs(client *client.Client, api *wso2v1alpha1.API) error {
 		err := errors.New("istio tls config is empty")
 		logVsc.Error(err, "Istio tls config is empty", "configmap", istioConfMapName,
 			"key", istioGatewayConfKey)
-		return err
+		return nil, err
 	}
 	tlsConf := &tlsRoutesConfigs{}
 	if err := yaml.Unmarshal([]byte(istioConfigMap.Data[istiotlsConfKey]), tlsConf); err != nil {
-		return err
+		return nil, err
 	}
 	istioConfigs.Tls = tlsConf
 
@@ -194,9 +196,9 @@ func ValidateIstioConfigs(client *client.Client, api *wso2v1alpha1.API) error {
 	cors := &istioapi.CorsPolicy{}
 	if err := yaml.Unmarshal([]byte(istioConfigMap.Data[istioCorsPolicyConfKey]), cors); err != nil {
 		logVsc.Error(err, "Istio CORS policy configs are invalid", "configmap", istioConfigMap)
-		return err
+		return nil, err
 	}
 	istioConfigs.CorsPolicy = cors
 
-	return nil
+	return istioConfigs, nil
 }
