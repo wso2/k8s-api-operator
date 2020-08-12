@@ -25,6 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strconv"
 	"strings"
 )
@@ -62,12 +63,10 @@ func AddContainers(containers *[]corev1.Container) {
 }
 
 // Deployment returns a MGW deployment for the given API definition
-func Deployment(api *wso2v1alpha1.API, controlConfigData map[string]string, owner *[]metav1.OwnerReference) *appsv1.Deployment {
+func Deployment(client *client.Client, api *wso2v1alpha1.API, controlConfigData map[string]string,
+	owner *[]metav1.OwnerReference) (*appsv1.Deployment, error) {
 	regConfig := registry.GetConfig()
 	labels := map[string]string{"app": api.Name}
-	var deployVolume []corev1.Volume
-	var deployVolumeMount []corev1.VolumeMount
-
 	liveDelay, _ := strconv.ParseInt(controlConfigData[livenessProbeInitialDelaySeconds], 10, 32)
 	livePeriod, _ := strconv.ParseInt(controlConfigData[livenessProbePeriodSeconds], 10, 32)
 	readDelay, _ := strconv.ParseInt(controlConfigData[readinessProbeInitialDelaySeconds], 10, 32)
@@ -78,6 +77,9 @@ func Deployment(api *wso2v1alpha1.API, controlConfigData map[string]string, owne
 	resReqMemory := controlConfigData[resourceRequestMemory]
 	resLimitCPU := controlConfigData[resourceLimitCPU]
 	resLimitMemory := controlConfigData[resourceLimitMemory]
+
+	// Mount the user specified Config maps and secrets to mgw deploy volume
+	deployVolume, deployVolumeMount, errDeploy := UserDeploymentVolume(client, api)
 
 	if Configs.AnalyticsEnabled {
 		// mounts an empty dir volume to be used when analytics is enabled
@@ -193,5 +195,5 @@ func Deployment(api *wso2v1alpha1.API, controlConfigData map[string]string, owne
 			},
 		},
 	}
-	return deploy
+	return deploy, errDeploy
 }

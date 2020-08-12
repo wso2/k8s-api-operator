@@ -292,3 +292,23 @@ data:
       - SOAPAction
       - apikey
       - Authorization
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mgw-deployment-configs
+  namespace: wso2-system
+data:
+  mgwConfigMaps: |
+  # Config Maps to be added to mgw deployment. This is an example
+  #  - name: test1cm
+  #    mountLocation: /home/ballerina/test1cm
+  #    subPath: test1cm
+  #    namespace: micro
+  mgwSecrets: |
+  # Secrets to be added to mgw deployment. This is an example
+  #  - name: test1secret
+  #    mountLocation: /home/ballerina/test1secret
+  #    subPath: test1secret
+  #    namespace: micro

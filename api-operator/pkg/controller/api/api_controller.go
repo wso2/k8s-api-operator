@@ -508,9 +508,16 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	if deployMgwRuntime {
 		reqLogger.Info("Deploying MGW runtime image")
 		// create MGW deployment in k8s cluster
-		mgwDeployment := mgw.Deployment(instance, controlConfigData, ownerRef)
+		mgwDeployment, errDeploy := mgw.Deployment(&r.client, instance, controlConfigData, ownerRef)
 		r.recorder.Event(instance, corev1.EventTypeNormal, "MGWRuntime",
 			fmt.Sprintf("Deploying MGW runtime: %s.", mgwDeployment.Name))
+		if errDeploy != nil {
+			reqLogger.Error(errDeploy, "Error mounting config maps and secrets to" +
+				"mgw deployment")
+			r.recorder.Event(instance, eventTypeError, "MGWDeployment", "Error mounting config maps and " +
+				"secrets to mgw deployment")
+			return reconcile.Result{}, errDeploy
+		}
 		if errMgw := k8s.Apply(&r.client, mgwDeployment); errMgw != nil {
 			reqLogger.Error(errMgw, "Error updating the MGW deployment", "deploy_name", mgwDeployment.Name)
 			r.recorder.Event(instance, eventTypeError, "MGWRuntime",
