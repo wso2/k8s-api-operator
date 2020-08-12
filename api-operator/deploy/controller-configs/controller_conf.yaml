@@ -98,6 +98,8 @@ data:
   #Request and response validation
   enableRequestValidation: "false"
   enableResponseValidation: "false"
+  # Enable configurations for retrieving API and subscription data from API Manager.
+  enabledEventhub: "false"
   #APIKey issuer configurations
   #APIKey STS token configurations
   enabledAPIKeyIssuer: "true"

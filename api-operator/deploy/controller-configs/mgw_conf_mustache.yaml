@@ -366,6 +366,20 @@ data:
         # Throttle data cleanup task frequency in seconds.
         cleanUpFrequency = 3600
 
+    # Configurations for retrieving API and subscription data from API Manager.
+    [apim.eventHub]
+      # Enable/ Disable the feature
+      enable = {{$.EnabledEventhub}}
+      # The API Manager URL
+      serviceUrl = "https://{{$.ThrottleEndpoint}}"
+      # The internal data REST API context.
+      internalDataContext="/internal/data/v1/"
+      # User name and password of the internal data api.
+      username = "{{$.ApimUsername}}"
+      password = "{{$.ApimPassword}}"
+      # The message broker connection URL.
+      eventListeningEndpoints = "amqp://admin:admin@carbon/carbon?brokerlist='tcp://{{$.JmsConnectionProvider}}'"
+
     # ballerina logs
     [b7a.log]
       level="{{$.LogLevel}}"
