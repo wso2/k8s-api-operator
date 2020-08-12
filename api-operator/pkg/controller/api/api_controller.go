@@ -354,7 +354,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		if !isDefinedSecurity && resourceLevelSec == 0 {
 			log.Info("Use default security")
 
-			err := security.Default(&r.client, userNamespace, ownerRef)
+			defaultJwtConfArray, err := security.Default(&r.client, userNamespace, ownerRef)
+			mgw.Configs.JwtConfigs = defaultJwtConfArray
 			if err != nil {
 				return reconcile.Result{}, err
 			}
