@@ -75,12 +75,14 @@ func UserDeploymentVolume(client *client.Client, api *wso2v1alpha1.API) ([]corev
 	if yamlErrDeploymentConfigMaps != nil {
 		logDeploy.Error(yamlErrDeploymentConfigMaps, "Error marshalling mgw config maps yaml",
 			"configmap", mgwDeploymentConfMap)
+		return nil, nil, yamlErrDeploymentConfigMaps
 	}
 	var deploymentSecrets []DeploymentConfig
 	yamlErrDeploymentSecrets := yaml.Unmarshal([]byte(mgwDeploymentConfMap.Data[mgwSecrets]), &deploymentSecrets)
 	if yamlErrDeploymentSecrets != nil {
 		logDeploy.Error(yamlErrDeploymentSecrets, "Error marshalling mgw secrets yaml", "configmap",
 			mgwDeploymentConfMap)
+		return nil, nil, yamlErrDeploymentSecrets
 	}
 	// mount the MGW config maps to volume
 	for _, deploymentConfigMap := range deploymentConfigMaps {
@@ -90,12 +92,14 @@ func UserDeploymentVolume(client *client.Client, api *wso2v1alpha1.API) ([]corev
 				Name: deploymentConfigMap.Name}, mgwConfigMap)
 			if mgwConfigMapErr != nil {
 				logDeploy.Error(mgwConfigMapErr, "Error Getting the mgw Config map")
+				return nil, nil, mgwConfigMapErr
 			}
 			newMgwConfigMap := CopyMgwConfigMap(types.NamespacedName{Namespace: api.Namespace,
 				Name: deploymentConfigMap.Name}, mgwConfigMap)
 			createConfigMapErr := k8s.Apply(client, newMgwConfigMap)
 			if createConfigMapErr != nil {
 				logDeploy.Error(createConfigMapErr, "Error Copying mgw config map to user namespace")
+				return nil, nil, createConfigMapErr
 			}
 			mgwDeployVol, mgwDeployMount = k8s.MgwConfigDirVolumeMount(deploymentConfigMap.Name,
 				deploymentConfigMap.MountLocation, deploymentConfigMap.SubPath)
@@ -116,12 +120,14 @@ func UserDeploymentVolume(client *client.Client, api *wso2v1alpha1.API) ([]corev
 				Name: deploymentSecret.Name}, mgwSecret)
 			if mgwSecretErr != nil {
 				logDeploy.Error(mgwSecretErr, "Error Getting the mgw Secret")
+				return nil, nil, mgwSecretErr
 			}
 			newMgwSecret := CopyMgwSecret(types.NamespacedName{Namespace: api.Namespace,
 				Name: deploymentSecret.Name}, mgwSecret)
 			createSecretErr := k8s.Apply(client, newMgwSecret)
 			if createSecretErr != nil {
 				logDeploy.Error(createSecretErr, "Error Copying mgw secret to user namespace")
+				return nil, nil, createSecretErr
 			}
 			mgwDeployVol, mgwDeployMount = k8s.MgwSecretVolumeMount(deploymentSecret.Name,
 				deploymentSecret.MountLocation,
