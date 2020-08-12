@@ -35,6 +35,7 @@ const (
 	istioConfMapName       = "istio-configs"
 	istioGatewayConfKey    = "gatewayName"
 	istioHostConfKey       = "host"
+	istiotlsConfKey        = "tls"
 	istioCorsPolicyConfKey = "corsPolicy"
 )
 
@@ -42,6 +43,12 @@ type IstioConfigs struct {
 	GatewayName string
 	Host        string
 	CorsPolicy  *istioapi.CorsPolicy
+	Tls         *tlsRoutesConfigs
+}
+
+type tlsRoutesConfigs struct {
+	Enable bool `yaml:"enable"`
+	Port   int  `yaml:"port"`
 }
 
 var istioConfigs IstioConfigs
@@ -53,6 +60,38 @@ func IstioVirtualService(api *wso2v1alpha1.API, apiBasePathMap map[string]string
 		"app": api.Name,
 	}
 
+	// route mode TLS/HTTP
+	var httpRoutes []*istioapi.HTTPRoute
+	var tlsRoutes []*istioapi.TLSRoute
+
+	// select route mode TLS/HTTP
+	if istioConfigs.Tls.Enable { // TLS mode
+		tlsRoutes = getTlsRoutes(api)
+	} else { // HTTP mode
+		httpRoutes = getHttpRoutes(api, apiBasePathMap)
+	}
+
+	// Istio virtual service
+	virtualService := istioclient.VirtualService{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            api.Name,
+			Namespace:       api.Namespace,
+			Generation:      0,
+			Labels:          labels,
+			OwnerReferences: owner,
+		},
+		Spec: istioapi.VirtualService{
+			Hosts:    []string{istioConfigs.Host},
+			Gateways: []string{istioConfigs.GatewayName},
+			Http:     httpRoutes,
+			Tls:      tlsRoutes,
+		},
+	}
+
+	return &virtualService
+}
+
+func getHttpRoutes(api *wso2v1alpha1.API, apiBasePathMap map[string]string) []*istioapi.HTTPRoute {
 	// http route matches
 	var httpRouteMatches []*istioapi.HTTPMatchRequest
 	for basePath, version := range apiBasePathMap {
@@ -75,7 +114,7 @@ func IstioVirtualService(api *wso2v1alpha1.API, apiBasePathMap map[string]string
 			Destination: &istioapi.Destination{
 				Host: api.Name, // MGW service name
 				Port: &istioapi.PortSelector{
-					Number: 9090,
+					Number: uint32(Configs.HttpPort),
 				},
 			},
 		}},
@@ -83,23 +122,28 @@ func IstioVirtualService(api *wso2v1alpha1.API, apiBasePathMap map[string]string
 		CorsPolicy: istioConfigs.CorsPolicy,
 	}}
 
-	// Istio virtual service
-	virtualService := istioclient.VirtualService{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:            api.Name,
-			Namespace:       api.Namespace,
-			Generation:      0,
-			Labels:          labels,
-			OwnerReferences: owner,
-		},
-		Spec: istioapi.VirtualService{
-			Hosts:    []string{istioConfigs.Host},
-			Gateways: []string{istioConfigs.GatewayName},
-			Http:     httpRoutes,
+	return httpRoutes
+}
+
+func getTlsRoutes(api *wso2v1alpha1.API) []*istioapi.TLSRoute {
+	tlsRoutes := []*istioapi.TLSRoute{
+		{
+			Match: []*istioapi.TLSMatchAttributes{{
+				SniHosts: []string{istioConfigs.Host},
+				Port:     0,
+			}},
+			Route: []*istioapi.RouteDestination{{
+				Destination: &istioapi.Destination{
+					Host: api.Name, // MGW service name
+					Port: &istioapi.PortSelector{
+						Number: uint32(Configs.HttpsPort),
+					},
+				},
+			}},
 		},
 	}
 
-	return &virtualService
+	return tlsRoutes
 }
 
 // ValidateIstioConfigs validate the Istio yaml config read from config map "istio-configs"
@@ -132,6 +176,19 @@ func ValidateIstioConfigs(client *client.Client, api *wso2v1alpha1.API) error {
 	} else {
 		istioConfigs.Host = istioConfigMap.Data[istioHostConfKey]
 	}
+
+	// TLS
+	if istioConfigMap.Data[istiotlsConfKey] == "" {
+		err := errors.New("istio tls config is empty")
+		logVsc.Error(err, "Istio tls config is empty", "configmap", istioConfMapName,
+			"key", istioGatewayConfKey)
+		return err
+	}
+	tlsConf := &tlsRoutesConfigs{}
+	if err := yaml.Unmarshal([]byte(istioConfigMap.Data[istiotlsConfKey]), tlsConf); err != nil {
+		return err
+	}
+	istioConfigs.Tls = tlsConf
 
 	// CORS policy
 	cors := &istioapi.CorsPolicy{}
