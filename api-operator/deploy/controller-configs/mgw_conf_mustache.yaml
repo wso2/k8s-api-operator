@@ -290,7 +290,7 @@ data:
       # The message broker context factory
       jmsConnectioninitialContextFactory = "wso2mbInitialContextFactory"
       # The message broker connection URL
-      jmsConnectionProviderUrl = "amqp://admin:admin@carbon/carbon?brokerlist='tcp://{{$.JmsConnectionProvider}}'"
+      jmsConnectionProviderUrl = "amqp://admin:admin@carbon/carbon?brokerlist='tcp://{{$.JmsConnectionProvider}}?retries='100'&connectdelay='10000''"
       # The username used to establish  the message broker connection
       jmsConnectionUsername = ""
       # The password used to establish  the message broker connection
