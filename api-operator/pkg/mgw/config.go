@@ -64,6 +64,7 @@ const (
 	enableRealtimeMessageRetrievalConst = "enableRealtimeMessageRetrieval"
 	enableRequestValidationConst        = "enableRequestValidation"
 	enableResponseValidationConst       = "enableResponseValidation"
+	enabledEventhub						= "enabledEventhub"
 	logLevelConst                       = "logLevel"
 	httpPortConst                       = "httpPort"
 	httpsPortConst                      = "httpsPort"
@@ -132,6 +133,7 @@ type Configuration struct {
 	// validation
 	EnableRequestValidation  string
 	EnableResponseValidation string
+	EnabledEventhub			 string
 
 	//basic authentication
 	BasicUsername string
@@ -246,6 +248,7 @@ var Configs = &Configuration{
 	// validation
 	EnableRequestValidation:  "false",
 	EnableResponseValidation: "false",
+	EnabledEventhub: 		  "false",
 
 	//basic authentication
 	BasicUsername: "admin",
@@ -332,6 +335,7 @@ func SetApimConfigs(client *client.Client) error {
 	Configs.EnableRealtimeMessageRetrieval = apimConfig.Data[enableRealtimeMessageRetrievalConst]
 	Configs.EnableRequestValidation = apimConfig.Data[enableRequestValidationConst]
 	Configs.EnableResponseValidation = apimConfig.Data[enableResponseValidationConst]
+	Configs.EnabledEventhub = apimConfig.Data[enabledEventhub]
 	Configs.LogLevel = apimConfig.Data[logLevelConst]
 	Configs.EnabledAPIKeyIssuer = apimConfig.Data[enabledAPIKeyIssuerConst]
 	Configs.APIKeyKeystorePath = apimConfig.Data[apiKeyKeystorePathConst]

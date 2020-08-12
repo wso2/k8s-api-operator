@@ -290,7 +290,7 @@ data:
       # The message broker context factory
       jmsConnectioninitialContextFactory = "wso2mbInitialContextFactory"
       # The message broker connection URL
-      jmsConnectionProviderUrl = "amqp://admin:admin@carbon/carbon?brokerlist='tcp://{{$.JmsConnectionProvider}}'"
+      jmsConnectionProviderUrl = "amqp://admin:admin@carbon/carbon?brokerlist='tcp://{{$.JmsConnectionProvider}}?retries='100'&connectdelay='10000''"
       # The username used to establish  the message broker connection
       jmsConnectionUsername = ""
       # The password used to establish  the message broker connection
@@ -365,6 +365,20 @@ data:
         processThreadPoolKeepAliveTime = 200
         # Throttle data cleanup task frequency in seconds.
         cleanUpFrequency = 3600
+
+    # Configurations for retrieving API and subscription data from API Manager.
+    [apim.eventHub]
+      # Enable/ Disable the feature
+      enable = {{$.EnabledEventhub}}
+      # The API Manager URL
+      serviceUrl = "https://{{$.ThrottleEndpoint}}"
+      # The internal data REST API context.
+      internalDataContext="/internal/data/v1/"
+      # User name and password of the internal data api.
+      username = "{{$.ApimUsername}}"
+      password = "{{$.ApimPassword}}"
+      # The message broker connection URL.
+      eventListeningEndpoints = "amqp://admin:admin@carbon/carbon?brokerlist='tcp://{{$.JmsConnectionProvider}}'"
 
     # ballerina logs
     [b7a.log]
