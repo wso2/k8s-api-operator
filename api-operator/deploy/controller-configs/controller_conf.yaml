@@ -277,7 +277,7 @@ data:
   host: "internal.wso2.com"
   #TLS routes for Virtual Service
   tls: |
-    enabled: true
+    enabled: false
     port: 443
   #CORS policy
   corsPolicy: |

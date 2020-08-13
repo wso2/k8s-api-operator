@@ -111,6 +111,10 @@ following changes.
       gatewayName: "wso2-gateway"
       #Gateway host
       host: "internal.wso2.com"
+      #TLS routes for Virtual Service
+      tls: |
+        enabled: false
+        port: 443
       #CORS policy
       corsPolicy: |
         allowOrigins:
@@ -219,7 +223,7 @@ This guide is based on https://istio.io/docs/tasks/traffic-management/ingress/se
 - Deploy the gateway in Istio.
 
     ```sh
-    >> apictl apply -f gateway.yaml
+    >> apictl apply -f gateway-tls-terminated.yaml
     ```
 <br />
 
@@ -293,7 +297,7 @@ This guide is based on https://istio.io/docs/tasks/traffic-management/ingress/se
             --apim https://localhost:9443 \
             --token https://localhost:9443/oauth2/token
   
-    >> apictl import-api -f online-store-api/ -e dev -k 
+    >> apictl import-api -f online-store-api-sc/ -e dev -k 
     ```
 <br />
 
@@ -305,3 +309,58 @@ This guide is based on https://istio.io/docs/tasks/traffic-management/ingress/se
   ![Select gateway as internal](images/select-gateway-in-dev-portal.png)
 - Try out API.
   ![Try out API](images/try-out-api.png)
+
+
+### Disable TLS Termination
+
+You can also disable TLS termination by changing the configuration "enable TLS" in the configmap `istio-configs` in
+the namespace `wso2-system`.
+
+Edit the config file `<K8S_API_OPERATOR_HOME>/api-operator/controller-artifacts/controller_conf.yaml` to make
+following changes.
+
+- Enable TLS routing
+    ```yaml
+    tls: |
+      enabled: true
+      port: 443
+    ```
+
+- Apply changes.
+    ```sh
+    >> apictl apply -f <K8S_API_OPERATOR_HOME>/api-operator/controller-artifacts/controller_conf.yaml
+    ```
+
+- Add following CORS configs in swagger definition. Edit `swagger.yaml` and append following. **NOTE:** The CORS configs
+defined in the configmap `istio-configs` are only applicable for HTTP routes.
+    ```yaml
+    x-wso2-cors:
+      accessControlAllowOrigins:
+        - https://localhost:9443
+        - https://wso2apim:32001
+      accessControlAllowHeaders:
+        - Authorization
+        - Content-Type
+      accessControlAllowMethods:
+        - GET
+        - PUT
+        - POST
+        - DELETE
+      accessControlAllowCredentials: true
+    ```
+- Delete created API and Gateway in above steps (step 6 and 7).
+    ```sh
+    >> apictl delete api -n micro online-store-api-sc
+    >> apictl delete gateway -n micro wso2-gateway 
+    ```
+
+- Recreate API and Gateway with the changes done. In the Gateway configuration tls mode is set as `PASSTHROUGH`.
+    ```sh
+    >> apictl apply -f gateway-tls-passthrough.yaml
+    >> apictl add api \
+                   -n online-store-api-sc \
+                   --from-file=./swagger.yaml \
+                   --namespace=micro \
+                   --override
+    ```
+- Follow the steps to invoke API and try out in WSO2 API Manager Developer Portal.
