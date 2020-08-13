@@ -277,6 +277,10 @@ data:
   gatewayName: "wso2-gateway"
   #Gateway host
   host: "internal.wso2.com"
+  #TLS routes for Virtual Service
+  tls: |
+    enabled: false
+    port: 443
   #CORS policy
   corsPolicy: |
     allowOrigins:
