@@ -30,55 +30,64 @@ import (
 
 var logDef = log.Log.WithName("security.default")
 
-func Default(client *client.Client, apiNamespace string, owner *[]metav1.OwnerReference) error {
-	defaultSecConf := mgw.JwtTokenConfig{}
+func Default(client *client.Client, apiNamespace string, owner *[]metav1.OwnerReference) (*[]mgw.JwtTokenConfig, error) {
+	var defaultSecConfArray []mgw.JwtTokenConfig
 	//copy default sec in wso2-system to user namespace
 	securityDefault := &wso2v1alpha1.Security{}
 	//check default security already exist in user namespace
 	errGetSec := k8s.Get(client, types.NamespacedName{Name: defaultSecurity, Namespace: apiNamespace}, securityDefault)
-
 	if errGetSec != nil && errors.IsNotFound(errGetSec) {
 		logDef.Info("Get default-security", "from namespace", wso2NameSpaceConst)
 		//retrieve default-security from wso2-system namespace
 		errSec := k8s.Get(client, types.NamespacedName{Name: defaultSecurity, Namespace: wso2NameSpaceConst}, securityDefault)
 		if errSec != nil {
 			logDef.Error(errSec, "Error getting default security", "namespace", wso2NameSpaceConst)
-			return errSec
+			return nil, errSec
 		}
-
-		var defaultCert = k8s.NewSecret()
-		//check default certificate exists in user namespace
-		err := k8s.Get(client, types.NamespacedName{Name: securityDefault.Spec.SecurityConfig[0].Certificate, Namespace: apiNamespace}, defaultCert)
-		if err != nil && errors.IsNotFound(err) {
-			errCert := k8s.Get(client, types.NamespacedName{Name: securityDefault.Spec.SecurityConfig[0].Certificate, Namespace: wso2NameSpaceConst}, defaultCert)
-			if errCert != nil {
-				return errCert
-			}
-			//copying default cert as a secret to user namespace
-			var defaultCertName string
-			var defaultCertValue []byte
-			for cert, value := range defaultCert.Data {
-				defaultCertName = cert
-				defaultCertValue = value
-			}
-			defCertData := map[string][]byte{defaultCertName: defaultCertValue}
-			newDefaultSecret := k8s.NewSecretWith(types.NamespacedName{Namespace: apiNamespace, Name: securityDefault.Spec.SecurityConfig[0].Certificate}, &defCertData, nil, owner)
-			errCreateSec := k8s.Create(client, newDefaultSecret)
-
-			if errCreateSec != nil {
-				return errCreateSec
+		for _, defaultSecurityConf := range securityDefault.Spec.SecurityConfig {
+			defaultSecConf := mgw.JwtTokenConfig{}
+			var defaultCert = k8s.NewSecret()
+			//check default certificate exists in user namespace
+			err := k8s.Get(client, types.NamespacedName{Name: defaultSecurityConf.Certificate, Namespace: apiNamespace}, defaultCert)
+			if err != nil && errors.IsNotFound(err) {
+				errCert := k8s.Get(client, types.NamespacedName{Name: defaultSecurityConf.Certificate, Namespace: wso2NameSpaceConst}, defaultCert)
+				if errCert != nil {
+					return nil, errCert
+				}
+				//copying default cert as a secret to user namespace
+				var defaultCertName string
+				var defaultCertValue []byte
+				for cert, value := range defaultCert.Data {
+					defaultCertName = cert
+					defaultCertValue = value
+				}
+				defCertData := map[string][]byte{defaultCertName: defaultCertValue}
+				newDefaultSecret := k8s.NewSecretWith(types.NamespacedName{Namespace: apiNamespace, Name: defaultSecurityConf.Certificate}, &defCertData, nil, owner)
+				errCreateSec := k8s.Apply(client, newDefaultSecret)
+				if errCreateSec != nil {
+					return nil, errCreateSec
+				} else {
+					//mount certs
+					alias := cert.Add(newDefaultSecret, "security")
+					defaultSecConf.CertificateAlias = alias
+				}
+			} else if err != nil {
+				logDef.Error(err, "Error getting default certificate", "from namespace", apiNamespace)
+				return nil, err
 			} else {
 				//mount certs
-				alias := cert.Add(newDefaultSecret, "security")
+				alias := cert.Add(defaultCert, "security")
 				defaultSecConf.CertificateAlias = alias
 			}
-		} else if err != nil {
-			logDef.Error(err, "Error getting default certificate", "from namespace", apiNamespace)
-			return err
-		} else {
-			//mount certs
-			alias := cert.Add(defaultCert, "security")
-			defaultSecConf.CertificateAlias = alias
+			if defaultSecurityConf.Issuer != "" {
+				defaultSecConf.Issuer = defaultSecurityConf.Issuer
+			}
+			if defaultSecurityConf.Audience != "" {
+				defaultSecConf.Audience = defaultSecurityConf.Audience
+			}
+			defaultSecConf.ValidateSubscription = defaultSecurityConf.ValidateSubscription
+			// append JwtConfigs
+			defaultSecConfArray = append(defaultSecConfArray, defaultSecConf)
 		}
 		//copying default security to user namespace
 		logDef.Info("copying default security to " + apiNamespace)
@@ -86,56 +95,53 @@ func Default(client *client.Client, apiNamespace string, owner *[]metav1.OwnerRe
 		errCreateSecurity := k8s.Create(client, newDefaultSecurity)
 		if errCreateSecurity != nil {
 			logDef.Error(errCreateSecurity, "error creating secret for default security in user namespace")
-			return errCreateSecurity
+			return nil, errCreateSecurity
 		}
 		logDef.Info("default security successfully copied to " + apiNamespace + " namespace")
-		if newDefaultSecurity.Spec.SecurityConfig[0].Issuer != "" {
-			defaultSecConf.Issuer = newDefaultSecurity.Spec.SecurityConfig[0].Issuer
-		}
-		if newDefaultSecurity.Spec.SecurityConfig[0].Audience != "" {
-			defaultSecConf.Audience = newDefaultSecurity.Spec.SecurityConfig[0].Audience
-		}
-		defaultSecConf.ValidateSubscription = newDefaultSecurity.Spec.SecurityConfig[0].ValidateSubscription
+
 	} else if errGetSec != nil {
 		logDef.Error(errGetSec, "error getting default security from user namespace")
-		return errGetSec
+		return nil, errGetSec
 	} else {
 		logDef.Info("Default security exists in the namespace", "namespace", apiNamespace)
 		// check default cert exist in api namespace
-		var defaultCertUsrNs = k8s.NewSecret()
-		err := k8s.Get(client, types.NamespacedName{Name: securityDefault.Spec.SecurityConfig[0].Certificate, Namespace: apiNamespace}, defaultCertUsrNs)
-		if err != nil {
-			return err
-		} else {
-			//mount certs
-			alias := cert.Add(defaultCertUsrNs, "security")
-			defaultSecConf.CertificateAlias = alias
-			defaultSecConf.ValidateSubscription = securityDefault.Spec.SecurityConfig[0].ValidateSubscription
-		}
-		if securityDefault.Spec.SecurityConfig[0].Issuer != "" {
-			defaultSecConf.Issuer = securityDefault.Spec.SecurityConfig[0].Issuer
-		}
-		if securityDefault.Spec.SecurityConfig[0].Audience != "" {
-			defaultSecConf.Audience = securityDefault.Spec.SecurityConfig[0].Audience
+		for _, securityDefaultConf := range securityDefault.Spec.SecurityConfig {
+			defaultSecConf := mgw.JwtTokenConfig{}
+			var defaultCertUsrNs = k8s.NewSecret()
+			err := k8s.Get(client, types.NamespacedName{Name: securityDefaultConf.Certificate, Namespace: apiNamespace}, defaultCertUsrNs)
+			if err != nil {
+				return nil, err
+			} else {
+				//mount certs
+				alias := cert.Add(defaultCertUsrNs, "security")
+				defaultSecConf.CertificateAlias = alias
+				defaultSecConf.ValidateSubscription = securityDefaultConf.ValidateSubscription
+			}
+			if securityDefaultConf.Issuer != "" {
+				defaultSecConf.Issuer = securityDefaultConf.Issuer
+			}
+			if securityDefaultConf.Audience != "" {
+				defaultSecConf.Audience = securityDefaultConf.Audience
+			}
+			// append JwtConfigs
+			defaultSecConfArray = append(defaultSecConfArray, defaultSecConf)
 		}
 	}
-
-	// append JwtConfigs
-	*mgw.Configs.JwtConfigs = append(*mgw.Configs.JwtConfigs, defaultSecConf)
-	return nil
+	return &defaultSecConfArray, nil
 }
 
 func copyDefaultSecurity(securityDefault *wso2v1alpha1.Security, userNameSpace string, owner []metav1.OwnerReference) *wso2v1alpha1.Security {
-
-	securityConf := wso2v1alpha1.SecurityConfig{
-		Certificate: securityDefault.Spec.SecurityConfig[0].Certificate,
-		Audience:    securityDefault.Spec.SecurityConfig[0].Audience,
-		Issuer:      securityDefault.Spec.SecurityConfig[0].Issuer,
+	securityConf := wso2v1alpha1.SecurityConfig{}
+	var securityConfArray []wso2v1alpha1.SecurityConfig
+	for _, securityDefaultConf := range securityDefault.Spec.SecurityConfig {
+		securityConf = wso2v1alpha1.SecurityConfig{
+			Certificate: securityDefaultConf.Certificate,
+			Audience:    securityDefaultConf.Audience,
+			Issuer:      securityDefaultConf.Issuer,
+		}
+		securityConfArray = append(securityConfArray, securityConf)
 	}
 
-	securityConfArray := []wso2v1alpha1.SecurityConfig{}
-
-	securityConfArray = append(securityConfArray, securityConf)
 	return &wso2v1alpha1.Security{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            defaultSecurity,
