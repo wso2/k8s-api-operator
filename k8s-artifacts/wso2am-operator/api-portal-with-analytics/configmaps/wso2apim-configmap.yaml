@@ -284,7 +284,7 @@ data:
     order = 1
 
     [event_listener.properties]
-    notification_endpoint = "https://wso2apim:32001/internal/data/v1/notify"
+    notification_endpoint = "https://localhost:${mgt.transport.https.port}/internal/data/v1/notify"
     username = "${admin.username}"
     password = "${admin.password}"
     'header.X-WSO2-KEY-MANAGER' = "default"
