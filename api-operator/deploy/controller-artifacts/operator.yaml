@@ -33,7 +33,7 @@ spec:
       containers:
         - name: api-operator
           # Replace this with the built image name
-          image: pubudu/k8s-api-operator:v1.2.0-custom2
+          image: renukafernando/k8s-api-operator:1.2.0-v6
           command:
           - api-operator
           imagePullPolicy: Always
