@@ -531,6 +531,18 @@ spec:
                 - delete
                 - patch
                 - watch
+            - apiGroups:
+                - networking.istio.io
+              resources:
+                - "*"
+              verbs:
+                - get
+                - list
+                - create
+                - update
+                - delete
+                - patch
+                - watch
           serviceAccountName: api-operator
       deployments:
         - name: api-operator

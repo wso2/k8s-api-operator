@@ -382,7 +382,7 @@ is products-api. So we should create the API with that name.
 
 - Delete the API and the sample backend service (Target Endpoint resource)
     ```sh
-    >> apictl delete api products
+    >> apictl delete api products-api
     >> apictl delete targetendpoints products-privatejet
 
     Output:
