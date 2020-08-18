@@ -13,25 +13,23 @@
 
     You can skip this section if you are deploying the API Operator via Operators in Openshift console.
       
-    - Grant access to the privileged SCC:
+    - Log in as Admin and create a project called wso2
+        ```
+        >> oc new-project wso2
+        ```
+
+    - Grant access to the privileged SCC
         ```
         >> oc adm policy add-scc-to-user <scc_name> <user_name>
+
+        Eg: oc adm policy add-scc-to-user privileged kubeadmin
         ```
-    - Make sure to grant service accounts access to the privileged SCC.
-    
-        ```
-        >> oc adm policy add-scc-to-user privileged system:serviceaccount:<project-name>:<service-account>
-        ```
-    - Add this command to enable container images with any user.
-    
+
+    - Add this command to enable container images with any user
         ```
         >> oc adm policy add-scc-to-group anyuid system:authenticated
         ```   
-    - Add this command to enable container images that require root.
-    
-        ```
-        >> oc adm policy add-scc-to-user anyuid system:serviceaccount:<your-project>:<service-account>
-        ```  
+ 
 - Navigate to the api-operator/controller-artifacts directory and set the operatorMode to "Route" in the 
   controler_conf.yaml file.
   
@@ -46,7 +44,7 @@
   
 #### Deploying the artifacts
 
-- Navigate to scenarios/scenario-17 directory and deploy the sample backend service using the following command.
+- Navigate to scenarios/scenario-18 directory and deploy the sample backend service using the following command.
     
     ```
     >> apictl apply -f hello-world-service.yaml
