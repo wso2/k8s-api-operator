@@ -17,6 +17,11 @@ can be configured in the apim-config in `controller-configs/controller_conf.yaml
      enabledEventhub: "true"
      ```
   
+- Apply the changes
+    ```$xslt
+    >> apictl apply -f <k8s-api-operator-home>/api-operator/controller-artifacts/controller_conf.yaml
+    ```
+  
 - Then we will create the API and push it to API Manager deployment to obtain JWT access token. Hence we would need API Portal in the Kubernetes cluster to try out this scenario.
 
 
