@@ -525,7 +525,7 @@ and configurations related to API operator and API portal.
 1. [Sample 21: Deploy a service as a managed API using WSO2 API Manager locally](scenarios/scenario-21)
 1. [Sample 22: Generating Backend JWT](scenarios/scenario-22)
 1. [Sample 23: Add Configmaps and Secrets to Micro-gateway Deployment](scenarios/scenario-23)
-
+1. [Sample 24: Connect to WSO2 API Manager as event hub to validate JWT subscriptions](scenarios/scenario-24)
 
 ### Troubleshooting Guide
 

@@ -72,7 +72,7 @@ In this swagger definition, the security schema of the "petstore" service has be
     
     Output:
     NAME           TYPE           CLUSTER-IP     EXTERNAL-IP     PORT(S)                         AGE
-    petstore-jwt   LoadBalancer   10.83.10.125   35.188.53.193   9095:32465/TCP,9090:30163/TCP   4m39s
+    petstore-jwt   LoadBalancer   10.83.10.125   10.106.28.187   9095:32465/TCP,9090:30163/TCP   4m39s
     ```
     - You can see petstore service has been exposed as a managed API.
     - Get the external IP of the managed API's service
