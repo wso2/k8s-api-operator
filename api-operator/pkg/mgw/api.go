@@ -49,8 +49,6 @@ func ExternalIP(client *client.Client, apiInstance *wso2v1alpha1.API, operatorMo
 
 	// ingress mode
 	if strings.EqualFold(operatorMode, ingressMode) {
-		ingressHostConf := ingressConfData[ingressHostName]
-		ipList[ingressHostConf] = true
 		ingResource := &v1beta1.Ingress{}
 		errRes := k8s.Get(client,
 			types.NamespacedName{Namespace: apiInstance.Namespace, Name: ingressConfData[ingressResourceName] + "-" + apiInstance.Name},
@@ -58,6 +56,13 @@ func ExternalIP(client *client.Client, apiInstance *wso2v1alpha1.API, operatorMo
 		if errRes != nil {
 			logger.Error(errRes, "Error getting the Ingress resources")
 		} else {
+			ingressRules := ingResource.Spec.Rules
+			for _, rule := range ingressRules {
+				if rule.Host != "" {
+					ipList[rule.Host] = true
+				}
+			}
+
 			ingresses := ingResource.Status.LoadBalancer.Ingress
 			for _, ingress := range ingresses {
 				if ingress.IP != "" {

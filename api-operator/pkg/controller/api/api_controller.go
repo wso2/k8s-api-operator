@@ -148,7 +148,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	ownerRef := k8s.NewOwnerRef(instance.TypeMeta, instance.ObjectMeta)
 	if errOwnerSet := setApiDependent(&r.client, instance, ownerRef); errOwnerSet != nil {
-		log.Error(errOwnerSet, "Error setting owner ref for API dependent configs")
+		reqLogger.Error(errOwnerSet, "Error setting owner ref for API dependent configs")
 		return reconcile.Result{}, errOwnerSet
 	}
 
@@ -179,10 +179,10 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	for _, err := range confErrs {
 		if err != nil {
 			if errors.IsNotFound(err) {
-				// Required configmap is not found, could have been deleted after reconcile request.
+				// Required configmap is not found. User should add the required config to proceed.
 				// Return and requeue
-				log.Error(err, "Required configmap is not found")
-				return reconcile.Result{}, err
+				reqLogger.Error(err, "Required configmap is not found. Requeue request after 10 seconds")
+				return reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 			}
 			// Error reading the object - requeue the request.
 			return reconcile.Result{}, err
@@ -198,10 +198,11 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	mgwDockerImage := registry.Image{}
 	registryTypeStr := dockerRegistryConf.Data[registryTypeConst]
 	if !registry.IsRegistryType(registryTypeStr) {
-		log.Error(err, "Invalid registry type", "registry-type", registryTypeStr)
+		reqLogger.Error(err, "Invalid registry type. Requeue request after 10 seconds",
+			"registry-type", registryTypeStr)
 		// Registry type is invalid, user should update this with valid type.
 		// Return and requeue
-		return reconcile.Result{}, err
+		return reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 	}
 	mgwDockerImage.RegistryType = registry.Type(dockerRegistryConf.Data[registryTypeConst])
 	mgwDockerImage.RepositoryName = dockerRegistryConf.Data[repositoryNameConst]
@@ -226,9 +227,9 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	// otherwise user may have to wait long time to know the error in configs
 	mgw.Configs.ObservabilityEnabled = strings.EqualFold(controlConfigData[observabilityEnabledConfigKey], "true")
 	if err := mgw.ValidateHpaConfigs(&r.client); err != nil {
-		// error has already logged inside the method
-		// Return and requeue request since config mismatch
-		return reconcile.Result{}, err
+		reqLogger.Error(err, "Invalid HPA configs. Requeue request after 10 seconds")
+		// Return and requeue request since config mismatch. User should reconfigure configs to proceed.
+		return reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 	}
 
 	// if operator mode is "Istio", validate istio configs
@@ -237,15 +238,15 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		// validate Istio configs and setting configs
 		istioConfigs, err = mgw.ValidateIstioConfigs(&r.client, instance)
 		if err != nil {
-			// error has already logged inside the method
-			// Return and requeue request since config mismatch
-			return reconcile.Result{}, err
+			reqLogger.Error(err, "Invalid Istio configs. Requeue request after 10 seconds")
+			// Return and requeue request since config mismatch. User should reconfigure configs to proceed.
+			return reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 		}
 	}
 
 	// if there aren't any ratelimiting objects deployed, new policy.yaml configmap will be created with default policies
 	if err := ratelimit.Handle(&r.client, userNamespace, operatorOwner); err != nil {
-		log.Error(err, "Error in creating default policy configmap")
+		reqLogger.Error(err, "Error in creating default policy configmap")
 	}
 
 	swaggerCmNames := instance.Spec.Definition.SwaggerConfigmapNames
@@ -255,9 +256,11 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		err := k8s.Get(&r.client, types.NamespacedName{Namespace: userNamespace, Name: swaggerCmName}, swaggerConfMap)
 		if err != nil {
 			if errors.IsNotFound(err) {
-				// Swagger configmap is not found, could have been deleted after reconcile request.
+				// Swagger configmap is not found. User should add the required config to proceed.
+				reqLogger.Error(err, "Configmap with API swagger definition is not found. "+
+					"Requeue request after 10 seconds", "configmap", swaggerConfMap)
 				// Return and requeue
-				return reconcile.Result{}, err
+				return reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 			}
 			// Error reading the object - requeue the request.
 			return reconcile.Result{}, err
@@ -266,20 +269,21 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		// fetch swagger data from configmap and loads as open api swagger v3
 		swaggerFileName, errSwagger := maps.OneKey(swaggerConfMap.Data)
 		if errSwagger != nil {
-			log.Error(errSwagger, "Error in the swagger configmap data", "data", swaggerConfMap.Data)
+			reqLogger.Error(errSwagger, "Error in the swagger configmap data", "data", swaggerConfMap.Data)
 			return reconcile.Result{}, errSwagger
 		}
 		swaggerData := swaggerConfMap.Data[swaggerFileName]
 		swaggerFileName = str.GetRandFileName(swaggerFileName) // randomize file name to make it unique
 		swaggerDoc, err := swagger.GetSwaggerV3(&swaggerData)
 		if err != nil {
-			return reconcile.Result{}, nil
+			// Error converting swagger - requeue the request.
+			return reconcile.Result{}, err
 		}
 
 		// Set endpoint deployment mode: sidecar/private-jet
 		epDeployMode, errMode := swagger.EpDeployMode(instance, swaggerDoc)
 		if errMode != nil {
-			log.Error(errMode, "Error setting the endpoint deployment mode")
+			reqLogger.Error(errMode, "Error setting the endpoint deployment mode")
 			return reconcile.Result{}, errMode
 		}
 
@@ -329,22 +333,23 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		swaggerConfMapMgw := k8s.NewConfMapWith(
 			types.NamespacedName{Namespace: userNamespace, Name: formattedSwaggerCmName}, &swaggerDataMgw, nil, ownerRef,
 		)
-		log.Info("Creating swagger configmap for mgw", "name", formattedSwaggerCmName, "namespace", userNamespace)
+		reqLogger.Info("Creating swagger configmap for mgw",
+			"name", formattedSwaggerCmName, "namespace", userNamespace)
 		r.recorder.Event(instance, corev1.EventTypeNormal, "Configs", "Creating swagger configmap for MGW.")
 		// add to kaniko volumes
 		if instance.Spec.UpdateTimeStamp == "" {
 			if err := k8s.CreateIfNotExists(&r.client, swaggerConfMapMgw); err != nil {
-				log.Error(err, "Error creating formatted swagger configmap", "configmap", swaggerConfMapMgw)
+				reqLogger.Error(err, "Error creating formatted swagger configmap", "configmap", swaggerConfMapMgw)
 				r.recorder.Event(instance, eventTypeError, "Configs",
 					"Error creating swagger configmap for MGW.")
 				return reconcile.Result{}, err
 			}
 		} else {
-			log.Info("Creating swagger configmap for updated MGW")
+			reqLogger.Info("Creating swagger configmap for updated MGW")
 			r.recorder.Event(instance, corev1.EventTypeNormal, "SwaggerConfigMap",
 				"Creating swagger configmap for updated MGW.")
 			if err := k8s.Apply(&r.client, swaggerConfMapMgw); err != nil {
-				log.Error(err, "Error creating formatted swagger configmap", "configmap", swaggerConfMapMgw)
+				reqLogger.Error(err, "Error creating formatted swagger configmap", "configmap", swaggerConfMapMgw)
 				r.recorder.Event(instance, eventTypeError, "Configs",
 					"Error creating swagger configmap for MGW.")
 				return reconcile.Result{}, err
@@ -354,7 +359,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 		// Default security
 		if !isDefinedSecurity && resourceLevelSec == 0 {
-			log.Info("Use default security")
+			reqLogger.Info("Use default security")
 
 			defaultJwtConfArray, err := security.Default(&r.client, userNamespace, ownerRef)
 			mgw.Configs.JwtConfigs = defaultJwtConfArray
@@ -382,7 +387,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	errReg := registry.SetRegistry(&r.client, userNamespace, mgwDockerImage)
 	if errReg != nil {
-		log.Error(errReg, "Error setting docker registry")
+		reqLogger.Error(errReg, "Error setting docker registry", "docker_image", mgwDockerImage)
 		return reconcile.Result{}, errReg
 	}
 
@@ -395,10 +400,10 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		// check if the image already exists
 		imageExist, errImage := registry.IsImageExist(&r.client)
 		if errImage != nil {
-			log.Error(errImage, "Error finding the MGW image in registry. Continue with creating Kaniko job",
+			reqLogger.Info("Error finding the MGW image in registry. Continue with creating Kaniko job",
 				"mgw_docker_image", mgwDockerImage)
 		} else {
-			log.Info("Existence of MGW runtime image in the docker registry",
+			reqLogger.Info("Existence of MGW runtime image in the docker registry",
 				"exists", strconv.FormatBool(imageExist), "mgw_docker_image", mgwDockerImage)
 		}
 
@@ -408,51 +413,52 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			r.recorder.Event(instance, corev1.EventTypeNormal, "Configs",
 				"Handling analytics & interceptors, rendering dockerfile & mgw configs, and creating the Kaniko job.")
 			// handling analytics
-			log.Info("Handling analytics")
+			reqLogger.Info("Handling analytics")
 			if err := analytics.Handle(&r.client, userNamespace); err != nil {
+				reqLogger.Error(err, "Error handling analytics")
 				r.recorder.Event(instance, eventTypeError, "Configs", "Error while handling analytics.")
 				return reconcile.Result{}, err
 			}
 
 			// handling interceptors
-			log.Info("Handling interceptors")
+			reqLogger.Info("Handling interceptors")
 			if err := interceptors.Handle(&r.client, instance); err != nil {
-				log.Error(err, "Error handling interceptors")
+				reqLogger.Error(err, "Error handling interceptors")
 				r.recorder.Event(instance, eventTypeError, "Configs", "Error while handling interceptors.")
 				return reconcile.Result{}, err
 			}
 
 			// handling Kaniko docker file
-			log.Info("Rendering the dockerfile for Kaniko job and adding volumes to the Kaniko job")
+			reqLogger.Info("Rendering the dockerfile for Kaniko job and adding volumes to the Kaniko job")
 			if err := kaniko.HandleDockerFile(&r.client, userNamespace, instance.Name, ownerRef); err != nil {
-				log.Error(err, "Error rendering the docker file for Kaniko job and adding volumes to the Kaniko job")
+				reqLogger.Error(err, "Error rendering the docker file for Kaniko job and adding volumes to the Kaniko job")
 				r.recorder.Event(instance, eventTypeError, "KanikoJob",
 					"Error rendering the dockerfile for kaniko job.")
 				return reconcile.Result{}, err
 			}
 
 			// setting the MGW configs from APIM configmap
-			log.Info("Setting the MGW configs from APIM configmap")
+			reqLogger.Info("Setting the MGW configs from APIM configmap")
 			if err := mgw.SetApimConfigs(&r.client); err != nil {
-				log.Error(err, "Error Setting the MGW configs from APIM configmap")
+				reqLogger.Error(err, "Error Setting the MGW configs from APIM configmap")
 				return reconcile.Result{}, err
 			}
 
 			// rendering MGW config file
-			log.Info("Rendering and adding the MGW configuration file to cluster")
+			reqLogger.Info("Rendering and adding the MGW configuration file to cluster")
 			if err := mgw.ApplyConfFile(&r.client, userNamespace, instance.Name, ownerRef); err != nil {
-				log.Error(err, "Error rendering and adding the MGW configuration file to cluster")
+				reqLogger.Error(err, "Error rendering and adding the MGW configuration file to cluster")
 				return reconcile.Result{}, err
 			}
 
 			kanikoArgs := k8s.NewConfMap()
 			err = k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: kanikoArgsConfigs}, kanikoArgs)
 			if err != nil && errors.IsNotFound(err) {
-				log.Info("No kaniko-arguments config map is available in wso2-system namespace")
+				reqLogger.Info("No kaniko-arguments config map is available in wso2-system namespace")
 			}
 
 			var kanikoJob *batchv1.Job
-			log.Info("Deploying the Kaniko job in cluster")
+			reqLogger.Info("Deploying the Kaniko job in cluster")
 			r.recorder.Event(instance, corev1.EventTypeNormal, "KanikoJob", "Deploying kaniko job.")
 			kanikoJob = kaniko.Job(instance, controlConfigData, kanikoArgs.Data[kanikoArguments], ownerRef)
 			if err := controllerutil.SetControllerReference(instance, kanikoJob, r.scheme); err != nil {
@@ -486,11 +492,11 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 				}
 
 				if kanikoJob.Status.Succeeded == 0 {
-					reqLogger.Info("Kaniko job is still not completed and requeue request after 10 seconds",
+					reqLogger.Info("Kaniko job is still not completed and requeue request",
 						"job_status", kanikoJob.Status)
 					r.recorder.Event(instance, corev1.EventTypeWarning, "KanikoJob",
 						"Kaniko job is still not completed. Re-queuing...")
-					return reconcile.Result{Requeue: true, RequeueAfter: 10 * time.Second}, nil
+					return reconcile.Result{Requeue: true}, nil
 				} else {
 					reqLogger.Info("Kaniko job is completed successfully", "job_status", kanikoJob.Status)
 					r.recorder.Event(instance, corev1.EventTypeNormal, "KanikoJob",
@@ -505,7 +511,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	generateK8sArtifactsForMgw := controlConfigData[generateKubernetesArtifactsForMgw]
 	deployMgwRuntime, err := strconv.ParseBool(generateK8sArtifactsForMgw)
 	if err != nil {
-		log.Error(err, "Error reading value for generate k8s artifacts")
+		reqLogger.Error(err, "Error reading value for generate k8s artifacts")
 		return reconcile.Result{}, err
 	}
 	if deployMgwRuntime {
@@ -515,9 +521,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		r.recorder.Event(instance, corev1.EventTypeNormal, "MGWRuntime",
 			fmt.Sprintf("Deploying MGW runtime: %s.", mgwDeployment.Name))
 		if errDeploy != nil {
-			reqLogger.Error(errDeploy, "Error mounting config maps and secrets to" +
-				"mgw deployment")
-			r.recorder.Event(instance, eventTypeError, "MGWDeployment", "Error mounting config maps and " +
+			reqLogger.Error(errDeploy, "Error mounting config maps and secrets to mgw deployment")
+			r.recorder.Event(instance, eventTypeError, "MGWDeployment", "Error mounting config maps and "+
 				"secrets to mgw deployment")
 			return reconcile.Result{}, errDeploy
 		}
@@ -606,11 +611,11 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		err = r.client.Update(context.TODO(), instance)
 
 		if getEndPointValue != "" {
-			log.Info("External IP extracted successfully")
+			reqLogger.Info("External IP extracted successfully")
 			r.recorder.Event(instance, corev1.EventTypeNormal, "MGWservice",
 				fmt.Sprintf("Managed API service endpoint: %s", instance.Spec.ApiEndPoint))
 		} else {
-			log.Info("Warning: External IP could not be extracted!")
+			reqLogger.Info("Warning: External IP could not be extracted!")
 			r.recorder.Event(instance, corev1.EventTypeWarning, "MGWservice",
 				fmt.Sprintf("Managed API service endpoint: %s", instance.Spec.ApiEndPoint))
 		}
@@ -618,7 +623,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		instance.Status.Replicas = instance.Spec.Replicas
 		err = r.client.Status().Update(context.TODO(), instance)
 		err = r.client.Update(context.TODO(), instance)
-		log.Info("Final endpoint value after updating is", "apiEndpoint", instance.Spec.ApiEndPoint)
+		reqLogger.Info("Final endpoint value after updating is", "apiEndpoint", instance.Spec.ApiEndPoint)
 
 		reqLogger.Info("Successfully deployed the API", "api_name", instance.Name)
 		r.recorder.Event(instance, corev1.EventTypeNormal, "Deploy",
@@ -665,7 +670,7 @@ func getOperatorOwner(client *client.Client) (*[]metav1.OwnerReference, error) {
 	depFound := &appsv1.Deployment{}
 	errDeploy := k8s.Get(client, types.NamespacedName{Name: "api_operator", Namespace: wso2NameSpaceConst}, depFound)
 	if errDeploy != nil {
-		noOwner := []metav1.OwnerReference{}
+		var noOwner []metav1.OwnerReference
 		return &noOwner, errDeploy
 	}
 
