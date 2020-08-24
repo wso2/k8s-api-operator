@@ -21,9 +21,9 @@ metadata:
   namespace: wso2-system
 data:
   #mgw toolkit image to initialize/setup the micro gw project
-  mgwToolkitImg: wso2am/wso2micro-gw-toolkit:3.2.0-rc1
+  mgwToolkitImg: wso2am/wso2micro-gw-toolkit:3.2.0-rc2
   #mgw runtime image to use in the mgw executable
-  mgwRuntimeImg: wso2/wso2micro-gw:3.2.0-rc1
+  mgwRuntimeImg: wso2/wso2micro-gw:3.2.0-rc2
   #kaniko image for the kaniko pod which builds the mgw api runtime and pushes to the registry
   kanikoImg: gcr.io/kaniko-project/executor:v0.24.0
   #Required CPU usage for pods.   Default-> resourceRequestCPU: "1000m"
