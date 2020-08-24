@@ -40,10 +40,15 @@ func IsImageExists(auth RegAuth, image string, tag string) (bool, error) {
 	}
 
 	// remove registry name if exists in the image name
-	imageWithoutReg := image
+	var imageWithoutReg string
 	splits := strings.Split(image, "/")
-	if len(splits) == 3 {
+	switch len(splits) {
+	case 3: // image in format "my-reg-host:5000/operator-demo/pets:v1"
 		imageWithoutReg = fmt.Sprintf("%s/%s", splits[1], splits[2])
+	case 2: // image in format "my-reg-host:5000/pets:v1"
+		imageWithoutReg = splits[1]
+	default:
+		imageWithoutReg = image
 	}
 
 	tags, errRepo := hub.Tags(imageWithoutReg)
