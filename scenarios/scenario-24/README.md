@@ -14,10 +14,29 @@ WSO2 API Manager on Kubernetes.
  
 - Enabling for connecting to WSO2 API Manager as event hub for retrieving API and subscription data from API Manager
 can be configured in the apim-config in `controller-configs/controller_conf.yaml`.
-- You can set the value to true. 
+- You can set enabledEventhub value to true. 
+- You can configure API Manager URL by providing the throttleEndpoint and the message broker connection URL by providing
+jmsConnectionProvider values.
      ```
      # Enable configurations for retrieving API and subscription data from API Manager.
      enabledEventhub: "true"
+     #Format: hostname_of_API_Portal:Default_port
+     throttleEndpoint: "wso2apim.wso2:9443"
+     #Format: hostname_of_API_Portal:JMS_port
+     jmsConnectionProvider: "wso2apim.wso2:5672"
+     ```
+- You can configure User name and password as base64 encoded for APIM (The internal data API) in the apim-secret in `controller-configs/controller_conf.yaml`.
+     ```
+     apiVersion: v1
+     kind: Secret
+     metadata:
+        name: apim-secret
+        namespace: wso2-system
+     type: Opaque
+     data:
+        #Base64 encoded username and password for APIM
+        username: YWRtaW4=
+        password: YWRtaW4=
      ```
   
 - Apply the changes
