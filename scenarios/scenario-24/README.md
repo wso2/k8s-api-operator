@@ -3,6 +3,9 @@
 - When you enable connecting to WSO2 API Manager as event hub, micro gateway will connect to API Manager and retrieve the
 API and subscriptions related data from API Manager.
 - By connecting to WSO2 API Manager as event hub you can validate JWT subscriptions.
+- You need to run WSO2 API manager where there is access from Micro gateway. In this scenario we are using 
+Kubernetes cluster to deploy WSO2 API Manager. You can follow the steps mentioned in [here](https://github.com/wso2/K8s-api-operator#step-4-install-the-api-portal-and-security-token-service) to deploy
+WSO2 API Manager on Kubernetes.
 
  ***Important:***
 > Follow the main README and deploy the api-operator and configuration files. Make sure to set the analyticsEnabled to "true" and deploy analytics secret with credentials to analytics server and certificate, if you want to check analytics.
@@ -23,7 +26,6 @@ can be configured in the apim-config in `controller-configs/controller_conf.yaml
     ```
   
 - Then we will create the API and push it to API Manager deployment to obtain JWT access token. Hence we would need API Portal in the Kubernetes cluster to try out this scenario.
-
 
 - Navigate to scenarios/scenario-24 directory.
 
