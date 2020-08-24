@@ -1,4 +1,4 @@
-## Scenario 24 - Connect to WSO2 API Manager as event hub to validate JWT subscriptions
+## Scenario 24 - Using event hub in WSO2 API Manager
 - This scenario describes how to connect to WSO2 API Manager as event hub.
 - When you enable connecting to WSO2 API Manager as event hub, micro gateway will connect to API Manager and retrieve the
 API and subscriptions related data from API Manager.

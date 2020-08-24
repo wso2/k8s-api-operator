@@ -23,4 +23,4 @@
 1. [Sample 21: Deploy a service as a managed API using WSO2 API Manager locally](scenario-21)
 1. [Sample 22: Generating Backend JWT](scenario-22)
 1. [Sample 23: Add Config Maps and Secrets to Micro-gateway Deployment](scenario-23)
-1. [Sample 24: Connect to WSO2 API Manager as event hub to validate JWT subscriptions](scenario-24)
+1. [Sample 24: Using event hub in WSO2 API Manager](scenario-24)
