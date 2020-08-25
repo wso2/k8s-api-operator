@@ -154,6 +154,8 @@ func ValidateIstioConfigs(client *client.Client, api *wso2v1alpha1.API) (*IstioC
 	istioConfigMap := k8s.NewConfMap()
 	if err := k8s.Get(client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: istioConfMapName},
 		istioConfigMap); err != nil {
+		logVsc.Error(err, "Istio configs configmap is empty", "configmap", istioConfMapName,
+			"key", istioGatewayConfKey)
 		return nil, err
 	}
 
@@ -172,7 +174,7 @@ func ValidateIstioConfigs(client *client.Client, api *wso2v1alpha1.API) (*IstioC
 		istioConfigs.Host = api.Spec.IngressHostname
 	} else if istioConfigMap.Data[istioHostConfKey] == "" {
 		err := errors.New("istio gateway host config is empty")
-		logVsc.Error(err, "Istio gateway host config is empty", "configmap", istioConfMapName,
+		logVsc.Error(err, "Istio gateway host config is empty", "configmap", istioConfigMap,
 			"key", istioHostConfKey)
 		return nil, err
 	} else {
@@ -182,12 +184,14 @@ func ValidateIstioConfigs(client *client.Client, api *wso2v1alpha1.API) (*IstioC
 	// TLS
 	if istioConfigMap.Data[istiotlsConfKey] == "" {
 		err := errors.New("istio tls config is empty")
-		logVsc.Error(err, "Istio tls config is empty", "configmap", istioConfMapName,
+		logVsc.Error(err, "Istio tls config is empty", "configmap", istioConfigMap,
 			"key", istioGatewayConfKey)
 		return nil, err
 	}
 	tlsConf := &tlsRoutesConfigs{}
 	if err := yaml.Unmarshal([]byte(istioConfigMap.Data[istiotlsConfKey]), tlsConf); err != nil {
+		logVsc.Error(err, "Istio tls config are invalid", "configmap", istioConfigMap,
+			"key", istiotlsConfKey)
 		return nil, err
 	}
 	istioConfigs.Tls = tlsConf
@@ -195,7 +199,8 @@ func ValidateIstioConfigs(client *client.Client, api *wso2v1alpha1.API) (*IstioC
 	// CORS policy
 	cors := &istioapi.CorsPolicy{}
 	if err := yaml.Unmarshal([]byte(istioConfigMap.Data[istioCorsPolicyConfKey]), cors); err != nil {
-		logVsc.Error(err, "Istio CORS policy configs are invalid", "configmap", istioConfigMap)
+		logVsc.Error(err, "Istio CORS policy configs are invalid", "configmap", istioConfigMap,
+			"key", istioCorsPolicyConfKey)
 		return nil, err
 	}
 	istioConfigs.CorsPolicy = cors
