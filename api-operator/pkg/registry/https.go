@@ -18,6 +18,8 @@ package registry
 
 import (
 	"fmt"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/registry/utils"
+	"strings"
 )
 
 const HTTPS Type = "HTTPS"
@@ -27,7 +29,24 @@ var httpsReg = *dockerHub
 
 func getHttpsRegConfigFunc(repoName string, imgName string, tag string) *Config {
 	httpsReg.ImagePath = fmt.Sprintf("%s/%s:%s", repoName, imgName, tag)
+	httpsReg.IsImageExist = func(config *Config, auth utils.RegAuth, image string, tag string) (b bool, err error) {
+		logger.Info("Checking for image in HTTPS registry", "Registry URL", auth.RegistryUrl)
+		return utils.IsImageExists(auth, getImageWithoutReg(image), tag)
+	}
 	return &httpsReg
+}
+
+// getImageWithoutReg remove registry host name if it exists in the image name
+func getImageWithoutReg(image string) string {
+	splits := strings.Split(image, "/")
+	switch len(splits) {
+	case 3: // image in format "my-reg-host:5000/operator-demo/pets:v1"
+		return fmt.Sprintf("%s/%s", splits[1], splits[2])
+	case 2: // image in format "my-reg-host:5000/pets:v1"
+		return splits[1]
+	default:
+		return image
+	}
 }
 
 func init() {
