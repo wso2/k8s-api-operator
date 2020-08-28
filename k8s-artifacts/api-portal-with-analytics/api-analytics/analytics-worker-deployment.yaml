@@ -37,9 +37,21 @@ spec:
         - name: init-wait-mysql
           image: alpine
           command: ["sh", "-c", "for i in $(seq 1 300); do nc -zvw1 wso2apim-with-analytics-rdbms-service 3306 && exit 0 || sleep 3; done; exit 1"]
+        - name: init-mysql-connector-download
+          image: busybox:1.32
+          command:
+            - /bin/sh
+            - "-c"
+            - |
+              set -e
+              connector_version=8.0.17
+              wget https://repo1.maven.org/maven2/mysql/mysql-connector-java/${connector_version}/mysql-connector-java-${connector_version}.jar -P /mysql-connector-jar/
+          volumeMounts:
+            - name: mysql-connector-jar
+              mountPath: /mysql-connector-jar
       containers:
         - name: wso2apim-analytics
-          image: pubudu/wso2am-analytics-worker:3.2.0-beta
+          image: wso2/wso2am-analytics-worker:3.2.0
           resources:
             limits:
               memory: "2Gi"
@@ -100,9 +112,13 @@ spec:
             containerPort: 7577
             protocol: "TCP"
           volumeMounts:
+          - name: mysql-connector-jar
+            mountPath: /home/wso2carbon/wso2-artifact-volume/lib
           - name: apim-analytics-conf-worker
             mountPath: /home/wso2carbon/wso2-config-volume/conf/worker
       volumes:
+      - name: mysql-connector-jar
+        emptyDir: {}
       - name: apim-analytics-conf-worker
         configMap:
           name: worker-conf

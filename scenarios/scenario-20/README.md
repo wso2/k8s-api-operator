@@ -25,8 +25,13 @@ a target endpoint of mode Private Jet.
 
 
 ### 1. Prerequisites
+
+#### 1.1. [Kubernetes v1.16 or above](https://Kubernetes.io/docs/setup/) <br>
+
+  - Minimum CPU : 8vCPU
+  - Minimum Memory : 8GB
  
-#### 1.1. Kubernetes Metrics Server
+#### 1.2. Kubernetes Metrics Server
 
 [Metrics Server](https://github.com/kubernetes-sigs/metrics-server) collects resource metrics from Kubelets and exposes
 them in Kubernetes apiserver through [Metrics API](https://github.com/kubernetes/metrics)
@@ -51,7 +56,7 @@ for use by Horizontal Pod Autoscaler and Vertical Pod Autoscaler
     clusterrolebinding.rbac.authorization.k8s.io/system:metrics-server created
     ```
 
-#### 1.2. Prometheus Monitoring System
+#### 1.3. Prometheus Monitoring System
 
 First, we needs to install **Prometheus** monitoring system in the kubernetes cluster.
 Lets use the [Prometheus Operator](https://github.com/coreos/prometheus-operator/tree/v0.39.0) for this installation.
@@ -105,7 +110,7 @@ Lets use the [Prometheus Operator](https://github.com/coreos/prometheus-operator
 - Test the Prometheus deployment by visiting the url `http://<NODE-IP>:30900/graph`.
     ![Prometheus Dashboard](images/prometheus-dashboard.png)
 
-#### 1.3. Prometheus Adapter
+#### 1.4. Prometheus Adapter
 
 - Create namespace `custom-metrics`.
     ```sh
@@ -371,7 +376,7 @@ is products-api. So we should create the API with that name.
   
     Output:
     NAME                  REFERENCE                        TARGETS              MINPODS   MAXPODS   REPLICAS   AGE
-    products              Deployment/products              200m/200m, 18%/50%   1         5         1          6m52s
+    products-api          Deployment/products              200m/200m, 18%/50%   1         5         1          6m52s
     products-privatejet   Deployment/products-privatejet   166m/100m, 5%/50%    1         6         2          8m29s
     ```
     **NOTE:** Wait for fem minutes if the metrics values is `<unknown>`.

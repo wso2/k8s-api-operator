@@ -35,17 +35,17 @@ In this document, we will walk through on the following.
 
 - An account in DockerHub or private docker registry
 
-- Download [k8s-api-operator-1.2.0-beta.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.2.0-beta/k8s-api-operator-1.2.0-beta.zip)
+- Download [k8s-api-operator-1.2.0.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.2.0-beta/k8s-api-operator-1.2.0-beta.zip)
 and extract the zip
 
     1. This zip contains the artifacts that required to deploy in Kubernetes.
-    2. Extract k8s-api-operator-1.2.0-beta.zip
+    2. Extract k8s-api-operator-1.2.0.zip
     
     ```sh
-    >> cd k8s-api-operator-1.2.0-beta
+    >> cd k8s-api-operator-1.2.0
     ```
  
-    **_Note:_** You need to run all commands from within the ***k8s-api-operator-1.2.0-beta*** directory.
+    **_Note:_** You need to run all commands from within the ***k8s-api-operator-1.2.0*** directory.
 
 <br />
 
@@ -118,7 +118,9 @@ This will deploy a pod and service for the sample service.
 
 #### Step 2: Configure API Controller
 
-- Download [API controller v3.2.0-beta](https://github.com/wso2/product-apim-tooling/releases/tag/v3.2.0-beta).
+- Download API controller v3.2.0 or the latest v3.1.x from the [API Manager Tooling web site](https://wso2.com/api-management/tooling/)
+
+    - Under Dev-Ops Tooling section, you can download the tool based on your operating system.
 
 - Extract the API controller distribution and navigate inside the extracted folder using the command-line tool
 
@@ -133,10 +135,6 @@ This will deploy a pod and service for the sample service.
 
 #### Step 3: Install API Operator
 
-- Set the operator version as `v1.2.0-beta` by executing following in a terminal.
-    ```sh
-    >> export WSO2_API_OPERATOR_VERSION=v1.2.0-beta
-    ```
 - Execute the following command to install API Operator interactively and configure repository to push the built managed
 API image.
 - Select "Docker Hub" as the repository type.
@@ -422,7 +420,7 @@ to perform the following actions.
 - Generate a JWT access token 
 
 The following commands will help you to push the API to the API portal in Kubernetes.
-Commands of the API Controller can be found [here](https://github.com/wso2/product-apim-tooling/blob/v3.2.0-beta/import-export-cli/docs/apictl.md) 
+Commands of the API Controller can be found [here](https://github.com/wso2/product-apim-tooling/blob/3.2.x/import-export-cli/docs/apictl.md) 
 
 
 - Add the API portal as an environment to the API controller using the following command.

@@ -10,6 +10,10 @@
 > "true" and deploy analytics secret with credentials to analytics server and certificate, if you want to check
 > analytics.
 
+### Installation Prerequisites
+
+- [Kubernetes v1.16 or above](https://Kubernetes.io/docs/setup/) <br>
+
 #### Installing Knative
 
 Follow the document
@@ -90,7 +94,7 @@ In this swagger definition, the backend service of the "hello-world-serverless" 
 
 - Verify pods in the namespace **micro** before invoking the API.
     ```sh
-    >> apictl get po -n micro
+    >> apictl get pods -n micro
     
     Output:
     No resources found in micro namespace.
