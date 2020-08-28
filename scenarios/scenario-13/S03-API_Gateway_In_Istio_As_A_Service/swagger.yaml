@@ -23,19 +23,6 @@ x-wso2-basePath: /storemep/{version}
 x-wso2-production-endpoints:
   urls:
     - http://products
-x-wso2-cors:
-  accessControlAllowOrigins:
-    - https://localhost:9443
-    - https://wso2apim:32001
-  accessControlAllowHeaders:
-    - Authorization
-    - Content-Type
-  accessControlAllowMethods:
-    - GET
-    - PUT
-    - POST
-    - DELETE
-  accessControlAllowCredentials: true
 paths:
   /products:
     get:
