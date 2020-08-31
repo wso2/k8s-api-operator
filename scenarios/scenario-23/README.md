@@ -138,7 +138,7 @@ without altering the mgw-deployment-configs in `controller-configs/controller_co
 
 - Get the pods 
     ```
-    >> apictl get pods 
+    >> apictl get pods -n micro
             
     Output:
     NAME                            READY   STATUS      RESTARTS   AGE

@@ -35,7 +35,7 @@ spec:
     spec:
       containers:
         - name: wso2apim
-          image: pubudu/wso2am:3.2.0-beta
+          image: wso2/wso2am:3.2.0
           resources:
             limits:
               memory: "2Gi"
@@ -47,7 +47,7 @@ spec:
                 - /bin/bash
                 - -c
                 - nc -z localhost 9443
-            initialDelaySeconds: 300
+            initialDelaySeconds: 240
             periodSeconds: 10
           readinessProbe:
             exec:
@@ -55,7 +55,7 @@ spec:
                 - /bin/bash
                 - -c
                 - nc -z localhost 9443
-            initialDelaySeconds: 300
+            initialDelaySeconds: 240
             periodSeconds: 10
           imagePullPolicy: IfNotPresent
           ports:

@@ -10,32 +10,34 @@ This works in Istio permissive mode and Strict MTLS mode.
 
 - [Kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
 
-- [Kubernetes v1.14 or above](https://Kubernetes.io/docs/setup/) <br>
+- [Kubernetes v1.15 or above](https://Kubernetes.io/docs/setup/) <br>
 
     - Minimum CPU : 6vCPU
     - Minimum Memory : 6GB
     
-- [Istio v1.3.x or above](https://istio.io/docs/setup/platform-setup/)
+- [Istio v1.6.5 or above](https://istio.io/docs/setup/platform-setup/)
 
 - An account in DockerHub or private docker registry
 
-- Download [k8s-api-operator-1.2.0-beta.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.2.0-beta/k8s-api-operator-1.2.0-beta.zip) and extract the zip
+- Download [k8s-api-operator-1.2.0.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.2.0-beta/k8s-api-operator-1.2.0-beta.zip) and extract the zip
 
     1. This zip contains the artifacts that required to deploy in Kubernetes.
-    2. Extract k8s-api-operator-1.2.0-beta.zip
+    2. Extract k8s-api-operator-1.2.0.zip
     
     ```sh
-    >> cd k8s-api-operator-1.2.0-beta/scenarios/scenario-13/S03-API_Gateway_In_Istio_As_A_Service
+    >> cd k8s-api-operator-1.2.0/scenarios/scenario-13/S03-API_Gateway_In_Istio_As_A_Service
     ```
  
     **_Note:_** You need to run all commands from within the ```S03-API_Gateway_In_Istio_As_A_Service``` directory and
-    consider `k8s-api-operator-1.2.0-beta` as the `<K8S_API_OPERATOR_HOME>`.
+    consider `k8s-api-operator-1.2.0` as the `<K8S_API_OPERATOR_HOME>`.
 
 <br />
 
 #### Step 1: Configure API Controller
 
-- Download [API controller v3.2.0-beta](https://github.com/wso2/product-apim-tooling/releases/tag/v3.2.0-beta).
+- Download API controller v3.2.0 or the latest v3.2.x from the [API Manager Tooling web site](https://wso2.com/api-management/tooling/)
+
+    - Under Dev-Ops Tooling section, you can download the tool based on your operating system.
 
 - Extract the API controller distribution and navigate inside the extracted folder using the command-line tool
 
