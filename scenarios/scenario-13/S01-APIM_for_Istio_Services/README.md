@@ -35,7 +35,7 @@ This works only in Istio permissive mode.
 
 #### Step 1: Configure API Controller
 
-- Download API controller v3.2.0 or the latest v3.1.x from the [API Manager Tooling web site](https://wso2.com/api-management/tooling/)
+- Download API controller v3.2.0 or the latest v3.2.x from the [API Manager Tooling web site](https://wso2.com/api-management/tooling/)
 
     - Under Dev-Ops Tooling section, you can download the tool based on your operating system.
 
