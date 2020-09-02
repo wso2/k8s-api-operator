@@ -152,7 +152,11 @@ By changing the following artifacts, you can point the API Operator to use the A
     ```shell script
     >> apictl delete api <API_NAME> -n <NAMESPACE>
     ```
-- Delete Analytics configs
+- Delete WSO2 APIM deployment and WSO2 Analytics deployment
     ```shell script
     >> apictl delete -Rf k8s-artifacts/wso2am-operator/api-portal-with-analytics
+    ```
+- Delete Analytics configs
+    ```shell script
+    >> apictl delete -f api-operator/apim-analytics-configs
     ```

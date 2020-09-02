@@ -176,7 +176,8 @@ This guide is based on https://istio.io/docs/tasks/traffic-management/ingress/se
 
 #### Step 5: Deploy Microservices
 
-- When you execute this command, it creates a namespace called `micro` and enable Istio sidecar injection for that namespace. Also this deploys 3 microservices.
+- When you execute this command, it creates a namespace called `micro` and **enable Istio sidecar injection** for that
+namespace. Also this deploys 3 microservices.
 
     ```sh
     >> apictl create -f microservices.yaml
@@ -231,9 +232,9 @@ This guide is based on https://istio.io/docs/tasks/traffic-management/ingress/se
 
 #### Step 8: Invoke the API
 
-- Retrieve the IP address of the Ingress gateway.
+- Retrieve the `IP` address of the Ingress gateway.
 
-- Use EXTERNAL-IP as the \<ingress_gateway_host> based on the output of the following command.  
+- Use `EXTERNAL-IP` as the `<ingress_gateway_host>` based on the output of the following command.  
 
     ```sh
     >> apictl get svc istio-ingressgateway -n istio-system
@@ -293,11 +294,14 @@ This guide is based on https://istio.io/docs/tasks/traffic-management/ingress/se
     ```
 
 - Import the API to API Manager
+    When prompted for username and password, enter `admin`, `admin` for username and password.
     ```sh
     >> apictl add-env \
             -e dev \
             --apim https://localhost:9443 \
             --token https://localhost:9443/oauth2/token
+  
+    >> apictl login dev -k
   
     >> apictl import-api -f online-store-api-sc/ -e dev -k 
     ```

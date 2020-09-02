@@ -14,9 +14,9 @@ WSO2 API Manager on Kubernetes.
  
 - Enabling for connecting to WSO2 API Manager as event hub for retrieving API and subscription data from API Manager
 can be configured in the apim-config in `controller-configs/controller_conf.yaml`.
-- You can set enabledEventhub value to true. 
-- You can configure API Manager URL by providing the throttleEndpoint and the message broker connection URL by providing
-jmsConnectionProvider values.
+- You can set `enabledEventhub` value to `true`. 
+- You can configure API Manager URL by providing the `throttleEndpoint` and the message broker connection URL by providing
+`jmsConnectionProvider` values.
      ```
      # Enable configurations for retrieving API and subscription data from API Manager.
      enabledEventhub: "true"
@@ -46,7 +46,7 @@ jmsConnectionProvider values.
   
 - Then we will create the API and push it to API Manager deployment to obtain JWT access token. Hence we would need API Portal in the Kubernetes cluster to try out this scenario.
 
-- Navigate to scenarios/scenario-24 directory.
+- Navigate to `scenarios/scenario-24` directory.
 
 - Deploy Kubernetes secret of the public cert of the JWT token issues and JWT Security custom resource.
 - In this JWT Security custom resource the `validateSubscription` field is set to true to validate JWT subscriptions.
@@ -141,7 +141,7 @@ In this swagger definition, the security schema of the "petstore" service has be
      ```sh
       >> apictl get-keys -n Petstore-Jwt -v v1 -e k8s --provider admin -k
   
-_Note:_** You also have the option to generate a token by logging into the devportal,
+**Note:** You also have the option to generate a token by logging into the devportal,
 creating an application, subscribing to an API and generating JWT token. 
 
  

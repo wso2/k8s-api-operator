@@ -179,16 +179,30 @@ API image.
 
 #### Step 4: Install the API portal and security token service
 
-- Install API Portal and security token service under a namespace called "wso2"
+[WSO2AM Kubernetes Operator](https://github.com/wso2/k8s-wso2am-operator) is used to deploy API portal and security
+token service.
+
+- Install the WSO2AM Operator in Kubernetes.
 
     ```sh
-    >> apictl apply -f k8s-artifacts/api-portal/
+    >> apictl install wso2am-operator
+    
+    namespace/wso2-system created
+    serviceaccount/wso2am-pattern-1-svc-account created
+    ...
+    configmap/wso2am-p1-apim-2-conf created
+    configmap/wso2am-p1-mysql-dbscripts created
+    [Setting to K8s Mode]
+    ```
+
+- Install API Portal and security token service under a namespace called "wso2"
+    ```sh
+    >> apictl apply -f k8s-artifacts/wso2am-operator/api-portal/
     
     Output:
     namespace/wso2 created
     configmap/apim-conf created
-    deployment.apps/wso2apim created
-    service/wso2apim created
+    apimanager.apim.wso2.com/custom-pattern-1 created
     ```
 
 - Access API Portal and security token service
