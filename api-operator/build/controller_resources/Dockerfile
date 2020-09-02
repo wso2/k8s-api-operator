@@ -17,7 +17,7 @@
 #This image will be used by Kaniko pod to create the micro-gw image
 
 # Custom image with java and toolkit has been build for stage1
-FROM wso2am/wso2micro-gw-toolkit:3.0.0-beta2 as toolkit
+FROM wso2am/wso2micro-gw-toolkit:3.2.0 as toolkit
 #init the micro-gw project
 RUN micro-gw init project
 #copy swagger definitions to the project location

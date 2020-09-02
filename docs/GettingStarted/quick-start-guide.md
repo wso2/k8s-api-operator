@@ -10,7 +10,7 @@ compose several microservices into individual APIs. With this users will be able
 as managed API in Kubernetes environment without any additional work.
 
 
-![Alt text](docs/images/K8s-API-Operator.png?raw=true "K8s API Operator")
+![Alt text](../images/K8s-API-Operator.png?raw=true "K8s API Operator")
 
 ## Quick Start Guide
 
@@ -35,17 +35,17 @@ In this document, we will walk through on the following.
 
 - An account in DockerHub or private docker registry
 
-- Download [k8s-api-operator-1.2.0-beta.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.2.0-beta/k8s-api-operator-1.2.0-beta.zip)
+- Download [k8s-api-operator-1.2.0.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.2.0/k8s-api-operator-1.2.0.zip)
 and extract the zip
 
     1. This zip contains the artifacts that required to deploy in Kubernetes.
-    2. Extract k8s-api-operator-1.2.0-beta.zip
+    2. Extract k8s-api-operator-1.2.0.zip
     
     ```sh
-    >> cd k8s-api-operator-1.2.0-beta
+    >> cd k8s-api-operator-1.2.0
     ```
  
-    **_Note:_** You need to run all commands from within the ***k8s-api-operator-1.2.0-beta*** directory.
+    **_Note:_** You need to run all commands from within the ***k8s-api-operator-1.2.0*** directory.
 
 <br />
 
@@ -118,7 +118,9 @@ This will deploy a pod and service for the sample service.
 
 #### Step 2: Configure API Controller
 
-- Download [API controller v3.2.0-beta](https://github.com/wso2/product-apim-tooling/releases/tag/v3.2.0-beta).
+- Download API controller v3.2.0 or the latest v3.2.x from the [API Manager Tooling web site](https://wso2.com/api-management/tooling/)
+
+    - Under Dev-Ops Tooling section, you can download the tool based on your operating system.
 
 - Extract the API controller distribution and navigate inside the extracted folder using the command-line tool
 
@@ -133,10 +135,6 @@ This will deploy a pod and service for the sample service.
 
 #### Step 3: Install API Operator
 
-- Set the operator version as `v1.2.0-beta` by executing following in a terminal.
-    ```sh
-    >> export WSO2_API_OPERATOR_VERSION=v1.2.0-beta
-    ```
 - Execute the following command to install API Operator interactively and configure repository to push the built managed
 API image.
 - Select "Docker Hub" as the repository type.
@@ -181,16 +179,30 @@ API image.
 
 #### Step 4: Install the API portal and security token service
 
-- Install API Portal and security token service under a namespace called "wso2"
+[WSO2AM Kubernetes Operator](https://github.com/wso2/k8s-wso2am-operator) is used to deploy API portal and security
+token service.
+
+- Install the WSO2AM Operator in Kubernetes.
 
     ```sh
-    >> apictl apply -f k8s-artifacts/api-portal/
+    >> apictl install wso2am-operator
+    
+    namespace/wso2-system created
+    serviceaccount/wso2am-pattern-1-svc-account created
+    ...
+    configmap/wso2am-p1-apim-2-conf created
+    configmap/wso2am-p1-mysql-dbscripts created
+    [Setting to K8s Mode]
+    ```
+
+- Install API Portal and security token service under a namespace called "wso2"
+    ```sh
+    >> apictl apply -f k8s-artifacts/wso2am-operator/api-portal/
     
     Output:
     namespace/wso2 created
     configmap/apim-conf created
-    deployment.apps/wso2apim created
-    service/wso2apim created
+    apimanager.apim.wso2.com/custom-pattern-1 created
     ```
 
 - Access API Portal and security token service
@@ -386,7 +398,7 @@ The endpoint of our microservice is referred in the API definition.
     You can find a sample token below.
     
     ```sh
-   TOKEN=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6Ik5UZG1aak00WkRrM05qWTBZemM1TW1abU9EZ3dNVEUzTVdZd05ERTVNV1JsWkRnNE56YzRaQT09In0.eyJhdWQiOiJodHRwOlwvXC9vcmcud3NvMi5hcGltZ3RcL2dhdGV3YXkiLCJzdWIiOiJhZG1pbkBjYXJib24uc3VwZXIiLCJhcHBsaWNhdGlvbiI6eyJvd25lciI6ImFkbWluIiwidGllciI6IjEwUGVyTWluIiwibmFtZSI6InNhbXBsZS1jcmQtYXBwbGljYXRpb24iLCJpZCI6NCwidXVpZCI6bnVsbH0sInNjb3BlIjoiYW1fYXBwbGljYXRpb25fc2NvcGUgZGVmYXVsdCIsImlzcyI6Imh0dHBzOlwvXC93c28yYXBpbTozMjAwMVwvb2F1dGgyXC90b2tlbiIsInRpZXJJbmZvIjp7fSwia2V5dHlwZSI6IlBST0RVQ1RJT04iLCJzdWJzY3JpYmVkQVBJcyI6W10sImNvbnN1bWVyS2V5IjoieF8xal83MW11dXZCb01SRjFLZnVLdThNOVVRYSIsImV4cCI6MzczMTQ5Mjg2MSwiaWF0IjoxNTg0MDA5MjE0LCJqdGkiOiJkYTA5Mjg2Yy03OGEzLTQ4YjgtYmFiNy1hYWZiYzhiMTUxNTQifQ.MKmGDwh855NrZ2wOvXO7TwFbCtsgsOFuoZW4DBVIbJ1KQ2F6TgTgBbtzBUvrYGPslEExMemhepfvvlYv8Gd6MMo3GVH4aO8AKyc8gHmeIQ8MQtXGn7u9N00ZW3_9JWaQkU-OYEDsLHvKKHzO0t2umaskSyCS2UkAS4wIT_szZ5sm-O-ez4nKGeJmESiV-1EchFjOhLpEH4p9wIj3MlKnZrIcJByRKK9ZGaHBqxwwYuJtMCDNa2wFAPMOh-45eabIUdo1KUO3gZLVcME93aza1t1jzL9mFsx0LGaXIxB7klrDuBCAdG9Yi3O7-3WUF74QaS2tmCxW36JhhOJ5DdacfQ
+   TOKEN=eyJ4NXQiOiJNell4TW1Ga09HWXdNV0kwWldObU5EY3hOR1l3WW1NNFpUQTNNV0kyTkRBelpHUXpOR00wWkdSbE5qSmtPREZrWkRSaU9URmtNV0ZoTXpVMlpHVmxOZyIsImtpZCI6Ik16WXhNbUZrT0dZd01XSTBaV05tTkRjeE5HWXdZbU00WlRBM01XSTJOREF6WkdRek5HTTBaR1JsTmpKa09ERmtaRFJpT1RGa01XRmhNelUyWkdWbE5nX1JTMjU2IiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiJhZG1pbkBjYXJib24uc3VwZXIiLCJhdWQiOiJKRmZuY0djbzRodGNYX0xkOEdIVzBBR1V1ME1hIiwibmJmIjoxNTk3MjExOTUzLCJhenAiOiJKRmZuY0djbzRodGNYX0xkOEdIVzBBR1V1ME1hIiwic2NvcGUiOiJhbV9hcHBsaWNhdGlvbl9zY29wZSBkZWZhdWx0IiwiaXNzIjoiaHR0cHM6XC9cL3dzbzJhcGltOjMyMDAxXC9vYXV0aDJcL3Rva2VuIiwiZXhwIjoxOTMwNTQ1Mjg2LCJpYXQiOjE1OTcyMTE5NTMsImp0aSI6IjMwNmI5NzAwLWYxZjctNDFkOC1hMTg2LTIwOGIxNmY4NjZiNiJ9.UIx-l_ocQmkmmP6y9hZiwd1Je4M3TH9B8cIFFNuWGHkajLTRdV3Rjrw9J_DqKcQhQUPZ4DukME41WgjDe5L6veo6Bj4dolJkrf2Xx_jHXUO_R4dRX-K39rtk5xgdz2kmAG118-A-tcjLk7uVOtaDKPWnX7VPVu1MUlk-Ssd-RomSwEdm_yKZ8z0Yc2VuhZa0efU0otMsNrk5L0qg8XFwkXXcLnImzc0nRXimmzf0ybAuf1GLJZyou3UUTHdTNVAIKZEFGMxw3elBkGcyRswzBRxm1BrIaU9Z8wzeEv4QZKrC5NpOpoNJPWx9IgmKdK2b3kIWJEFreT3qyoGSBrM49Q
     ```
     Copy and paste the above token in the command line. Now you can invoke the API using the cURL command as below.
     
@@ -422,7 +434,7 @@ to perform the following actions.
 - Generate a JWT access token 
 
 The following commands will help you to push the API to the API portal in Kubernetes.
-Commands of the API Controller can be found [here](https://github.com/wso2/product-apim-tooling/blob/v3.2.0-beta/import-export-cli/docs/apictl.md) 
+Commands of the API Controller can be found [here](https://github.com/wso2/product-apim-tooling/blob/3.2.x/import-export-cli/docs/apictl.md) 
 
 
 - Add the API portal as an environment to the API controller using the following command.
@@ -467,14 +479,6 @@ Commands of the API Controller can be found [here](https://github.com/wso2/produ
 
 - By default the API is secured with JWT. Hence a valid JWT token is needed to invoke the API.
 You can obtain a JWT token using the API Controller command as below.
-    
-    ```sh
-    >> apictl set --token-type JWT
-    
-    Output: 
-    Token type set to: JWT
-    ```
-- Generate access token for the API with the following command.
 
     ```sh
     >> apictl get-keys -n online-store -v v1.0.0 -e k8s --provider admin -k
@@ -485,7 +489,7 @@ You can obtain a JWT token using the API Controller command as below.
     Access Token:  eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6IlpqUm1ZVE13TlRKak9XVTVNbUl6TWpnek5ESTNZMkl5TW1JeVkyRXpNamRoWmpWaU1qYzBaZz09In0.eyJhdWQiOiJodHRwOlwvXC9vcmcud3NvMi5hcGltZ3RcL2dhdGV3YXkiLCJzdWIiOiJhZG1pbkBjYXJib24uc3VwZXIiLCJhcHBsaWNhdGlvbiI6eyJvd25lciI6ImFkbWluIiwidGllciI6IlVubGltaXRlZCIsIm5hbWUiOiJkZWZhdWx0LWFwaWN0bC1hcHAiLCJpZCI6MiwidXVpZCI6bnVsbH0sInNjb3BlIjoiYW1fYXBwbGljYXRpb25fc2NvcGUgZGVmYXVsdCIsImlzcyI6Imh0dHBzOlwvXC93c28yYXBpbTozMjAwMVwvb2F1dGgyXC90b2tlbiIsInRpZXJJbmZvIjp7IlVubGltaXRlZCI6eyJzdG9wT25RdW90YVJlYWNoIjp0cnVlLCJzcGlrZUFycmVzdExpbWl0IjowLCJzcGlrZUFycmVzdFVuaXQiOm51bGx9fSwia2V5dHlwZSI6IlBST0RVQ1RJT04iLCJzdWJzY3JpYmVkQVBJcyI6W3sic3Vic2NyaWJlclRlbmFudERvbWFpbiI6ImNhcmJvbi5zdXBlciIsIm5hbWUiOiJPbmxpbmUtU3RvcmUiLCJjb250ZXh0IjoiXC9zdG9yZVwvdjEuMC4wXC92MS4wLjAiLCJwdWJsaXNoZXIiOiJhZG1pbiIsInZlcnNpb24iOiJ2MS4wLjAiLCJzdWJzY3JpcHRpb25UaWVyIjoiVW5saW1pdGVkIn1dLCJjb25zdW1lcktleSI6Im1Hd0lmUWZuZHdZTVZxT25JVW9Rczhqc1B0Y2EiLCJleHAiOjE1NzIyNjAyMjQsImlhdCI6MTU3MjI1NjYyNCwianRpIjoiNTNlYWJkYWEtY2IyZC00MTQ0LWEzYWUtZDNjNTIxMjgwYjM4In0.QU9rt4WBLcIOXzDkdiBpo_SAN_W4jpMlymPSgdhe4mf4FmdepA6hIXa_NXdzWyOST2XcHskWleL-9bhv4GecvDaCcMUwfSKOo_8DuphYhtv0BukpGpyfzK2SZDtABxxtdRUmNDcyXJiC5NU4laXlDGzUruI_LISjkeeCaK4gA93YQC3Nd0xe14uIO940UNsSiUuI5cZkeKlB9k5vKIzjN1-M-SJCvtDkusvdPTgkSHZL29ICsMQl9rTSRm6dL4xq9rcH7osD-o_amgurkm1RvNagzN0buku6y4tuEyisZvRUlNkQ2KRzX6E6VwNKHAFQ7CG95-k-QYvXDGDXYGNisw  
     ```
   
-    **_Note:_** You also have the option to generate an access token by logging into the devportal. 
+    **_Note:_** You also have the option to generate a token by logging into the devportal. 
 
 <br />
 
@@ -510,27 +514,30 @@ and configurations related to API operator and API portal.
 
 ### Sample Scenarios
 
-1. [Sample 1: Expose a K8s service as an API](../../scenarios/scenario-1)
-1. [Sample 2: Deploy pet store service as a managed API in k8s cluster](../../scenarios/scenario-2)
-1. [Sample 3: Deploy pet store service as a managed API secured with Basic Auth](../../scenarios/scenario-3)
-1. [Sample 4: Deploy pet store service as a managed API secured with JWT](../../scenarios/scenario-4)
-1. [Sample 5: Deploy pet store service as a managed API secured with OAuth2](../../scenarios/scenario-5)
-1. [Sample 6: Apply rate-limiting to managed API in Kubernetes cluster](../../scenarios/scenario-6)
-1. [Sample 7: Deploy APIs in k8s in private jet mode](../../scenarios/scenario-7)
-1. [Sample 8: Deploy APIs in k8s in sidecar mode](../../scenarios/scenario-8)
-1. [Sample 9: Expose an API with multiple service endpoints](../../scenarios/scenario-9)
-1. [Sample 10: Apply interceptors to an API](../../scenarios/scenario-10)
-1. [Sample 11: Enabling Analytics for managed API](../../scenarios/scenario-11)
-1. [Sample 12: Apply distributed rate-limiting to managed API in Kubernetes cluster](../../scenarios/scenario-12)
-1. [Sample 13: K8s API Operator for Istio](../../scenarios/scenario-13)
-1. [Sample 14: API Management in Serverless (Knative)](../../scenarios/scenario-14)
-1. [Sample 15: Apply Java interceptors to an API](../../scenarios/scenario-15)
-1. [Sample 16: Deploy multiple swagger-projects as one API](../../scenarios/scenario-16)
-1. [Sample 17: Expose an API using Ingress](../../scenarios/scenario-17)
-1. [Sample 18: Expose an API using Openshift Route](../../scenarios/scenario-18)
-1. [Sample 19: Deploy petstore service as a managed API secured with API Key Authentication](../../scenarios/scenario-19)
-1. [Sample 20: Horizontal pod auto-scaling with custom-metrics](../../scenarios/scenario-20)
-
+1. [Sample 1: Expose a K8s service as an API](scenarios/scenario-1)
+1. [Sample 2: Deploy pet store service as a managed API in k8s cluster](scenarios/scenario-2)
+1. [Sample 3: Deploy pet store service as a managed API secured with Basic Auth](scenarios/scenario-3)
+1. [Sample 4: Deploy pet store service as a managed API secured with JWT](scenarios/scenario-4)
+1. [Sample 5: Deploy pet store service as a managed API secured with OAuth2](scenarios/scenario-5)
+1. [Sample 6: Apply rate-limiting to managed API in Kubernetes cluster](scenarios/scenario-6)
+1. [Sample 7: Deploy APIs in k8s in private jet mode](scenarios/scenario-7)
+1. [Sample 8: Deploy APIs in k8s in sidecar mode](scenarios/scenario-8)
+1. [Sample 9: Expose an API with multiple service endpoints](scenarios/scenario-9)
+1. [Sample 10: Apply interceptors to an API](scenarios/scenario-10)
+1. [Sample 11: Enabling Analytics for managed API](scenarios/scenario-11)
+1. [Sample 12: Apply distributed rate-limiting to managed API in Kubernetes cluster](scenarios/scenario-12)
+1. [Sample 13: K8s API Operator for Istio](scenarios/scenario-13)
+1. [Sample 14: API Management in Serverless (Knative)](scenarios/scenario-14)
+1. [Sample 15: Apply Java interceptors to an API](scenarios/scenario-15)
+1. [Sample 16: Deploy multiple swagger-projects as one API](scenarios/scenario-16)
+1. [Sample 17: Expose an API using Ingress](scenarios/scenario-17)
+1. [Sample 18: Expose an API using Openshift Route](scenarios/scenario-18)
+1. [Sample 19: Deploy petstore service as a managed API secured with API Key Authentication](scenarios/scenario-19)
+1. [Sample 20: Horizontal pod auto-scaling with custom-metrics](scenarios/scenario-20)
+1. [Sample 21: Deploy a service as a managed API using WSO2 API Manager locally](scenarios/scenario-21)
+1. [Sample 22: Generating Backend JWT](scenarios/scenario-22)
+1. [Sample 23: Add Configmaps and Secrets to Micro-gateway Deployment](scenarios/scenario-23)
+1. [Sample 24: Using event hub in WSO2 API Manager](scenarios/scenario-24)
 
 ### Troubleshooting Guide
 

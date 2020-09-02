@@ -35,7 +35,7 @@ In this document, we will walk through on the following.
 
 - An account in DockerHub or private docker registry
 
-- Download [k8s-api-operator-1.2.0.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.2.0-beta/k8s-api-operator-1.2.0-beta.zip)
+- Download [k8s-api-operator-1.2.0.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.2.0/k8s-api-operator-1.2.0.zip)
 and extract the zip
 
     1. This zip contains the artifacts that required to deploy in Kubernetes.
