@@ -19,7 +19,7 @@ This works in Istio permissive mode and Strict MTLS mode.
 
 - An account in DockerHub or private docker registry
 
-- Download [k8s-api-operator-1.2.0.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.2.0-beta/k8s-api-operator-1.2.0-beta.zip) and extract the zip
+- Download [k8s-api-operator-1.2.0.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.2.0/k8s-api-operator-1.2.0.zip) and extract the zip
 
     1. This zip contains the artifacts that required to deploy in Kubernetes.
     2. Extract k8s-api-operator-1.2.0.zip
@@ -92,7 +92,8 @@ This works in Istio permissive mode and Strict MTLS mode.
 
 #### Step 3: Deploy Microservices
 
-- When you execute this command, it creates a namespace called micro and enable Istio sidecar injection for that namespace. Also this deploys 3 microservices.
+- When you execute this command, it creates a namespace called `micro` and **enable Istio sidecar injection** for that
+namespace. Also this deploys 3 microservices.
 
     ```sh
     >> apictl create -f microservices.yaml
@@ -109,7 +110,8 @@ This works in Istio permissive mode and Strict MTLS mode.
 
 #### Step 4: Deploy an API for the microservices
 
-- We are creating a namespace called wso2 and deploy our API there. In this namespace, we have not enabled Istio sidecar injection.
+- We are creating a namespace called `wso2` and deploy our API there. In this namespace, we have
+**NOT enabled Istio sidecar injection**.
 
     **Note:** For this sample, using the flag `--override` to update configs, if there are images in the docker registry
     which where created during older versions of API Operator.

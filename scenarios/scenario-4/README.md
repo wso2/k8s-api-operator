@@ -18,6 +18,15 @@
 - Navigate to scenarios/scenario-4 directory.
 
 - Deploy Kubernetes secret of the public cert of the JWT token issues and JWT Security custom resource.
+  - Create the **certificate secret** with base64 encoded **PEM** format of public certificate the key **server.pem**.
+    Or the **certificate secret** can be created with the following command.
+    ```shell script
+    >> apictl create secret generic <CERT_SECRET_NAME> --from-file=server.pem=<PUBLIC_CERT_PEM_FORMAT>
+    ```
+    
+    We have created a **certificate secret** and a Security CRD for you which can be found in the file
+    [jwt-security.yaml](jwt-security.yaml) that we are going to apply.
+    
     ```$xslt
     >> apictl apply -f jwt-security.yaml
     

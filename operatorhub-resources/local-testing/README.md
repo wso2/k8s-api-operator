@@ -9,16 +9,16 @@
 
 - An account in DockerHub or private docker registry
 
-- Download [k8s-api-operator-1.1.0.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.1.0/k8s-api-operator-1.1.0.zip) and extract the zip
+- Download [k8s-api-operator-1.2.0.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.2.0/k8s-api-operator-1.2.0.zip) and extract the zip
 
     1. This zip contains the artifacts that required to deploy in Kubernetes.
-    2. Extract k8s-api-operator-1.1.0.zip
+    2. Extract k8s-api-operator-1.2.0.zip
     
     ```
-    cd k8s-api-operator-1.1.0
+    cd k8s-api-operator-1.2.0
     ```
  
-    **_Note:_** You need to run all commands from within the ***k8s-api-operator-1.1.0*** directory.
+    **_Note:_** You need to run all commands from within the ***k8s-api-operator-1.2.0*** directory.
 
 <br />
 
@@ -75,7 +75,7 @@ api-operator is deployed and is running in marketplace namespace.
 
 #### How to preview the operator
 
-Go to  https://operatorhub.io/preview and upload [csv file](api-operator/1.1.0/api-operator.v1.1.0.clusterserviceversion.yaml)
+Go to  https://operatorhub.io/preview and upload [csv file](api-operator/1.2.0/api-operator.v1.2.0.clusterserviceversion.yaml)
 
 #### Operator bundle
 

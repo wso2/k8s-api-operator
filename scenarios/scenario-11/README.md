@@ -146,3 +146,17 @@ By changing the following artifacts, you can point the API Operator to use the A
 
     Samples can be found api-operator/apim-analytics-configs/apim_analytics_conf.yaml
 
+#### Clean Up
+
+- Delete the created API (Find APIs `apictl get api --all-namespaces`)
+    ```shell script
+    >> apictl delete api <API_NAME> -n <NAMESPACE>
+    ```
+- Delete WSO2 APIM deployment and WSO2 Analytics deployment
+    ```shell script
+    >> apictl delete -Rf k8s-artifacts/wso2am-operator/api-portal-with-analytics
+    ```
+- Delete Analytics configs
+    ```shell script
+    >> apictl delete -f api-operator/apim-analytics-configs
+    ```
