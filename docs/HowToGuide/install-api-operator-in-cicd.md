@@ -22,10 +22,12 @@ the [release](https://github.com/wso2/k8s-api-operator/releases). The configs po
 
 The flag `--from-file` can be used with any registry type.
 
+## 1. Install with Configuring a Registry
+
 If it is needed to reconfigure registry after installing API Operator, you can follow the document
 ["Reconfigure Registry"](WorkingWithDockerRegistries/reconfigure-registry.md).
 
-## 1. Docker Hub
+### 1.1. Docker Hub
 
 Registry type: **DOCKER_HUB**
 
@@ -49,7 +51,7 @@ Docker-Hub:
             --password=*******
 ```
 
-## 2. Amazon ECR
+### 1.2. Amazon ECR
 
 Registry type: **AMAZON_ECR**
 
@@ -67,7 +69,7 @@ Example:
             --key-file=/Users/wso2/.aws/credentials
 ```
 
-## 3. GCR
+### 1.3. GCR
 
 Registry type: **GCR**
 
@@ -83,7 +85,7 @@ Example:
             --key-file=/path/to/gcr/service/account/key/file.json
 ```
 
-## 4. HTTP private registry
+### 1.4. HTTP private registry
 
 Registry type: **HTTP**
 
@@ -103,7 +105,7 @@ Example:
             --password=********
 ```
 
-## 5. HTTPS private registry
+### 1.5. HTTPS private registry
 
 Registry type: **HTTPS**
 
@@ -119,7 +121,7 @@ Example:
 >> apictl install api-operator --registry-type=HTTPS --repository=10.100.5.225:5000/wso2 --username=jennifer --password=********
 ```
 
-## 6. QUAY.IO registry
+### 1.6. QUAY.IO registry
 
 Registry type: **QUAY**
 
@@ -137,4 +139,42 @@ Example:
             --repository=john \
             --username=john \
             --password=********
+```
+
+## 2. Installation Configurations
+
+### 2.1. Install with Default configurations
+
+You can quick start and try API Operator with the default configurations that we set for you.
+
+```sh
+>> apictl install api-operator \
+            --registry-type=DOCKER_HUB \
+            --repository=docker.io/wso2 \
+            --username=john \
+            --password=*******
+```
+
+#### 2.1.1. What are the default configurations?
+
+You can find the default configurations of the API Operator in the extracted `k8s-api-operator-<VERSION>.zip` file in
+the [releases](https://github.com/wso2/k8s-api-operator/releases).
+
+Default configurations: `K8S-API-OPERATOR-HOME/api-operator/controller-artifacts/`
+
+### 2.2. Install with Customized configurations and offline installation
+
+You can specify your default configurations for the API Operator by specifying the configuration file, directory with
+config files or URL.
+
+Change the configurations files with your defaults and specify the location with the flag `-f` or `--from-file`.
+This `<ALL_CONFIGURATIONS>` can be a **file**, **directory** or an **URL**
+
+```sh
+>> apictl install api-operator \
+            --registry-type=DOCKER_HUB \
+            --repository=docker.io/wso2 \
+            --username=john \
+            --password=*******
+            -f <ALL_CONFIGURATIONS>
 ```
