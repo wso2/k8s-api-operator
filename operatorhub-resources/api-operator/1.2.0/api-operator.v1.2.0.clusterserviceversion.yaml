@@ -185,7 +185,7 @@ metadata:
     categories: Developer Tools, Integration & Delivery, Cloud Provider
     certified: "false"
     containerImage: wso2/k8s-api-operator:1.2.0
-    createdAt: "2020-07-27T03:00:00.000Z"
+    createdAt: "2020-09-07T03:00:00.000Z"
     description: API Operator provides a fully automated experience for cloud-native
       API management of microservices.
     repository: https://github.com/wso2/k8s-api-operator
@@ -299,8 +299,10 @@ spec:
     * Create a namespace and deploy the controller level configurations
 
         ```
-        >> apictl apply -f api-operator/operatorhub-controller-configs/
+        >> apictl apply -f api-operator/operatorhub-controller-configs/namespace.yaml \
+                        -f api-operator/operatorhub-controller-configs/
 
+        Output:
         namespace/wso2-system created
         configmap/controller-config created
         configmap/apim-config created
@@ -604,10 +606,12 @@ spec:
     - name: Slack channel
       url: https://apim-slack.wso2.com
   maintainers:
-    - email: user@wso2.org
-      name: User Mailing List
     - email: dev@wso2.org
       name: Developer Mailing List
+    - email: architecture@wso2.org
+      name: Architecture of WSO2 products
+    - email: announce@wso2.org
+      name: WSO2 product releases
   maturity: stable
   provider:
     name: WSO2
