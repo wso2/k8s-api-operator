@@ -89,8 +89,9 @@ func Job(api *wso2v1alpha1.API, controlConfigData map[string]string, kanikoArgs 
 					SecurityContext: &corev1.PodSecurityContext{
 						RunAsUser: &rootUserVal,
 					},
-					RestartPolicy: "Never",
-					Volumes:       *JobVolume,
+					RestartPolicy:    "Never",
+					Volumes:          *JobVolume,
+					ImagePullSecrets: regConfig.ImagePullSecrets,
 				},
 			},
 		},
