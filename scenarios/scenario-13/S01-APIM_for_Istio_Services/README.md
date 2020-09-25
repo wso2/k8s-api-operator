@@ -20,13 +20,13 @@ This works only in Istio permissive mode.
 
 - An account in DockerHub or private docker registry
 
-- Download [k8s-api-operator-1.2.0.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.2.0/k8s-api-operator-1.2.0.zip) and extract the zip
+- Download [k8s-api-operator-1.2.1.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.2.1/k8s-api-operator-1.2.1.zip) and extract the zip
 
     1. This zip contains the artifacts that required to deploy in Kubernetes.
-    2. Extract k8s-api-operator-1.2.0.zip
+    2. Extract k8s-api-operator-1.2.1.zip
     
     ```sh
-    cd k8s-api-operator-1.2.0/scenarios/scenario-13/S01-APIM_for_Istio_Services/
+    cd k8s-api-operator-1.2.1/scenarios/scenario-13/S01-APIM_for_Istio_Services/
     ```
  
     **_Note:_** You need to run all commands from within the ```S01-APIM_for_Istio_Services``` directory.
@@ -52,6 +52,10 @@ This works only in Istio permissive mode.
 
 #### Step 2: Install API Operator
 
+- Set the operator version as `v1.2.1` by executing following in a terminal.
+    ```sh
+    >> export WSO2_API_OPERATOR_VERSION=v1.2.1
+    ```
 - Execute the following command to install API Operator interactively and configure repository to push the microgateway image.
 - Select "Docker Hub" as the repository type.
 - Enter repository name of your Docker Hub account (usually it is the username as well).

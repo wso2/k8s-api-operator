@@ -15,14 +15,14 @@ You should build the image when changes are added to the project. The steps to b
 
 1.  Build the api-operator image 
     ```sh
-    >> operator-sdk build wso2/k8s-api-operator:v1.2.0
+    >> operator-sdk build wso2/k8s-api-operator:v1.2.1
     ```
 
 1.  Replace the image name in deploy/controller-artifacts/operator.yaml:
 
 1.  Push it to a registry:
     ```sh
-    >> docker push wso2/api-operator:v1.2.0
+    >> docker push wso2/api-operator:v1.2.1
     ```
 
 ### Add new API and controller

@@ -120,7 +120,7 @@ In this swagger definition, the security schema of the "petstore" service has be
                   --initial-state=PUBLISHED
       
       Output:
-      Initializing a new WSO2 API Manager project in /home/jayanie/Documents/jwt-issuer/k8s-api-operator/distribution/target/k8s-api-operator-1.2.0/scenarios/scenario-24/petstore-api
+      Initializing a new WSO2 API Manager project in scenarios/scenario-24/petstore-api
       Project initialized
       Open README file to learn more
      ```
