@@ -35,17 +35,17 @@ In this document, we will walk through on the following.
 
 - An account in DockerHub or private docker registry
 
-- Download [k8s-api-operator-1.2.0.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.2.0/k8s-api-operator-1.2.0.zip)
+- Download [k8s-api-operator-1.2.1.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.2.1/k8s-api-operator-1.2.1.zip)
 and extract the zip
 
     1. This zip contains the artifacts that required to deploy in Kubernetes.
-    2. Extract k8s-api-operator-1.2.0.zip
+    2. Extract k8s-api-operator-1.2.1.zip
     
     ```sh
-    >> cd k8s-api-operator-1.2.0
+    >> cd k8s-api-operator-1.2.1
     ```
  
-    **_Note:_** You need to run all commands from within the ***k8s-api-operator-1.2.0*** directory.
+    **_Note:_** You need to run all commands from within the ***k8s-api-operator-1.2.1*** directory.
 
 <br />
 
@@ -135,8 +135,13 @@ This will deploy a pod and service for the sample service.
 
 #### Step 3: Install API Operator
 
-- Execute the following command to install API Operator interactively and configure repository to push the built managed
-API image.
+- Set the operator version as `v1.2.1` by executing following in a terminal.
+    ```sh
+    >> export WSO2_API_OPERATOR_VERSION=v1.2.1
+    ```
+
+- Execute the following command to install API Operator interactively and configure a repository to push the built
+managed API image.
 - Select "Docker Hub" as the repository type.
 - Enter repository name of your Docker Hub account (usually it is the username as well).
   - Supports both `jennifer` and `docker.io/jennifer` (backward compatibility) as repository name.
@@ -514,30 +519,30 @@ and configurations related to API operator and API portal.
 
 ### Sample Scenarios
 
-1. [Sample 1: Expose a K8s service as an API](scenarios/scenario-1)
-1. [Sample 2: Deploy pet store service as a managed API in k8s cluster](scenarios/scenario-2)
-1. [Sample 3: Deploy pet store service as a managed API secured with Basic Auth](scenarios/scenario-3)
-1. [Sample 4: Deploy pet store service as a managed API secured with JWT](scenarios/scenario-4)
-1. [Sample 5: Deploy pet store service as a managed API secured with OAuth2](scenarios/scenario-5)
-1. [Sample 6: Apply rate-limiting to managed API in Kubernetes cluster](scenarios/scenario-6)
-1. [Sample 7: Deploy APIs in k8s in private jet mode](scenarios/scenario-7)
-1. [Sample 8: Deploy APIs in k8s in sidecar mode](scenarios/scenario-8)
-1. [Sample 9: Expose an API with multiple service endpoints](scenarios/scenario-9)
-1. [Sample 10: Apply interceptors to an API](scenarios/scenario-10)
-1. [Sample 11: Enabling Analytics for managed API](scenarios/scenario-11)
-1. [Sample 12: Apply distributed rate-limiting to managed API in Kubernetes cluster](scenarios/scenario-12)
-1. [Sample 13: K8s API Operator for Istio](scenarios/scenario-13)
-1. [Sample 14: API Management in Serverless (Knative)](scenarios/scenario-14)
-1. [Sample 15: Apply Java interceptors to an API](scenarios/scenario-15)
-1. [Sample 16: Deploy multiple swagger-projects as one API](scenarios/scenario-16)
-1. [Sample 17: Expose an API using Ingress](scenarios/scenario-17)
-1. [Sample 18: Expose an API using Openshift Route](scenarios/scenario-18)
-1. [Sample 19: Deploy petstore service as a managed API secured with API Key Authentication](scenarios/scenario-19)
-1. [Sample 20: Horizontal pod auto-scaling with custom-metrics](scenarios/scenario-20)
-1. [Sample 21: Deploy a service as a managed API using WSO2 API Manager locally](scenarios/scenario-21)
-1. [Sample 22: Generating Backend JWT](scenarios/scenario-22)
-1. [Sample 23: Add Configmaps and Secrets to Micro-gateway Deployment](scenarios/scenario-23)
-1. [Sample 24: Using event hub in WSO2 API Manager](scenarios/scenario-24)
+1. [Sample 1: Expose a K8s service as an API](../../scenarios/scenario-1)
+1. [Sample 2: Deploy pet store service as a managed API in k8s cluster](../../scenarios/scenario-2)
+1. [Sample 3: Deploy pet store service as a managed API secured with Basic Auth](../../scenarios/scenario-3)
+1. [Sample 4: Deploy pet store service as a managed API secured with JWT](../../scenarios/scenario-4)
+1. [Sample 5: Deploy pet store service as a managed API secured with OAuth2](../../scenarios/scenario-5)
+1. [Sample 6: Apply rate-limiting to managed API in Kubernetes cluster](../../scenarios/scenario-6)
+1. [Sample 7: Deploy APIs in k8s in private jet mode](../../scenarios/scenario-7)
+1. [Sample 8: Deploy APIs in k8s in sidecar mode](../../scenarios/scenario-8)
+1. [Sample 9: Expose an API with multiple service endpoints](../../scenarios/scenario-9)
+1. [Sample 10: Apply interceptors to an API](../../scenarios/scenario-10)
+1. [Sample 11: Enabling Analytics for managed API](../../scenarios/scenario-11)
+1. [Sample 12: Apply distributed rate-limiting to managed API in Kubernetes cluster](../../scenarios/scenario-12)
+1. [Sample 13: K8s API Operator for Istio](../../scenarios/scenario-13)
+1. [Sample 14: API Management in Serverless (Knative)](../../scenarios/scenario-14)
+1. [Sample 15: Apply Java interceptors to an API](../../scenarios/scenario-15)
+1. [Sample 16: Deploy multiple swagger-projects as one API](../../scenarios/scenario-16)
+1. [Sample 17: Expose an API using Ingress](../../scenarios/scenario-17)
+1. [Sample 18: Expose an API using Openshift Route](../../scenarios/scenario-18)
+1. [Sample 19: Deploy petstore service as a managed API secured with API Key Authentication](../../scenarios/scenario-19)
+1. [Sample 20: Horizontal pod auto-scaling with custom-metrics](../../scenarios/scenario-20)
+1. [Sample 21: Deploy a service as a managed API using WSO2 API Manager locally](../../scenarios/scenario-21)
+1. [Sample 22: Generating Backend JWT](../../scenarios/scenario-22)
+1. [Sample 23: Add Configmaps and Secrets to Micro-gateway Deployment](../../scenarios/scenario-23)
+1. [Sample 24: Using event hub in WSO2 API Manager](../../scenarios/scenario-24)
 
 ### Troubleshooting Guide
 

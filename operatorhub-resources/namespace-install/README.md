@@ -97,7 +97,7 @@ Set the API Controller’s mode to Kubernetes to be compatible with kubectl comm
   1. This zip contains the artifacts that required to deploy in Kubernetes.
   2. Extract k8s-api-operator-1.2.0.zip
 ```
-cd k8s-api-operator-1.2.0
+cd k8s-api-operator-1.2.1
 ```     
 * Create namspace and deploy the controller level configurations **[IMPORTANT]**
   *  When you create an API, a docker image of it will be created and pushed to a docker registry. For this, credentials for your docker resgitry are required.

@@ -9,6 +9,10 @@ to create a service account key JSON File and download it to your local file sys
 
 ## Install API Operator
 
+- Set the operator version as `v1.2.1` by executing following in a terminal.
+    ```sh
+    >> export WSO2_API_OPERATOR_VERSION=v1.2.1
+    ```
 - Execute the following command to install API Operator interactively and configure repository to push the
   Microgateway image.
 - Select "GCR" as the repository type.

@@ -23,7 +23,7 @@ Note:
     2. Extract k8s-api-operator-1.2.0.zip
     
     ```
-    cd k8s-api-operator-1.2.0
+    cd k8s-api-operator-1.2.1
     ```
  
     **_Note:_** You need to run all commands from within the ***k8s-api-operator-1.2.0*** directory.
@@ -104,7 +104,7 @@ curl -sL https://github.com/operator-framework/operator-lifecycle-manager/releas
   2. Extract k8s-api-operator-1.2.0.zip
   
     ```shell script
-    cd k8s-api-operator-1.2.0
+    cd k8s-api-operator-1.2.1
     ```     
 * Create a namespace and deploy the controller level configurations 
 

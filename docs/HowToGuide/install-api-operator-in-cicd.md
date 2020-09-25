@@ -27,6 +27,11 @@ The flag `--from-file` can be used with any registry type.
 If it is needed to reconfigure registry after installing API Operator, you can follow the document
 ["Reconfigure Registry"](WorkingWithDockerRegistries/reconfigure-registry.md).
 
+- Set the operator version as `v1.2.1` by executing following in a terminal.
+    ```sh
+    >> export WSO2_API_OPERATOR_VERSION=v1.2.1
+    ```
+
 ### 1.1. Docker Hub
 
 Registry type: **DOCKER_HUB**
