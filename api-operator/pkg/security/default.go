@@ -30,18 +30,18 @@ import (
 
 var logDef = log.Log.WithName("security.default")
 
-func Default(client *client.Client, apiNamespace string, owner *[]metav1.OwnerReference) (*[]mgw.JwtTokenConfig, error) {
+func Default(client *client.Client, apiNamespace string, owner *[]metav1.OwnerReference, artifactsNamespace string)	(*[]mgw.JwtTokenConfig, error) {
 	var defaultSecConfArray []mgw.JwtTokenConfig
 	//copy default sec in wso2-system to user namespace
 	securityDefault := &wso2v1alpha1.Security{}
 	//check default security already exist in user namespace
 	errGetSec := k8s.Get(client, types.NamespacedName{Name: defaultSecurity, Namespace: apiNamespace}, securityDefault)
 	if errGetSec != nil && errors.IsNotFound(errGetSec) {
-		logDef.Info("Get default-security", "from namespace", wso2NameSpaceConst)
+		logDef.Info("Get default-security", "from namespace", artifactsNamespace)
 		//retrieve default-security from wso2-system namespace
-		errSec := k8s.Get(client, types.NamespacedName{Name: defaultSecurity, Namespace: wso2NameSpaceConst}, securityDefault)
+		errSec := k8s.Get(client, types.NamespacedName{Name: defaultSecurity, Namespace: artifactsNamespace}, securityDefault)
 		if errSec != nil {
-			logDef.Error(errSec, "Error getting default security", "namespace", wso2NameSpaceConst)
+			logDef.Error(errSec, "Error getting default security", "namespace", artifactsNamespace)
 			return nil, errSec
 		}
 		for _, defaultSecurityConf := range securityDefault.Spec.SecurityConfig {
@@ -50,7 +50,7 @@ func Default(client *client.Client, apiNamespace string, owner *[]metav1.OwnerRe
 			//check default certificate exists in user namespace
 			err := k8s.Get(client, types.NamespacedName{Name: defaultSecurityConf.Certificate, Namespace: apiNamespace}, defaultCert)
 			if err != nil && errors.IsNotFound(err) {
-				errCert := k8s.Get(client, types.NamespacedName{Name: defaultSecurityConf.Certificate, Namespace: wso2NameSpaceConst}, defaultCert)
+				errCert := k8s.Get(client, types.NamespacedName{Name: defaultSecurityConf.Certificate, Namespace: artifactsNamespace}, defaultCert)
 				if errCert != nil {
 					return nil, errCert
 				}

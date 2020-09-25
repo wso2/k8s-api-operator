@@ -65,11 +65,11 @@ var dockerImage Image
 var registryConfigs = map[Type]func(repoName string, imgName string, tag string) *Config{}
 
 // SetRegistry sets the registry type, repository and image
-func SetRegistry(client *client.Client, namespace string, img Image) error {
+func SetRegistry(client *client.Client, namespace string, img Image, artifactsNamespace string) error {
 	logger.Info("Setting registry type", "image", img)
 	dockerImage = img
 
-	return copyConfigVolumes(client, namespace)
+	return copyConfigVolumes(client, namespace, artifactsNamespace)
 }
 
 // GetConfig returns the registry config
@@ -84,7 +84,7 @@ func IsRegistryType(regType string) bool {
 }
 
 // IsImageExist checks if the image exists in the given registry using the secret in the user-namespace
-func IsImageExist(client *client.Client) (bool, error) {
+func IsImageExist(client *client.Client, artifactNamespace string) (bool, error) {
 	// Auth represents the pull secret of registries
 	// local struct since not used in other places
 	type Auth struct {
@@ -99,13 +99,13 @@ func IsImageExist(client *client.Client) (bool, error) {
 	// checks if the pull secret is available
 	regPullSecret := k8s.NewSecret()
 	err := k8s.Get(client, types.NamespacedName{Name: config.ImagePullSecrets[0].Name,
-		Namespace: wso2NameSpaceConst}, regPullSecret)
+		Namespace: artifactNamespace}, regPullSecret)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			logger.Info("Registry pull secret is not found",
-				"secret_name", utils.DockerRegCredSecret, "namespace", wso2NameSpaceConst)
+				"secret_name", utils.DockerRegCredSecret, "namespace", artifactNamespace)
 		} else {
-			logger.Info("Error retrieving docker credentials secret", "secret_name", utils.DockerRegCredSecret, "namespace", wso2NameSpaceConst)
+			logger.Info("Error retrieving docker credentials secret", "secret_name", utils.DockerRegCredSecret, "namespace", artifactNamespace)
 		}
 		return false, err
 	}
@@ -144,7 +144,7 @@ func IsImageExist(client *client.Client) (bool, error) {
 
 // copyConfigVolumes copy the configured secrets and config maps to user's namespace
 // from wso2's system namespace
-func copyConfigVolumes(client *client.Client, namespace string) error {
+func copyConfigVolumes(client *client.Client, namespace string, artifactsNamespace string) error {
 	logger.Info("Replacing configured secrets and config maps for the registry")
 	config := GetConfig()
 	// registry volumes map: name -> runtime object
@@ -168,7 +168,7 @@ func copyConfigVolumes(client *client.Client, namespace string) error {
 	// get object from wso2's system namespace and
 	// creates or replaces volumes in the given namespace
 	for name, object := range regVolumes {
-		fromNsName := types.NamespacedName{Namespace: wso2NameSpaceConst, Name: name}
+		fromNsName := types.NamespacedName{Namespace: artifactsNamespace, Name: name}
 		if err := k8s.Get(client, fromNsName, object); err != nil {
 			return err
 		}

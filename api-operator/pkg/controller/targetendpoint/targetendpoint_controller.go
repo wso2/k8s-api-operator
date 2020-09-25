@@ -19,6 +19,7 @@ package targetendpoint
 import (
 	"context"
 	"fmt"
+	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	"github.com/sirupsen/logrus"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"k8s.io/api/autoscaling/v2beta1"
@@ -127,13 +128,40 @@ func (r *ReconcileTargetEndpoint) Reconcile(request reconcile.Request) (reconcil
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
 	}
+
+	operatorNs, opErr := k8sutil.GetOperatorNamespace()
+	if opErr != nil {
+		reqLogger.Error(opErr, "Cannot get the operator namespace")
+		operatorNs = wso2NameSpaceConst
+	} else {
+		reqLogger.Info("Operator deployment namespace","current", operatorNs, "default", wso2NameSpaceConst)
+	}
+
+	depFound := &appsv1.Deployment{}
+	errDeploy := k8s.Get(&r.client, types.NamespacedName{Name: "api-operator", Namespace: operatorNs}, depFound)
+	if errDeploy != nil {
+		reqLogger.Error(errDeploy, "Cannot find the operator deployment!")
+	}
+	var artifactNs string
+	envs := []corev1.EnvVar{}
+	envs = depFound.Spec.Template.Spec.Containers[0].Env
+	for i := 0; i < len(envs); i++ {
+		if envs[i].Name == artifactsNamespaceConst {
+			artifactNs = envs[i].Value
+			break
+		}
+	}
+	if artifactNs != "" {
+		reqLogger.Info("Namespace of artifacts in env", artifactsNamespaceConst, artifactNs)
+	}
+
 	//getting owner reference to create HPA for TargetEndPoint
 	owner := getOwnerDetails(instance)
 	if owner == nil {
 		reqLogger.Info("Operator was not found in the " + instance.Namespace + " namespace. No owner will be set for the artifacts")
 	}
 	//get configurations file for the controller
-	controlConf, err := getConfigmap(r, "controller-config", "wso2-system")
+	controlConf, err := getConfigmap(r, "controller-config", artifactNs)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Controller configmap is not found, could have been deleted after reconcile request.
@@ -206,7 +234,7 @@ func (r *ReconcileTargetEndpoint) Reconcile(request reconcile.Request) (reconcil
 
 	dep := r.newDeploymentForCR(instance, reqCpu, reqMemory, limitCpu, limitMemory, minReplicas)
 	if strings.EqualFold(mode, privateJet) {
-		errHpa := createHPA(&r.client, instance, dep, minReplicas, owner)
+		errHpa := createHPA(&r.client, instance, dep, minReplicas, owner, artifactNs)
 		if errHpa != nil {
 			log.Error(errHpa, "Error creating HPA")
 		}
@@ -457,15 +485,15 @@ func (r *ReconcileTargetEndpoint) newServiceForCR(m *wso2v1alpha1.TargetEndpoint
 
 // createHPA checks whether the HPA version is v2beta1 or v2beta2
 func createHPA(client *client.Client, targetEp *wso2v1alpha1.TargetEndpoint, dep *appsv1.Deployment, minReplicas int32,
-	owner []metav1.OwnerReference) error {
+	owner []metav1.OwnerReference, artifactNs string) error {
 	// get global hpa configs, return error if not found (required config map)
 	hpaConfMap := k8s.NewConfMap()
-	err := k8s.Get(client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: hpaConfigMapName}, hpaConfMap)
+	err := k8s.Get(client, types.NamespacedName{Namespace: artifactNs, Name: hpaConfigMapName}, hpaConfMap)
 	if err != nil {
 		return err
 	}
 	if hpaConfMap.Data[hpaVersionConst] == "v2beta1" {
-		hpaV2beta1, errHpaV2beta1 := createHPAv2beta1(client, targetEp, dep, minReplicas, owner)
+		hpaV2beta1, errHpaV2beta1 := createHPAv2beta1(client, targetEp, dep, minReplicas, owner, artifactNs)
 		if errHpaV2beta1 != nil {
 			return errHpaV2beta1
 		}
@@ -473,7 +501,7 @@ func createHPA(client *client.Client, targetEp *wso2v1alpha1.TargetEndpoint, dep
 		return k8s.Apply(client, hpaV2beta1)
 	}
 	if hpaConfMap.Data[hpaVersionConst] == "v2beta2" {
-		hpaV2beta2, errHpaV2beta2 := createHPAv2beta2(client, targetEp, dep, minReplicas, owner)
+		hpaV2beta2, errHpaV2beta2 := createHPAv2beta2(client, targetEp, dep, minReplicas, owner, artifactNs)
 		if errHpaV2beta2 != nil {
 			return errHpaV2beta2
 		}
@@ -485,7 +513,7 @@ func createHPA(client *client.Client, targetEp *wso2v1alpha1.TargetEndpoint, dep
 
 // createHPA creates (or update) HPA for the Target Endpoint with HPA version v2beta1
 func createHPAv2beta1(client *client.Client, targetEp *wso2v1alpha1.TargetEndpoint, dep *appsv1.Deployment, minReplicas int32,
-	owner []metav1.OwnerReference) (*v2beta1.HorizontalPodAutoscaler, error) {
+	owner []metav1.OwnerReference, artifactNs string) (*v2beta1.HorizontalPodAutoscaler, error) {
 	// target resource
 	targetResource := v2beta1.CrossVersionObjectReference{
 		Kind:       dep.Kind,
@@ -495,7 +523,7 @@ func createHPAv2beta1(client *client.Client, targetEp *wso2v1alpha1.TargetEndpoi
 
 	// get global hpa configs, return error if not found (required config map)
 	hpaConfMap := k8s.NewConfMap()
-	err := k8s.Get(client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: hpaConfigMapName}, hpaConfMap)
+	err := k8s.Get(client, types.NamespacedName{Namespace: artifactNs, Name: hpaConfigMapName}, hpaConfMap)
 	if err != nil {
 		log.Error(err, "HPA configs not defined")
 		return nil, err
@@ -542,7 +570,7 @@ func createHPAv2beta1(client *client.Client, targetEp *wso2v1alpha1.TargetEndpoi
 
 // createHPA creates (or update) HPA for the Target Endpoint with HPA version v2beta1
 func createHPAv2beta2(client *client.Client, targetEp *wso2v1alpha1.TargetEndpoint, dep *appsv1.Deployment, minReplicas int32,
-	owner []metav1.OwnerReference) (*v2beta2.HorizontalPodAutoscaler, error) {
+	owner []metav1.OwnerReference, artifactNs string) (*v2beta2.HorizontalPodAutoscaler, error) {
 	// target resource
 	targetResource := v2beta2.CrossVersionObjectReference{
 		Kind:       dep.Kind,
@@ -552,7 +580,7 @@ func createHPAv2beta2(client *client.Client, targetEp *wso2v1alpha1.TargetEndpoi
 
 	// get global hpa configs, return error if not found (required config map)
 	hpaConfMap := k8s.NewConfMap()
-	err := k8s.Get(client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: hpaConfigMapName}, hpaConfMap)
+	err := k8s.Get(client, types.NamespacedName{Namespace: artifactNs, Name: hpaConfigMapName}, hpaConfMap)
 	if err != nil {
 		return nil, err
 	}
@@ -612,7 +640,7 @@ func getConfigmap(r *ReconcileTargetEndpoint, mapName string, ns string) (*corev
 		}
 	} else {
 		if err != nil && errors.IsNotFound(err) {
-			log.Error(err, "Specified configmap is not found: %s", mapName)
+			log.Error(err, "Specified configmap is not found: %s", "configMap", mapName)
 			return apiConfigMap, err
 		} else if err != nil {
 			log.Error(err, "error ")
