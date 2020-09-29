@@ -18,7 +18,6 @@ apiVersion: wso2.com/v1alpha1
 kind: Security
 metadata:
   name: default-security-jwt
-  namespace: wso2-system
 spec:
   type: JWT
   securityConfig:
