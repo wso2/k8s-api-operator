@@ -217,7 +217,7 @@ var Configs = &Configuration{
 	// jwtTokenConfig
 	JwtConfigs: &[]JwtTokenConfig{
 		{
-			CertificateAlias:     "wso2apim310",
+			CertificateAlias:     "wso2apim320",
 			Issuer:               "https://wso2apim.wso2:32001/oauth2/token",
 			Audience:             "http://org.wso2.apimgt/gateway",
 			ValidateSubscription: false,
