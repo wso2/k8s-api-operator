@@ -600,6 +600,13 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 		for t := 24; t > 0; t -= 1 {
 			time.Sleep(5 * time.Second)
+			// check whether the instance is deleted
+			errInstance := k8s.Get(&r.client, request.NamespacedName, instance)
+			if errInstance != nil {
+				if errors.IsNotFound(errInstance) {
+					return reconcile.Result{}, nil
+				}
+			}
 			errSvc := k8s.Get(&r.client, request.NamespacedName, mgwSvc)
 			if errSvc != nil {
 				reqLogger.Error(errSvc, "Error getting the mgw service")
