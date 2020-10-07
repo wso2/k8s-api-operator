@@ -33,6 +33,7 @@ func GetSwaggerV3(swaggerStr *string) (*openapi3.Swagger, error) {
 	swagger, err := openapi3.NewSwaggerLoader().LoadSwaggerFromData([]byte(*swaggerStr))
 	if err != nil {
 		logger.Error(err, "Error loading swagger")
+		return nil, err
 	}
 
 	swaggerV3Version := swagger.OpenAPI
