@@ -250,6 +250,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	swaggerCmNames := instance.Spec.Definition.SwaggerConfigmapNames
+	apiSecurityConfigs := []mgw.JwtTokenConfig{}
 	for i, swaggerCmName := range swaggerCmNames {
 		// Check if the configmap mentioned in the crd object exist
 		swaggerConfMap := k8s.NewConfMap()
@@ -319,7 +320,9 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		if errSec != nil {
 			return reconcile.Result{}, errSec
 		}
-		mgw.Configs.JwtConfigs = jwtConfArray
+		for _, jwtConf := range *jwtConfArray {
+			apiSecurityConfigs = append(apiSecurityConfigs, jwtConf)
+		}
 		mgw.Configs.APIKeyConfigs = apiKeyConfArray
 
 		//adding security scheme to swagger
@@ -370,12 +373,16 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			reqLogger.Info("Use default security")
 
 			defaultJwtConfArray, err := security.Default(&r.client, userNamespace, ownerRef)
-			mgw.Configs.JwtConfigs = defaultJwtConfArray
+			for _, secConf := range *defaultJwtConfArray {
+				apiSecurityConfigs = append(apiSecurityConfigs, secConf)
+			}
 			if err != nil {
 				return reconcile.Result{}, err
 			}
 		}
 	}
+	//setting the JWT configs for API
+	mgw.Configs.JwtConfigs = &apiSecurityConfigs
 
 	// micro-gateway image to be build
 	mgwDockerImage.Name = strings.ToLower(strings.ReplaceAll(instance.Name, " ", ""))
