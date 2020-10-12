@@ -18,6 +18,7 @@ package endpoints
 
 import (
 	"errors"
+
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/mgw"
@@ -38,7 +39,7 @@ const (
 
 var logger = log.Log.WithName("endpoints.sidecar")
 
-func AddSidecarContainers(client *client.Client, apiNamespace string, sidecarEpNames *map[string]bool) error {
+func AddSidecarContainers(client *client.Client, apiNamespace string, sidecarEpNames *map[string]bool, containersList *[]corev1.Container) error {
 	containerList := make([]corev1.Container, 0, len(*sidecarEpNames))
 	isAdded := make(map[string]bool)
 
@@ -69,13 +70,12 @@ func AddSidecarContainers(client *client.Client, apiNamespace string, sidecarEpN
 					return err
 				}
 
-
 				sidecarContainer := corev1.Container{
 					Image: targetEndpointCr.Spec.Deploy.DockerImage,
 					Name:  targetEndpointCr.Spec.Deploy.Name,
 					Ports: containerPorts,
 					Resources: corev1.ResourceRequirements{
-						Limits: resourceLimits,
+						Limits:   resourceLimits,
 						Requests: resourceRequirements,
 					},
 				}
@@ -95,7 +95,7 @@ func AddSidecarContainers(client *client.Client, apiNamespace string, sidecarEpN
 		}
 	}
 
-	mgw.AddContainers(&containerList)
+	mgw.AddContainers(containersList, &containerList)
 	return nil
 }
 

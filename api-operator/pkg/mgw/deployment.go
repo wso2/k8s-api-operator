@@ -17,6 +17,9 @@
 package mgw
 
 import (
+	"strconv"
+	"strings"
+
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/registry"
@@ -26,8 +29,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strconv"
-	"strings"
 )
 
 const (
@@ -49,22 +50,18 @@ const (
 	envKeyValSeparator = "="
 )
 
-var (
-	ContainerList *[]corev1.Container
-)
-
-func InitContainers() {
+func InitContainers() *[]corev1.Container {
 	initContainerList := make([]corev1.Container, 0, 2)
-	ContainerList = &initContainerList
+	return &initContainerList
 }
 
-func AddContainers(containers *[]corev1.Container) {
-	*ContainerList = append(*ContainerList, *containers...)
+func AddContainers(containerList *[]corev1.Container, containers *[]corev1.Container) {
+	*containerList = append(*containerList, *containers...)
 }
 
 // Deployment returns a MGW deployment for the given API definition
 func Deployment(client *client.Client, api *wso2v1alpha1.API, controlConfigData map[string]string,
-	owner *[]metav1.OwnerReference) (*appsv1.Deployment, error) {
+	owner *[]metav1.OwnerReference, containersList *[]corev1.Container) (*appsv1.Deployment, error) {
 	regConfig := registry.GetConfig()
 	labels := map[string]string{"app": api.Name}
 	liveDelay, _ := strconv.ParseInt(controlConfigData[livenessProbeInitialDelaySeconds], 10, 32)
@@ -170,7 +167,7 @@ func Deployment(client *client.Client, api *wso2v1alpha1.API, controlConfigData 
 		},
 	}
 
-	*(ContainerList) = append(*(ContainerList), apiContainer)
+	*(containersList) = append(*(containersList), apiContainer)
 
 	// set hostAliases
 	hostAliases := getHostAliases(client)
@@ -192,8 +189,8 @@ func Deployment(client *client.Client, api *wso2v1alpha1.API, controlConfigData 
 				Labels: labels,
 			},
 			Spec: corev1.PodSpec{
-				HostAliases:	  hostAliases,
-				Containers:       *(ContainerList),
+				HostAliases:      hostAliases,
+				Containers:       *(containersList),
 				Volumes:          deployVolume,
 				ImagePullSecrets: regConfig.ImagePullSecrets,
 			},
