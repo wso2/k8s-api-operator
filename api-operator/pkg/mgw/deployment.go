@@ -172,6 +172,9 @@ func Deployment(client *client.Client, api *wso2v1alpha1.API, controlConfigData 
 
 	*(ContainerList) = append(*(ContainerList), apiContainer)
 
+	// set hostAliases
+	hostAliases := getHostAliases(client)
+
 	deploy := k8s.NewDeployment()
 	deploy.ObjectMeta = metav1.ObjectMeta{
 		Name:            api.Name,
@@ -189,6 +192,7 @@ func Deployment(client *client.Client, api *wso2v1alpha1.API, controlConfigData 
 				Labels: labels,
 			},
 			Spec: corev1.PodSpec{
+				HostAliases:	  hostAliases,
 				Containers:       *(ContainerList),
 				Volumes:          deployVolume,
 				ImagePullSecrets: regConfig.ImagePullSecrets,

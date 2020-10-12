@@ -19,6 +19,7 @@ package mgw
 import (
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
+	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/types"
@@ -101,4 +102,22 @@ func ExternalIP(client *client.Client, apiInstance *wso2v1alpha1.API, operatorMo
 
 	logger.Info("Setting API endpoint value", "api.endpoint", ipString)
 	return ipString
+}
+
+// get hostAliases for the deployment
+func getHostAliases(client *client.Client) []corev1.HostAlias {
+	mgwDeploymentConfMap := k8s.NewConfMap()
+	errGetDeploy := k8s.Get(client, types.NamespacedName{Name: mgwDeploymentConfigMapName, Namespace: wso2NameSpaceConst},
+		mgwDeploymentConfMap)
+	if errGetDeploy != nil {
+		logEp.Error(errGetDeploy, "Error getting mgw deployment configs")
+	}
+
+	var aliases []corev1.HostAlias
+	yamlErrDeploymentConfigMaps := yaml.Unmarshal([]byte(mgwDeploymentConfMap.Data["hostAliases"]), &aliases)
+	if yamlErrDeploymentConfigMaps != nil {
+		logEp.Error(yamlErrDeploymentConfigMaps, "Error setting the hostAliases")
+	}
+
+	return aliases
 }
