@@ -21,7 +21,6 @@ import (
 
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
-	"github.com/wso2/k8s-api-operator/api-operator/pkg/mgw"
 	corev1 "k8s.io/api/core/v1"
 	k8sError "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -39,7 +38,7 @@ const (
 
 var logger = log.Log.WithName("endpoints.sidecar")
 
-func AddSidecarContainers(client *client.Client, apiNamespace string, sidecarEpNames *map[string]bool, containersList *[]corev1.Container) error {
+func GetSidecarContainers(client *client.Client, apiNamespace string, sidecarEpNames *map[string]bool) ([]corev1.Container, error) {
 	containerList := make([]corev1.Container, 0, len(*sidecarEpNames))
 	isAdded := make(map[string]bool)
 
@@ -64,10 +63,10 @@ func AddSidecarContainers(client *client.Client, apiNamespace string, sidecarEpN
 					if k8sError.IsNotFound(err) {
 						// Controller configmap is not found.
 						logger.Error(err, "Controller configuration file is not found")
-						return err
+						return nil, err
 					}
 					// Error reading the object
-					return err
+					return nil, err
 				}
 
 				sidecarContainer := corev1.Container{
@@ -90,13 +89,12 @@ func AddSidecarContainers(client *client.Client, apiNamespace string, sidecarEpN
 				}
 
 				logger.Error(err, "Failed to deploy the sidecar endpoint", "endpoint_name", sidecarEpName)
-				return err
+				return nil, err
 			}
 		}
 	}
 
-	mgw.AddContainers(containersList, &containerList)
-	return nil
+	return containerList, nil
 }
 
 func getResourceMetadata(client *client.Client,

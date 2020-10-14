@@ -50,18 +50,9 @@ const (
 	envKeyValSeparator = "="
 )
 
-func InitContainers() *[]corev1.Container {
-	initContainerList := make([]corev1.Container, 0, 2)
-	return &initContainerList
-}
-
-func AddContainers(containerList *[]corev1.Container, containers *[]corev1.Container) {
-	*containerList = append(*containerList, *containers...)
-}
-
 // Deployment returns a MGW deployment for the given API definition
 func Deployment(client *client.Client, api *wso2v1alpha1.API, controlConfigData map[string]string,
-	owner *[]metav1.OwnerReference, containersList *[]corev1.Container) (*appsv1.Deployment, error) {
+	owner *[]metav1.OwnerReference, sidecarContainers []corev1.Container) (*appsv1.Deployment, error) {
 	regConfig := registry.GetConfig()
 	labels := map[string]string{"app": api.Name}
 	liveDelay, _ := strconv.ParseInt(controlConfigData[livenessProbeInitialDelaySeconds], 10, 32)
@@ -167,8 +158,6 @@ func Deployment(client *client.Client, api *wso2v1alpha1.API, controlConfigData 
 		},
 	}
 
-	*(containersList) = append(*(containersList), apiContainer)
-
 	// set hostAliases
 	hostAliases := getHostAliases(client)
 
@@ -190,7 +179,7 @@ func Deployment(client *client.Client, api *wso2v1alpha1.API, controlConfigData 
 			},
 			Spec: corev1.PodSpec{
 				HostAliases:      hostAliases,
-				Containers:       *(containersList),
+				Containers:       append(sidecarContainers, apiContainer),
 				Volumes:          deployVolume,
 				ImagePullSecrets: regConfig.ImagePullSecrets,
 			},

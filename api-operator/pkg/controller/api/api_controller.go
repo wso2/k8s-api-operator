@@ -127,7 +127,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	// initialize volumes
 	kaniko.InitDocFileProp()
 	kaniko.InitJobVolumes()
-	containersList := mgw.InitContainers()
+
+	var sidecarContainers []corev1.Container
 
 	var apiVersion string // API version - for the tag of final MGW docker image
 
@@ -301,7 +302,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		// Creating sidecar endpoint deployment
 		if epDeployMode == sidecar {
 			instance.Spec.Mode = sidecar
-			err := endpoints.AddSidecarContainers(&r.client, userNamespace, &endpointNames, containersList)
+			sidecarContainers, err = endpoints.GetSidecarContainers(&r.client, userNamespace, &endpointNames)
 			if err != nil {
 				return reconcile.Result{}, err
 			}
@@ -533,7 +534,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	if deployMgwRuntime {
 		reqLogger.Info("Deploying MGW runtime image")
 		// create MGW deployment in k8s cluster
-		mgwDeployment, errDeploy := mgw.Deployment(&r.client, instance, controlConfigData, ownerRef, containersList)
+		mgwDeployment, errDeploy := mgw.Deployment(&r.client, instance, controlConfigData, ownerRef, sidecarContainers)
 		r.recorder.Event(instance, corev1.EventTypeNormal, "MGWRuntime",
 			fmt.Sprintf("Deploying MGW runtime: %s.", mgwDeployment.Name))
 		if errDeploy != nil {
