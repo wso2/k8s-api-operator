@@ -1,0 +1,47 @@
+kind: Ingress
+apiVersion: networking.k8s.io/v1beta1
+metadata:
+  name: products
+  namespace: default
+  annotations:
+    # use the shared ingress-nginx
+    kubernetes.io/ingress.class: "microgateway"
+    microgateway.ingress.wso2.com.foo: "foo-value"
+    microgateway.ingress.wso2.com.bar: "bar-value"
+spec:
+  # ingressClassName: microgateway
+  backend:
+    serviceName: products
+    servicePort: 80
+    # resource:
+    #   apiGroup: networking.k8s.io/v1beta1
+    #   kind: Ingress
+    #   name: default-ing
+  tls:
+    - secretName: foobar
+      hosts:
+        - rnk.foo.org
+        - rnk.bar.org
+    - secretName: foobar2
+      hosts:
+        - rnk.foo2.org
+        - rnk.bar2.org
+  rules:
+    - host: rnk.foo.org
+      http:
+        paths:
+          - path: /products
+            pathType: ImplementationSpecific # Prefix # Exact
+            backend:
+              serviceName: products
+              servicePort: 80
+              # or resource
+    - host: rnk.bar.org
+      http:
+        paths:
+          - path: /products
+            pathType: Prefix
+            backend:
+              serviceName: orders
+              servicePort: 80
+              # or resource
