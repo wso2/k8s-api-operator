@@ -1,6 +1,6 @@
 # Working with HTTP/HTTPS Private Registry
 
-You can use a HTTP, insecure registry or HTTPS, secure registry to push the built micro-gateway.
+You can use an HTTP, insecure registry or HTTPS, secure registry to push the built micro-gateway.
 
 ## Deploy a Registry Server
 
@@ -16,7 +16,7 @@ You can use a HTTP, insecure registry or HTTPS, secure registry to push the buil
     <MY_IP_ADDRESS>       myregistrydomain.com
     ```
 
-### Deploy a HTTP registry
+### Deploy an HTTP registry
 
 1. Start the registry with basic authentication.
     ```sh
@@ -31,8 +31,8 @@ You can use a HTTP, insecure registry or HTTPS, secure registry to push the buil
       registry:2
     ```
    
-1. Add insecure registry.
-   Edit `docker/daemon.json` file `<HOME_DIR>/.docker/daemon.json` to add insecure registry.
+1. Add an insecure registry.
+   Edit `docker/daemon.json` file `<HOME_DIR>/.docker/daemon.json` to add an insecure registry.
    ```json
    { 
       "debug":true,
@@ -44,7 +44,7 @@ You can use a HTTP, insecure registry or HTTPS, secure registry to push the buil
    ```
    If you are using `Minikube` start it with the flag `--insecure-registry="myregistrydomain.com:5001"`.
 
-### Deploy a HTTPS registry
+### Deploy an HTTPS registry
 
 1. Create self-signed certificates
     ```sh
@@ -76,7 +76,7 @@ You can use a HTTP, insecure registry or HTTPS, secure registry to push the buil
      You do not need to restart Docker.
    
    - Windows Server:
-       1. Open Windows Explorer, right-click the domain.crt file, and choose Install certificate. When prompted,
+       1. Open Windows Explorer, right-click the domain.crt file, and choose `Install certificate`. When prompted,
           select the following options:
           - Store location: local machine
           - Place all certificates in the following store: selected
@@ -93,7 +93,7 @@ You can use a HTTP, insecure registry or HTTPS, secure registry to push the buil
      Restart Docker.
 
 Follow the documentation https://docs.docker.com/registry/deploying for more information on deploying
-a HTTP/HTTPS registry.
+an HTTP/HTTPS registry.
 
 ## Install API Operator
 

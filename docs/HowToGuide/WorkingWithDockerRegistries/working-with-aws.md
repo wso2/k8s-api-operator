@@ -28,7 +28,7 @@ NAME         TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
 kubernetes   ClusterIP   10.100.0.1   <none>        443/TCP   1m
 ```
 
-Verify that you have running Node Groups with following command. Otherwise launch a
+Verify that you have running Node Groups with following command. Otherwise, launch a
 [Managed Node Group](https://docs.aws.amazon.com/eks/latest/userguide/managed-node-groups.html).
 ```sh
 >> kubectl get nodes
@@ -47,12 +47,12 @@ section describes using an Amazon ECR registry type. It also works with other re
     ```sh
     >> export WSO2_API_OPERATOR_VERSION=v1.2.1
     ```
-- Execute the following command to install API Operator interactively and configure repository to push the
+- Execute the following command to install API Operator interactively and configure the repository to push the
   Microgateway image.
 - Select "Amazon ECR" as the repository type.
-- Enter repository uri which is highlighted in the above image.
+- Enter the repository uri which is highlighted in the above image.
 - Enter the file path for aws credentials file. Default is `<USER_HOME>/.aws/credentials`.
-- Confirm configuration are correct with entering "Y"
+- Confirm the configuration are correct with entering "Y"
 
 ```sh
 >> apictl install api-operator

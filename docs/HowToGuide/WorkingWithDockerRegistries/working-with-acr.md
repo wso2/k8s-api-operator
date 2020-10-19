@@ -1,11 +1,11 @@
-# Working with Google Container Registry
+# Working with Azure Container Registry
 
-You can use Google Container Registry as a registry to push the built micro-gateway.
+You can use Azure Container Registry as a registry to push the built micro-gateway.
 
-## Download Service Account Key JSON File
+## Get Access Token
 
-Follow the [cloud.google.com documentation](https://cloud.google.com/docs/authentication/getting-started#creating_a_service_account)
-to create a service account key JSON File and download it to your local file system.
+Follow https://docs.microsoft.com/en-us/azure/container-registry/container-registry-authentication#az-acr-login-with---expose-token
+to get an Access Token for the ACR.
 
 ## Install API Operator
 
@@ -15,9 +15,22 @@ to create a service account key JSON File and download it to your local file sys
     ```
 - Execute the following command to install API Operator interactively and configure the repository to push the
   Microgateway image.
-- Select "GCR" as the repository type.
-- Enter the file path of the downloaded service account key JSON File.
+- Select "HTTPS" as the repository type.
+- Use `<loginServer>` as the repository name.
+- Enter `00000000-0000-0000-0000-000000000000` as the username.
+- Enter `<accessToken>` as the password.
 - Confirm the configuration are correct with entering "Y"
+
+Sample Access Token.
+```json
+{
+  "accessToken": "eyJhbGciOiJSUzI1NiIs[...]24V7wA",
+  "loginServer": "myregistry.azurecr.io"
+}
+```
+
+**Note:** It is also possible to use credentials of admin account of ACR.
+For more info follow https://docs.microsoft.com/en-us/azure/container-registry/container-registry-authentication#admin-account.
 
 ```sh
 >> apictl install api-operator
@@ -28,10 +41,13 @@ Choose registry type:
 4: HTTP Private Registry
 5: HTTPS Private Registry
 6: Quay.io
-Choose a number: 1: 3
-GCR service account key json file: /path/to/gcr/service/account/key/file.json
+Choose a number: 1: 5
+Enter repository name: myregistry.azurecr.io
+Enter username: 00000000-0000-0000-0000-000000000000
+Enter password: eyJhbGciOiJSUzI1NiIs[...]24V7wA
 
-GCR service account key json file: /path/to/gcr/service/account/key/file.json
+Repository: myregistry.azurecr.io
+Username  : 00000000-0000-0000-0000-000000000000
 Confirm configurations: Y:
 ```
 
@@ -55,7 +71,7 @@ Try out [sample scenarios](../../GettingStarted/quick-start-guide.md#sample-scen
 
 ## Clean up
 
-- Delete images created by the operator in GCR repository.
+- Delete images created by the operator in ACR repository.
 - Uninstall the operator
 
 ```sh
