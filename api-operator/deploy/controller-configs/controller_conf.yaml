@@ -318,9 +318,13 @@ data:
   #    mountLocation: /home/ballerina/test1cm
   #    subPath: test1cm
   #    namespace: micro
+  #  - name: test1cmEnv
+  #    asEnvVar: true
   mgwSecrets: |
   # Secrets to be added to mgw deployment. This is an example
   #  - name: test1secret
   #    mountLocation: /home/ballerina/test1secret
   #    subPath: test1secret
   #    namespace: micro
+  #  - name: test1secretEnv
+  #    asEnvVar: true
