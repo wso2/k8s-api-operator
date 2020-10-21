@@ -6,15 +6,65 @@ Here, we will see how we can deploy a simple API which calls the petstore servic
 
 ### Install API Operator
 
-First, install the API Operator. The following command will install the Operator and the configurations
-in the `wso2-system` namespace.
+First, install the API Operator.
+
+- Download [k8s-api-operator-1.2.2.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.2.2/k8s-api-operator-1.2.2.zip)
+and extract the zip
+
+    1. This zip contains the artifacts that required to deploy in Kubernetes.
+    
+    2. Extract k8s-api-operator-1.2.2.zip
+    
+    ```sh
+    >> cd k8s-api-operator-1.2.2
+    ```
+ 
+    **_Note:_** You need to run all commands from within the ***k8s-api-operator-1.2.2*** directory.
+ 
+- Download API controller v3.2.0 or the latest v3.2.x from the [API Manager Tooling web site](https://wso2.com/api-management/tooling/)
+
+    - Under Dev-Ops Tooling section, you can download the tool based on your operating system.
+
+- Extract the API controller distribution and navigate inside the extracted folder using the command-line tool
+
+- Add the location of the extracted folder to your system's $PATH variable to be able to access the executable from anywhere.
+
+- You can find available operations using the below command.
+    
+  ```sh
+  >> apictl --help
+
+- Execute the following command to install API Operator and the configurations interactively on `wso2-system` namespace 
+  and configure a repository to push the built
+managed API image.
+- Select the desired repository type.
+- Enter repository name of repository you chose.
+- Enter the username and the password.
+- Confirm the configurations are correct with entering "Y".
 
 ```sh
 >>> apictl install api-operator
+
+Choose registry type:
+1: Docker Hub
+2: Amazon ECR
+3: GCR
+4: HTTP Private Registry
+5: HTTPS Private Registry
+6: Quay.io
+Choose a number: 1: 1
+Enter repository name: johndoe
+Enter username: johndoe
+Enter password: 
+
+Repository: johndoe
+Username  : johndoe
+Confirm configurations: Y: y
 ```
 
 Please refer [Install API Operator in CI/CD](install-api-operator-in-cicd.md) for more information
-on installing the API operator.
+on installing the API operator and [Working with Registries](WorkingWithDockerRegistries) for more information
+on supported registry types.
 
 ```sh
 namespace/wso2-system created
