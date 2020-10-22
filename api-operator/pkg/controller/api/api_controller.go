@@ -323,7 +323,16 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			return reconcile.Result{}, errSec
 		}
 		for _, jwtConf := range *jwtConfArray {
-			apiSecurityConfigs = append(apiSecurityConfigs, jwtConf)
+			isJwtExist := false
+			for _, jwtIssuers := range apiSecurityConfigs {
+				if strings.EqualFold(jwtConf.Issuer, jwtIssuers.Issuer) {
+					isJwtExist = true
+					break
+				}
+			}
+			if !isJwtExist {
+				apiSecurityConfigs = append(apiSecurityConfigs, jwtConf)
+			}
 		}
 		mgw.Configs.APIKeyConfigs = apiKeyConfArray
 
@@ -373,10 +382,18 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		// Default security
 		if !isDefinedSecurity && resourceLevelSec == 0 {
 			reqLogger.Info("Use default security")
-
 			defaultJwtConfArray, err := security.Default(&r.client, userNamespace, ownerRef)
 			for _, secConf := range *defaultJwtConfArray {
-				apiSecurityConfigs = append(apiSecurityConfigs, secConf)
+				isJwtExist := false
+				for _, jwtIssuers := range apiSecurityConfigs {
+					if strings.EqualFold(secConf.Issuer, jwtIssuers.Issuer) {
+						isJwtExist = true
+						break
+					}
+				}
+				if !isJwtExist {
+					apiSecurityConfigs = append(apiSecurityConfigs, secConf)
+				}
 			}
 			if err != nil {
 				return reconcile.Result{}, err
