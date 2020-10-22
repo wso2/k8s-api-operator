@@ -154,7 +154,7 @@ Furthermore, you have the capability to write your own logic overriding any of t
     >> apictl init petstore-int --oas=swagger.yaml
     
     Output:    
-    Initializing a new WSO2 API Manager project in k8s-api-operator-1.2.1/scenarios/scenario-22/petstore-int
+    Initializing a new WSO2 API Manager project in k8s-api-operator-1.2.2/scenarios/scenario-22/petstore-int
     Project initialized
     ```
 - Copy the _sample-jwt-generator-1.0-SNAPSHOT.jar_ file in scenario-15 into the libs folder in petstore-int/libs path.
