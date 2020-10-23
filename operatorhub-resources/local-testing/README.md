@@ -18,7 +18,7 @@
     cd k8s-api-operator-1.2.2
     ```
  
-    **_Note:_** You need to run all commands from within the ***k8s-api-operator-1.2.0*** directory.
+    **_Note:_** You need to run all commands from within the ***k8s-api-operator-1.2.2*** directory.
 
 <br />
 
@@ -33,6 +33,10 @@ kubectl apply -f https://github.com/operator-framework/operator-lifecycle-manage
 git clone https://github.com/operator-framework/operator-marketplace.git
 kubectl apply -f operator-marketplace/deploy/upstream/
 ```
+
+**_Note:_** If the above steps don't deploy the marketplace and other operators properly, remove the resources created 
+in above steps and use `olm.sh` script.
+
 - Deploy other resources
 ```shell script
 kubectl apply -f install.yaml 
@@ -54,7 +58,7 @@ wso2am-operators   api-operator
  
 >> kubectl get clusterserviceversion -n marketplace
 NAME                   DISPLAY                       VERSION   REPLACES   PHASE
-api-operator.v1.1.0   API Operator for Kubernetes     1.1.0              Succeeded
+api-operator.v1.2.2   API Operator for Kubernetes     1.1.0              Succeeded
 
 >> kubectl get deployment -n marketplace
 NAME                           READY   UP-TO-DATE   AVAILABLE   AGE
@@ -71,7 +75,7 @@ wso2am-operators-66b65df899-fwbs2              1/1     Running   0          90s
 upstream-community-operators-5897c5d54-kqcwr   1/1     Running   0          115s
 
 ```
-api-operator is deployed and is running in marketplace namespace.
+api-operator is deployed and is running in `marketplace` namespace.
 
 #### How to preview the operator
 
