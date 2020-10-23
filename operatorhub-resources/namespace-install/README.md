@@ -93,11 +93,11 @@ Set the API Controller’s mode to Kubernetes to be compatible with kubectl comm
 
 #### Step 2: Install API Operator Configurations
 
-* Download [k8s-api-operator-1.2.0.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.2.0/api-k8s-crds-1.2.0.zip)
+* Download [k8s-api-operator-1.2.2.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.2.2/api-k8s-crds-1.2.2.zip)
   1. This zip contains the artifacts that required to deploy in Kubernetes.
-  2. Extract k8s-api-operator-1.2.0.zip
+  2. Extract k8s-api-operator-1.2.2.zip
 ```
-cd k8s-api-operator-1.2.1
+cd k8s-api-operator-1.2.2
 ```     
 * Create namspace and deploy the controller level configurations **[IMPORTANT]**
   *  When you create an API, a docker image of it will be created and pushed to a docker registry. For this, credentials for your docker resgitry are required.
