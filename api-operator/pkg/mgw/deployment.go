@@ -17,6 +17,9 @@
 package mgw
 
 import (
+	"strconv"
+	"strings"
+
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/registry"
@@ -26,8 +29,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strconv"
-	"strings"
 )
 
 const (
@@ -49,22 +50,9 @@ const (
 	envKeyValSeparator = "="
 )
 
-var (
-	ContainerList *[]corev1.Container
-)
-
-func InitContainers() {
-	initContainerList := make([]corev1.Container, 0, 2)
-	ContainerList = &initContainerList
-}
-
-func AddContainers(containers *[]corev1.Container) {
-	*ContainerList = append(*ContainerList, *containers...)
-}
-
 // Deployment returns a MGW deployment for the given API definition
 func Deployment(client *client.Client, api *wso2v1alpha1.API, controlConfigData map[string]string,
-	owner *[]metav1.OwnerReference) (*appsv1.Deployment, error) {
+	owner *[]metav1.OwnerReference, sidecarContainers []corev1.Container) (*appsv1.Deployment, error) {
 	regConfig := registry.GetConfig()
 	labels := map[string]string{"app": api.Name}
 	liveDelay, _ := strconv.ParseInt(controlConfigData[livenessProbeInitialDelaySeconds], 10, 32)
@@ -79,7 +67,7 @@ func Deployment(client *client.Client, api *wso2v1alpha1.API, controlConfigData 
 	resLimitMemory := controlConfigData[resourceLimitMemory]
 
 	// Mount the user specified Config maps and secrets to mgw deploy volume
-	deployVolume, deployVolumeMount, errDeploy := UserDeploymentVolume(client, api)
+	deployVolume, deployVolumeMount, envFromSources, errDeploy := UserDeploymentVolume(client, api)
 
 	if Configs.AnalyticsEnabled {
 		// mounts an empty dir volume to be used when analytics is enabled
@@ -143,6 +131,7 @@ func Deployment(client *client.Client, api *wso2v1alpha1.API, controlConfigData 
 		},
 		VolumeMounts: deployVolumeMount,
 		Env:          env,
+		EnvFrom:      envFromSources,
 		Ports:        containerPorts,
 		ReadinessProbe: &corev1.Probe{
 			Handler: corev1.Handler{
@@ -170,8 +159,6 @@ func Deployment(client *client.Client, api *wso2v1alpha1.API, controlConfigData 
 		},
 	}
 
-	*(ContainerList) = append(*(ContainerList), apiContainer)
-
 	// set hostAliases
 	hostAliases := getHostAliases(client)
 
@@ -192,8 +179,8 @@ func Deployment(client *client.Client, api *wso2v1alpha1.API, controlConfigData 
 				Labels: labels,
 			},
 			Spec: corev1.PodSpec{
-				HostAliases:	  hostAliases,
-				Containers:       *(ContainerList),
+				HostAliases:      hostAliases,
+				Containers:       append(sidecarContainers, apiContainer),
 				Volumes:          deployVolume,
 				ImagePullSecrets: regConfig.ImagePullSecrets,
 			},

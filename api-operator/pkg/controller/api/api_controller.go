@@ -19,6 +19,10 @@ package api
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/analytics"
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/endpoints"
@@ -48,9 +52,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	"strconv"
-	"strings"
-	"time"
 )
 
 var log = logf.Log.WithName("api.controller")
@@ -126,7 +127,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	// initialize volumes
 	kaniko.InitDocFileProp()
 	kaniko.InitJobVolumes()
-	mgw.InitContainers()
+
+	var sidecarContainers []corev1.Container
 
 	var apiVersion string // API version - for the tag of final MGW docker image
 
@@ -300,7 +302,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		// Creating sidecar endpoint deployment
 		if epDeployMode == sidecar {
 			instance.Spec.Mode = sidecar
-			err := endpoints.AddSidecarContainers(&r.client, userNamespace, &endpointNames)
+			sidecarContainers, err = endpoints.GetSidecarContainers(&r.client, userNamespace, &endpointNames)
 			if err != nil {
 				return reconcile.Result{}, err
 			}
@@ -321,7 +323,16 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			return reconcile.Result{}, errSec
 		}
 		for _, jwtConf := range *jwtConfArray {
-			apiSecurityConfigs = append(apiSecurityConfigs, jwtConf)
+			isJwtExist := false
+			for _, jwtIssuers := range apiSecurityConfigs {
+				if strings.EqualFold(jwtConf.Issuer, jwtIssuers.Issuer) {
+					isJwtExist = true
+					break
+				}
+			}
+			if !isJwtExist {
+				apiSecurityConfigs = append(apiSecurityConfigs, jwtConf)
+			}
 		}
 		mgw.Configs.APIKeyConfigs = apiKeyConfArray
 
@@ -371,10 +382,18 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		// Default security
 		if !isDefinedSecurity && resourceLevelSec == 0 {
 			reqLogger.Info("Use default security")
-
 			defaultJwtConfArray, err := security.Default(&r.client, userNamespace, ownerRef)
 			for _, secConf := range *defaultJwtConfArray {
-				apiSecurityConfigs = append(apiSecurityConfigs, secConf)
+				isJwtExist := false
+				for _, jwtIssuers := range apiSecurityConfigs {
+					if strings.EqualFold(secConf.Issuer, jwtIssuers.Issuer) {
+						isJwtExist = true
+						break
+					}
+				}
+				if !isJwtExist {
+					apiSecurityConfigs = append(apiSecurityConfigs, secConf)
+				}
 			}
 			if err != nil {
 				return reconcile.Result{}, err
@@ -532,7 +551,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	if deployMgwRuntime {
 		reqLogger.Info("Deploying MGW runtime image")
 		// create MGW deployment in k8s cluster
-		mgwDeployment, errDeploy := mgw.Deployment(&r.client, instance, controlConfigData, ownerRef)
+		mgwDeployment, errDeploy := mgw.Deployment(&r.client, instance, controlConfigData, ownerRef, sidecarContainers)
 		r.recorder.Event(instance, corev1.EventTypeNormal, "MGWRuntime",
 			fmt.Sprintf("Deploying MGW runtime: %s.", mgwDeployment.Name))
 		if errDeploy != nil {

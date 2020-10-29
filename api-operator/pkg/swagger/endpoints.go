@@ -39,7 +39,7 @@ const (
 	privateJet = "privateJet"
 )
 
-//XMgwProductionEndpoint represents the structure of endpoint
+//XMgwProductionEndpoint represents the structure of production endpoint
 type XMgwProductionEndpoint struct {
 	Urls []string `yaml:"urls" json:"urls"`
 }
@@ -50,6 +50,47 @@ func HandleMgwEndpoints(client *client.Client, swagger *openapi3.Swagger, mode s
 	map[string]bool, error) {
 	// map endpoint name -> exists (bool)
 	sideCarEndpoints := make(map[string]bool)
+
+	genericEndpointsSwagger, checkEndpoint := swagger.Extensions[EndpointExtension]
+	if checkEndpoint {
+		logEp.Info("Parsing x-wso2-endpoints extension in swagger definition")
+		endpointGen, checkJsonRawNew := genericEndpointsSwagger.(json.RawMessage)
+		if !checkJsonRawNew {
+			err := errs.New("value is not a json.RawMessage")
+			logEp.Error(err,
+				"Invalid format of Target Endpoint definition in swagger")
+			return nil, err
+		}
+
+		var genericEndpoints []map[string]interface{}
+		if err := json.Unmarshal(endpointGen, &genericEndpoints); err != nil {
+			logEp.Error(err, "Invalid format of Target Endpoint definition in swagger")
+		}
+
+		// updated endpoints
+		finalisedEndpoints := genericEndpoints
+
+		for index, _ := range genericEndpoints {
+			for name, value := range genericEndpoints[index] {
+				urlList := value.(map[string]interface{})["urls"].([]interface{})
+				stringUrlList := make([]string, len(urlList))
+				for index, epVal := range urlList {
+					stringUrlList[index] = epVal.(string)
+				}
+				updatedEndpoint := XMgwProductionEndpoint{Urls: stringUrlList}
+
+				errEndpoint := processEndpoints(client, updatedEndpoint.Urls, sideCarEndpoints, updatedEndpoint, apiNamespace, mode)
+				if errEndpoint != nil {
+					return nil, errEndpoint
+				}
+
+				finalisedEndpoints[index][name].(map[string]interface{})["urls"] = updatedEndpoint.Urls
+				fmt.Println(updatedEndpoint)
+			}
+		}
+
+		swagger.Extensions[EndpointExtension] = finalisedEndpoints
+	}
 
 	// API level endpoint
 	if err := updateSwaggerWithProdEPs(client, swagger.Extensions, sideCarEndpoints, apiNamespace, mode); err != nil {
@@ -108,7 +149,7 @@ func HandleMgwEndpoints(client *client.Client, swagger *openapi3.Swagger, mode s
 // updateSwaggerWithProdEPs replaces production endpoints with Target Endpoints CR values
 func updateSwaggerWithProdEPs(client *client.Client, swaggerExtensions map[string]interface{},
 	sideCarEndpoints map[string]bool, apiNamespace string, mode string) error {
-	swaggerEpAPI, checkEndpoint := swaggerExtensions[EndpointExtension]
+	swaggerEpAPI, checkEndpoint := swaggerExtensions[ProductionEndpointExtension]
 	// if not production endpoints defined return
 	if !checkEndpoint {
 		return nil
@@ -123,6 +164,13 @@ func updateSwaggerWithProdEPs(client *client.Client, swaggerExtensions map[strin
 		return err
 	}
 
+	prodEpStr := string(endpointJson)
+	// check if endpoint is a reference
+	if strings.EqualFold(prodEpStr[1:2], "#") {
+		swaggerExtensions[ProductionEndpointExtension] = prodEpStr[1:len(prodEpStr)-1]
+		return nil
+	}
+
 	prodEp := XMgwProductionEndpoint{}
 	if err := json.Unmarshal(endpointJson, &prodEp); err != nil {
 		logEp.Error(err, "Invalid format of Target Endpoint definition in swagger")
@@ -131,7 +179,21 @@ func updateSwaggerWithProdEPs(client *client.Client, swaggerExtensions map[strin
 	// Updated URLs
 	updatedEndpoint := XMgwProductionEndpoint{Urls: make([]string, len(prodEp.Urls))}
 
-	for index, prodEpVal := range prodEp.Urls {
+	errProdEndpoint := processEndpoints(client, prodEp.Urls, sideCarEndpoints, updatedEndpoint, apiNamespace, mode)
+	if errProdEndpoint != nil {
+		return errProdEndpoint
+	}
+
+	// update swagger definition
+	swaggerExtensions[ProductionEndpointExtension] = updatedEndpoint
+	return nil
+}
+
+// updating the endpoint values based on targetendpoints
+func processEndpoints(client *client.Client, endpointList []string,
+	sideCarEndpoints map[string]bool, updatedEndpoint XMgwProductionEndpoint, apiNamespace string, mode string) error {
+
+	for index, prodEpVal := range endpointList {
 		_, errUrl := url.ParseRequestURI(prodEpVal)
 		if errUrl == nil { // Target EP is a valid URL
 			updatedEndpoint.Urls[index] = prodEpVal
@@ -163,8 +225,5 @@ func updateSwaggerWithProdEPs(client *client.Client, swaggerExtensions map[strin
 			}
 		}
 	}
-
-	// update swagger definition
-	swaggerExtensions[EndpointExtension] = updatedEndpoint
 	return nil
 }

@@ -308,7 +308,7 @@ metadata:
 data:
   hostAliases: |
   #  Host Alises to be added to mgw deployment. This is an example.
-  #  - ip: "192.168.1.4"
+  #  - ip: "34.23.143.14"
   #    hostnames:
   #    - "wso2km"
   #    - "km.wso2.com"
@@ -318,9 +318,13 @@ data:
   #    mountLocation: /home/ballerina/test1cm
   #    subPath: test1cm
   #    namespace: micro
+  #  - name: test1cmEnv
+  #    asEnvVar: true
   mgwSecrets: |
   # Secrets to be added to mgw deployment. This is an example
   #  - name: test1secret
   #    mountLocation: /home/ballerina/test1secret
   #    subPath: test1secret
   #    namespace: micro
+  #  - name: test1secretEnv
+  #    asEnvVar: true
