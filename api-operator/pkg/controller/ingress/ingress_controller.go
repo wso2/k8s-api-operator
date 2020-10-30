@@ -2,8 +2,10 @@ package ingress
 
 import (
 	"context"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/controller/common"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/ingress"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/ingress/class"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -83,6 +85,8 @@ func (r *ReconcileIngress) Reconcile(request reconcile.Request) (reconcile.Resul
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
 	}
+	// Request info
+	requestInfo := &common.RequestInfo{Request: request, Ctx: ctx, Client: &r.client, Object: instance}
 
 	if !class.IsValid(instance) {
 		reqLogger.Info("Ignore ingress based on ingress class")
@@ -91,6 +95,11 @@ func (r *ReconcileIngress) Reconcile(request reconcile.Request) (reconcile.Resul
 
 	// TODO: (renuka) sample record
 	r.recorder.Event(instance, corev1.EventTypeNormal, "SampleRecord", "Example record to test :)")
+
+	// handle deletion with finalizers
+	if deleted, err := k8s.HandleDeletion(requestInfo, finalizerName, finalizeDeletion); deleted || err != nil {
+		return reconcile.Result{}, err
+	}
 
 	ingList := &v1beta1.IngressList{}
 	if err := r.client.List(ctx, ingList, client.InNamespace("default")); err != nil {

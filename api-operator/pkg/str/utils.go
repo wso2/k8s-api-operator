@@ -57,3 +57,23 @@ func RenderTemplate(templateText string, configs interface{}) (string, error) {
 
 	return strBuilder.String(), nil
 }
+
+func ContainsString(slice []string, val string) bool {
+	for _, item := range slice {
+		if item == val {
+			return true
+		}
+	}
+	return false
+}
+
+func RemoveString(slice []string, val string) []string {
+	result := make([]string, 0, len(slice))
+	for _, item := range slice {
+		if item == val {
+			continue
+		}
+		result = append(result, item)
+	}
+	return result
+}
