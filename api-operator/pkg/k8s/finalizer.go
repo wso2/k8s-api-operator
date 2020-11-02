@@ -16,12 +16,13 @@ func HandleDeletion(requestInfo *common.RequestInfo, finalizer string, handle fu
 				return false, err
 			}
 		}
+		return false, nil
 	} else {
 		// object is being deleted
 		if str.ContainsString(meta.GetFinalizers(), finalizer) {
 			// handle finalizer
 			if err := handle(requestInfo); err != nil {
-				return false, err
+				return true, err
 			}
 			// remove finalizer
 			meta.SetFinalizers(str.RemoveString(meta.GetFinalizers(), finalizer))
@@ -31,6 +32,4 @@ func HandleDeletion(requestInfo *common.RequestInfo, finalizer string, handle fu
 		}
 		return true, nil
 	}
-
-	return false, nil
 }
