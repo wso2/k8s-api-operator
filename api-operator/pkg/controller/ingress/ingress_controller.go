@@ -3,7 +3,6 @@ package ingress
 import (
 	"context"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/controller/common"
-	"github.com/wso2/k8s-api-operator/api-operator/pkg/envoy/configs"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/ingress"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/ingress/class"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
@@ -142,7 +141,8 @@ func (r *ReconcileIngress) Reconcile(request reconcile.Request) (reconcile.Resul
 	// Check startup
 	if handledRequestCount == len(ingresses)-1 {
 		// Build the whole delta change for all ingresses
-		log.Info("Build whole world")
+		log.Info("Build whole configurations for first time")
+		return reconcile.Result{}, nil
 	} else if handledRequestCount < len(ingresses) {
 		// Ignore these requests as it will be processed in final request.
 		log.Info("Ignore request")
@@ -150,7 +150,7 @@ func (r *ReconcileIngress) Reconcile(request reconcile.Request) (reconcile.Resul
 	}
 	// Make incremental changes since whole world is built.
 
-	if err := configs.Update(requestInfo, ingresses); err != nil {
+	if err := ingress.Update(requestInfo, ingresses); err != nil {
 		return reconcile.Result{}, err
 	}
 
