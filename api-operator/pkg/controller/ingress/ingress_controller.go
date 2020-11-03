@@ -49,7 +49,10 @@ func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Create a new controller
-	c, err := controller.New("ingress-controller", mgr, controller.Options{Reconciler: r})
+	c, err := controller.New("ingress-controller", mgr, controller.Options{
+		Reconciler:              r,
+		MaxConcurrentReconciles: 1, // MaxConcurrentReconciles should be 1 for handling ingresses
+	})
 	if err != nil {
 		return err
 	}
@@ -142,7 +145,8 @@ func (r *ReconcileIngress) Reconcile(request reconcile.Request) (reconcile.Resul
 	if handledRequestCount == len(ingresses)-1 {
 		// Build the whole delta change for all ingresses
 		log.Info("Build whole configurations for first time")
-		return reconcile.Result{}, nil
+		// TODO (renuka) uncomment this, commented for testing purposes
+		//return reconcile.Result{}, nil
 	} else if handledRequestCount < len(ingresses) {
 		// Ignore these requests as it will be processed in final request.
 		log.Info("Ignore request")
@@ -150,7 +154,7 @@ func (r *ReconcileIngress) Reconcile(request reconcile.Request) (reconcile.Resul
 	}
 	// Make incremental changes since whole world is built.
 
-	if err := ingress.Update(requestInfo, ingresses); err != nil {
+	if err := ingress.UpdateDelta(requestInfo, ingresses); err != nil {
 		return reconcile.Result{}, err
 	}
 

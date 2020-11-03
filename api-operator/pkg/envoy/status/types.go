@@ -13,7 +13,18 @@ const operatorNamespace = "wso2-system"
 const ingressProjectStatusCm = "ingress-project-status"
 const ingressProjectStatusKey = "project-status"
 
-// ProjectsStatus represents a list of Open API Spec projects updated in the microgateway
+// ProjectsStatus represents a list of Open API Spec projects updated in the microgateway.
+// Maps ingress -> projects
+//
+// ing1:
+//   example1_com: _
+//   example2_com: _
+// ing2:
+//   example2_com: _
+//   example3_com: _
+//
+// Require a go routine mutex if handled by multiple go routines.
+// Since, only one go routine updates ingresses this is not required.
 type ProjectsStatus map[string]map[string]string
 
 func (s *ProjectsStatus) UpdateToConfigMap(reqInfo *common.RequestInfo) error {
@@ -52,26 +63,23 @@ func (s *ProjectsStatus) UpdateToConfigMap(reqInfo *common.RequestInfo) error {
 	return nil
 }
 
-// NewFromConfigMap returns a new ProjectsStatus object with reading k8s config map
-func NewFromConfigMap(reqInfo *common.RequestInfo) (*ProjectsStatus, error) {
-	// Fetch ingress-configs from configmap
-	ingresCm := &v1.ConfigMap{}
-	if err := (*reqInfo.Client).Get(reqInfo.Ctx, types.NamespacedName{
-		Namespace: operatorNamespace, Name: ingressProjectStatusCm,
-	}, ingresCm); err != nil {
-		if !errors.IsNotFound(err) {
-			return &ProjectsStatus{}, nil
+// UpdatedProjects returns project names that needed to be updated with the new state
+func (s *ProjectsStatus) UpdatedProjects(newS *ProjectsStatus) map[string]bool {
+	// returns all projects in both s and newS
+	projects := make(map[string]bool)
+	for ing, ps := range *newS {
+		// projects from new state - newS
+		for p := range ps {
+			projects[p] = true
 		}
-		return nil, err
+
+		// projects from current state - s
+		for p := range (*s)[ing] {
+			projects[p] = true
+		}
 	}
 
-	// Unmarshal to yaml
-	configs := &ProjectsStatus{}
-	c := ingresCm.BinaryData[ingressProjectStatusKey]
-	if err := yaml.Unmarshal(c, configs); err != nil {
-		return nil, err
-	}
-	return configs, nil
+	return projects
 }
 
 // RemovedProjects returns removed project names from current state with given new state
@@ -80,7 +88,7 @@ func (s *ProjectsStatus) RemovedProjects(newS *ProjectsStatus) []string {
 	var projects []string
 	for ing, ps := range *s {
 		if _, ok := (*newS)[ing]; ok {
-			for p, _ := range ps {
+			for p := range ps {
 				if _, ok := (*newS)[ing][p]; !ok {
 					projects = append(projects, p)
 				}
