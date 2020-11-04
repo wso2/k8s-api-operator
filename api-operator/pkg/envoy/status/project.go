@@ -119,37 +119,51 @@ func (s *ProjectsStatus) Update(newS *ProjectsStatus, gatewayResponse controller
 			continue
 		case controller.Deleted:
 			for ing := range *s {
-				delete((*s)[ing], resProject)
-				// if there are no any project, delete the ingress from current state
-				if len((*s)[ing]) == 0 {
-					delete(*s, ing)
-				}
+				s.removeProject(ing, resProject)
 			}
 		case controller.Updated:
 			for _, ing := range allIngresses {
-				// check project already exists in current state
-				if _, ok := (*s)[ing]; ok {
-					if _, ok := (*s)[ing][resProject]; ok {
-						// do not need to update, already exists
-						continue
-					}
+				sProjectFound := s.containsProject(ing, resProject)
+				newSProjectFound := newS.containsProject(ing, resProject)
+
+				// project should be deleted from the current state if
+				// current state contains it and new state do not contains
+				if sProjectFound && !newSProjectFound {
+					s.removeProject(ing, resProject)
 				}
-				// if not already exists in current state, check the new state
-				if _, ok := (*newS)[ing]; ok {
-					if _, ok := (*newS)[ing][resProject]; ok {
-						// new state contains the project
-						// update the current state
-						if _, ok := (*s)[ing]; ok {
-							// existing ingress
-							(*s)[ing][resProject] = "_"
-						} else {
-							// new ingress
-							(*s)[ing] = map[string]string{resProject: "_"}
-						}
-					}
+
+				// project should be added to the current state if
+				// current state do not contains it and new state contains it
+				if !sProjectFound && newSProjectFound {
+					s.addProject(ing, resProject)
 				}
-				// not exists in both current or new state, ignore the update
+
+				// otherwise do not need to update current state
 			}
 		}
 	}
+}
+
+func (s *ProjectsStatus) removeProject(ing, project string) {
+	delete((*s)[ing], project)
+	// if there are no any project, delete the ingress from current state
+	if len((*s)[ing]) == 0 {
+		delete(*s, ing)
+	}
+}
+
+func (s *ProjectsStatus) addProject(ing, project string) {
+	if _, ok := (*s)[ing]; ok {
+		(*s)[ing][project] = "_"
+	} else {
+		(*s)[ing] = map[string]string{project: "_"}
+	}
+}
+
+func (s *ProjectsStatus) containsProject(ing, project string) bool {
+	if _, ok := (*s)[ing]; ok {
+		_, found := (*s)[ing][project]
+		return found
+	}
+	return false
 }
