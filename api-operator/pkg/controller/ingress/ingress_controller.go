@@ -119,7 +119,8 @@ func (r *ReconcileIngress) Reconcile(request reconcile.Request) (reconcile.Resul
 
 	ingList := &v1beta1.IngressList{}
 	// Read all ingresses in all namespaces
-	// TODO: (renuka) change this if wants to
+	// TODO: (renuka) add a config to handle namespace to watch (all_namespace or specific namespace)
+	// watch namespace read from env variable
 	if err := r.client.List(ctx, ingList, client.InNamespace("")); err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.

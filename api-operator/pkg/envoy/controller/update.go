@@ -5,10 +5,13 @@ import (
 )
 
 func UpdateGateway(projects *action.ProjectsMap) (Response, error) {
-	r := Response{}
+	// TODO (renuka) call HTTP client
 
-	r["ingress-foo_com"] = 200
-	r["ingress-bar_com"] = 500
+	// sample response
+	r := Response{
+		"ingress-foo_com": 200,
+		"ingress-bar_com": 500,
+	}
 
 	return r, nil
 }

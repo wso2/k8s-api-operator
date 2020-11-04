@@ -25,15 +25,12 @@ func UpdateDelta(reqInfo *common.RequestInfo, ingresses []*v1beta1.Ingress) erro
 
 	projectsActions := action.FromProjects(reqInfo, ingresses, projectsList)
 
-	_, err = controller.UpdateGateway(projectsActions) // gatewayResponse
+	gatewayResponse, err := controller.UpdateGateway(projectsActions)
 	if err != nil {
 		return err
 	}
 
-	ingressConfigs := &status.ProjectsStatus{"ing1": map[string]string{"foo_com": "_", "bar_com": "_"}}
-
-	_ = ingressConfigs.UpdateToConfigMap(reqInfo)
-
-	// TODO (renuka)
+	st.Update(newSt, gatewayResponse)
+	//_ = st.UpdateToConfigMap(reqInfo)
 	return nil
 }

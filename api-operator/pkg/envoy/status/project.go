@@ -2,6 +2,7 @@ package status
 
 import (
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/controller/common"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/envoy/controller"
 	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -50,6 +51,7 @@ func (s *ProjectsStatus) UpdateToConfigMap(reqInfo *common.RequestInfo) error {
 	}
 
 	// Update ConfigMap
+	// TODO set to Data
 	d := ingresCm.BinaryData
 	if d == nil {
 		d = map[string][]byte{ingressProjectStatusKey: bytes}
@@ -96,4 +98,58 @@ func (s *ProjectsStatus) RemovedProjects(newS *ProjectsStatus) []string {
 		}
 	}
 	return projects
+}
+
+// Update updates the gateway current state according to the new state changes and response of gateway for changes
+func (s *ProjectsStatus) Update(newS *ProjectsStatus, gatewayResponse controller.Response) {
+	// allIngresses are the all updated or deleted ingresses
+	allIngresses := make([]string, 0, len(*s)+len(*newS))
+	for ing := range *s {
+		allIngresses = append(allIngresses, ing)
+	}
+	for ing := range *newS {
+		allIngresses = append(allIngresses, ing)
+	}
+
+	for resProject, resType := range gatewayResponse {
+		switch resType {
+		case controller.Failed:
+			// project is failed to update or delete
+			// ignore it
+			continue
+		case controller.Deleted:
+			for ing := range *s {
+				delete((*s)[ing], resProject)
+				// if there are no any project, delete the ingress from current state
+				if len((*s)[ing]) == 0 {
+					delete(*s, ing)
+				}
+			}
+		case controller.Updated:
+			for _, ing := range allIngresses {
+				// check project already exists in current state
+				if _, ok := (*s)[ing]; ok {
+					if _, ok := (*s)[ing][resProject]; ok {
+						// do not need to update, already exists
+						continue
+					}
+				}
+				// if not already exists in current state, check the new state
+				if _, ok := (*newS)[ing]; ok {
+					if _, ok := (*newS)[ing][resProject]; ok {
+						// new state contains the project
+						// update the current state
+						if _, ok := (*s)[ing]; ok {
+							// existing ingress
+							(*s)[ing][resProject] = "_"
+						} else {
+							// new ingress
+							(*s)[ing] = map[string]string{resProject: "_"}
+						}
+					}
+				}
+				// not exists in both current or new state, ignore the update
+			}
+		}
+	}
 }

@@ -42,3 +42,7 @@ func TestUpdatedProjects(t *testing.T) {
 		})
 	}
 }
+
+func TestUpdate(t *testing.T) {
+
+}

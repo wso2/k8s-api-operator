@@ -32,6 +32,7 @@ func FromProjects(reqInfo *common.RequestInfo, ingresses []*v1beta1.Ingress, pro
 					oasPath := path.Path
 					if *path.PathType == v1beta1.PathTypeExact {
 						if strings.HasSuffix(oasPath, "/*") {
+							// check debug level
 							// TODO: (renuka) should this be skipped or corrected with removing suffix or treat as prefixed type
 							log.Info("Skipping the path configuration for the host defined, since path type is \"exact\" and path is suffixed with \"*\"",
 								"ingress", ing, "host", rule.Host, "path", oasPath)
