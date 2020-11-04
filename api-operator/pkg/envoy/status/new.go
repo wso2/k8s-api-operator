@@ -35,12 +35,13 @@ func FromConfigMap(reqInfo *common.RequestInfo) (*ProjectsStatus, error) {
 // NewFromIngress returns a new ProjectsStatus from given Ingress object
 func NewFromIngress(ing *v1beta1.Ingress) *ProjectsStatus {
 	st := &ProjectsStatus{}
-	(*st)[ing.Name] = make(map[string]string)
+	name := names.IngressToName(ing)
+	(*st)[name] = make(map[string]string)
 
 	// Projects for defined HTTP rules
 	for _, rule := range ing.Spec.Rules {
 		proj := names.HostToProject(rule.Host)
-		(*st)[ing.Name][proj] = "_"
+		(*st)[name][proj] = "_"
 	}
 
 	// Projects for defined TLS rules

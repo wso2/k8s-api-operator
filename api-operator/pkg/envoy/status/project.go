@@ -16,10 +16,10 @@ const ingressProjectStatusKey = "project-status"
 // ProjectsStatus represents a list of Open API Spec projects updated in the microgateway.
 // Maps ingress -> projects
 //
-// ing1:
+// default/ing1:
 //   example1_com: _
 //   example2_com: _
-// ing2:
+// default/ing2:
 //   example2_com: _
 //   example3_com: _
 //
@@ -68,12 +68,12 @@ func (s *ProjectsStatus) UpdatedProjects(newS *ProjectsStatus) map[string]bool {
 	// returns all projects in both s and newS
 	projects := make(map[string]bool)
 	for ing, ps := range *newS {
-		// projects from new state - newS
+		// projects from new state: newS
 		for p := range ps {
 			projects[p] = true
 		}
 
-		// projects from current state - s
+		// projects from current state: s
 		for p := range (*s)[ing] {
 			projects[p] = true
 		}

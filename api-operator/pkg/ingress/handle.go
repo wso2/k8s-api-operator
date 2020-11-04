@@ -25,7 +25,8 @@ func UpdateDelta(reqInfo *common.RequestInfo, ingresses []*v1beta1.Ingress) erro
 
 	projectsActions := action.FromProjects(reqInfo, ingresses, projectsList)
 
-	if err = controller.UpdateGateway(projectsActions); err != nil {
+	_, err = controller.UpdateGateway(projectsActions) // gatewayResponse
+	if err != nil {
 		return err
 	}
 
