@@ -21,9 +21,9 @@ func UpdateDelta(reqInfo *common.RequestInfo, ingresses []*v1beta1.Ingress) erro
 	// New state to be configured
 	instance := reqInfo.Object.(*v1beta1.Ingress)
 	newSt := status.NewFromIngress(instance)
-	projectsList := st.UpdatedProjects(newSt)
+	projectsSet := st.UpdatedProjects(newSt)
 
-	projectsActions := action.FromProjects(reqInfo, ingresses, projectsList)
+	projectsActions := action.FromProjects(reqInfo, ingresses, projectsSet)
 
 	gatewayResponse, err := controller.UpdateGateway(projectsActions)
 	if err != nil {

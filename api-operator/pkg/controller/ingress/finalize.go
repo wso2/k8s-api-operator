@@ -8,6 +8,10 @@ const (
 )
 
 func finalizeDeletion(requestInfo *common.RequestInfo) error {
-	// TODO (renuka)
+	// handle deletion with finalizers to avoid missing ingress configurations deleted while
+	// restating controller, or deleted before starting controller.
+	//
+	// Ingress deletion delta change also handled in the update delta change flow and
+	// skipping handling deletion here
 	return nil
 }

@@ -144,6 +144,17 @@ func (s *ProjectsStatus) Update(newS *ProjectsStatus, gatewayResponse controller
 	}
 }
 
+func (s *ProjectsStatus) ProjectSet() map[string]bool {
+	projects := make(map[string]bool)
+	for _, ps := range *s {
+		for p := range ps {
+			projects[p] = true
+		}
+	}
+
+	return projects
+}
+
 func (s *ProjectsStatus) removeProject(ing, project string) {
 	delete((*s)[ing], project)
 	// if there are no any project, delete the ingress from current state

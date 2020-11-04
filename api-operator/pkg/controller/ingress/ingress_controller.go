@@ -113,7 +113,10 @@ func (r *ReconcileIngress) Reconcile(request reconcile.Request) (reconcile.Resul
 	r.recorder.Event(instance, corev1.EventTypeNormal, "SampleRecord", "Example record to test :)")
 
 	// Handle deletion with finalizers
-	if deleted, err := k8s.HandleDeletion(requestInfo, finalizerName, finalizeDeletion); deleted || err != nil {
+	if _, finUpdated, err := k8s.HandleDeletion(requestInfo, finalizerName, finalizeDeletion); finUpdated || err != nil {
+		// Deletion is also handled in the below segment, hence allows the flow to continue
+		// If finalizer updated, end the flow as a new request will queue since ingress is updated
+		// If error should requeue request
 		return reconcile.Result{}, err
 	}
 
