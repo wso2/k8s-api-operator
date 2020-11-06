@@ -13,7 +13,7 @@ var (
 	// IngressClass sets the runtime ingress class to use
 	// An empty string means accept all ingresses without
 	// annotation and the ones configured with class microgateway
-	IngressClass = "microgateway"
+	IngressClass = DefaultName
 )
 
 // IsValid returns true if the given Ingress specify the ingress.class annotation
@@ -29,7 +29,7 @@ func IsValid(ing *v1beta1.Ingress) bool {
 		//
 		//return ingress == IngressClass
 
-		return ingress == DefaultName
+		return ingress == IngressClass
 	}
 
 	//// 2. k8s < v1.18. Check default annotation

@@ -36,7 +36,7 @@ func TestNewFromIngress(t *testing.T) {
 		"foo/ing1": map[string]string{"ingress-a_com": "_", "ingress-b_com": "_"},
 	}
 
-	status := NewFromIngress(ingress)
+	status := NewFromIngresses(ingress)
 
 	if !reflect.DeepEqual(status, want) {
 		t.Errorf("NewFromIngress ingress: %v returned state: %v; want: %v", *ingress, *status, *want)

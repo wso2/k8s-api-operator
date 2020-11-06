@@ -1,7 +1,7 @@
 package status
 
 import (
-	"github.com/wso2/k8s-api-operator/api-operator/pkg/envoy/controller"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/envoy/client"
 	"reflect"
 	"testing"
 )
@@ -48,28 +48,28 @@ func TestUpdate(t *testing.T) {
 	var tests = []struct {
 		name       string
 		st, newSt  *ProjectsStatus
-		gwResponse controller.Response
+		gwResponse client.Response
 		want       *ProjectsStatus
 	}{
 		{
 			name:       "Successful deletion & update",
 			st:         &ProjectsStatus{"foo/ing1": map[string]string{"a_com": "_", "b_com": "_"}},
 			newSt:      &ProjectsStatus{"foo/ing1": map[string]string{"a_com": "_"}},
-			gwResponse: controller.Response{"a_com": controller.Updated, "b_com": controller.Deleted},
+			gwResponse: client.Response{"a_com": client.Updated, "b_com": client.Deleted},
 			want:       &ProjectsStatus{"foo/ing1": map[string]string{"a_com": "_"}},
 		},
 		{
 			name:       "Failed deletion & update",
 			st:         &ProjectsStatus{"foo/ing1": map[string]string{"a_com": "_", "b_com": "_"}},
 			newSt:      &ProjectsStatus{"foo/ing1": map[string]string{"a_com": "_"}},
-			gwResponse: controller.Response{"a_com": controller.Failed, "b_com": controller.Failed},
+			gwResponse: client.Response{"a_com": client.Failed, "b_com": client.Failed},
 			want:       &ProjectsStatus{"foo/ing1": map[string]string{"a_com": "_", "b_com": "_"}},
 		},
 		{
 			name:       "Failed update",
 			st:         &ProjectsStatus{"foo/ing1": map[string]string{"a_com": "_"}},
 			newSt:      &ProjectsStatus{"foo/ing1": map[string]string{"b_com": "_"}},
-			gwResponse: controller.Response{"a_com": controller.Deleted, "b_com": controller.Failed},
+			gwResponse: client.Response{"a_com": client.Deleted, "b_com": client.Failed},
 			want:       &ProjectsStatus{},
 		},
 		{
@@ -85,13 +85,13 @@ func TestUpdate(t *testing.T) {
 				"foo/ing4": map[string]string{"f_com": "_"},
 				"foo/ing5": map[string]string{"a_com": "_"},
 			},
-			gwResponse: controller.Response{
-				"a_com": controller.Updated,
-				"b_com": controller.Deleted,
-				"c_com": controller.Failed,
-				"d_com": controller.Failed,
-				"e_com": controller.Deleted,
-				"f_com": controller.Failed,
+			gwResponse: client.Response{
+				"a_com": client.Updated,
+				"b_com": client.Deleted,
+				"c_com": client.Failed,
+				"d_com": client.Failed,
+				"e_com": client.Deleted,
+				"f_com": client.Failed,
 			},
 			want: &ProjectsStatus{
 				"foo/ing1": map[string]string{"a_com": "_"},

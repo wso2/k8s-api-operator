@@ -7,11 +7,13 @@ import (
 )
 
 func HostToProject(host string) string {
-	return fmt.Sprintf("ingress-%v", strings.ReplaceAll(host, ".", "_"))
+	p := strings.ReplaceAll(host, "*.", "__")
+	return fmt.Sprintf("ingress-%v", strings.ReplaceAll(p, ".", "_"))
 }
 
 func ProjectToHost(pj string) string {
-	return strings.TrimPrefix(strings.ReplaceAll(pj, "_", "."), "ingress-")
+	p := strings.TrimPrefix(strings.ReplaceAll(pj, "__", "*."), "ingress-")
+	return strings.ReplaceAll(p, "_", ".")
 }
 
 func IngressToName(ing *v1beta1.Ingress) string {

@@ -25,27 +25,32 @@ func FromConfigMap(reqInfo *common.RequestInfo) (*ProjectsStatus, error) {
 
 	// Unmarshal to yaml
 	st := &ProjectsStatus{}
-	cm := ingresCm.BinaryData[ingressProjectStatusKey]
-	if err := yaml.Unmarshal(cm, st); err != nil {
+	cm := ingresCm.Data[ingressProjectStatusKey]
+	if err := yaml.Unmarshal([]byte(cm), st); err != nil {
 		return nil, err
 	}
 	return st, nil
 }
 
-// NewFromIngress returns a new ProjectsStatus from given Ingress object
-func NewFromIngress(ing *v1beta1.Ingress) *ProjectsStatus {
+// NewFromIngresses returns a new ProjectsStatus from given Ingress objects
+func NewFromIngresses(ingresses ...*v1beta1.Ingress) *ProjectsStatus {
 	st := &ProjectsStatus{}
+	for _, ing := range ingresses {
+		updateFromIngress(st, ing)
+	}
+	return st
+}
+
+func updateFromIngress(projects *ProjectsStatus, ing *v1beta1.Ingress) {
 	name := names.IngressToName(ing)
-	(*st)[name] = make(map[string]string)
+	(*projects)[name] = make(map[string]string)
 
 	// Projects for defined HTTP rules
 	for _, rule := range ing.Spec.Rules {
 		proj := names.HostToProject(rule.Host)
-		(*st)[name][proj] = "_"
+		(*projects)[name][proj] = "_"
 	}
 
 	// Projects for defined TLS rules
 	// TODO: (renuka) handle TLS
-
-	return st
 }

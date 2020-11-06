@@ -2,7 +2,7 @@ package status
 
 import (
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/controller/common"
-	"github.com/wso2/k8s-api-operator/api-operator/pkg/envoy/controller"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/envoy/client"
 	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -40,12 +40,13 @@ func (s *ProjectsStatus) UpdateToConfigMap(reqInfo *common.RequestInfo) error {
 	if err := (*reqInfo.Client).Get(reqInfo.Ctx, types.NamespacedName{
 		Namespace: operatorNamespace, Name: ingressProjectStatusCm,
 	}, ingresCm); err != nil {
-		if !errors.IsNotFound(err) {
+		if errors.IsNotFound(err) {
 			// ConfigMap not found and create it.
-			ingresCm.BinaryData = map[string][]byte{ingressProjectStatusKey: bytes}
-			if err := (*reqInfo.Client).Create(reqInfo.Ctx, ingresCm); err != nil {
-				return err
-			}
+			ingresCm.Namespace = operatorNamespace
+			ingresCm.Name = ingressProjectStatusCm
+			ingresCm.Data = map[string]string{ingressProjectStatusKey: string(bytes)}
+			err = (*reqInfo.Client).Create(reqInfo.Ctx, ingresCm)
+			return err
 		}
 		return err
 	}
@@ -101,7 +102,7 @@ func (s *ProjectsStatus) RemovedProjects(newS *ProjectsStatus) []string {
 }
 
 // Update updates the gateway current state according to the new state changes and response of gateway for changes
-func (s *ProjectsStatus) Update(newS *ProjectsStatus, gatewayResponse controller.Response) {
+func (s *ProjectsStatus) Update(newS *ProjectsStatus, gatewayResponse client.Response) {
 	// allIngresses are the all updated or deleted ingresses
 	allIngresses := make([]string, 0, len(*s)+len(*newS))
 	for ing := range *s {
@@ -113,15 +114,15 @@ func (s *ProjectsStatus) Update(newS *ProjectsStatus, gatewayResponse controller
 
 	for resProject, resType := range gatewayResponse {
 		switch resType {
-		case controller.Failed:
+		case client.Failed:
 			// project is failed to update or delete
 			// ignore it
 			continue
-		case controller.Deleted:
+		case client.Deleted:
 			for ing := range *s {
 				s.removeProject(ing, resProject)
 			}
-		case controller.Updated:
+		case client.Updated:
 			for _, ing := range allIngresses {
 				sProjectFound := s.containsProject(ing, resProject)
 				newSProjectFound := newS.containsProject(ing, resProject)

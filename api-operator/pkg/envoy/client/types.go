@@ -1,4 +1,10 @@
-package controller
+package client
+
+import "github.com/wso2/k8s-api-operator/api-operator/pkg/envoy/action"
+
+type GatewayClient interface {
+	Update(projects *action.ProjectsMap) (Response, error)
+}
 
 // Response represents the response code list after updating the microgateway
 // maps [project -> response code]
