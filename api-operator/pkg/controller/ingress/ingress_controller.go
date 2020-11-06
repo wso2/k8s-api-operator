@@ -4,9 +4,9 @@ import (
 	"context"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/controller/common"
 	gwclient "github.com/wso2/k8s-api-operator/api-operator/pkg/envoy/client"
-	"github.com/wso2/k8s-api-operator/api-operator/pkg/ingress"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/ingress/class"
 	inghandler "github.com/wso2/k8s-api-operator/api-operator/pkg/ingress/handler"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/ingress/ingutils"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -136,7 +136,7 @@ func (r *ReconcileIngress) Reconcile(request reconcile.Request) (reconcile.Resul
 		}
 	}
 
-	ingress.SortIngressSlice(ingresses)
+	ingutils.SortIngressSlice(ingresses)
 
 	// Check startup
 	if successfullyHandledRequestCount == len(ingresses)-1 {

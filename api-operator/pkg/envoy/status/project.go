@@ -53,13 +53,12 @@ func (s *ProjectsStatus) UpdateToConfigMap(reqInfo *common.RequestInfo) error {
 
 	// Update ConfigMap
 	// TODO set to Data
-	d := ingresCm.BinaryData
-	if d == nil {
-		d = map[string][]byte{ingressProjectStatusKey: bytes}
+	if ingresCm.Data == nil {
+		ingresCm.Data = map[string]string{ingressProjectStatusKey: string(bytes)}
 	} else {
-		d[ingressProjectStatusKey] = bytes
+		ingresCm.Data[ingressProjectStatusKey] = string(bytes)
 	}
-	ingresCm.BinaryData = d
+
 	if err := (*reqInfo.Client).Update(reqInfo.Ctx, ingresCm); err != nil {
 		return err
 	}
@@ -67,11 +66,11 @@ func (s *ProjectsStatus) UpdateToConfigMap(reqInfo *common.RequestInfo) error {
 }
 
 // UpdatedProjects returns project names that needed to be updated with the new state
-func (s *ProjectsStatus) UpdatedProjects(newS *ProjectsStatus) map[string]bool {
-	// returns all projects in both s and newS
+func (s *ProjectsStatus) UpdatedProjects(sDiff *ProjectsStatus) map[string]bool {
+	// returns all projects in both s and sDiff
 	projects := make(map[string]bool)
-	for ing, ps := range *newS {
-		// projects from new state: newS
+	for ing, ps := range *sDiff {
+		// projects from new state: sDiff
 		for p := range ps {
 			projects[p] = true
 		}
@@ -86,13 +85,13 @@ func (s *ProjectsStatus) UpdatedProjects(newS *ProjectsStatus) map[string]bool {
 }
 
 // RemovedProjects returns removed project names from current state with given new state
-func (s *ProjectsStatus) RemovedProjects(newS *ProjectsStatus) []string {
-	// returns what presents in s but not in newS
+func (s *ProjectsStatus) RemovedProjects(sDiff *ProjectsStatus) []string {
+	// returns what presents in s but not in sDiff
 	var projects []string
 	for ing, ps := range *s {
-		if _, ok := (*newS)[ing]; ok {
+		if _, ok := (*sDiff)[ing]; ok {
 			for p := range ps {
-				if _, ok := (*newS)[ing][p]; !ok {
+				if _, ok := (*sDiff)[ing][p]; !ok {
 					projects = append(projects, p)
 				}
 			}
@@ -102,13 +101,13 @@ func (s *ProjectsStatus) RemovedProjects(newS *ProjectsStatus) []string {
 }
 
 // Update updates the gateway current state according to the new state changes and response of gateway for changes
-func (s *ProjectsStatus) Update(newS *ProjectsStatus, gatewayResponse client.Response) {
+func (s *ProjectsStatus) Update(sDiff *ProjectsStatus, gatewayResponse client.Response) {
 	// allIngresses are the all updated or deleted ingresses
-	allIngresses := make([]string, 0, len(*s)+len(*newS))
+	allIngresses := make([]string, 0, len(*s)+len(*sDiff))
 	for ing := range *s {
 		allIngresses = append(allIngresses, ing)
 	}
-	for ing := range *newS {
+	for ing := range *sDiff {
 		allIngresses = append(allIngresses, ing)
 	}
 
@@ -125,17 +124,18 @@ func (s *ProjectsStatus) Update(newS *ProjectsStatus, gatewayResponse client.Res
 		case client.Updated:
 			for _, ing := range allIngresses {
 				sProjectFound := s.containsProject(ing, resProject)
-				newSProjectFound := newS.containsProject(ing, resProject)
+				_, sDiffIngFound := (*sDiff)[ing]
+				sDiffProjectFound := sDiff.containsProject(ing, resProject)
 
 				// project should be deleted from the current state if
-				// current state contains it and new state do not contains
-				if sProjectFound && !newSProjectFound {
+				// current state contains it and diff state contains ingress but do not contains project
+				if sProjectFound && sDiffIngFound && !sDiffProjectFound {
 					s.removeProject(ing, resProject)
 				}
 
 				// project should be added to the current state if
-				// current state do not contains it and new state contains it
-				if !sProjectFound && newSProjectFound {
+				// current state do not contains it and diff state contains it
+				if !sProjectFound && sDiffProjectFound {
 					s.addProject(ing, resProject)
 				}
 

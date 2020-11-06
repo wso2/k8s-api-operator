@@ -1,4 +1,4 @@
-package ingress
+package ingutils
 
 import (
 	"fmt"

@@ -18,9 +18,9 @@ func (h *Handler) UpdateWholeWorld(reqInfo *common.RequestInfo, ingresses []*v1b
 	log.Info("Handle whole world update of the ingresses")
 
 	// New state to be configured
-	newS := status.NewFromIngresses(ingresses...)
+	sDiff := status.NewFromIngresses(ingresses...)
 
-	return h.update(reqInfo, ingresses, newS)
+	return h.update(reqInfo, ingresses, sDiff)
 }
 
 func (h *Handler) UpdateDelta(reqInfo *common.RequestInfo, ingresses []*v1beta1.Ingress) error {
@@ -34,15 +34,15 @@ func (h *Handler) UpdateDelta(reqInfo *common.RequestInfo, ingresses []*v1beta1.
 	return h.update(reqInfo, ingresses, newS)
 }
 
-func (h *Handler) update(reqInfo *common.RequestInfo, ingresses []*v1beta1.Ingress, newStatus *status.ProjectsStatus) error {
+func (h *Handler) update(reqInfo *common.RequestInfo, ingresses []*v1beta1.Ingress, sDiff *status.ProjectsStatus) error {
 	// Read current state
 	st, err := status.FromConfigMap(reqInfo)
 	if err != nil {
 		return err
 	}
 
-	// Actions needed to happened with newStatus
-	projectsSet := st.UpdatedProjects(newStatus)
+	// Actions needed to happened with sDiff
+	projectsSet := st.UpdatedProjects(sDiff)
 	projectsActions := action.FromProjects(reqInfo, ingresses, projectsSet)
 
 	// Updated the gateway
@@ -52,7 +52,7 @@ func (h *Handler) update(reqInfo *common.RequestInfo, ingresses []*v1beta1.Ingre
 	}
 
 	// Update the state back
-	st.Update(newStatus, gatewayResponse)
+	st.Update(sDiff, gatewayResponse)
 
 	// try update state without re handling request if error occurred
 	var updateErr error

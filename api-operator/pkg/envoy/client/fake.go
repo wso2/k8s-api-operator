@@ -6,48 +6,76 @@ import (
 	"time"
 )
 
-func NewFakeWithRandomResponse() *Fake {
-	return &Fake{
-		randomResponse: true,
-	}
+type Fake struct {
+	ProjectMap     *action.ProjectsMap
+	Response       Response
+	responseMethod func(projects *action.ProjectsMap) Response
 }
 
 func NewFake(response Response) *Fake {
 	return &Fake{
-		Response:       response,
-		randomResponse: false,
+		responseMethod: func(projects *action.ProjectsMap) Response {
+			return response
+		},
 	}
 }
 
-type Fake struct {
-	ProjectMap     *action.ProjectsMap
-	Response       Response
-	randomResponse bool
+func NewFakeAllSucceeded() *Fake {
+	return &Fake{
+		responseMethod: func(projects *action.ProjectsMap) Response {
+			r := Response{}
+
+			for name, project := range *projects {
+				switch project.Type {
+				case action.Update:
+					r[name] = Updated
+				case action.Delete:
+					r[name] = Deleted
+				}
+			}
+			return r
+		},
+	}
+}
+
+func NewFakeAllFailed() *Fake {
+	return &Fake{
+		responseMethod: func(projects *action.ProjectsMap) Response {
+			r := Response{}
+
+			for name := range *projects {
+				r[name] = Failed
+			}
+			return r
+		},
+	}
+}
+
+func NewFakeWithRandomResponse() *Fake {
+	return &Fake{
+		responseMethod: func(projects *action.ProjectsMap) Response {
+			r := Response{}
+			rand.Seed(time.Now().UnixNano())
+
+			for name, project := range *projects {
+				if rand.Intn(2) == 0 {
+					r[name] = Failed
+				} else {
+					switch project.Type {
+					case action.Update:
+						r[name] = Updated
+					case action.Delete:
+						r[name] = Deleted
+					}
+				}
+			}
+			return r
+		},
+	}
 }
 
 func (c *Fake) Update(projects *action.ProjectsMap) (Response, error) {
 	c.ProjectMap = projects
-
-	if !c.randomResponse {
-		return c.Response, nil
-	}
-
-	// Random response
-	r := Response{}
-	rand.Seed(time.Now().UnixNano())
-
-	for name, project := range *projects {
-		if rand.Intn(2) == 0 {
-			r[name] = Failed
-		} else {
-			switch project.Type {
-			case action.Update:
-				r[name] = Updated
-			case action.Delete:
-				r[name] = Deleted
-			}
-		}
-	}
-	c.Response = r
+	c.Response = c.responseMethod(projects)
 	return c.Response, nil
 }
