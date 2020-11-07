@@ -123,9 +123,9 @@ func (s *ProjectsStatus) Update(sDiff *ProjectsStatus, gatewayResponse client.Re
 			}
 		case client.Updated:
 			for _, ing := range allIngresses {
-				sProjectFound := s.containsProject(ing, resProject)
+				sProjectFound := s.ContainsProject(ing, resProject)
 				_, sDiffIngFound := (*sDiff)[ing]
-				sDiffProjectFound := sDiff.containsProject(ing, resProject)
+				sDiffProjectFound := sDiff.ContainsProject(ing, resProject)
 
 				// project should be deleted from the current state if
 				// current state contains it and diff state contains ingress but do not contains project
@@ -172,7 +172,7 @@ func (s *ProjectsStatus) addProject(ing, project string) {
 	}
 }
 
-func (s *ProjectsStatus) containsProject(ing, project string) bool {
+func (s *ProjectsStatus) ContainsProject(ing, project string) bool {
 	if _, ok := (*s)[ing]; ok {
 		_, found := (*s)[ing][project]
 		return found

@@ -1,0 +1,138 @@
+# Old: 3
+kind: Ingress
+apiVersion: networking.k8s.io/v1beta1
+metadata:
+  name: ing1
+  namespace: default
+  creationTimestamp: "2020-10-03T00:00:01Z"
+  annotations:
+    kubernetes.io/ingress.class: "microgateway"
+spec:
+  backend:
+    serviceName: products
+    servicePort: 80
+  tls:
+    - secretName: foo-prod
+      hosts:
+        - prod.foo.com
+    - secretName: foo-dev
+      hosts:
+        - dev.foo.com
+  rules:
+    - host: "*.foo.com"
+      http:
+        paths:
+          - path: /products
+            pathType: Exact
+            backend:
+              serviceName: products-exact
+              servicePort: 8080
+    - host: prod.foo.com
+      http:
+        paths:
+          - path: /products
+            pathType: Prefix
+            backend:
+              serviceName: products-prefix
+              servicePort: 8080
+    - host: deprecated.foo.com
+      http:
+        paths:
+          - path: /products
+            pathType: Prefix
+            backend:
+              serviceName: products-prefix
+              servicePort: 8080
+
+---
+# Old: 1
+kind: Ingress
+apiVersion: networking.k8s.io/v1beta1
+metadata:
+  name: ing2
+  namespace: default
+  creationTimestamp: "2020-10-01T00:00:01Z"
+  annotations:
+    kubernetes.io/ingress.class: "microgateway"
+spec:
+  tls:
+    - secretName: bar-prod
+      hosts:
+        - prod.bar.org
+  rules:
+    - host: "*.bar.com"
+      http:
+        paths:
+          - path: /products
+            pathType: Exact
+            backend:
+              serviceName: products-exact
+              servicePort: 80
+
+---
+# Old: 2
+kind: Ingress
+apiVersion: networking.k8s.io/v1beta1
+metadata:
+  name: ing3
+  namespace: default
+  creationTimestamp: "2020-10-02T00:00:01Z"
+  annotations:
+    kubernetes.io/ingress.class: "microgateway"
+spec:
+  tls:
+    - secretName: bar-prod2
+      hosts:
+        - prod.bar.org
+  rules:
+    - host: "*.bar.com"
+      http:
+        paths:
+          - path: /products
+            pathType: Prefix
+            backend:
+              serviceName: products-prefix
+              servicePort: 80
+      # Override ing2 /products
+    - host: "*.bar.com"
+      http:
+        paths:
+          - path: /products
+            pathType: Exact
+            backend:
+              serviceName: products-exact-override
+              servicePort: 80
+    - host: "deprecated.bar.com"
+      http:
+        paths:
+          - path: /products
+            pathType: Exact
+            backend:
+              serviceName: products-exact-override
+              servicePort: 80
+
+---
+# Old: 4
+kind: Ingress
+apiVersion: networking.k8s.io/v1beta1
+metadata:
+  name: ing4
+  namespace: default
+  creationTimestamp: "2020-10-04T00:00:01Z"
+  annotations:
+    kubernetes.io/ingress.class: "microgateway"
+spec:
+  tls:
+    - secretName: bar-prod
+      hosts:
+        - prod.bar.org
+  rules:
+      # Override ing1 /products prefix
+    - host: prod.foo.com
+      http:
+        paths:
+          - path: /products
+            pathType: Prefix
+            backend:
+              serviceName: products-prefix
+              servicePort: 8080

@@ -7,6 +7,7 @@ import (
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/ingress/class"
 	inghandler "github.com/wso2/k8s-api-operator/api-operator/pkg/ingress/handler"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/ingress/ingutils"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -30,6 +31,7 @@ var (
 	// successfullyHandledRequestCount represents number of requests successfully handled by the controller for the ingresses
 	// managed by this controller.
 	successfullyHandledRequestCount = 0
+	builtWholeWorld                 = false
 )
 
 // Add creates a new Ingress Controller and adds it to the Manager. The Manager will set fields on the Controller
@@ -91,12 +93,14 @@ func (r *ReconcileIngress) Reconcile(request reconcile.Request) (reconcile.Resul
 	// Fetch the Ingress instance
 	instance := &v1beta1.Ingress{}
 	if err := r.client.Get(ctx, request.NamespacedName, instance); err != nil {
-		if !errors.IsNotFound(err) {
-			// Error reading the object - requeue the request.
-			return reconcile.Result{}, err
+		if errors.IsNotFound(err) {
+			// Request object not found, could have been deleted after reconcile request.
+			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
+			// Return and don't requeue
+			return reconcile.Result{}, nil
 		}
-		// Ingress object not found, could have been deleted after reconcile request.
-		// Handle the request
+		// Error reading the object - requeue the request.
+		return reconcile.Result{}, err
 	}
 	// Request info
 	requestInfo := &common.RequestInfo{Request: request, Ctx: ctx, Client: &r.client, Object: instance, Log: log}
@@ -111,13 +115,13 @@ func (r *ReconcileIngress) Reconcile(request reconcile.Request) (reconcile.Resul
 	r.recorder.Event(instance, corev1.EventTypeNormal, "SampleRecord", "Example record to test :)")
 
 	// TODO (renuka) do not need finalizers since we are storing state in a configmap, so delete following code.
-	//// Handle deletion with finalizers
-	//if _, finUpdated, err := k8s.HandleDeletion(requestInfo, finalizerName, finalizeDeletion); finUpdated || err != nil {
-	//	// Deletion is also handled in the below segment, hence allows the flow to continue
-	//	// If finalizer updated, end the flow as a new request will queue since ingress is updated
-	//	// If error should requeue request
-	//	return reconcile.Result{}, err
-	//}
+	// Handle deletion with finalizers
+	if deleted, finUpdated, err := k8s.HandleDeletion(requestInfo, finalizerName, finalizeDeletion); (finUpdated && !deleted) || err != nil {
+		// Deletion is also handled in the below segment, hence allows the flow to continue
+		// If finalizer updated, end the flow as a new request will queue since ingress is updated
+		// If error should requeue request
+		return reconcile.Result{}, err
+	}
 
 	ingList := &v1beta1.IngressList{}
 	// Read all ingresses in all namespaces
@@ -139,17 +143,20 @@ func (r *ReconcileIngress) Reconcile(request reconcile.Request) (reconcile.Resul
 	ingutils.SortIngressSlice(ingresses)
 
 	// Check startup
-	if successfullyHandledRequestCount == len(ingresses)-1 {
-		// Build the whole delta change for all ingresses
-		log.Info("Build whole configurations for first time")
-		if err := r.ingHandler.UpdateWholeWorld(requestInfo, ingresses); err != nil {
-			return reconcile.Result{}, err
+	if !builtWholeWorld {
+		if successfullyHandledRequestCount == len(ingresses)-1 {
+			// Build the whole delta change for all ingresses
+			log.Info("Build whole configurations for first time")
+			if err := r.ingHandler.UpdateWholeWorld(requestInfo, ingresses); err != nil {
+				return reconcile.Result{}, err
+			}
+			builtWholeWorld = true
+			return successfullyHandled()
+		} else if successfullyHandledRequestCount < len(ingresses) {
+			// Ignore these requests as it will be processed in final request.
+			log.Info("Ignore request")
+			return successfullyHandled()
 		}
-		return successfullyHandled()
-	} else if successfullyHandledRequestCount < len(ingresses) {
-		// Ignore these requests as it will be processed in final request.
-		log.Info("Ignore request")
-		return successfullyHandled()
 	}
 	// Make incremental changes since whole world is built.
 
