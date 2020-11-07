@@ -24,9 +24,6 @@ import (
 
 var log = logf.Log.WithName("controller_ingress")
 
-// TODO: (renuka) operatorNamespace represents the namespace of the operator
-const operatorNamespace = "wso2-system"
-
 var (
 	// successfullyHandledRequestCount represents number of requests successfully handled by the controller for the ingresses
 	// managed by this controller.
@@ -124,10 +121,7 @@ func (r *ReconcileIngress) Reconcile(request reconcile.Request) (reconcile.Resul
 	}
 
 	ingList := &v1beta1.IngressList{}
-	// Read all ingresses in all namespaces
-	// TODO: (renuka) add a config to handle namespace to watch (all_namespace or specific namespace)
-	// watch namespace read from env variable
-	if err := r.client.List(ctx, ingList, client.InNamespace("")); err != nil {
+	if err := r.client.List(ctx, ingList, client.InNamespace(common.WatchNamespace)); err != nil {
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
 	}
