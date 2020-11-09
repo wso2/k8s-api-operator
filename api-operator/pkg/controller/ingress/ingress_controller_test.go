@@ -41,10 +41,10 @@ func TestReconcile(t *testing.T) {
 	k8sClient := fake.NewFakeClientWithScheme(scheme.Scheme, k8sObjects...)
 
 	r := &ReconcileIngress{
-		client:     k8sClient,
-		scheme:     scheme.Scheme,
-		recorder:   &record.FakeRecorder{},
-		ingHandler: &inghandler.Handler{GatewayClient: gwclient.NewFakeAllSucceeded()},
+		client:      k8sClient,
+		scheme:      scheme.Scheme,
+		evnRecorder: &record.FakeRecorder{},
+		ingHandler:  &inghandler.Handler{GatewayClient: gwclient.NewFakeAllSucceeded()},
 	}
 	var request reconcile.Request
 
@@ -107,7 +107,7 @@ func TestReconcile(t *testing.T) {
 			t.Errorf("Ing 5 project: ingress-__bar_com, action: %v; want: Update", tp)
 		}
 
-		testCurrentStatus(&k8sClient, t, true, "default/ing5", "ingress-__bar_com")
+		testCurrentStatus(k8sClient, t, true, "default/ing5", "ingress-__bar_com")
 	})
 
 	// 3.  Update ingress: ing1
@@ -143,9 +143,9 @@ func TestReconcile(t *testing.T) {
 			t.Errorf("Ing 1 project: ingress-deprecated_foo_com, action: %v; want: Delete", tp)
 		}
 
-		testCurrentStatus(&k8sClient, t, true, "default/ing1", "ingress-__foo_com")
-		testCurrentStatus(&k8sClient, t, false, "default/ing1", "ingress-prod_foo_com")
-		testCurrentStatus(&k8sClient, t, false, "default/ing1", "ingress-deprecated_foo_com")
+		testCurrentStatus(k8sClient, t, true, "default/ing1", "ingress-__foo_com")
+		testCurrentStatus(k8sClient, t, false, "default/ing1", "ingress-prod_foo_com")
+		testCurrentStatus(k8sClient, t, false, "default/ing1", "ingress-deprecated_foo_com")
 	})
 
 	// 4.  Delete ingress: ing3
@@ -174,12 +174,12 @@ func TestReconcile(t *testing.T) {
 			t.Errorf("Ing 1 project: ingress-deprecated_bar_com, action: %v; want: Delete", tp)
 		}
 
-		testCurrentStatus(&k8sClient, t, false, "default/ing3", "ingress-__bar_com")
-		testCurrentStatus(&k8sClient, t, false, "default/ing3", "ingress-deprecated_bar_com")
+		testCurrentStatus(k8sClient, t, false, "default/ing3", "ingress-__bar_com")
+		testCurrentStatus(k8sClient, t, false, "default/ing3", "ingress-deprecated_bar_com")
 	})
 }
 
-func testCurrentStatus(k8sClient *client.Client, t *testing.T, shouldExists bool, ing, project string) {
+func testCurrentStatus(k8sClient client.Client, t *testing.T, shouldExists bool, ing, project string) {
 	st, err := status.FromConfigMap(&common.RequestInfo{Ctx: context.TODO(), Client: k8sClient})
 	if err != nil {
 		t.Fatal("Error reading status from configmap")

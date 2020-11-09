@@ -3,6 +3,7 @@ package status
 import (
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/controller/common"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/envoy/names"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
@@ -14,7 +15,7 @@ import (
 func FromConfigMap(reqInfo *common.RequestInfo) (*ProjectsStatus, error) {
 	// Fetch ingress-status from configmap
 	ingresCm := &v1.ConfigMap{}
-	if err := (*reqInfo.Client).Get(reqInfo.Ctx, types.NamespacedName{
+	if err := reqInfo.Client.Get(reqInfo.Ctx, types.NamespacedName{
 		Namespace: operatorNamespace, Name: ingressProjectStatusCm,
 	}, ingresCm); err != nil {
 		if !errors.IsNotFound(err) {
@@ -44,6 +45,12 @@ func NewFromIngresses(ingresses ...*v1beta1.Ingress) *ProjectsStatus {
 func updateFromIngress(projects *ProjectsStatus, ing *v1beta1.Ingress) {
 	name := names.IngressToName(ing)
 	(*projects)[name] = make(map[string]string)
+
+	if k8s.IsDeleted(ing) {
+		// Object being deleted
+		// Should not affect the state
+		return
+	}
 
 	// Projects for defined HTTP rules
 	for _, rule := range ing.Spec.Rules {

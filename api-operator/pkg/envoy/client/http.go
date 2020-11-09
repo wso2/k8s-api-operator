@@ -9,11 +9,11 @@ func (c *Http) Update(projects *action.ProjectsMap) (Response, error) {
 	// TODO (renuka) call HTTP client
 
 	// sample response
-	r := Response{
-		"ingress-__bar_org":    Updated,
-		"ingress-__foo_org":    Failed,
-		"ingress-prod_foo_org": Updated,
-	}
+	//r := Response{
+	//	"ingress-__bar_org":    Updated,
+	//	"ingress-__foo_org":    Failed,
+	//	"ingress-prod_foo_org": Updated,
+	//}
 
-	return r, nil
+	return NewFakeAllSucceeded().Update(projects)
 }

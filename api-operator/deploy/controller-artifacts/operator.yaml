@@ -35,11 +35,19 @@ spec:
           # Replace this with the built image name
           image: wso2/k8s-api-operator:1.2.2
           command:
-          - api-operator
+            - api-operator
+          args:
+            # Zap log level: "info" or "debug"
+            - "--zap-level=info"
           imagePullPolicy: Always
           env:
             - name: WATCH_NAMESPACE
+              # Empty value for watch all namespaces
               value: ""
+              # Watch the namespace, that API Operator is running
+              # valueFrom:
+              #   fieldRef:
+              #     fieldPath: metadata.namespace
             - name: POD_NAME
               valueFrom:
                 fieldRef:

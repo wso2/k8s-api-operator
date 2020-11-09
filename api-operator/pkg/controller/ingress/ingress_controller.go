@@ -40,10 +40,10 @@ func Add(mgr manager.Manager) error {
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 	return &ReconcileIngress{
-		client:     mgr.GetClient(),
-		scheme:     mgr.GetScheme(),
-		recorder:   mgr.GetEventRecorderFor("ingress-controller"),
-		ingHandler: &inghandler.Handler{GatewayClient: &gwclient.Http{}},
+		client:      mgr.GetClient(),
+		scheme:      mgr.GetScheme(),
+		evnRecorder: mgr.GetEventRecorderFor("ingress-controller"),
+		ingHandler:  &inghandler.Handler{GatewayClient: &gwclient.Http{}},
 	}
 }
 
@@ -74,10 +74,10 @@ var _ reconcile.Reconciler = &ReconcileIngress{}
 type ReconcileIngress struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
-	client     client.Client
-	scheme     *runtime.Scheme
-	recorder   record.EventRecorder
-	ingHandler *inghandler.Handler
+	client      client.Client
+	scheme      *runtime.Scheme
+	evnRecorder record.EventRecorder
+	ingHandler  *inghandler.Handler
 }
 
 // Reconcile reads that state of the cluster for a Ingress object and makes changes based on the state read
@@ -100,7 +100,7 @@ func (r *ReconcileIngress) Reconcile(request reconcile.Request) (reconcile.Resul
 		return reconcile.Result{}, err
 	}
 	// Request info
-	requestInfo := &common.RequestInfo{Request: request, Ctx: ctx, Client: &r.client, Object: instance, Log: log}
+	requestInfo := &common.RequestInfo{Request: request, Ctx: ctx, Client: r.client, Object: instance, Log: log, EvnRecorder: r.evnRecorder}
 
 	// Ignore ingresses not managed by this controller
 	if !class.IsValid(instance) {
@@ -109,21 +109,60 @@ func (r *ReconcileIngress) Reconcile(request reconcile.Request) (reconcile.Resul
 	}
 
 	// TODO: (renuka) sample record
-	r.recorder.Event(instance, corev1.EventTypeNormal, "SampleRecord", "Example record to test :)")
+	r.evnRecorder.Event(instance, corev1.EventTypeNormal, "SampleRecord", "Example record to test :)")
 
-	// TODO (renuka) do not need finalizers since we are storing state in a configmap, so delete following code.
 	// Handle deletion with finalizers
-	if deleted, finUpdated, err := k8s.HandleDeletion(requestInfo, finalizerName, finalizeDeletion); (finUpdated && !deleted) || err != nil {
-		// Deletion is also handled in the below segment, hence allows the flow to continue
+	if _, finUpdated, err := k8s.HandleDeletion(requestInfo, finalizerName, r.finalizeDeletion); finUpdated || err != nil {
 		// If finalizer updated, end the flow as a new request will queue since ingress is updated
 		// If error should requeue request
 		return reconcile.Result{}, err
 	}
 
-	ingList := &v1beta1.IngressList{}
-	if err := r.client.List(ctx, ingList, client.InNamespace(common.WatchNamespace)); err != nil {
-		// Error reading the object - requeue the request.
+	ingresses, err := getSortedIngressList(requestInfo)
+	if err != nil {
 		return reconcile.Result{}, err
+	}
+
+	if err := r.handleRequest(requestInfo, ingresses); err != nil {
+		return reconcile.Result{}, nil
+	}
+
+	successfullyHandledRequestCount++
+	return reconcile.Result{}, nil
+}
+
+func (r *ReconcileIngress) handleRequest(requestInfo *common.RequestInfo, ingresses []*v1beta1.Ingress) error {
+	// Check startup
+	if !builtWholeWorld {
+		if successfullyHandledRequestCount == len(ingresses)-1 {
+			// Build the whole delta change for all ingresses
+			log.Info("Build all configurations for first time")
+			if err := r.ingHandler.UpdateWholeWorld(requestInfo, ingresses); err != nil {
+				return err
+			}
+			builtWholeWorld = true
+			return nil
+		} else if successfullyHandledRequestCount < len(ingresses) {
+			// Ignore these requests as it will be processed in final request.
+			log.Info("Ignore request and will be handled")
+			return nil
+		}
+	}
+
+	// Make incremental changes since whole world is built.
+	if err := r.ingHandler.UpdateDelta(requestInfo, ingresses); err != nil {
+		return err
+	}
+	return nil
+}
+
+func getSortedIngressList(requestInfo *common.RequestInfo) ([]*v1beta1.Ingress, error) {
+	requestInfo.Log.Info("Read all ingresses in the specified namespace", "namespace", common.WatchNamespace)
+	ingList := &v1beta1.IngressList{}
+	if err := requestInfo.Client.List(requestInfo.Ctx, ingList, client.InNamespace(common.WatchNamespace)); err != nil {
+		// Error reading the object - requeue the request.
+		requestInfo.Log.Error(err, "Error reading all ingresses in the specified namespace", "namespace", common.WatchNamespace)
+		return nil, err
 	}
 
 	// Filter out ingresses managed by the microgateway ingress controller
@@ -134,43 +173,8 @@ func (r *ReconcileIngress) Reconcile(request reconcile.Request) (reconcile.Resul
 		}
 	}
 
+	requestInfo.Log.V(1).Info("Sort ingress based on CreationTimestamp")
 	ingutils.SortIngressSlice(ingresses)
 
-	// Check startup
-	if !builtWholeWorld {
-		if successfullyHandledRequestCount == len(ingresses)-1 {
-			// Build the whole delta change for all ingresses
-			log.Info("Build whole configurations for first time")
-			if err := r.ingHandler.UpdateWholeWorld(requestInfo, ingresses); err != nil {
-				return reconcile.Result{}, err
-			}
-			builtWholeWorld = true
-			return successfullyHandled()
-		} else if successfullyHandledRequestCount < len(ingresses) {
-			// Ignore these requests as it will be processed in final request.
-			log.Info("Ignore request")
-			return successfullyHandled()
-		}
-	}
-	// Make incremental changes since whole world is built.
-
-	if err := r.ingHandler.UpdateDelta(requestInfo, ingresses); err != nil {
-		return reconcile.Result{}, err
-	}
-
-	// Set Ingress instance as the owner and controller
-	//if err := controllerutil.SetControllerReference(instance, pod, r.scheme); err != nil {
-	//	return reconcile.Result{}, err
-	//}
-
-	// Check if this Pod already exists
-
-	// Pod already exists - don't requeue
-	//log.Info("Skip reconcile: Pod already exists", "Pod.Namespace", found.Namespace, "Pod.Name", found.Name)
-	return successfullyHandled()
-}
-
-func successfullyHandled() (reconcile.Result, error) {
-	successfullyHandledRequestCount++
-	return reconcile.Result{}, nil
+	return ingresses, nil
 }

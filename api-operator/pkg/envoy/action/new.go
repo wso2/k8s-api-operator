@@ -5,6 +5,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/controller/common"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/envoy/names"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"k8s.io/api/networking/v1beta1"
 	"strings"
 )
@@ -21,6 +22,11 @@ func FromProjects(reqInfo *common.RequestInfo, ingresses []*v1beta1.Ingress, pro
 	}
 
 	for _, ing := range ingresses {
+		if k8s.IsDeleted(ing) {
+			// Ingress is deleted, no need to process
+			continue
+		}
+
 		for _, rule := range ing.Spec.Rules {
 			pj := names.HostToProject(rule.Host)
 

@@ -47,7 +47,7 @@ func TestUpdateDelta(t *testing.T) {
 	reqInfo := &common.RequestInfo{
 		Request: reconcile.Request{NamespacedName: types.NamespacedName{Namespace: newIng5.Namespace, Name: newIng5.Name}},
 		Ctx:     ctx,
-		Client:  &k8sClient,
+		Client:  k8sClient,
 		Object:  newIng5,
 		Log:     logger,
 	}

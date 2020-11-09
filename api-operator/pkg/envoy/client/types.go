@@ -20,6 +20,18 @@ type Response map[string]ResponseType
 
 type ResponseType int
 
+func (t ResponseType) String() string {
+	switch t {
+	case Failed:
+		return "Failed"
+	case Updated:
+		return "Updated"
+	case Deleted:
+		return "Deleted"
+	}
+	return "Unsupported Response Type"
+}
+
 const (
 	Failed  = ResponseType(0)
 	Updated = ResponseType(1)

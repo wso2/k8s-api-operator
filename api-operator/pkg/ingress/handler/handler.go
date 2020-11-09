@@ -14,22 +14,22 @@ type Handler struct {
 }
 
 func (h *Handler) UpdateWholeWorld(reqInfo *common.RequestInfo, ingresses []*v1beta1.Ingress) error {
-	log := reqInfo.Log
-	log.Info("Handle whole world update of the ingresses")
+	reqInfo.Log.Info("Handle whole world update of the ingresses")
 
 	// New state to be configured
 	sDiff := status.NewFromIngresses(ingresses...)
+	reqInfo.Log.V(1).Info("Changes in projects for ingresses", "new_status_changes", sDiff)
 
 	return h.update(reqInfo, ingresses, sDiff)
 }
 
 func (h *Handler) UpdateDelta(reqInfo *common.RequestInfo, ingresses []*v1beta1.Ingress) error {
-	log := reqInfo.Log
-	log.Info("Handle delta update of the ingress")
+	reqInfo.Log.Info("Handle delta update of the ingress")
 
 	// New state to be configured
 	instance := reqInfo.Object.(*v1beta1.Ingress)
 	newS := status.NewFromIngresses(instance)
+	reqInfo.Log.V(1).Info("Changes in projects for ingress", "new_status_changes", newS)
 
 	return h.update(reqInfo, ingresses, newS)
 }
@@ -40,19 +40,25 @@ func (h *Handler) update(reqInfo *common.RequestInfo, ingresses []*v1beta1.Ingre
 	if err != nil {
 		return err
 	}
+	reqInfo.Log.V(1).Info("Current status of Microgateway read from k8s configmap", "current_status", st)
 
 	// Actions needed to happened with sDiff
 	projectsSet := st.UpdatedProjects(sDiff)
+	reqInfo.Log.V(1).Info("Project set that require changes", "projects", projectsSet)
 	projectsActions := action.FromProjects(reqInfo, ingresses, projectsSet)
+	reqInfo.Log.V(1).Info("Required actions on projects", "projects_actions", projectsActions)
 
 	// Updated the gateway
+	reqInfo.Log.Info("Updating projects on Microgateway")
 	gatewayResponse, err := h.GatewayClient.Update(projectsActions)
 	if err != nil {
 		return err
 	}
+	reqInfo.Log.Info("Response from Microgateway on updating projects", "gateway_response", gatewayResponse)
 
 	// Update the state back
 	st.Update(sDiff, gatewayResponse)
+	reqInfo.Log.V(1).Info("Updated state of gateway to be stored in k8s configmap based on the Microgateway response", "updated_current_state", st)
 
 	// try update state without re handling request if error occurred
 	var updateErr error
@@ -61,6 +67,10 @@ func (h *Handler) update(reqInfo *common.RequestInfo, ingresses []*v1beta1.Ingre
 			break
 		}
 		time.Sleep(2 * time.Second)
+	}
+	if updateErr == nil {
+		reqInfo.Log.V(1).Info("Successfully updated the updated_current_state in k8s configmap")
+		reqInfo.Log.Info("Successfully updated the project")
 	}
 	return updateErr
 }

@@ -25,6 +25,16 @@ type Project struct {
 // Type represents the type of action
 type Type int
 
+func (t Type) String() string {
+	switch t {
+	case Delete:
+		return "Delete"
+	case Update:
+		return "Update"
+	}
+	return "Unsupported Action Type"
+}
+
 // Project types
 const (
 	Delete = Type(1)

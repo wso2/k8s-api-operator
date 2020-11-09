@@ -37,7 +37,7 @@ func (s *ProjectsStatus) UpdateToConfigMap(reqInfo *common.RequestInfo) error {
 
 	// Check ingress-configs from configmap
 	ingresCm := &v1.ConfigMap{}
-	if err := (*reqInfo.Client).Get(reqInfo.Ctx, types.NamespacedName{
+	if err := reqInfo.Client.Get(reqInfo.Ctx, types.NamespacedName{
 		Namespace: operatorNamespace, Name: ingressProjectStatusCm,
 	}, ingresCm); err != nil {
 		if errors.IsNotFound(err) {
@@ -45,7 +45,7 @@ func (s *ProjectsStatus) UpdateToConfigMap(reqInfo *common.RequestInfo) error {
 			ingresCm.Namespace = operatorNamespace
 			ingresCm.Name = ingressProjectStatusCm
 			ingresCm.Data = map[string]string{ingressProjectStatusKey: string(bytes)}
-			err = (*reqInfo.Client).Create(reqInfo.Ctx, ingresCm)
+			err = reqInfo.Client.Create(reqInfo.Ctx, ingresCm)
 			return err
 		}
 		return err
@@ -59,7 +59,7 @@ func (s *ProjectsStatus) UpdateToConfigMap(reqInfo *common.RequestInfo) error {
 		ingresCm.Data[ingressProjectStatusKey] = string(bytes)
 	}
 
-	if err := (*reqInfo.Client).Update(reqInfo.Ctx, ingresCm); err != nil {
+	if err := reqInfo.Client.Update(reqInfo.Ctx, ingresCm); err != nil {
 		return err
 	}
 	return nil
