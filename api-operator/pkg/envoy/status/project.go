@@ -1,6 +1,7 @@
 package status
 
 import (
+	"context"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/controller/common"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/envoy/client"
 	"gopkg.in/yaml.v2"
@@ -28,7 +29,7 @@ const ingressProjectStatusKey = "project-status"
 // Since, only one go routine updates ingresses this is not required.
 type ProjectsStatus map[string]map[string]string
 
-func (s *ProjectsStatus) UpdateToConfigMap(reqInfo *common.RequestInfo) error {
+func (s *ProjectsStatus) UpdateToConfigMap(ctx context.Context, reqInfo *common.RequestInfo) error {
 	// Marshal yaml
 	bytes, err := yaml.Marshal(s)
 	if err != nil {
@@ -37,7 +38,7 @@ func (s *ProjectsStatus) UpdateToConfigMap(reqInfo *common.RequestInfo) error {
 
 	// Check ingress-configs from configmap
 	ingresCm := &v1.ConfigMap{}
-	if err := reqInfo.Client.Get(reqInfo.Ctx, types.NamespacedName{
+	if err := reqInfo.Client.Get(ctx, types.NamespacedName{
 		Namespace: operatorNamespace, Name: ingressProjectStatusCm,
 	}, ingresCm); err != nil {
 		if errors.IsNotFound(err) {
@@ -45,7 +46,7 @@ func (s *ProjectsStatus) UpdateToConfigMap(reqInfo *common.RequestInfo) error {
 			ingresCm.Namespace = operatorNamespace
 			ingresCm.Name = ingressProjectStatusCm
 			ingresCm.Data = map[string]string{ingressProjectStatusKey: string(bytes)}
-			err = reqInfo.Client.Create(reqInfo.Ctx, ingresCm)
+			err = reqInfo.Client.Create(ctx, ingresCm)
 			return err
 		}
 		return err
@@ -59,7 +60,7 @@ func (s *ProjectsStatus) UpdateToConfigMap(reqInfo *common.RequestInfo) error {
 		ingresCm.Data[ingressProjectStatusKey] = string(bytes)
 	}
 
-	if err := reqInfo.Client.Update(reqInfo.Ctx, ingresCm); err != nil {
+	if err := reqInfo.Client.Update(ctx, ingresCm); err != nil {
 		return err
 	}
 	return nil

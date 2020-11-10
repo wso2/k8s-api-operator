@@ -1,6 +1,7 @@
 package status
 
 import (
+	"context"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/controller/common"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/envoy/names"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
@@ -12,10 +13,10 @@ import (
 )
 
 // FromConfigMap returns a new ProjectsStatus object with reading k8s config map
-func FromConfigMap(reqInfo *common.RequestInfo) (*ProjectsStatus, error) {
+func FromConfigMap(ctx context.Context, reqInfo *common.RequestInfo) (*ProjectsStatus, error) {
 	// Fetch ingress-status from configmap
 	ingresCm := &v1.ConfigMap{}
-	if err := reqInfo.Client.Get(reqInfo.Ctx, types.NamespacedName{
+	if err := reqInfo.Client.Get(ctx, types.NamespacedName{
 		Namespace: operatorNamespace, Name: ingressProjectStatusCm,
 	}, ingresCm); err != nil {
 		if !errors.IsNotFound(err) {

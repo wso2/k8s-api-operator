@@ -9,11 +9,23 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
+type key int
+
+const requestInfoKey key = 0
+
 type RequestInfo struct {
 	reconcile.Request
-	Ctx         context.Context
 	Client      client.Client
 	Object      runtime.Object
 	EvnRecorder record.EventRecorder
 	Log         logr.Logger
+}
+
+func (r RequestInfo) NewContext(ctx context.Context) context.Context {
+	return context.WithValue(ctx, requestInfoKey, r)
+}
+
+func FromContext(ctx context.Context) (RequestInfo, bool) {
+	value, ok := ctx.Value(requestInfoKey).(RequestInfo)
+	return value, ok
 }

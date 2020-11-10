@@ -28,7 +28,8 @@ var (
 	// successfullyHandledRequestCount represents number of requests successfully handled by the controller for the ingresses
 	// managed by this controller.
 	successfullyHandledRequestCount = 0
-	builtWholeWorld                 = false
+	// builtWholeWorld is true if controller successfully updated the Microgateway at least once, when controller started or restarted
+	builtWholeWorld = false
 )
 
 // Add creates a new Ingress Controller and adds it to the Manager. The Manager will set fields on the Controller
@@ -83,7 +84,9 @@ type ReconcileIngress struct {
 // Reconcile reads that state of the cluster for a Ingress object and makes changes based on the state read
 // and what is in the Ingress.Spec
 func (r *ReconcileIngress) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	ctx := context.Background()
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	defer cancelFunc()
+
 	log := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
 	log.Info("Reconciling Ingress")
 
@@ -100,7 +103,8 @@ func (r *ReconcileIngress) Reconcile(request reconcile.Request) (reconcile.Resul
 		return reconcile.Result{}, err
 	}
 	// Request info
-	requestInfo := &common.RequestInfo{Request: request, Ctx: ctx, Client: r.client, Object: instance, Log: log, EvnRecorder: r.evnRecorder}
+	requestInfo := &common.RequestInfo{Request: request, Client: r.client, Object: instance, Log: log, EvnRecorder: r.evnRecorder}
+	ctx = requestInfo.NewContext(ctx)
 
 	// Ignore ingresses not managed by this controller
 	if !class.IsValid(instance) {
@@ -112,18 +116,18 @@ func (r *ReconcileIngress) Reconcile(request reconcile.Request) (reconcile.Resul
 	r.evnRecorder.Event(instance, corev1.EventTypeNormal, "SampleRecord", "Example record to test :)")
 
 	// Handle deletion with finalizers
-	if _, finUpdated, err := k8s.HandleDeletion(requestInfo, finalizerName, r.finalizeDeletion); finUpdated || err != nil {
+	if _, finUpdated, err := k8s.HandleDeletion(ctx, requestInfo, finalizerName, r.finalizeDeletion); finUpdated || err != nil {
 		// If finalizer updated, end the flow as a new request will queue since ingress is updated
 		// If error should requeue request
 		return reconcile.Result{}, err
 	}
 
-	ingresses, err := getSortedIngressList(requestInfo)
+	ingresses, err := getSortedIngressList(ctx, requestInfo)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	if err := r.handleRequest(requestInfo, ingresses); err != nil {
+	if err := r.handleRequest(ctx, requestInfo, ingresses); err != nil {
 		return reconcile.Result{}, nil
 	}
 
@@ -131,13 +135,13 @@ func (r *ReconcileIngress) Reconcile(request reconcile.Request) (reconcile.Resul
 	return reconcile.Result{}, nil
 }
 
-func (r *ReconcileIngress) handleRequest(requestInfo *common.RequestInfo, ingresses []*v1beta1.Ingress) error {
+func (r *ReconcileIngress) handleRequest(ctx context.Context, requestInfo *common.RequestInfo, ingresses []*v1beta1.Ingress) error {
 	// Check startup
 	if !builtWholeWorld {
 		if successfullyHandledRequestCount == len(ingresses)-1 {
 			// Build the whole delta change for all ingresses
 			log.Info("Build all configurations for first time")
-			if err := r.ingHandler.UpdateWholeWorld(requestInfo, ingresses); err != nil {
+			if err := r.ingHandler.UpdateWholeWorld(ctx, requestInfo, ingresses); err != nil {
 				return err
 			}
 			builtWholeWorld = true
@@ -150,16 +154,16 @@ func (r *ReconcileIngress) handleRequest(requestInfo *common.RequestInfo, ingres
 	}
 
 	// Make incremental changes since whole world is built.
-	if err := r.ingHandler.UpdateDelta(requestInfo, ingresses); err != nil {
+	if err := r.ingHandler.UpdateDelta(ctx, requestInfo, ingresses); err != nil {
 		return err
 	}
 	return nil
 }
 
-func getSortedIngressList(requestInfo *common.RequestInfo) ([]*v1beta1.Ingress, error) {
+func getSortedIngressList(ctx context.Context, requestInfo *common.RequestInfo) ([]*v1beta1.Ingress, error) {
 	requestInfo.Log.Info("Read all ingresses in the specified namespace", "namespace", common.WatchNamespace)
 	ingList := &v1beta1.IngressList{}
-	if err := requestInfo.Client.List(requestInfo.Ctx, ingList, client.InNamespace(common.WatchNamespace)); err != nil {
+	if err := requestInfo.Client.List(ctx, ingList, client.InNamespace(common.WatchNamespace)); err != nil {
 		// Error reading the object - requeue the request.
 		requestInfo.Log.Error(err, "Error reading all ingresses in the specified namespace", "namespace", common.WatchNamespace)
 		return nil, err

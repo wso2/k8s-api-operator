@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/controller/common"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/envoy/action"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/envoy/client"
@@ -13,17 +14,17 @@ type Handler struct {
 	GatewayClient client.GatewayClient
 }
 
-func (h *Handler) UpdateWholeWorld(reqInfo *common.RequestInfo, ingresses []*v1beta1.Ingress) error {
+func (h *Handler) UpdateWholeWorld(ctx context.Context, reqInfo *common.RequestInfo, ingresses []*v1beta1.Ingress) error {
 	reqInfo.Log.Info("Handle whole world update of the ingresses")
 
 	// New state to be configured
 	sDiff := status.NewFromIngresses(ingresses...)
 	reqInfo.Log.V(1).Info("Changes in projects for ingresses", "new_status_changes", sDiff)
 
-	return h.update(reqInfo, ingresses, sDiff)
+	return h.update(ctx, reqInfo, ingresses, sDiff)
 }
 
-func (h *Handler) UpdateDelta(reqInfo *common.RequestInfo, ingresses []*v1beta1.Ingress) error {
+func (h *Handler) UpdateDelta(ctx context.Context, reqInfo *common.RequestInfo, ingresses []*v1beta1.Ingress) error {
 	reqInfo.Log.Info("Handle delta update of the ingress")
 
 	// New state to be configured
@@ -31,12 +32,12 @@ func (h *Handler) UpdateDelta(reqInfo *common.RequestInfo, ingresses []*v1beta1.
 	newS := status.NewFromIngresses(instance)
 	reqInfo.Log.V(1).Info("Changes in projects for ingress", "new_status_changes", newS)
 
-	return h.update(reqInfo, ingresses, newS)
+	return h.update(ctx, reqInfo, ingresses, newS)
 }
 
-func (h *Handler) update(reqInfo *common.RequestInfo, ingresses []*v1beta1.Ingress, sDiff *status.ProjectsStatus) error {
+func (h *Handler) update(ctx context.Context, reqInfo *common.RequestInfo, ingresses []*v1beta1.Ingress, sDiff *status.ProjectsStatus) error {
 	// Read current state
-	st, err := status.FromConfigMap(reqInfo)
+	st, err := status.FromConfigMap(ctx, reqInfo)
 	if err != nil {
 		return err
 	}
@@ -63,7 +64,7 @@ func (h *Handler) update(reqInfo *common.RequestInfo, ingresses []*v1beta1.Ingre
 	// try update state without re handling request if error occurred
 	var updateErr error
 	for i := 0; i < 3; i++ {
-		if updateErr = st.UpdateToConfigMap(reqInfo); updateErr == nil {
+		if updateErr = st.UpdateToConfigMap(ctx, reqInfo); updateErr == nil {
 			break
 		}
 		time.Sleep(2 * time.Second)

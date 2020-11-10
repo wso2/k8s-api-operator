@@ -180,7 +180,7 @@ func TestReconcile(t *testing.T) {
 }
 
 func testCurrentStatus(k8sClient client.Client, t *testing.T, shouldExists bool, ing, project string) {
-	st, err := status.FromConfigMap(&common.RequestInfo{Ctx: context.TODO(), Client: k8sClient})
+	st, err := status.FromConfigMap(context.TODO(), &common.RequestInfo{Client: k8sClient})
 	if err != nil {
 		t.Fatal("Error reading status from configmap")
 	}
