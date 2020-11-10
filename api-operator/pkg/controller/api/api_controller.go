@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/analytics"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/apim"
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/endpoints"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/interceptors"
@@ -209,6 +210,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	mgwDockerImage.RegistryType = registry.Type(dockerRegistryConf.Data[registryTypeConst])
 	mgwDockerImage.RepositoryName = dockerRegistryConf.Data[repositoryNameConst]
 	operatorMode := controlConfigData[operatorModeConst]
+	importAPIEnabled, err := strconv.ParseBool(controlConfigData[importAPIEnabledConst])
 
 	// log controller configurations
 	reqLogger.Info(
@@ -669,6 +671,18 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		reqLogger.Info("Successfully deployed the API", "api_name", instance.Name)
 		r.recorder.Event(instance, corev1.EventTypeNormal, "Deploy",
 			fmt.Sprintf("Successfully deployed the API: %s.", instance.Name))
+
+		if importAPIEnabled {
+			importErr := apim.ImportAPI(&r.client, instance)
+			if importErr != nil {
+				r.recorder.Event(instance, eventTypeError, "Import",
+					fmt.Sprintf("Error occured while importing the API to APIM"))
+				return reconcile.Result{}, importErr
+			}
+			r.recorder.Event(instance, corev1.EventTypeNormal, "Import",
+				fmt.Sprintf("Successfully imported the API to APIM"))
+			reqLogger.Info("Successfully imported the API to APIM", "api_name", instance.Name)
+		}
 
 	} else {
 		reqLogger.Info("Skip updating kubernetes artifacts")

@@ -57,6 +57,8 @@ data:
   operatorMode: "default"
   #Expose custom metrics. Default-> observabilityEnabled: "false"
   observabilityEnabled: "false"
+  #Import an API to APIM through Operator
+  importAPIToAPIManager: "false"
 
 ---
 apiVersion: v1
@@ -84,6 +86,13 @@ data:
   #Ports from which the managed API service is getting exposed
   httpPort: "9090"
   httpsPort: "9095"
+  #The following 3 endpoints are related to importing API to API Manager
+  #API Manager Keymanager/DCR endpoint
+  apimKeymanagerEndpoint: "https://localhost:9443"
+  #API Manager Publisher endpoint
+  apimPublisherEndpoint: "https://localhost:9443"
+  #API Manager token endpoint
+  apimTokenEndpoint: "https://localhost:8243/token"
   #Enable distributed ratelimiting. Default value:false. If enabled please deploy API Portal
   enabledGlobalTMEventPublishing: "false"
   #The central traffic management solution URL (related to distributed ratelimiting)
