@@ -27,6 +27,20 @@ func FromProjects(reqInfo *common.RequestInfo, ingresses []*v1beta1.Ingress, pro
 			continue
 		}
 
+		// check whether the ingress contributes to the default backend project
+		if projects[names.DefaultBackendProject] && ing.Spec.Backend != nil {
+			if projectMap[names.DefaultBackendProject].OAS.Servers != nil {
+				// skip this default backend configuration
+				// give priority to older ingress
+				log.Info("Skipping the default backend configuration, since it is already defined by old ingress",
+					"new_ingress", ing)
+			} else {
+				projectMap[names.DefaultBackendProject].Type = Update
+				u := urlFromIngBackend(reqInfo.Namespace, ing.Spec.Backend)
+				projectMap[names.DefaultBackendProject].OAS.Servers = oasServers(u)
+			}
+		}
+
 		for _, rule := range ing.Spec.Rules {
 			pj := names.HostToProject(rule.Host)
 
@@ -51,6 +65,7 @@ func FromProjects(reqInfo *common.RequestInfo, ingresses []*v1beta1.Ingress, pro
 							oasPath += "/*"
 						}
 					}
+
 					if projectMap[pj].OAS.Paths[oasPath] != nil {
 						// skip this path
 						// give priority to older ingress
@@ -59,7 +74,7 @@ func FromProjects(reqInfo *common.RequestInfo, ingresses []*v1beta1.Ingress, pro
 						continue
 					}
 
-					u := urlFromIngBackend(reqInfo.Namespace, path.Backend)
+					u := urlFromIngBackend(reqInfo.Namespace, &path.Backend)
 					projectMap[pj].OAS.Paths[oasPath] = oasPathItem(u)
 				}
 			}
@@ -69,7 +84,7 @@ func FromProjects(reqInfo *common.RequestInfo, ingresses []*v1beta1.Ingress, pro
 	return &projectMap
 }
 
-func urlFromIngBackend(namespace string, backend v1beta1.IngressBackend) string {
+func urlFromIngBackend(namespace string, backend *v1beta1.IngressBackend) string {
 	// TODO: (renuka) check TLS configs if not terminated should be HTTPS, use HTTP for now
 	// Using only backend.ServiceName
 	// TODO: (renuka) do validation for existence of service and throw error
@@ -80,11 +95,15 @@ func oasPathItem(url string) *openapi3.PathItem {
 	return &openapi3.PathItem{
 		Summary:     "",
 		Description: "",
-		Servers: openapi3.Servers{{
-			URL:         url,
-			Description: "",
-		}},
+		Servers:     oasServers(url),
 	}
+}
+
+func oasServers(url string) openapi3.Servers {
+	return openapi3.Servers{{
+		URL:         url,
+		Description: "",
+	}}
 }
 
 func defaultOpenAPI(title string) *openapi3.Swagger {

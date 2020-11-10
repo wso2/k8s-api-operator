@@ -6,6 +6,11 @@ import (
 	"strings"
 )
 
+// DefaultBackendProject represents the project of default backend of ingress
+// project for a host in an ingress rule can not have three "_" consecutively.
+// So this name is not conflict with a project for a host in an ingress rule.
+const DefaultBackendProject = "ingress-___default"
+
 func HostToProject(host string) string {
 	p := strings.ReplaceAll(host, "*.", "__")
 	return fmt.Sprintf("ingress-%v", strings.ReplaceAll(p, ".", "_"))

@@ -53,6 +53,10 @@ func updateFromIngress(projects *ProjectsStatus, ing *v1beta1.Ingress) {
 		return
 	}
 
+	if ing.Spec.Backend != nil {
+		(*projects)[name][names.DefaultBackendProject] = "_"
+	}
+
 	// Projects for defined HTTP rules
 	for _, rule := range ing.Spec.Rules {
 		proj := names.HostToProject(rule.Host)
