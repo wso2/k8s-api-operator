@@ -24,20 +24,52 @@ import (
 	"time"
 )
 
+// TODO (renuka) have to update tests with adding k8s service objects
+
 func TestReconcile(t *testing.T) {
-	ingresses := []*v1beta1.Ingress{{}, {}, {}, {}}
-	statusCm := &v1.ConfigMap{}
-	k8sObjects := []runtime.Object{ingresses[0], ingresses[1], ingresses[2], ingresses[3], statusCm}
 	ctx := context.Background()
+	k8sObjects := make([]runtime.Object, 0, 16)
 
 	// Read 4 ingresses
-	if err := readResources("test_resources/existing/ingresses.yaml", k8sObjects...); err != nil {
+	ingresses := make([]v1beta1.Ingress, 4, 4)
+	ingObj := make([]runtime.Object, 4, 4)
+	for i := range ingresses {
+		ingObj[i] = &ingresses[i]
+	}
+	k8sObjects = append(k8sObjects, ingObj...)
+	if err := readResources("test_resources/existing/ingresses.yaml", ingObj...); err != nil {
 		t.Fatal("Error reading ingress resources")
 	}
+
 	// Read status configmap
+	statusCm := &v1.ConfigMap{}
+	k8sObjects = append(k8sObjects, statusCm)
 	if err := readResources("test_resources/existing/configmaps.yaml", statusCm); err != nil {
 		t.Fatal("Error reading configmap resource")
 	}
+
+	// Read services
+	svc := make([]v1.Service, 4, 4)
+	svcObj := make([]runtime.Object, 4, 4)
+	for i := range svc {
+		svcObj[i] = &svc[i]
+	}
+	k8sObjects = append(k8sObjects, svcObj...)
+	if err := readResources("test_resources/existing/services.yaml", svcObj...); err != nil {
+		t.Fatal("Error reading service resources")
+	}
+
+	// Read secrets
+	sec := make([]v1.Secret, 4, 4)
+	secObj := make([]runtime.Object, 4, 4)
+	for i := range sec {
+		secObj[i] = &sec[i]
+	}
+	k8sObjects = append(k8sObjects, secObj...)
+	if err := readResources("test_resources/existing/secrets.yaml", secObj...); err != nil {
+		t.Fatal("Error reading secret resources")
+	}
+
 	k8sClient := fake.NewFakeClientWithScheme(scheme.Scheme, k8sObjects...)
 
 	r := &ReconcileIngress{
@@ -130,7 +162,11 @@ func TestReconcile(t *testing.T) {
 		}
 
 		projectMap := r.ingHandler.GatewayClient.(*gwclient.Fake).ProjectMap
-		tp := (*projectMap)["ingress-__foo_com"].Type
+		tp := (*projectMap)["ingress-___default"].Type
+		if tp != action.Update {
+			t.Errorf("Ing 1 project: ingress-___default, action: %v; want: Update", tp)
+		}
+		tp = (*projectMap)["ingress-__foo_com"].Type
 		if tp != action.Update {
 			t.Errorf("Ing 1 project: ingress-__foo_com, action: %v; want: Update", tp)
 		}
@@ -143,6 +179,7 @@ func TestReconcile(t *testing.T) {
 			t.Errorf("Ing 1 project: ingress-deprecated_foo_com, action: %v; want: Delete", tp)
 		}
 
+		testCurrentStatus(k8sClient, t, true, "default/ing1", "ingress-___default")
 		testCurrentStatus(k8sClient, t, true, "default/ing1", "ingress-__foo_com")
 		testCurrentStatus(k8sClient, t, false, "default/ing1", "ingress-prod_foo_com")
 		testCurrentStatus(k8sClient, t, false, "default/ing1", "ingress-deprecated_foo_com")

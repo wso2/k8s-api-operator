@@ -64,5 +64,10 @@ func updateFromIngress(projects *ProjectsStatus, ing *v1beta1.Ingress) {
 	}
 
 	// Projects for defined TLS rules
-	// TODO: (renuka) handle TLS
+	for _, tls := range ing.Spec.TLS {
+		for _, host := range tls.Hosts {
+			proj := names.HostToProject(host)
+			(*projects)[name][proj] = "_"
+		}
+	}
 }

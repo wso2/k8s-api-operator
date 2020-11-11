@@ -13,9 +13,6 @@ spec:
     serviceName: products
     servicePort: 80
   tls:
-    - secretName: foo-prod
-      hosts:
-        - prod.foo.com
     - secretName: foo-dev
       hosts:
         - dev.foo.com

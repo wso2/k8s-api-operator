@@ -1,7 +1,7 @@
 kind: Ingress
 apiVersion: networking.k8s.io/v1beta1
 metadata:
-  name: foo-products
+  name: foo-products-passthrough
   namespace: default
   annotations:
     # use the shared ingress-nginx
@@ -11,15 +11,14 @@ metadata:
 spec:
   # ingressClassName: microgateway
   backend:
-    serviceName: products
+    serviceName: products-passthrough
     servicePort: 80
     # resource:
     #   apiGroup: networking.k8s.io/v1beta1
     #   kind: Ingress
     #   name: default-ing
   tls:
-    - secretName: foo-prod
-      hosts:
+    - hosts:
         - prod.foo.org
     - secretName: foo-dev
       hosts:

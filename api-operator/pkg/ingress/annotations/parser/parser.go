@@ -1,10 +1,16 @@
-package annotations
+package parser
 
-import "fmt"
+import (
+	"fmt"
+	"k8s.io/api/networking/v1beta1"
+)
 
 const (
 	// DefaultPrefix defines the default annotation prefix used in the WSO2 microgateway ingress controller.
 	DefaultPrefix = "microgateway.ingress.wso2.com"
+
+	TlsMode       = "tls-mode"
+	ApiManagement = "api-management"
 )
 
 var (
@@ -12,6 +18,10 @@ var (
 	Prefix = DefaultPrefix
 )
 
-func GetAnnotation(name string) string {
+type Parser interface {
+	Parse(*v1beta1.Ingress)
+}
+
+func GetAnnotationWithPrefix(name string) string {
 	return fmt.Sprintf("%v/%v", Prefix, name)
 }

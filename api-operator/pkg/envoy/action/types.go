@@ -20,6 +20,14 @@ type Project struct {
 	Type Type
 	// OAS definition to be updated
 	OAS *openapi3.Swagger
+	// TlsCertificate of the project for TLS termination
+	TlsCertificate *TlsCertificate
+}
+
+type TlsCertificate struct {
+	CertificateChain []byte
+	PrivateKey       []byte
+	TrustedCa        []byte
 }
 
 // Type represents the type of action
