@@ -1,11 +1,15 @@
 package client
 
-import "github.com/wso2/k8s-api-operator/api-operator/pkg/envoy/action"
+import (
+	"context"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/controller/common"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/envoy/action"
+)
 
 type Http struct {
 }
 
-func (c *Http) Update(projects *action.ProjectsMap) (Response, error) {
+func (c *Http) Update(ctx context.Context, reqInfo *common.RequestInfo, projects *action.ProjectsMap) (Response, error) {
 	// TODO (renuka) call HTTP client
 
 	// sample response
@@ -15,5 +19,5 @@ func (c *Http) Update(projects *action.ProjectsMap) (Response, error) {
 	//	"ingress-prod_foo_org": Updated,
 	//}
 
-	return NewFakeAllSucceeded().Update(projects)
+	return NewFakeAllSucceeded().Update(ctx, reqInfo, projects)
 }

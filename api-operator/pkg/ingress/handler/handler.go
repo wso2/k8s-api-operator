@@ -56,7 +56,7 @@ func (h *Handler) update(ctx context.Context, reqInfo *common.RequestInfo, ingre
 
 	// Updated the gateway
 	reqInfo.Log.Info("Updating projects on Microgateway")
-	gatewayResponse, err := h.GatewayClient.Update(projectsActions)
+	gatewayResponse, err := h.GatewayClient.Update(ctx, reqInfo, projectsActions)
 	if err != nil {
 		return err
 	}

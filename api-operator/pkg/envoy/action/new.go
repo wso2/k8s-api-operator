@@ -190,7 +190,8 @@ func processIngressTls(ctx context.Context, reqInfo *common.RequestInfo, project
 					continue
 				}
 				pMap[pj].TlsCertificate = tlsCertificate
-				pMap[pj].Type = ForceUpdate
+				// pMap[pj].Type = ForceUpdate Do not change as Type as ForceUpdate since project should have
+				// HTTP rules or default backend
 			}
 		}
 	}
@@ -210,7 +211,7 @@ func tlsCertFromIngTls(secret *v1.Secret, ing *v1beta1.Ingress) (*TlsCertificate
 	if !ok {
 		return nil, errors.New(fmt.Sprintf("tls key not found in the field \"tls.key\" of secret %s", secret.String()))
 	}
-	tlsCert.CertificateChain = key
+	tlsCert.PrivateKey = key
 
 	tlsConf := tls.Parse(ing)
 	if tlsConf.TlsMode == tls.Mutual {

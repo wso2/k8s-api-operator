@@ -1,7 +1,11 @@
 package client
 
 import (
+	"context"
+	"fmt"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/controller/common"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/envoy/action"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/swagger"
 	"math/rand"
 	"time"
 )
@@ -74,7 +78,22 @@ func NewFakeWithRandomResponse() *Fake {
 	}
 }
 
-func (c *Fake) Update(projects *action.ProjectsMap) (Response, error) {
+func (c *Fake) Update(ctx context.Context, reqInfo *common.RequestInfo, projects *action.ProjectsMap) (Response, error) {
+	for s, project := range *projects {
+		fmt.Println("")
+		fmt.Println("******* PRINT PROJECT ******")
+		fmt.Printf("Project name: %s\n", s)
+		fmt.Printf("Action: %s\n", project.Type)
+
+		if project.Type != action.ForceUpdate {
+			continue
+		}
+		err := project.OAS.Validate(ctx)
+		fmt.Printf("Swagger validation: %v\n", err == nil)
+		fmt.Printf("Tls certs: %v\n", project.TlsCertificate)
+		fmt.Println(swagger.PrettyString(project.OAS))
+	}
+
 	c.ProjectMap = projects
 	c.Response = c.responseMethod(projects)
 	return c.Response, nil

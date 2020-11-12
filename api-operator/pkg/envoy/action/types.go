@@ -1,6 +1,10 @@
 package action
 
-import "github.com/getkin/kin-openapi/openapi3"
+import (
+	"fmt"
+	"github.com/getkin/kin-openapi/openapi3"
+	"strings"
+)
 
 // ProjectsMap represents an action needed to be sent to the envoy microgateway
 // Maps project -> action
@@ -28,6 +32,21 @@ type TlsCertificate struct {
 	CertificateChain []byte
 	PrivateKey       []byte
 	TrustedCa        []byte
+}
+
+func (c *TlsCertificate) String() string {
+	elem := make([]string, 0, 3)
+	if c.CertificateChain != nil {
+		elem = append(elem, "CertificateChain")
+	}
+	if c.PrivateKey != nil {
+		elem = append(elem, "PrivateKey")
+	}
+	if c.TrustedCa != nil {
+		elem = append(elem, "TrustedCa")
+	}
+
+	return fmt.Sprintf("{%s}", strings.Join(elem, ", "))
 }
 
 // Type represents the type of action

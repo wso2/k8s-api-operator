@@ -28,3 +28,11 @@ spec:
             backend:
               serviceName: products-exact
               servicePort: 8080
+    - host: "*.no-service.com"
+      http:
+        paths:
+          - path: /no-service-updated-in-ing1
+            pathType: Exact
+            backend:
+              serviceName: products
+              servicePort: 8080

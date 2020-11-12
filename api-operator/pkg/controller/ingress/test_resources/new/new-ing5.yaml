@@ -32,7 +32,7 @@ spec:
     - host: "*.no-service.com"
       http:
         paths:
-          - path: /products
+          - path: /no-service
             pathType: Exact
             backend:
               serviceName: no-service-available

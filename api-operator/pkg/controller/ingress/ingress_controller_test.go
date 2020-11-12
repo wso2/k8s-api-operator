@@ -187,12 +187,17 @@ func TestReconcile(t *testing.T) {
 		if tp != action.DoNothing {
 			t.Errorf("Ing 1 project: ingress-no_existing-secret-host_com, action: %v; want: DoNothing", tp)
 		}
+		tp = (*projectMap)["ingress-__no-service_com"].Type
+		if tp != action.ForceUpdate {
+			t.Errorf("Ing 5 project: ingress-__no-service_com, action: %v; want: ForceUpdate", tp)
+		}
 
 		testCurrentStatus(k8sClient, t, true, "default/ing1", "ingress-___default")
 		testCurrentStatus(k8sClient, t, true, "default/ing1", "ingress-__foo_com")
 		testCurrentStatus(k8sClient, t, false, "default/ing1", "ingress-prod_foo_com")
 		testCurrentStatus(k8sClient, t, false, "default/ing1", "ingress-deprecated_foo_com")
 		testCurrentStatus(k8sClient, t, false, "default/ing1", "ingress-no_existing-secret-host_com")
+		testCurrentStatus(k8sClient, t, true, "default/ing1", "ingress-__no-service_com")
 	})
 
 	// 4.  Delete ingress: ing3
