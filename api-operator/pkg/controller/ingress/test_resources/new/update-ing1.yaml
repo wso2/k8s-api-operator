@@ -16,6 +16,9 @@ spec:
     - secretName: foo-dev
       hosts:
         - dev.foo.com
+    - secretName: no-existing-secret
+      hosts:
+        - no.existing-secret-host.com
   rules:
     - host: "*.foo.com"
       http:

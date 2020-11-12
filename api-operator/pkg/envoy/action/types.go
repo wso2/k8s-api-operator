@@ -6,7 +6,7 @@ import "github.com/getkin/kin-openapi/openapi3"
 // Maps project -> action
 //
 // example1_com:
-//   Type: Update
+//   Type: ForceUpdate
 //   OAS: swagger.yaml
 // example2_com:
 //   Type: Delete
@@ -37,14 +37,18 @@ func (t Type) String() string {
 	switch t {
 	case Delete:
 		return "Delete"
-	case Update:
-		return "Update"
+	case ForceUpdate:
+		return "ForceUpdate"
+	case DoNothing:
+		return "DoNothing"
 	}
 	return "Unsupported Action Type"
 }
 
 // Project types
 const (
-	Delete = Type(1)
-	Update = Type(2)
+	Delete      = Type(1)
+	ForceUpdate = Type(2)
+	// DoNothing for new projects that are invalid
+	DoNothing = Type(3)
 )

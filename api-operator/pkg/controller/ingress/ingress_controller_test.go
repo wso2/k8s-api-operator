@@ -109,8 +109,8 @@ func TestReconcile(t *testing.T) {
 
 		projectMap := r.ingHandler.GatewayClient.(*gwclient.Fake).ProjectMap
 		tp := (*projectMap)["ingress-__bar_com"].Type
-		if tp != action.Update {
-			t.Errorf("Ing 5 project: ingress-__bar_com, action: %v; want: Update", tp)
+		if tp != action.ForceUpdate {
+			t.Errorf("Ing 5 project: ingress-__bar_com, action: %v; want: ForceUpdate", tp)
 		}
 	})
 
@@ -135,11 +135,16 @@ func TestReconcile(t *testing.T) {
 
 		projectMap := r.ingHandler.GatewayClient.(*gwclient.Fake).ProjectMap
 		tp := (*projectMap)["ingress-__bar_com"].Type
-		if tp != action.Update {
-			t.Errorf("Ing 5 project: ingress-__bar_com, action: %v; want: Update", tp)
+		if tp != action.ForceUpdate {
+			t.Errorf("Ing 5 project: ingress-__bar_com, action: %v; want: ForceUpdate", tp)
+		}
+		tp = (*projectMap)["ingress-__no-service_com"].Type
+		if tp != action.DoNothing {
+			t.Errorf("Ing 5 project: ingress-__no-service_com, action: %v; want: DoNothing", tp)
 		}
 
 		testCurrentStatus(k8sClient, t, true, "default/ing5", "ingress-__bar_com")
+		testCurrentStatus(k8sClient, t, false, "default/ing5", "ingress-__no-service_com")
 	})
 
 	// 3.  Update ingress: ing1
@@ -163,26 +168,31 @@ func TestReconcile(t *testing.T) {
 
 		projectMap := r.ingHandler.GatewayClient.(*gwclient.Fake).ProjectMap
 		tp := (*projectMap)["ingress-___default"].Type
-		if tp != action.Update {
-			t.Errorf("Ing 1 project: ingress-___default, action: %v; want: Update", tp)
+		if tp != action.ForceUpdate {
+			t.Errorf("Ing 1 project: ingress-___default, action: %v; want: ForceUpdate", tp)
 		}
 		tp = (*projectMap)["ingress-__foo_com"].Type
-		if tp != action.Update {
-			t.Errorf("Ing 1 project: ingress-__foo_com, action: %v; want: Update", tp)
+		if tp != action.ForceUpdate {
+			t.Errorf("Ing 1 project: ingress-__foo_com, action: %v; want: ForceUpdate", tp)
 		}
 		tp = (*projectMap)["ingress-prod_foo_com"].Type
-		if tp != action.Update {
-			t.Errorf("Ing 1 project: ingress-prod_foo_com, action: %v; want: Update", tp)
+		if tp != action.ForceUpdate {
+			t.Errorf("Ing 1 project: ingress-prod_foo_com, action: %v; want: ForceUpdate", tp)
 		}
 		tp = (*projectMap)["ingress-deprecated_foo_com"].Type
 		if tp != action.Delete {
 			t.Errorf("Ing 1 project: ingress-deprecated_foo_com, action: %v; want: Delete", tp)
+		}
+		tp = (*projectMap)["ingress-no_existing-secret-host_com"].Type
+		if tp != action.DoNothing {
+			t.Errorf("Ing 1 project: ingress-no_existing-secret-host_com, action: %v; want: DoNothing", tp)
 		}
 
 		testCurrentStatus(k8sClient, t, true, "default/ing1", "ingress-___default")
 		testCurrentStatus(k8sClient, t, true, "default/ing1", "ingress-__foo_com")
 		testCurrentStatus(k8sClient, t, false, "default/ing1", "ingress-prod_foo_com")
 		testCurrentStatus(k8sClient, t, false, "default/ing1", "ingress-deprecated_foo_com")
+		testCurrentStatus(k8sClient, t, false, "default/ing1", "ingress-no_existing-secret-host_com")
 	})
 
 	// 4.  Delete ingress: ing3
@@ -203,8 +213,8 @@ func TestReconcile(t *testing.T) {
 
 		projectMap := r.ingHandler.GatewayClient.(*gwclient.Fake).ProjectMap
 		tp := (*projectMap)["ingress-__bar_com"].Type
-		if tp != action.Update {
-			t.Errorf("Ing 1 project: ingress-__bar_com, action: %v; want: Update", tp)
+		if tp != action.ForceUpdate {
+			t.Errorf("Ing 1 project: ingress-__bar_com, action: %v; want: ForceUpdate", tp)
 		}
 		tp = (*projectMap)["ingress-deprecated_bar_com"].Type
 		if tp != action.Delete {

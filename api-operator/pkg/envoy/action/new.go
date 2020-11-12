@@ -16,10 +16,10 @@ import (
 	"strings"
 )
 
-func FromProjects(ctx context.Context, reqInfo *common.RequestInfo, ingresses []*v1beta1.Ingress, projects map[string]bool) (*ProjectsMap, error) {
+func FromProjects(ctx context.Context, reqInfo *common.RequestInfo, ingresses []*v1beta1.Ingress, projectsToBeUpdated, existingProjects map[string]bool) (*ProjectsMap, error) {
 	projectMap := ProjectsMap{}
 	// Initialize project action with type delete
-	for p := range projects {
+	for p := range projectsToBeUpdated {
 		projectMap[p] = &Project{
 			Type: Delete,
 			OAS:  defaultOpenAPI(p),
@@ -34,14 +34,22 @@ func FromProjects(ctx context.Context, reqInfo *common.RequestInfo, ingresses []
 			continue
 		}
 
-		if err := processDefaultBackend(ctx, reqInfo, projects, &projectMap, ing); err != nil {
+		if err := processDefaultBackend(ctx, reqInfo, projectsToBeUpdated, &projectMap, ing); err != nil {
 			return nil, err
 		}
-		if err := processIngressRules(ctx, reqInfo, projects, &projectMap, ing); err != nil {
+		if err := processIngressRules(ctx, reqInfo, projectsToBeUpdated, &projectMap, ing); err != nil {
 			return nil, err
 		}
-		if err := processIngressTls(ctx, reqInfo, projects, &projectMap, ing); err != nil {
+		if err := processIngressTls(ctx, reqInfo, projectsToBeUpdated, &projectMap, ing); err != nil {
 			return nil, err
+		}
+	}
+
+	// Already not existing projects can not be deleted
+	// Do nothing for those projects
+	for project := range projectsToBeUpdated {
+		if projectMap[project].Type == Delete && !existingProjects[project] {
+			projectMap[project].Type = DoNothing
 		}
 	}
 
@@ -49,7 +57,7 @@ func FromProjects(ctx context.Context, reqInfo *common.RequestInfo, ingresses []
 }
 
 // processDefaultBackend go through ingress default backend and updates the Open API Spec (openapi3.Swagger) of
-// names.DefaultBackendProject in the ProjectsMap and the action Type to Update
+// names.DefaultBackendProject in the ProjectsMap and the action Type to ForceUpdate
 func processDefaultBackend(ctx context.Context, reqInfo *common.RequestInfo, projects map[string]bool, projectMap *ProjectsMap, ing *v1beta1.Ingress) error {
 	log := reqInfo.Log
 	pMap := *projectMap
@@ -74,7 +82,7 @@ func processDefaultBackend(ctx context.Context, reqInfo *common.RequestInfo, pro
 			}
 
 			u := urlFromIngBackend(ing, ing.Spec.Backend)
-			pMap[names.DefaultBackendProject].Type = Update
+			pMap[names.DefaultBackendProject].Type = ForceUpdate
 			pMap[names.DefaultBackendProject].OAS.Servers = oasServers(u)
 		}
 	}
@@ -83,13 +91,14 @@ func processDefaultBackend(ctx context.Context, reqInfo *common.RequestInfo, pro
 }
 
 // processIngressRules go through ingress rules and updates the Open API Spec (openapi3.Swagger) in
-// the ProjectsMap and the action Type to Update
+// the ProjectsMap and the action Type to ForceUpdate
 func processIngressRules(ctx context.Context, reqInfo *common.RequestInfo, projects map[string]bool, projectMap *ProjectsMap, ing *v1beta1.Ingress) error {
 	log := reqInfo.Log
 	pMap := *projectMap
 
 	for _, rule := range ing.Spec.Rules {
 		pj := names.HostToProject(rule.Host)
+		validPj := false
 
 		// check whether the ingress contributes to the project
 		if projects[pj] {
@@ -131,9 +140,12 @@ func processIngressRules(ctx context.Context, reqInfo *common.RequestInfo, proje
 
 				u := urlFromIngBackend(ing, &path.Backend)
 				pMap[pj].OAS.Paths[oasPath] = oasPathItem(u)
+				validPj = true
 			}
 			// Update the project
-			pMap[pj].Type = Update
+			if validPj {
+				pMap[pj].Type = ForceUpdate
+			}
 		}
 	}
 
@@ -141,7 +153,7 @@ func processIngressRules(ctx context.Context, reqInfo *common.RequestInfo, proje
 }
 
 // processIngressTls go through ingress TLS rules and updates the Project.TlsCertificate in
-// the ProjectsMap and the action Type to Update
+// the ProjectsMap and the action Type to ForceUpdate
 func processIngressTls(ctx context.Context, reqInfo *common.RequestInfo, projects map[string]bool, projectMap *ProjectsMap, ing *v1beta1.Ingress) error {
 	log := reqInfo.Log
 	pMap := *projectMap
@@ -178,7 +190,7 @@ func processIngressTls(ctx context.Context, reqInfo *common.RequestInfo, project
 					continue
 				}
 				pMap[pj].TlsCertificate = tlsCertificate
-				pMap[pj].Type = Update
+				pMap[pj].Type = ForceUpdate
 			}
 		}
 	}

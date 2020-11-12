@@ -27,7 +27,7 @@ func NewFakeAllSucceeded() *Fake {
 
 			for name, project := range *projects {
 				switch project.Type {
-				case action.Update:
+				case action.ForceUpdate:
 					r[name] = Updated
 				case action.Delete:
 					r[name] = Deleted
@@ -62,7 +62,7 @@ func NewFakeWithRandomResponse() *Fake {
 					r[name] = Failed
 				} else {
 					switch project.Type {
-					case action.Update:
+					case action.ForceUpdate:
 						r[name] = Updated
 					case action.Delete:
 						r[name] = Deleted

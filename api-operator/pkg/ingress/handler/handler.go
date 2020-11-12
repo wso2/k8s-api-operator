@@ -45,8 +45,9 @@ func (h *Handler) update(ctx context.Context, reqInfo *common.RequestInfo, ingre
 
 	// Actions needed to happened with sDiff
 	projectsSet := st.UpdatedProjects(sDiff)
+	existingProjectSet := st.ProjectSet()
 	reqInfo.Log.V(1).Info("Project set that require changes", "projects", projectsSet)
-	projectsActions, err := action.FromProjects(ctx, reqInfo, ingresses, projectsSet)
+	projectsActions, err := action.FromProjects(ctx, reqInfo, ingresses, projectsSet, existingProjectSet)
 	if err != nil {
 		return err
 	}
