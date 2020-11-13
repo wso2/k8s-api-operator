@@ -15,6 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
+	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -30,45 +31,33 @@ func TestReconcile(t *testing.T) {
 	ctx := context.Background()
 	k8sObjects := make([]runtime.Object, 0, 16)
 
-	// Read 4 ingresses
-	ingresses := make([]v1beta1.Ingress, 4, 4)
-	ingObj := make([]runtime.Object, 4, 4)
-	for i := range ingresses {
-		ingObj[i] = &ingresses[i]
-	}
-	k8sObjects = append(k8sObjects, ingObj...)
-	if err := readResources("test_resources/existing/ingresses.yaml", ingObj...); err != nil {
+	// Read ingresses
+	ingresses, err := readResources("test_resources/existing/ingresses.yaml", v1beta1.Ingress{})
+	if err != nil {
 		t.Fatal("Error reading ingress resources")
 	}
+	k8sObjects = append(k8sObjects, ingresses...)
 
 	// Read status configmap
-	statusCm := &v1.ConfigMap{}
-	k8sObjects = append(k8sObjects, statusCm)
-	if err := readResources("test_resources/existing/configmaps.yaml", statusCm); err != nil {
+	statusCm, err := readResources("test_resources/existing/configmaps.yaml", v1.ConfigMap{})
+	if err != nil {
 		t.Fatal("Error reading configmap resource")
 	}
+	k8sObjects = append(k8sObjects, statusCm...)
 
 	// Read services
-	svc := make([]v1.Service, 4, 4)
-	svcObj := make([]runtime.Object, 4, 4)
-	for i := range svc {
-		svcObj[i] = &svc[i]
-	}
-	k8sObjects = append(k8sObjects, svcObj...)
-	if err := readResources("test_resources/existing/services.yaml", svcObj...); err != nil {
+	svc, err := readResources("test_resources/existing/services.yaml", v1.Service{})
+	if err != nil {
 		t.Fatal("Error reading service resources")
 	}
+	k8sObjects = append(k8sObjects, svc...)
 
 	// Read secrets
-	sec := make([]v1.Secret, 4, 4)
-	secObj := make([]runtime.Object, 4, 4)
-	for i := range sec {
-		secObj[i] = &sec[i]
-	}
-	k8sObjects = append(k8sObjects, secObj...)
-	if err := readResources("test_resources/existing/secrets.yaml", secObj...); err != nil {
+	sec, err := readResources("test_resources/existing/secrets.yaml", v1.Secret{})
+	if err != nil {
 		t.Fatal("Error reading secret resources")
 	}
+	k8sObjects = append(k8sObjects, sec...)
 
 	k8sClient := fake.NewFakeClientWithScheme(scheme.Scheme, k8sObjects...)
 
@@ -83,7 +72,8 @@ func TestReconcile(t *testing.T) {
 	// 1.  Update whole world
 	t.Run("Build whole world", func(t *testing.T) {
 		for _, ingress := range ingresses {
-			request = reconcile.Request{NamespacedName: types.NamespacedName{Namespace: ingress.Namespace, Name: ingress.Name}}
+			ing := ingress.(*v1beta1.Ingress)
+			request = reconcile.Request{NamespacedName: types.NamespacedName{Namespace: ing.Namespace, Name: ing.Name}}
 			if _, err := r.Reconcile(request); err != nil {
 				t.Error("Error building whole world from initial ingresses")
 			}
@@ -96,12 +86,13 @@ func TestReconcile(t *testing.T) {
 		// Since update ingresses with finalizers will result to requeue the updated ingress
 		// process them again
 		for i, ingress := range ingresses {
-			request = reconcile.Request{NamespacedName: types.NamespacedName{Namespace: ingress.Namespace, Name: ingress.Name}}
+			ing := *ingress.(*v1beta1.Ingress)
+			request = reconcile.Request{NamespacedName: types.NamespacedName{Namespace: ing.Namespace, Name: ing.Name}}
 			if _, err := r.Reconcile(request); err != nil {
 				t.Error("Error building whole world from initial ingresses")
 			}
 
-			// The following is not a required feature, but it can void unnecessary update of gateway
+			// The following is not a required feature, but it can provide unnecessary update of gateway
 			if i < len(ingresses)-1 && r.ingHandler.GatewayClient.(*gwclient.Fake).ProjectMap != nil {
 				t.Error("Only last request should consider to build whole world")
 			}
@@ -116,10 +107,11 @@ func TestReconcile(t *testing.T) {
 
 	// 2.  Add new ingress: ing5
 	t.Run("Delta change: Add new ingress", func(t *testing.T) {
-		newIng5 := &v1beta1.Ingress{}
-		if err := readResources("test_resources/new/new-ing5.yaml", newIng5); err != nil {
+		ing, err := readResources("test_resources/new/new-ing5.yaml", v1beta1.Ingress{})
+		if err != nil {
 			t.Fatal("Error reading ingress resource")
 		}
+		newIng5 := ing[0].(*v1beta1.Ingress)
 		request = reconcile.Request{NamespacedName: types.NamespacedName{Namespace: newIng5.Namespace, Name: newIng5.Name}}
 		if err := k8sClient.Create(ctx, newIng5); err != nil {
 			t.Fatal("Error in k8s client; err: ", err)
@@ -149,10 +141,12 @@ func TestReconcile(t *testing.T) {
 
 	// 3.  Update ingress: ing1
 	t.Run("Delta change: Update ingress", func(t *testing.T) {
-		updateIng1 := &v1beta1.Ingress{}
-		if err := readResources("test_resources/new/update-ing1.yaml", updateIng1); err != nil {
+		ing, err := readResources("test_resources/new/update-ing1.yaml", v1beta1.Ingress{})
+		if err != nil {
 			t.Fatal("Error reading ingress resource")
 		}
+		updateIng1 := ing[0].(*v1beta1.Ingress)
+
 		request = reconcile.Request{NamespacedName: types.NamespacedName{Namespace: updateIng1.Namespace, Name: updateIng1.Name}}
 		if err := k8sClient.Update(ctx, updateIng1); err != nil {
 			t.Fatal("Error in k8s client; err: ", err)
@@ -247,18 +241,24 @@ func testCurrentStatus(k8sClient client.Client, t *testing.T, shouldExists bool,
 	}
 }
 
-func readResources(path string, obs ...runtime.Object) error {
+func readResources(path string, objType interface{}) ([]runtime.Object, error) {
+	tp := reflect.TypeOf(objType)
+
 	resource, err := readYamlResourceFile(path)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	for i, s := range resource {
-		if err := yaml.Unmarshal([]byte(s), obs[i]); err != nil {
-			return err
+	res := make([]runtime.Object, 0, len(resource))
+	for _, s := range resource {
+		vl := reflect.New(tp)
+		x := vl.Interface().(runtime.Object)
+		res = append(res, x)
+		if err := yaml.Unmarshal([]byte(s), x); err != nil {
+			return nil, err
 		}
 	}
-	return nil
+	return res, nil
 }
 
 func readYamlResourceFile(path string) ([]string, error) {
