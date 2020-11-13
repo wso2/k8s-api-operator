@@ -35,7 +35,7 @@ spec:
           # Replace this with the built image name
           image: wso2/k8s-api-operator:1.2.2
           command:
-          - api-operator
+            - api-operator
           imagePullPolicy: Always
           env:
             - name: WATCH_NAMESPACE
@@ -46,3 +46,5 @@ spec:
                   fieldPath: metadata.name
             - name: OPERATOR_NAME
               value: "api-operator"
+            - name: SYSTEM_NAMESPACE
+              value: "wso2-system"

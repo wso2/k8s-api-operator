@@ -19,6 +19,7 @@ package analytics
 import (
 	"errors"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/cert"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/mgw"
 	corev1 "k8s.io/api/core/v1"
@@ -31,7 +32,6 @@ var logger = log.Log.WithName("analytics.config")
 
 // k8s configs
 const (
-	wso2NameSpaceConst   = "wso2-system"
 	analyticsConfName    = "analytics-config"
 	analyticsSecretConst = "analyticsSecret"
 
@@ -52,7 +52,7 @@ const (
 
 func Handle(client *client.Client, userNamespace string) error {
 	analyticsConf := k8s.NewConfMap()
-	errConf := k8s.Get(client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: analyticsConfName}, analyticsConf)
+	errConf := k8s.Get(client, types.NamespacedName{Namespace: config.SystemNamespace, Name: analyticsConfName}, analyticsConf)
 	if errConf != nil {
 		logger.Info("Disabling analytics since the analytics configuration related config map not found")
 		mgw.Configs.AnalyticsEnabled = false
@@ -61,7 +61,7 @@ func Handle(client *client.Client, userNamespace string) error {
 			// gets the data from analytics secret
 			analyticsSecret := k8s.NewSecret()
 			errSecret := k8s.Get(client, types.NamespacedName{
-				Namespace: wso2NameSpaceConst,
+				Namespace: config.SystemNamespace,
 				Name:      analyticsConf.Data[analyticsSecretConst],
 			}, analyticsSecret)
 
@@ -71,10 +71,10 @@ func Handle(client *client.Client, userNamespace string) error {
 				// checks if the certificate exists in the namespace of the API
 				errCertNs := k8s.Get(client, types.NamespacedName{Name: analyticsCertSecretName, Namespace: userNamespace}, analyticsCertSecret)
 				if errCertNs != nil {
-					logger.Info("Analytics certificate is not found in the user namespace. Finding it in system namespace", "user_namespace", userNamespace, "system_namespace", wso2NameSpaceConst)
-					errCopyCert := k8s.Get(client, types.NamespacedName{Name: analyticsCertSecretName, Namespace: wso2NameSpaceConst}, analyticsCertSecret)
+					logger.Info("Analytics certificate is not found in the user namespace. Finding it in system namespace", "user_namespace", userNamespace, "system_namespace", config.SystemNamespace)
+					errCopyCert := k8s.Get(client, types.NamespacedName{Name: analyticsCertSecretName, Namespace: config.SystemNamespace}, analyticsCertSecret)
 					if errCopyCert != nil {
-						logger.Error(errCopyCert, "Error getting analytics certificate in the system namespace", "system_namespace", wso2NameSpaceConst)
+						logger.Error(errCopyCert, "Error getting analytics certificate in the system namespace", "system_namespace", config.SystemNamespace)
 						return errCopyCert
 					}
 					// copy to user namespace

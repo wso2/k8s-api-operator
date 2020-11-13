@@ -14,12 +14,32 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package ratelimiting
+package config
 
-const (
-	policyFileConst        = "policies.yaml"
-	policyConfMapNameConst = "policy-configmap"
-	resourceConst          = "Resource"
-	subscriptionConst      = "Subscription"
-	applicationConst       = "Application"
+import (
+	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
+	"os"
 )
+
+const DefaultSystemNamespace = "wso2-system"
+const SystemNamespaceEnv = "SYSTEM_NAMESPACE"
+
+var (
+	SystemNamespace   = DefaultSystemNamespace
+	OperatorNamespace = DefaultSystemNamespace
+)
+
+func SetSystemNamespaceFromEnv() (found bool) {
+	ns, found := os.LookupEnv(SystemNamespaceEnv)
+	if !found {
+		ns = DefaultSystemNamespace
+	}
+	SystemNamespace = ns
+	return
+}
+
+func SetOperatorNamespace() {
+	if ns, err := k8sutil.GetOperatorNamespace(); err == nil {
+		OperatorNamespace = ns
+	}
+}

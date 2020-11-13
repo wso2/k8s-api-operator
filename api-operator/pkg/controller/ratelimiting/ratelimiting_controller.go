@@ -18,6 +18,7 @@ package ratelimiting
 
 import (
 	"context"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
 
@@ -125,7 +126,8 @@ func (r *ReconcileRateLimiting) Reconcile(request reconcile.Request) (reconcile.
 	//gets the details of the operator as the owner
 	operatorOwner, ownerErr := getOperatorOwner(r)
 	if ownerErr != nil {
-		reqLogger.Info("Operator was not found in the " + wso2NameSpaceConst + " namespace. No owner will be set for the artifacts")
+		reqLogger.Info("Operator was not found in the operator namespace. No owner will be set for the artifacts",
+			"operator_namespace", config.OperatorNamespace)
 	}
 
 	// GENERATE POLICY YAML USING CRD INSTANCE
@@ -362,7 +364,7 @@ type Policy struct {
 func getOperatorOwner(r *ReconcileRateLimiting) ([]metav1.OwnerReference, error) {
 	depFound := &appsv1.Deployment{}
 	setOwner := true
-	deperr := r.client.Get(context.TODO(), types.NamespacedName{Name: "api-operator", Namespace: wso2NameSpaceConst}, depFound)
+	deperr := r.client.Get(context.TODO(), types.NamespacedName{Name: "api-operator", Namespace: config.OperatorNamespace}, depFound)
 	if deperr != nil {
 		noOwner := []metav1.OwnerReference{}
 		return noOwner, deperr

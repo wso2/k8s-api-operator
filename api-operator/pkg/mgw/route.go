@@ -19,6 +19,7 @@ package mgw
 import (
 	routv1 "github.com/openshift/api/route/v1"
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -51,7 +52,7 @@ func ApplyRouteResource(client *client.Client, api *wso2v1alpha1.API,
 	apiBasePathMap map[string]string, owner *[]metav1.OwnerReference) error {
 	logRoute := loggerRoute.WithValues("namespace", api.Namespace, "apiName", api.Name)
 	routeConfMap := k8s.NewConfMap()
-	errRoute := k8s.Get(client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: openShiftConfigs}, routeConfMap)
+	errRoute := k8s.Get(client, types.NamespacedName{Namespace: config.SystemNamespace, Name: openShiftConfigs}, routeConfMap)
 	if errRoute != nil {
 		logRoute.Error(errRoute, "Error retrieving route configmap")
 		return errRoute

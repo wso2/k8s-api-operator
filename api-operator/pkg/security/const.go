@@ -25,11 +25,10 @@ const (
 	jwtConst               = "JWT"
 	oauthConst             = "Oauth"
 	apiKeyConst            = "apiKey"
-	apiKeyIn			   = "header"
-	apiKeyName			   = "api_key"
+	apiKeyIn               = "header"
+	apiKeyName             = "api_key"
 )
 
 const (
-	defaultSecurity    = "default-security-jwt"
-	wso2NameSpaceConst = "wso2-system"
+	defaultSecurity = "default-security-jwt"
 )

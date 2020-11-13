@@ -17,6 +17,7 @@
 package mgw
 
 import (
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 	"strings"
 
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
@@ -60,9 +61,9 @@ func UserDeploymentVolume(client *client.Client, api *wso2v1alpha1.API) ([]corev
 	errGetDeploy := k8s.Get(client, types.NamespacedName{Name: mgwDeploymentConfigMapName, Namespace: api.Namespace},
 		mgwDeploymentConfMap)
 	if errGetDeploy != nil && errors.IsNotFound(errGetDeploy) {
-		logDeploy.Info("Get mgw deployment configs", "from namespace", wso2NameSpaceConst)
+		logDeploy.Info("Get mgw deployment configs", "from_namespace", config.SystemNamespace)
 		//retrieve mgw deployment configs from wso2-system namespace
-		err := k8s.Get(client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: mgwDeploymentConfigMapName},
+		err := k8s.Get(client, types.NamespacedName{Namespace: config.SystemNamespace, Name: mgwDeploymentConfigMapName},
 			mgwDeploymentConfMap)
 		if err != nil && !errors.IsNotFound(err) {
 			logDeploy.Error(err, "Error while reading user volumes config")
