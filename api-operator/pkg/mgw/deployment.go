@@ -160,7 +160,7 @@ func Deployment(client *client.Client, api *wso2v1alpha1.API, controlConfigData 
 	}
 
 	// set hostAliases
-	hostAliases := getHostAliases(client)
+	hostAliases := getHostAliases(client, artifactsNamespace)
 
 	deploy := k8s.NewDeployment()
 	deploy.ObjectMeta = metav1.ObjectMeta{

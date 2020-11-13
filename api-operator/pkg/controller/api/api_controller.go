@@ -19,6 +19,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -134,25 +135,20 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	operatorNs, opErr := k8sutil.GetOperatorNamespace()
 	if opErr != nil {
 		reqLogger.Error(opErr, "Cannot get the operator namespace")
+		reqLogger.Info("Continue with default namespace for operator", "default_namespace", wso2NameSpaceConst)
 		operatorNs = wso2NameSpaceConst
 	} else {
 		reqLogger.Info("Operator deployement namespace", "current", operatorNs, "default", wso2NameSpaceConst)
 	}
 
-	depFound := &appsv1.Deployment{}
-	errDeploy := k8s.Get(&r.client, types.NamespacedName{Name: "api-operator", Namespace: operatorNs}, depFound)
-	if errDeploy != nil {
-		reqLogger.Error(errDeploy, "Cannot find the operator deployment!")
+	artifactNs, ok := os.LookupEnv(artifactNamespaceConst)
+	if !ok {
+		reqLogger.Error(fmt.Errorf("environment variable %s is not defined", artifactNamespaceConst),
+			"Environment variable for artifact namespace is not defined", "env_variable", artifactNamespaceConst)
+		reqLogger.Info("Continue with default namespace for artifacts", "default_namespace", wso2NameSpaceConst)
+		operatorNs = wso2NameSpaceConst
 	}
-	var artifactNs string
-	envs := []corev1.EnvVar{}
-	envs = depFound.Spec.Template.Spec.Containers[0].Env
-	for i := 0; i < len(envs); i++ {
-		if envs[i].Name == artifactNamespaceConst {
-			artifactNs = envs[i].Value
-			break
-		}
-	}
+
 	if artifactNs != "" {
 		reqLogger.Info("Namespace of artifacts in env", artifactNamespaceConst, artifactNs)
 	}
