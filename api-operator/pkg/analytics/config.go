@@ -31,7 +31,6 @@ var logger = log.Log.WithName("analytics.config")
 
 // k8s configs
 const (
-	wso2NameSpaceConst   = "wso2-system"
 	analyticsConfName    = "analytics-config"
 	analyticsSecretConst = "analyticsSecret"
 

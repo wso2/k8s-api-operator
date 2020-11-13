@@ -136,7 +136,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		reqLogger.Error(opErr, "Cannot get the operator namespace")
 		operatorNs = wso2NameSpaceConst
 	} else {
-		reqLogger.Info("Operator deployement namespace","current", operatorNs, "default", wso2NameSpaceConst)
+		reqLogger.Info("Operator deployement namespace", "current", operatorNs, "default", wso2NameSpaceConst)
 	}
 
 	depFound := &appsv1.Deployment{}
@@ -329,7 +329,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		// Creating sidecar endpoint deployment
 		if epDeployMode == sidecar {
 			instance.Spec.Mode = sidecar
-			sidecarContainers, err = endpoints.GetSidecarContainers(&r.client, userNamespace, &endpointNames)
+			sidecarContainers, err = endpoints.GetSidecarContainers(&r.client, userNamespace, &endpointNames, artifactNs)
 			if err != nil {
 				return reconcile.Result{}, err
 			}
@@ -515,7 +515,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			kanikoArgs := k8s.NewConfMap()
 			err = k8s.Get(&r.client, types.NamespacedName{Namespace: artifactNs, Name: kanikoArgsConfigs}, kanikoArgs)
 			if err != nil && errors.IsNotFound(err) {
-				reqLogger.Info("No kaniko-arguments config map is available in wso2-system namespace")
+				reqLogger.Info("No kaniko-arguments config map is available", "namespace", artifactNs)
 			}
 
 			var kanikoJob *batchv1.Job

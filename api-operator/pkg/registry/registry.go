@@ -35,8 +35,6 @@ import (
 
 var logger = log.Log.WithName("registry")
 
-const wso2NameSpaceConst = "wso2-system"
-
 type Type string
 
 // Image defines a docker image

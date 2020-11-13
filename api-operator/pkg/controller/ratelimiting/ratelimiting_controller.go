@@ -126,7 +126,7 @@ func (r *ReconcileRateLimiting) Reconcile(request reconcile.Request) (reconcile.
 	//gets the details of the operator as the owner
 	operatorOwner, ownerErr := getOperatorOwner(r)
 	if ownerErr != nil {
-		reqLogger.Info("Operator was not found in the " + wso2NameSpaceConst + " namespace. No owner will be set for the artifacts")
+		reqLogger.Info("Operator pod was not found. No owner will be set for the artifacts")
 	}
 
 	// GENERATE POLICY YAML USING CRD INSTANCE

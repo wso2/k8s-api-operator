@@ -33,10 +33,9 @@ import (
 var logConf = log.Log.WithName("mgw.config")
 
 const (
-	apimConfName       = "apim-config"
-	apimSecretName     = "apim-secret"
-	mgwConfMustache    = "mgw-conf-mustache"
-	wso2NameSpaceConst = "wso2-system"
+	apimConfName    = "apim-config"
+	apimSecretName  = "apim-secret"
+	mgwConfMustache = "mgw-conf-mustache"
 
 	mgwConfGoTmpl      = "mgwConf.gotmpl"
 	mgwConfSecretConst = "mgw-conf"
@@ -64,7 +63,7 @@ const (
 	enableRealtimeMessageRetrievalConst = "enableRealtimeMessageRetrieval"
 	enableRequestValidationConst        = "enableRequestValidation"
 	enableResponseValidationConst       = "enableResponseValidation"
-	enabledEventhub						= "enabledEventhub"
+	enabledEventhub                     = "enabledEventhub"
 	logLevelConst                       = "logLevel"
 	httpPortConst                       = "httpPort"
 	httpsPortConst                      = "httpsPort"
@@ -133,7 +132,7 @@ type Configuration struct {
 	// validation
 	EnableRequestValidation  string
 	EnableResponseValidation string
-	EnabledEventhub			 string
+	EnabledEventhub          string
 
 	//basic authentication
 	BasicUsername string
@@ -248,7 +247,7 @@ var Configs = &Configuration{
 	// validation
 	EnableRequestValidation:  "false",
 	EnableResponseValidation: "false",
-	EnabledEventhub: 		  "false",
+	EnabledEventhub:          "false",
 
 	//basic authentication
 	BasicUsername: "admin",

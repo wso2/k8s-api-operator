@@ -34,7 +34,6 @@ var logDocker = log.Log.WithName("kaniko.docker")
 const (
 	truststoreSecretName      = "truststorepass"
 	dockerFileTemplate        = "dockerfile-template"
-	wso2NameSpaceConst        = "wso2-system"
 	encodedTruststorePassword = "YmFsbGVyaW5h"
 	truststoreSecretData      = "password"
 	dockerFile                = "dockerfile"

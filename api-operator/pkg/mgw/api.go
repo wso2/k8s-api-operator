@@ -105,9 +105,9 @@ func ExternalIP(client *client.Client, apiInstance *wso2v1alpha1.API, operatorMo
 }
 
 // get hostAliases for the deployment
-func getHostAliases(client *client.Client) []corev1.HostAlias {
+func getHostAliases(client *client.Client, artifactNs string) []corev1.HostAlias {
 	mgwDeploymentConfMap := k8s.NewConfMap()
-	errGetDeploy := k8s.Get(client, types.NamespacedName{Name: mgwDeploymentConfigMapName, Namespace: wso2NameSpaceConst},
+	errGetDeploy := k8s.Get(client, types.NamespacedName{Name: mgwDeploymentConfigMapName, Namespace: artifactNs},
 		mgwDeploymentConfMap)
 	if errGetDeploy != nil {
 		logEp.Error(errGetDeploy, "Error getting mgw deployment configs")
