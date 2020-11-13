@@ -18,7 +18,6 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: controller-config
-  namespace: wso2-system
 data:
   #mgw toolkit image to initialize/setup the micro gw project
   mgwToolkitImg: wso2am/wso2micro-gw-toolkit:3.2.0
@@ -63,7 +62,6 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: apim-secret
-  namespace: wso2-system
 type: Opaque
 data:
   #Base64 encoded username and password for APIM
@@ -75,7 +73,6 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: apim-config
-  namespace: wso2-system
 data:
   #By default hostname verification is disabled. In a production scenario, this has to be enabled.
   verifyHostname: "false"
@@ -155,7 +152,6 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: hpa-configs
-  namespace: wso2-system
 data:
   # Horizontal Pod Auto-Scaling for Micro-Gateways
   # Maximum number of replicas for the Horizontal Pod Auto-scale. Default->  maxReplicas: "5"
@@ -221,7 +217,6 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: ingress-configs
-  namespace: wso2-system
 data:
   ingress.properties: |
     nginx.ingress.kubernetes.io/backend-protocol: HTTPS
@@ -244,7 +239,6 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: kaniko-arguments
-  namespace: wso2-system
 data:
   kanikoArguments: |
   #kaniko additional flags should go here: Please refer https://github.com/GoogleContainerTools/kaniko#additional-flags
@@ -254,7 +248,6 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: route-configs
-  namespace: wso2-system
 data:
   route.properties: |
     openshift.io/host.generated: false
@@ -271,7 +264,6 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: istio-configs
-  namespace: wso2-system
 data:
   #Gateway name
   gatewayName: "wso2-gateway"
@@ -304,7 +296,6 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: mgw-deployment-configs
-  namespace: wso2-system
 data:
   hostAliases: |
   #  Host Alises to be added to mgw deployment. This is an example.

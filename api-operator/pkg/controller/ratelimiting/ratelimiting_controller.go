@@ -18,6 +18,7 @@ package ratelimiting
 
 import (
 	"context"
+	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
 
@@ -362,7 +363,11 @@ type Policy struct {
 func getOperatorOwner(r *ReconcileRateLimiting) ([]metav1.OwnerReference, error) {
 	depFound := &appsv1.Deployment{}
 	setOwner := true
-	deperr := r.client.Get(context.TODO(), types.NamespacedName{Name: "api-operator", Namespace: wso2NameSpaceConst}, depFound)
+	operatorNs, opErr := k8sutil.GetOperatorNamespace()
+	if opErr != nil {
+		operatorNs = wso2NameSpaceConst
+	}
+	deperr := r.client.Get(context.TODO(), types.NamespacedName{Name: "api-operator", Namespace: operatorNs}, depFound)
 	if deperr != nil {
 		noOwner := []metav1.OwnerReference{}
 		return noOwner, deperr

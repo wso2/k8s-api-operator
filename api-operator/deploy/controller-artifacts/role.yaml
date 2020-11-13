@@ -19,7 +19,6 @@ kind: ClusterRole
 metadata:
   creationTimestamp: null
   name: api-operator
-  namespace: wso2-system
 rules:
 - apiGroups:
   - ""

@@ -43,10 +43,11 @@ const (
 
 // ApplyIngressResource creates or updates an Ingress resource to expose mgw
 // Supports for multiple apiBasePaths when there are multiple swaggers for one API CRD
-func ApplyIngressResource(client *client.Client, api *wso2v1alpha1.API, apiBasePathMap map[string]string, owner *[]metav1.OwnerReference) error {
+func ApplyIngressResource(client *client.Client, api *wso2v1alpha1.API,
+	apiBasePathMap map[string]string, owner *[]metav1.OwnerReference, artifactsNamespace string) error {
 	logIng := loggerIng.WithValues("namespace", api.Namespace, "apiName", api.Name)
 	ingressConfMap := k8s.NewConfMap()
-	err := k8s.Get(client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: ingressConfigs}, ingressConfMap)
+	err := k8s.Get(client, types.NamespacedName{Namespace: artifactsNamespace, Name: ingressConfigs}, ingressConfMap)
 	if err != nil {
 		logIng.Error(err, "Error retrieving ingress configmap", "name", ingressConfigs)
 		return err

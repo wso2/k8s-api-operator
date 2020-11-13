@@ -48,10 +48,10 @@ const (
 // ApplyRouteResource creates or updates a route resource to expose MGW
 // Supports for multiple apiBasePaths when there are multiple swaggers for one API CRD
 func ApplyRouteResource(client *client.Client, api *wso2v1alpha1.API,
-	apiBasePathMap map[string]string, owner *[]metav1.OwnerReference) error {
+	apiBasePathMap map[string]string, owner *[]metav1.OwnerReference, artifactsNamespace string) error {
 	logRoute := loggerRoute.WithValues("namespace", api.Namespace, "apiName", api.Name)
 	routeConfMap := k8s.NewConfMap()
-	errRoute := k8s.Get(client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: openShiftConfigs}, routeConfMap)
+	errRoute := k8s.Get(client, types.NamespacedName{Namespace: artifactsNamespace, Name: openShiftConfigs}, routeConfMap)
 	if errRoute != nil {
 		logRoute.Error(errRoute, "Error retrieving route configmap")
 		return errRoute
