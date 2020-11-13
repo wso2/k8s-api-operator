@@ -101,8 +101,11 @@ To try out the scenario navigate to ```k8s-api-operator-<version>``` directory.
 - If you haven't deployed the API Operator please follow the quick start guide in root readme and follow step 2 and 3.
 - By deploying the analytics configmaps, you can enable analytics as follows.
 
+    **Note:** Here `<CONFIG_NAMESPACE>` is the namespace you have defined for configs.
+    The default namespace is `wso2-system` if you have not defined explictly.
+
     ```
-    >> apictl apply -f api-operator/apim-analytics-configs
+    >> apictl apply -f api-operator/apim-analytics-configs -n <CONFIG_NAMESPACE>
     
     ---
     configmap/analytics-config created
