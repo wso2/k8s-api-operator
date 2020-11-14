@@ -113,3 +113,23 @@ func MgwSecretVolumeMount(secretName string, mountPath string, subPath string) (
 
 	return &vol, &mount
 }
+
+func MgwEnvFromConfigMap(name string) *corev1.EnvFromSource {
+	return &corev1.EnvFromSource{
+		ConfigMapRef: &corev1.ConfigMapEnvSource{
+			LocalObjectReference: corev1.LocalObjectReference{
+				Name: name,
+			},
+		},
+	}
+}
+
+func MgwEnvFromSecret(name string) *corev1.EnvFromSource {
+	return &corev1.EnvFromSource{
+		SecretRef: &corev1.SecretEnvSource{
+			LocalObjectReference: corev1.LocalObjectReference{
+				Name: name,
+			},
+		},
+	}
+}

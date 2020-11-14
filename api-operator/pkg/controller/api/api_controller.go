@@ -19,6 +19,11 @@ package api
 import (
 	"context"
 	"fmt"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/analytics"
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/endpoints"
@@ -48,9 +53,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	"strconv"
-	"strings"
-	"time"
 )
 
 var log = logf.Log.WithName("api.controller")
@@ -126,7 +128,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	// initialize volumes
 	kaniko.InitDocFileProp()
 	kaniko.InitJobVolumes()
-	mgw.InitContainers()
+
+	var sidecarContainers []corev1.Container
 
 	var apiVersion string // API version - for the tag of final MGW docker image
 
@@ -155,25 +158,25 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	operatorOwner, ownerErr := getOperatorOwner(&r.client)
 	if ownerErr != nil {
 		reqLogger.Info("Operator was not found. No owner will be set for the artifacts",
-			"operator_namespace", wso2NameSpaceConst)
+			"operator_namespace", config.OperatorNamespace)
 	}
 	userNamespace := instance.Namespace
 
 	//get configurations file for the controller
 	controlConf := k8s.NewConfMap()
-	errConf := k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: controllerConfName},
+	errConf := k8s.Get(&r.client, types.NamespacedName{Namespace: config.SystemNamespace, Name: controllerConfName},
 		controlConf)
 	//get docker registry configs
 	dockerRegistryConf := k8s.NewConfMap()
-	errRegConf := k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: dockerRegConfigs},
+	errRegConf := k8s.Get(&r.client, types.NamespacedName{Namespace: config.SystemNamespace, Name: dockerRegConfigs},
 		dockerRegistryConf)
 	//get ingress configs
 	ingressConf := k8s.NewConfMap()
-	errIngressConf := k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: ingressConfigs},
+	errIngressConf := k8s.Get(&r.client, types.NamespacedName{Namespace: config.SystemNamespace, Name: ingressConfigs},
 		ingressConf)
 	//get openshift configs
 	OpenshiftConf := k8s.NewConfMap()
-	errOpenshiftConf := k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: openShiftConfigs},
+	errOpenshiftConf := k8s.Get(&r.client, types.NamespacedName{Namespace: config.SystemNamespace, Name: openShiftConfigs},
 		OpenshiftConf)
 	confErrs := []error{errConf, errRegConf, errIngressConf, errOpenshiftConf}
 	for _, err := range confErrs {
@@ -250,6 +253,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	swaggerCmNames := instance.Spec.Definition.SwaggerConfigmapNames
+	apiSecurityConfigs := []mgw.JwtTokenConfig{}
 	for i, swaggerCmName := range swaggerCmNames {
 		// Check if the configmap mentioned in the crd object exist
 		swaggerConfMap := k8s.NewConfMap()
@@ -299,7 +303,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		// Creating sidecar endpoint deployment
 		if epDeployMode == sidecar {
 			instance.Spec.Mode = sidecar
-			err := endpoints.AddSidecarContainers(&r.client, userNamespace, &endpointNames)
+			sidecarContainers, err = endpoints.GetSidecarContainers(&r.client, userNamespace, &endpointNames)
 			if err != nil {
 				return reconcile.Result{}, err
 			}
@@ -319,7 +323,18 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		if errSec != nil {
 			return reconcile.Result{}, errSec
 		}
-		mgw.Configs.JwtConfigs = jwtConfArray
+		for _, jwtConf := range *jwtConfArray {
+			isJwtExist := false
+			for _, jwtIssuers := range apiSecurityConfigs {
+				if strings.EqualFold(jwtConf.Issuer, jwtIssuers.Issuer) {
+					isJwtExist = true
+					break
+				}
+			}
+			if !isJwtExist {
+				apiSecurityConfigs = append(apiSecurityConfigs, jwtConf)
+			}
+		}
 		mgw.Configs.APIKeyConfigs = apiKeyConfArray
 
 		//adding security scheme to swagger
@@ -368,14 +383,26 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		// Default security
 		if !isDefinedSecurity && resourceLevelSec == 0 {
 			reqLogger.Info("Use default security")
-
 			defaultJwtConfArray, err := security.Default(&r.client, userNamespace, ownerRef)
-			mgw.Configs.JwtConfigs = defaultJwtConfArray
+			for _, secConf := range *defaultJwtConfArray {
+				isJwtExist := false
+				for _, jwtIssuers := range apiSecurityConfigs {
+					if strings.EqualFold(secConf.Issuer, jwtIssuers.Issuer) {
+						isJwtExist = true
+						break
+					}
+				}
+				if !isJwtExist {
+					apiSecurityConfigs = append(apiSecurityConfigs, secConf)
+				}
+			}
 			if err != nil {
 				return reconcile.Result{}, err
 			}
 		}
 	}
+	//setting the JWT configs for API
+	mgw.Configs.JwtConfigs = &apiSecurityConfigs
 
 	// micro-gateway image to be build
 	mgwDockerImage.Name = strings.ToLower(strings.ReplaceAll(instance.Name, " ", ""))
@@ -460,9 +487,9 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			}
 
 			kanikoArgs := k8s.NewConfMap()
-			err = k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: kanikoArgsConfigs}, kanikoArgs)
+			err = k8s.Get(&r.client, types.NamespacedName{Namespace: config.SystemNamespace, Name: kanikoArgsConfigs}, kanikoArgs)
 			if err != nil && errors.IsNotFound(err) {
-				reqLogger.Info("No kaniko-arguments config map is available in wso2-system namespace")
+				reqLogger.Info("No kaniko-arguments config map is available in system namespace", "namespace", config.SystemNamespace)
 			}
 
 			var kanikoJob *batchv1.Job
@@ -525,7 +552,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	if deployMgwRuntime {
 		reqLogger.Info("Deploying MGW runtime image")
 		// create MGW deployment in k8s cluster
-		mgwDeployment, errDeploy := mgw.Deployment(&r.client, instance, controlConfigData, ownerRef)
+		mgwDeployment, errDeploy := mgw.Deployment(&r.client, instance, controlConfigData, ownerRef, sidecarContainers)
 		r.recorder.Event(instance, corev1.EventTypeNormal, "MGWRuntime",
 			fmt.Sprintf("Deploying MGW runtime: %s.", mgwDeployment.Name))
 		if errDeploy != nil {
@@ -600,6 +627,13 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 		for t := 24; t > 0; t -= 1 {
 			time.Sleep(5 * time.Second)
+			// check whether the instance is deleted
+			errInstance := k8s.Get(&r.client, request.NamespacedName, instance)
+			if errInstance != nil {
+				if errors.IsNotFound(errInstance) {
+					return reconcile.Result{}, nil
+				}
+			}
 			errSvc := k8s.Get(&r.client, request.NamespacedName, mgwSvc)
 			if errSvc != nil {
 				reqLogger.Error(errSvc, "Error getting the mgw service")
@@ -676,7 +710,7 @@ func setApiDependent(client *client.Client, api *wso2v1alpha1.API, ownerRef *[]m
 // getOperatorOwner returns the owner reference of the operator
 func getOperatorOwner(client *client.Client) (*[]metav1.OwnerReference, error) {
 	depFound := &appsv1.Deployment{}
-	errDeploy := k8s.Get(client, types.NamespacedName{Name: "api_operator", Namespace: wso2NameSpaceConst}, depFound)
+	errDeploy := k8s.Get(client, types.NamespacedName{Name: "api_operator", Namespace: config.OperatorNamespace}, depFound)
 	if errDeploy != nil {
 		var noOwner []metav1.OwnerReference
 		return &noOwner, errDeploy

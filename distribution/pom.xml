@@ -23,7 +23,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.wso2.apim</groupId>
     <artifactId>k8s-api-operator-distribution</artifactId>
-    <version>1.2.1</version>
+    <version>1.2.2</version>
     <name>API Operator For K8s Distribution</name>
 
     <build>

@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/sirupsen/logrus"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"k8s.io/api/autoscaling/v2beta1"
 	"k8s.io/api/autoscaling/v2beta2"
@@ -133,7 +134,7 @@ func (r *ReconcileTargetEndpoint) Reconcile(request reconcile.Request) (reconcil
 		reqLogger.Info("Operator was not found in the " + instance.Namespace + " namespace. No owner will be set for the artifacts")
 	}
 	//get configurations file for the controller
-	controlConf, err := getConfigmap(r, "controller-config", "wso2-system")
+	controlConf, err := getConfigmap(r, "controller-config", config.SystemNamespace)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Controller configmap is not found, could have been deleted after reconcile request.
@@ -460,7 +461,7 @@ func createHPA(client *client.Client, targetEp *wso2v1alpha1.TargetEndpoint, dep
 	owner []metav1.OwnerReference) error {
 	// get global hpa configs, return error if not found (required config map)
 	hpaConfMap := k8s.NewConfMap()
-	err := k8s.Get(client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: hpaConfigMapName}, hpaConfMap)
+	err := k8s.Get(client, types.NamespacedName{Namespace: config.SystemNamespace, Name: hpaConfigMapName}, hpaConfMap)
 	if err != nil {
 		return err
 	}
@@ -495,7 +496,7 @@ func createHPAv2beta1(client *client.Client, targetEp *wso2v1alpha1.TargetEndpoi
 
 	// get global hpa configs, return error if not found (required config map)
 	hpaConfMap := k8s.NewConfMap()
-	err := k8s.Get(client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: hpaConfigMapName}, hpaConfMap)
+	err := k8s.Get(client, types.NamespacedName{Namespace: config.SystemNamespace, Name: hpaConfigMapName}, hpaConfMap)
 	if err != nil {
 		log.Error(err, "HPA configs not defined")
 		return nil, err
@@ -552,7 +553,7 @@ func createHPAv2beta2(client *client.Client, targetEp *wso2v1alpha1.TargetEndpoi
 
 	// get global hpa configs, return error if not found (required config map)
 	hpaConfMap := k8s.NewConfMap()
-	err := k8s.Get(client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: hpaConfigMapName}, hpaConfMap)
+	err := k8s.Get(client, types.NamespacedName{Namespace: config.SystemNamespace, Name: hpaConfigMapName}, hpaConfMap)
 	if err != nil {
 		return nil, err
 	}

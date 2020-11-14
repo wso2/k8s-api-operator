@@ -27,12 +27,13 @@ import (
 var logExt = log.Log.WithName("swagger.extensions")
 
 const (
-	EndpointExtension       = "x-wso2-production-endpoints"
-	ApiBasePathExtension    = "x-wso2-basePath"
-	DeploymentModeExtension = "x-wso2-mode"
-	SecurityExtension       = "security"
-	PathsExtension          = "paths"
-	SecuritySchemeExtension = "securitySchemes"
+	EndpointExtension 			= "x-wso2-endpoints"
+	ProductionEndpointExtension = "x-wso2-production-endpoints"
+	ApiBasePathExtension    	= "x-wso2-basePath"
+	DeploymentModeExtension 	= "x-wso2-mode"
+	SecurityExtension       	= "security"
+	PathsExtension          	= "paths"
+	SecuritySchemeExtension 	= "securitySchemes"
 )
 
 func ApiBasePath(swagger *openapi3.Swagger) string {

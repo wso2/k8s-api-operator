@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	operatorConfig "github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 	v1 "k8s.io/api/core/v1"
 	"os"
 	"runtime"
@@ -59,6 +60,13 @@ func main() {
 	// be propagated through the whole operator, generating
 	// uniform and structured logs.
 	logf.SetLogger(zap.Logger())
+
+	// Set system and operator namespaces
+	if found := operatorConfig.SetSystemNamespaceFromEnv(); !found {
+		log.Info("Environment variable for system namespace not defined and using the default",
+			"env_var", operatorConfig.SystemNamespaceEnv, "default_ns", operatorConfig.DefaultSystemNamespace)
+	}
+	operatorConfig.SetOperatorNamespace()
 
 	printVersion()
 

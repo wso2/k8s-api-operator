@@ -19,6 +19,7 @@ package mgw
 import (
 	"errors"
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	istioapi "istio.io/api/networking/v1alpha3"
 	istioclient "istio.io/client-go/pkg/apis/networking/v1alpha3"
@@ -152,7 +153,7 @@ func ValidateIstioConfigs(client *client.Client, api *wso2v1alpha1.API) (*IstioC
 	istioConfigs := &IstioConfigs{}
 
 	istioConfigMap := k8s.NewConfMap()
-	if err := k8s.Get(client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: istioConfMapName},
+	if err := k8s.Get(client, types.NamespacedName{Namespace: config.SystemNamespace, Name: istioConfMapName},
 		istioConfigMap); err != nil {
 		logVsc.Error(err, "Istio configs configmap is empty", "configmap", istioConfMapName,
 			"key", istioGatewayConfKey)

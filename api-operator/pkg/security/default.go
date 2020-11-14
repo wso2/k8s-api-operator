@@ -19,6 +19,7 @@ package security
 import (
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/cert"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/mgw"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -37,11 +38,11 @@ func Default(client *client.Client, apiNamespace string, owner *[]metav1.OwnerRe
 	//check default security already exist in user namespace
 	errGetSec := k8s.Get(client, types.NamespacedName{Name: defaultSecurity, Namespace: apiNamespace}, securityDefault)
 	if errGetSec != nil && errors.IsNotFound(errGetSec) {
-		logDef.Info("Get default-security", "from namespace", wso2NameSpaceConst)
+		logDef.Info("Get default-security", "from namespace", config.SystemNamespace)
 		//retrieve default-security from wso2-system namespace
-		errSec := k8s.Get(client, types.NamespacedName{Name: defaultSecurity, Namespace: wso2NameSpaceConst}, securityDefault)
+		errSec := k8s.Get(client, types.NamespacedName{Name: defaultSecurity, Namespace: config.SystemNamespace}, securityDefault)
 		if errSec != nil {
-			logDef.Error(errSec, "Error getting default security", "namespace", wso2NameSpaceConst)
+			logDef.Error(errSec, "Error getting default security", "namespace", config.SystemNamespace)
 			return nil, errSec
 		}
 		for _, defaultSecurityConf := range securityDefault.Spec.SecurityConfig {
@@ -50,7 +51,7 @@ func Default(client *client.Client, apiNamespace string, owner *[]metav1.OwnerRe
 			//check default certificate exists in user namespace
 			err := k8s.Get(client, types.NamespacedName{Name: defaultSecurityConf.Certificate, Namespace: apiNamespace}, defaultCert)
 			if err != nil && errors.IsNotFound(err) {
-				errCert := k8s.Get(client, types.NamespacedName{Name: defaultSecurityConf.Certificate, Namespace: wso2NameSpaceConst}, defaultCert)
+				errCert := k8s.Get(client, types.NamespacedName{Name: defaultSecurityConf.Certificate, Namespace: config.SystemNamespace}, defaultCert)
 				if errCert != nil {
 					return nil, errCert
 				}
