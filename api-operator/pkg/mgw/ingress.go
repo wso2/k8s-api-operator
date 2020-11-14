@@ -18,6 +18,7 @@ package mgw
 
 import (
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -46,7 +47,7 @@ const (
 func ApplyIngressResource(client *client.Client, api *wso2v1alpha1.API, apiBasePathMap map[string]string, owner *[]metav1.OwnerReference) error {
 	logIng := loggerIng.WithValues("namespace", api.Namespace, "apiName", api.Name)
 	ingressConfMap := k8s.NewConfMap()
-	err := k8s.Get(client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: ingressConfigs}, ingressConfMap)
+	err := k8s.Get(client, types.NamespacedName{Namespace: config.SystemNamespace, Name: ingressConfigs}, ingressConfMap)
 	if err != nil {
 		logIng.Error(err, "Error retrieving ingress configmap", "name", ingressConfigs)
 		return err

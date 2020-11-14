@@ -17,6 +17,7 @@
 package mgw
 
 import (
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/kaniko"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/str"
@@ -33,10 +34,9 @@ import (
 var logConf = log.Log.WithName("mgw.config")
 
 const (
-	apimConfName       = "apim-config"
-	apimSecretName     = "apim-secret"
-	mgwConfMustache    = "mgw-conf-mustache"
-	wso2NameSpaceConst = "wso2-system"
+	apimConfName    = "apim-config"
+	apimSecretName  = "apim-secret"
+	mgwConfMustache = "mgw-conf-mustache"
 
 	mgwConfGoTmpl      = "mgwConf.gotmpl"
 	mgwConfSecretConst = "mgw-conf"
@@ -64,7 +64,7 @@ const (
 	enableRealtimeMessageRetrievalConst = "enableRealtimeMessageRetrieval"
 	enableRequestValidationConst        = "enableRequestValidation"
 	enableResponseValidationConst       = "enableResponseValidation"
-	enabledEventhub						= "enabledEventhub"
+	enabledEventhub                     = "enabledEventhub"
 	logLevelConst                       = "logLevel"
 	httpPortConst                       = "httpPort"
 	httpsPortConst                      = "httpsPort"
@@ -133,7 +133,7 @@ type Configuration struct {
 	// validation
 	EnableRequestValidation  string
 	EnableResponseValidation string
-	EnabledEventhub			 string
+	EnabledEventhub          string
 
 	//basic authentication
 	BasicUsername string
@@ -248,7 +248,7 @@ var Configs = &Configuration{
 	// validation
 	EnableRequestValidation:  "false",
 	EnableResponseValidation: "false",
-	EnabledEventhub: 		  "false",
+	EnabledEventhub:          "false",
 
 	//basic authentication
 	BasicUsername: "admin",
@@ -303,7 +303,7 @@ var Configs = &Configuration{
 func SetApimConfigs(client *client.Client) error {
 	// get data from APIM configmap
 	apimConfig := k8s.NewConfMap()
-	errApim := k8s.Get(client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: apimConfName}, apimConfig)
+	errApim := k8s.Get(client, types.NamespacedName{Namespace: config.SystemNamespace, Name: apimConfName}, apimConfig)
 
 	if errApim != nil {
 		if errors.IsNotFound(errApim) {
@@ -315,7 +315,7 @@ func SetApimConfigs(client *client.Client) error {
 	}
 
 	apimSecret := k8s.NewSecret()
-	errorApimSecret := k8s.Get(client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: apimSecretName}, apimSecret)
+	errorApimSecret := k8s.Get(client, types.NamespacedName{Namespace: config.SystemNamespace, Name: apimSecretName}, apimSecret)
 
 	if errorApimSecret != nil {
 		if errors.IsNotFound(errorApimSecret) {
@@ -431,7 +431,7 @@ func SetApimConfigs(client *client.Client) error {
 func ApplyConfFile(client *client.Client, userNamespace, apiName string, owner *[]metav1.OwnerReference) error {
 	// retrieving the MGW template configmap
 	templateConfMap := k8s.NewConfMap()
-	errConf := k8s.Get(client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: mgwConfMustache}, templateConfMap)
+	errConf := k8s.Get(client, types.NamespacedName{Namespace: config.SystemNamespace, Name: mgwConfMustache}, templateConfMap)
 	if errConf != nil {
 		logConf.Error(errConf, "Error retrieving the MGW template configmap")
 		return errConf

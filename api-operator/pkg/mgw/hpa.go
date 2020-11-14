@@ -19,6 +19,7 @@ package mgw
 import (
 	"errors"
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/api/autoscaling/v2beta1"
@@ -50,7 +51,7 @@ func HPA(client *client.Client, api *wso2v1alpha1.API, dep *appsv1.Deployment, o
 	*v2beta2.HorizontalPodAutoscaler) {
 	// get global hpa configs, return error if not found (required config map)
 	hpaConfMap := k8s.NewConfMap()
-	err := k8s.Get(client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: hpaConfigMapName}, hpaConfMap)
+	err := k8s.Get(client, types.NamespacedName{Namespace: config.SystemNamespace, Name: hpaConfigMapName}, hpaConfMap)
 	if err != nil {
 		logHpa.Error(err, "HPA configs not defined")
 		return nil, nil
@@ -127,7 +128,7 @@ func HPAv2beta2(api *wso2v1alpha1.API, dep *appsv1.Deployment, owner *[]metav1.O
 func ValidateHpaConfigs(client *client.Client) error {
 	// get global hpa configs, return error if not found (required config map)
 	hpaConfMap := k8s.NewConfMap()
-	err := k8s.Get(client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: hpaConfigMapName}, hpaConfMap)
+	err := k8s.Get(client, types.NamespacedName{Namespace: config.SystemNamespace, Name: hpaConfigMapName}, hpaConfMap)
 	if err != nil {
 		return err
 	}

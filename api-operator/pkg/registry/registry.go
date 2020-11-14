@@ -19,6 +19,7 @@ package registry
 import (
 	"encoding/json"
 	"fmt"
+	operatorConfig "github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/maps"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/registry/utils"
@@ -34,8 +35,6 @@ import (
 )
 
 var logger = log.Log.WithName("registry")
-
-const wso2NameSpaceConst = "wso2-system"
 
 type Type string
 
@@ -99,13 +98,13 @@ func IsImageExist(client *client.Client) (bool, error) {
 	// checks if the pull secret is available
 	regPullSecret := k8s.NewSecret()
 	err := k8s.Get(client, types.NamespacedName{Name: config.ImagePullSecrets[0].Name,
-		Namespace: wso2NameSpaceConst}, regPullSecret)
+		Namespace: operatorConfig.SystemNamespace}, regPullSecret)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			logger.Info("Registry pull secret is not found",
-				"secret_name", utils.DockerRegCredSecret, "namespace", wso2NameSpaceConst)
+				"secret_name", utils.DockerRegCredSecret, "namespace", operatorConfig.SystemNamespace)
 		} else {
-			logger.Info("Error retrieving docker credentials secret", "secret_name", utils.DockerRegCredSecret, "namespace", wso2NameSpaceConst)
+			logger.Info("Error retrieving docker credentials secret", "secret_name", utils.DockerRegCredSecret, "namespace", operatorConfig.SystemNamespace)
 		}
 		return false, err
 	}
@@ -168,7 +167,7 @@ func copyConfigVolumes(client *client.Client, namespace string) error {
 	// get object from wso2's system namespace and
 	// creates or replaces volumes in the given namespace
 	for name, object := range regVolumes {
-		fromNsName := types.NamespacedName{Namespace: wso2NameSpaceConst, Name: name}
+		fromNsName := types.NamespacedName{Namespace: operatorConfig.SystemNamespace, Name: name}
 		if err := k8s.Get(client, fromNsName, object); err != nil {
 			return err
 		}

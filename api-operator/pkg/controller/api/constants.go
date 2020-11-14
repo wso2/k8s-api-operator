@@ -21,7 +21,6 @@ const (
 	kanikoArguments     = "kanikoArguments"
 	registryTypeConst   = "registryType"
 	repositoryNameConst = "repositoryName"
-	wso2NameSpaceConst  = "wso2-system"
 	controllerConfName  = "controller-config"
 	ingressConfigs      = "ingress-configs"
 	openShiftConfigs    = "route-configs"

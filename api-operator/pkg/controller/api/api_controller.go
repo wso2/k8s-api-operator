@@ -19,6 +19,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 	"strconv"
 	"strings"
 	"time"
@@ -157,25 +158,25 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	operatorOwner, ownerErr := getOperatorOwner(&r.client)
 	if ownerErr != nil {
 		reqLogger.Info("Operator was not found. No owner will be set for the artifacts",
-			"operator_namespace", wso2NameSpaceConst)
+			"operator_namespace", config.OperatorNamespace)
 	}
 	userNamespace := instance.Namespace
 
 	//get configurations file for the controller
 	controlConf := k8s.NewConfMap()
-	errConf := k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: controllerConfName},
+	errConf := k8s.Get(&r.client, types.NamespacedName{Namespace: config.SystemNamespace, Name: controllerConfName},
 		controlConf)
 	//get docker registry configs
 	dockerRegistryConf := k8s.NewConfMap()
-	errRegConf := k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: dockerRegConfigs},
+	errRegConf := k8s.Get(&r.client, types.NamespacedName{Namespace: config.SystemNamespace, Name: dockerRegConfigs},
 		dockerRegistryConf)
 	//get ingress configs
 	ingressConf := k8s.NewConfMap()
-	errIngressConf := k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: ingressConfigs},
+	errIngressConf := k8s.Get(&r.client, types.NamespacedName{Namespace: config.SystemNamespace, Name: ingressConfigs},
 		ingressConf)
 	//get openshift configs
 	OpenshiftConf := k8s.NewConfMap()
-	errOpenshiftConf := k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: openShiftConfigs},
+	errOpenshiftConf := k8s.Get(&r.client, types.NamespacedName{Namespace: config.SystemNamespace, Name: openShiftConfigs},
 		OpenshiftConf)
 	confErrs := []error{errConf, errRegConf, errIngressConf, errOpenshiftConf}
 	for _, err := range confErrs {
@@ -486,9 +487,9 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			}
 
 			kanikoArgs := k8s.NewConfMap()
-			err = k8s.Get(&r.client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: kanikoArgsConfigs}, kanikoArgs)
+			err = k8s.Get(&r.client, types.NamespacedName{Namespace: config.SystemNamespace, Name: kanikoArgsConfigs}, kanikoArgs)
 			if err != nil && errors.IsNotFound(err) {
-				reqLogger.Info("No kaniko-arguments config map is available in wso2-system namespace")
+				reqLogger.Info("No kaniko-arguments config map is available in system namespace", "namespace", config.SystemNamespace)
 			}
 
 			var kanikoJob *batchv1.Job
@@ -709,7 +710,7 @@ func setApiDependent(client *client.Client, api *wso2v1alpha1.API, ownerRef *[]m
 // getOperatorOwner returns the owner reference of the operator
 func getOperatorOwner(client *client.Client) (*[]metav1.OwnerReference, error) {
 	depFound := &appsv1.Deployment{}
-	errDeploy := k8s.Get(client, types.NamespacedName{Name: "api_operator", Namespace: wso2NameSpaceConst}, depFound)
+	errDeploy := k8s.Get(client, types.NamespacedName{Name: "api_operator", Namespace: config.OperatorNamespace}, depFound)
 	if errDeploy != nil {
 		var noOwner []metav1.OwnerReference
 		return &noOwner, errDeploy
