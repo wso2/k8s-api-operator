@@ -38,23 +38,10 @@ import (
 )
 
 var logImport = log.Log.WithName("apim.import")
+var insecure = true
 
 // ImportAPI imports an API to APIM using either project zip or swagger
 func ImportAPI(client *client.Client, api *wso2v1alpha1.API) error {
-
-	apimConfig := k8s.NewConfMap()
-	errApim := k8s.Get(client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: apimConfName}, apimConfig)
-
-	if errApim != nil {
-		if errors.IsNotFound(errApim) {
-			logImport.Info("APIM config is not found. Continue with default configs")
-			return errApim
-		} else {
-			logImport.Error(errApim, "Error retrieving APIM configs")
-			return errApim
-		}
-	}
-
 	inputConf := k8s.NewConfMap()
 	errInput := k8s.Get(client, types.NamespacedName{Namespace: api.Namespace, Name: api.Name}, inputConf)
 
@@ -68,15 +55,29 @@ func ImportAPI(client *client.Client, api *wso2v1alpha1.API) error {
 		}
 	}
 
-	kmEndpoint := apimConfig.Data[apimRegistrationEndpointConst]
-	publisherEndpoint := apimConfig.Data[apimPublisherEndpointConst]
-	tokenEndpoint := apimConfig.Data[apimTokenEndpointConst]
+	apimConfig, errInput := getRESTAPIConfigs(client)
+	if errInput != nil {
+		if errors.IsNotFound(errInput) {
+			logDelete.Info("APIM config is not found. Continue with default configs")
+			return errInput
+		} else {
+			logDelete.Error(errInput, "Error retrieving APIM configs")
+			return errInput
+		}
+	}
+
+	kmEndpoint := apimConfig.KeyManagerEndpoint
+	publisherEndpoint := apimConfig.PublisherEndpoint
+	tokenEndpoint := apimConfig.TokenEndpoint
+	credSecret := apimConfig.CredentialsSecretName
+
+	insecure = apimConfig.SkipVerification
 
 	if strings.EqualFold(tokenEndpoint, "") {
 		tokenEndpoint = kmEndpoint + "/" + defaultTokenEndpoint
 		logImport.Info("Token endpoint not defined. Using keymanager endpoint.", "tokenEndpoint", tokenEndpoint)
 	}
-	accessToken, errToken := getAccessToken(client, tokenEndpoint, kmEndpoint)
+	accessToken, errToken := getAccessToken(client, tokenEndpoint, kmEndpoint, credSecret)
 	if errToken != nil {
 		return errToken
 	}

@@ -25,6 +25,8 @@ const (
 	apimRegistrationEndpointConst = "apimKeymanagerEndpoint"
 	apimPublisherEndpointConst    = "apimPublisherEndpoint"
 	apimTokenEndpointConst        = "apimTokenEndpoint"
+	apimCredentialsConst          = "apimCredentialsSecret"
+	skipVerifyConst               = "insecureSkipVerify"
 	wso2NameSpaceConst            = "wso2-system"
 
 	HeaderAuthorization           = "Authorization"
@@ -155,4 +157,12 @@ type API struct {
 type APIListResponse struct {
 	Count int32 `json:"count"`
 	List  []API `json:"list"`
+}
+
+type RESTConfig struct {
+	KeyManagerEndpoint    string
+	PublisherEndpoint     string
+	TokenEndpoint         string
+	CredentialsSecretName string
+	SkipVerification      bool
 }

@@ -17,7 +17,7 @@
 package apim
 
 import (
-	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -25,52 +25,49 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"strconv"
 	"strings"
-	"time"
 
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/maps"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/swagger"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/utils"
-	"gopkg.in/resty.v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 )
 
-func invokePOSTRequest(url string, headers map[string]string, body interface{}) (*resty.Response, error) {
-	httpClient := resty.New()
-	httpClient.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
-	httpClient.SetTimeout(time.Duration(DefaultHttpRequestTimeout) * time.Millisecond)
+// getRESTAPIConfigs returns the APIM configs for REST API invocation
+func getRESTAPIConfigs(client *client.Client) (*RESTConfig, error) {
+	apimConfig := k8s.NewConfMap()
+	errApim := k8s.Get(client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: apimConfName}, apimConfig)
 
-	response, err := httpClient.R().SetHeaders(headers).SetBody(body).Post(url)
-	return response, err
+	if errApim != nil {
+		if errors.IsNotFound(errApim) {
+			logDelete.Info("APIM config is not found. Continue with default configs")
+			return nil, errApim
+		} else {
+			logDelete.Error(errApim, "Error retrieving APIM configs")
+			return nil, errApim
+		}
+	}
+
+	configs := &RESTConfig{}
+	configs.KeyManagerEndpoint = apimConfig.Data[apimRegistrationEndpointConst]
+	configs.PublisherEndpoint = apimConfig.Data[apimPublisherEndpointConst]
+	configs.TokenEndpoint = apimConfig.Data[apimTokenEndpointConst]
+	configs.CredentialsSecretName = apimConfig.Data[apimCredentialsConst]
+	skipVerify, err := strconv.ParseBool(apimConfig.Data[skipVerifyConst])
+	if err != nil {
+		return nil, err
+	}
+	configs.SkipVerification = skipVerify
+
+	return configs, nil
 }
 
-func invokeGETRequest(url string, headers map[string]string) (*resty.Response, error) {
-	httpClient := resty.New()
-	httpClient.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
-	httpClient.SetTimeout(time.Duration(DefaultHttpRequestTimeout) * time.Millisecond)
-
-	response, err := httpClient.R().SetHeaders(headers).Get(url)
-	return response, err
-}
-
-func invokePUTRequest(url string, headers map[string]string, body interface{}) (*resty.Response, error) {
-	httpClient := resty.New()
-	httpClient.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
-	httpClient.SetTimeout(time.Duration(DefaultHttpRequestTimeout) * time.Millisecond)
-
-	response, err := httpClient.R().SetHeaders(headers).SetBody(body).Put(url)
-	return response, err
-}
-
-func invokeDELETERequest(url string, headers map[string]string) (*resty.Response, error) {
-	httpClient := resty.New()
-	httpClient.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
-	httpClient.SetTimeout(time.Duration(DefaultHttpRequestTimeout) * time.Millisecond)
-
-	response, err := httpClient.R().SetHeaders(headers).Delete(url)
-
-	return response, err
-}
-
+// deleteAPIById generates the request payload for deleting an API in APIM
 func deleteAPIById(url, apiId, token string) error {
 	requestHeaders := make(map[string]string)
 	requestHeaders[HeaderAuthorization] = HeaderValueAuthBearerPrefix + " " + token
@@ -87,6 +84,26 @@ func deleteAPIById(url, apiId, token string) error {
 	if resp.StatusCode() != http.StatusOK {
 		return fmt.Errorf("Unable to update API. Status:" + resp.Status())
 	}
+
+	return nil
+}
+
+// getCert gets the public cert of APIM instance when skip verification is false
+func getCert(client *client.Client, certConf string) error {
+	apimCert := k8s.NewSecret()
+	errCert := k8s.Get(client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: certConf}, apimCert)
+	if errCert != nil {
+		return errCert
+	}
+
+	certName, errCert := maps.OneKey(apimCert.Data)
+	if errCert != nil {
+		return errCert
+	}
+	cert := string(apimCert.Data[certName])
+	certData := []byte(cert)
+	certPool = x509.NewCertPool()
+	certPool.AppendCertsFromPEM(certData)
 
 	return nil
 }
@@ -240,7 +257,7 @@ func getTempPathOfExtractedArchive(data []byte) (string, error) {
 	defer os.Remove(file.Name())
 
 	if _, err := file.Write(data); err != nil {
-		return "",err
+		return "", err
 	}
 	err = file.Close()
 

@@ -17,6 +17,7 @@
 package apim
 
 import (
+	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -33,6 +34,7 @@ import (
 
 var logLogin = log.Log.WithName("apim.login")
 var clientInfo = make(map[string]string)
+var certPool *x509.CertPool
 
 type ClientRegistrationResponse struct {
 	ClientID     string `json:"clientId"`
@@ -116,16 +118,25 @@ func getClientIdSecret(username string, password string, registrationEndpoint st
 }
 
 // getAccessToken returns an access token to use REST APIs in APIM
-func getAccessToken(client *client.Client, tokenEndpoint string, dcrEndpoint string) (accessToken string, error error) {
+func getAccessToken(client *client.Client,
+	tokenEndpoint string, dcrEndpoint string, secretName string) (accessToken string, error error) {
 	var username, password, clientId, clientSecret string
 
 	apimSecret := k8s.NewSecret()
-	errToken := k8s.Get(client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: apimSecretName}, apimSecret)
+	errToken := k8s.Get(client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: secretName}, apimSecret)
 	if errToken != nil {
 		return "", errToken
 	}
 	username = string(apimSecret.Data["username"])
 	password = string(apimSecret.Data["password"])
+	certSecret := string(apimSecret.Data["cert_security"])
+
+	if !insecure {
+		errToken = getCert(client, certSecret)
+		if errToken != nil {
+			return "", errToken
+		}
+	}
 
 	if len(clientInfo) != 0 {
 		logLogin.Info("Getting clientId and clientSecret from memory")
