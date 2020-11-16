@@ -49,7 +49,7 @@ type DeploymentConfig struct {
 var logDeploy = log.Log.WithName("mgw.userDeploymentVolume")
 
 // UserDeploymentVolume returns the deploy volumes and volume mounts with user defined config maps and secrets
-func UserDeploymentVolume(client *client.Client, api *wso2v1alpha1.API) ([]corev1.Volume, []corev1.VolumeMount, []corev1.EnvFromSource,
+func UserDeploymentVolume(client *client.Client, api *wso2v1alpha1.API, artifactsNamespace string) ([]corev1.Volume, []corev1.VolumeMount, []corev1.EnvFromSource,
 	error) {
 	var deployVolume []corev1.Volume
 	var deployVolumeMount []corev1.VolumeMount
@@ -60,9 +60,9 @@ func UserDeploymentVolume(client *client.Client, api *wso2v1alpha1.API) ([]corev
 	errGetDeploy := k8s.Get(client, types.NamespacedName{Name: mgwDeploymentConfigMapName, Namespace: api.Namespace},
 		mgwDeploymentConfMap)
 	if errGetDeploy != nil && errors.IsNotFound(errGetDeploy) {
-		logDeploy.Info("Get mgw deployment configs", "from namespace", wso2NameSpaceConst)
+		logDeploy.Info("Get mgw deployment configs", "from namespace", artifactsNamespace)
 		//retrieve mgw deployment configs from wso2-system namespace
-		err := k8s.Get(client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: mgwDeploymentConfigMapName},
+		err := k8s.Get(client, types.NamespacedName{Namespace: artifactsNamespace, Name: mgwDeploymentConfigMapName},
 			mgwDeploymentConfMap)
 		if err != nil && !errors.IsNotFound(err) {
 			logDeploy.Error(err, "Error while reading user volumes config")
