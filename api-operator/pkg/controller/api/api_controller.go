@@ -211,6 +211,10 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	mgwDockerImage.RepositoryName = dockerRegistryConf.Data[repositoryNameConst]
 	operatorMode := controlConfigData[operatorModeConst]
 	importAPIEnabled, err := strconv.ParseBool(controlConfigData[importAPIEnabledConst])
+	if err != nil {
+		reqLogger.Error(err, "Invalid boolean value for importAPIEnabled")
+		return reconcile.Result{}, err
+	}
 
 	// log controller configurations
 	reqLogger.Info(
@@ -675,11 +679,11 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		if importAPIEnabled {
 			importErr := apim.ImportAPI(&r.client, instance)
 			if importErr != nil {
-				r.recorder.Event(instance, eventTypeError, "Import",
+				r.recorder.Event(instance, eventTypeError, "FailedAPIImport",
 					fmt.Sprintf("Error occured while importing the API to APIM"))
 				return reconcile.Result{}, importErr
 			}
-			r.recorder.Event(instance, corev1.EventTypeNormal, "Import",
+			r.recorder.Event(instance, corev1.EventTypeNormal, "APIImport",
 				fmt.Sprintf("Successfully imported the API to APIM"))
 			reqLogger.Info("Successfully imported the API to APIM", "api_name", instance.Name)
 		}
