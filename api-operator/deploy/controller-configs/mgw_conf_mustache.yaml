@@ -313,8 +313,8 @@ data:
         password = "{{$.ApimPassword}}"
         # Receiver URL and the authentication URL of the Traffic manager node/nodes
         [[throttlingConfig.binary.URLGroup]]
-          receiverURL = "tcp://wso2apim.wso2:9611"
-          authURL = "ssl://wso2apim.wso2:9711"
+          receiverURL = "tcp://{{$.ThrottlingRecieverURL}}"
+          authURL = "ssl://{{$.ThrottlingAuthURL}}"
         # Data publisher object pool configurations
         [throttlingConfig.binary.publisherPool]
           maxIdle = 1000

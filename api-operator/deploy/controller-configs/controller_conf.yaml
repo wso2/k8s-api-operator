@@ -92,6 +92,8 @@ data:
   #Message broker connection URL (related to distributed ratelimiting and token revocation)
   #Format: hostname_of_API_Portal:JMS_port
   jmsConnectionProvider: "wso2apim.wso2:5672"
+  throttlingRecieverUrl: "wso2apim.wso2:9611"
+  throttlingAuthUrl: "wso2apim.wso2:9711"
   #Token revocation
   #Enable real time notifier for token revocation
   enableRealtimeMessageRetrieval: "false"

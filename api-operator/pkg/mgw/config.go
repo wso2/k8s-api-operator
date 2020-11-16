@@ -27,8 +27,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
-	"strconv"
-	"strings"
 )
 
 var logConf = log.Log.WithName("mgw.config")
@@ -61,6 +59,8 @@ const (
 	enabledGlobalTMEventPublishingConst = "enabledGlobalTMEventPublishing"
 	jmsConnectionProviderConst          = "jmsConnectionProvider"
 	throttleEndpointConst               = "throttleEndpoint"
+	throttlingRecieverURLConst          = "throttlingRecieverUrl"
+	throttlingAuthURLConst              = "throttlingAuthUrl"
 	enableRealtimeMessageRetrievalConst = "enableRealtimeMessageRetrieval"
 	enableRequestValidationConst        = "enableRequestValidation"
 	enableResponseValidationConst       = "enableResponseValidation"
@@ -126,6 +126,8 @@ type Configuration struct {
 	ThrottleEndpoint               string
 	ApimUsername                   string
 	ApimPassword                   string
+	ThrottlingRecieverURL          string
+	ThrottlingAuthURL              string
 
 	// token revocation
 	EnableRealtimeMessageRetrieval string
@@ -241,6 +243,8 @@ var Configs = &Configuration{
 	ThrottleEndpoint:               "wso2apim.wso2:32001",
 	ApimUsername:                   "admin",
 	ApimPassword:                   "admin",
+	ThrottlingRecieverURL:          "wso2apim.wso2:9611",
+	ThrottlingAuthURL:              "wso2apim.wso2:9611",
 
 	// token revocation
 	EnableRealtimeMessageRetrieval: "false",
@@ -332,6 +336,8 @@ func SetApimConfigs(client *client.Client) error {
 	Configs.ThrottleEndpoint = apimConfig.Data[throttleEndpointConst]
 	Configs.ApimUsername = string(apimSecret.Data["username"])
 	Configs.ApimPassword = string(apimSecret.Data["password"])
+	Configs.ThrottlingRecieverURL = apimConfig.Data[throttlingRecieverURLConst]
+	Configs.ThrottlingAuthURL = apimConfig.Data[throttlingAuthURLConst]
 	Configs.EnableRealtimeMessageRetrieval = apimConfig.Data[enableRealtimeMessageRetrievalConst]
 	Configs.EnableRequestValidation = apimConfig.Data[enableRequestValidationConst]
 	Configs.EnableResponseValidation = apimConfig.Data[enableResponseValidationConst]
