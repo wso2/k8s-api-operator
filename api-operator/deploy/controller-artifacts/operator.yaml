@@ -45,5 +45,5 @@ spec:
                   fieldPath: metadata.name
             - name: OPERATOR_NAME
               value: "api-operator"
-            - name: ARTIFACTS_NAMESPACE
+            - name: SYSTEM_NAMESPACE
               value: "wso2-system"

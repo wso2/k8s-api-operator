@@ -19,6 +19,7 @@ package kaniko
 import (
 	b64 "encoding/base64"
 	"fmt"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/maps"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/str"
@@ -69,10 +70,10 @@ func InitDocFileProp() {
 }
 
 // HandleDockerFile render the docker file for Kaniko job and add volumes to the Kaniko job
-func HandleDockerFile(client *client.Client, userNamespace, apiName string, owner *[]metav1.OwnerReference, artifactsNamespace string) error {
+func HandleDockerFile(client *client.Client, userNamespace, apiName string, owner *[]metav1.OwnerReference) error {
 	// get docker file template from system namespace
 	dockerFileConfMap := k8s.NewConfMap()
-	err := k8s.Get(client, types.NamespacedName{Namespace: artifactsNamespace, Name: dockerFileTemplate}, dockerFileConfMap)
+	err := k8s.Get(client, types.NamespacedName{Namespace: config.SystemNamespace, Name: dockerFileTemplate}, dockerFileConfMap)
 	if err != nil {
 		logDocker.Error(err, "Error retrieving docker template configmap",
 			"configmap", dockerFileTemplate, "namespace", userNamespace, "apiName", apiName)
@@ -88,7 +89,7 @@ func HandleDockerFile(client *client.Client, userNamespace, apiName string, owne
 	}
 
 	// set truststore password
-	if err := setTruststorePassword(client, artifactsNamespace); err != nil {
+	if err := setTruststorePassword(client); err != nil {
 		return err
 	}
 
@@ -115,10 +116,10 @@ func HandleDockerFile(client *client.Client, userNamespace, apiName string, owne
 }
 
 // setTruststorePassword sets the truststore password in docker file properties DocFileProp
-func setTruststorePassword(client *client.Client, artifactsNamespace string) error {
+func setTruststorePassword(client *client.Client) error {
 	// get secret if available
 	secret := k8s.NewSecret()
-	err := k8s.Get(client, types.NamespacedName{Name: truststoreSecretName, Namespace: artifactsNamespace}, secret)
+	err := k8s.Get(client, types.NamespacedName{Name: truststoreSecretName, Namespace: config.SystemNamespace}, secret)
 	if err != nil && errors.IsNotFound(err) {
 		encodedPw := encodedTruststorePassword
 		decodedPw, err := b64.StdEncoding.DecodeString(encodedPw)
@@ -130,7 +131,7 @@ func setTruststorePassword(client *client.Client, artifactsNamespace string) err
 
 		logDocker.Info("Creating a new secret for truststore password")
 		trustStoreSecret := k8s.NewSecretWith(types.NamespacedName{
-			Namespace: artifactsNamespace,
+			Namespace: config.SystemNamespace,
 			Name:      truststoreSecretName,
 		}, &map[string][]byte{
 			truststoreSecretData: []byte(encodedPw),

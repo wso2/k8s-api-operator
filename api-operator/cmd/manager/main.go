@@ -12,6 +12,7 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/apis"
+	operatorConfig "github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/controller"
 
 	routv1 "github.com/openshift/api/route/v1"
@@ -59,6 +60,13 @@ func main() {
 	// be propagated through the whole operator, generating
 	// uniform and structured logs.
 	logf.SetLogger(zap.Logger())
+
+	// Set system and operator namespaces
+	if found := operatorConfig.SetSystemNamespaceFromEnv(); !found {
+		log.Info("Environment variable for system namespace not defined and using the default",
+			"env_var", operatorConfig.SystemNamespaceEnv, "default_ns", operatorConfig.DefaultSystemNamespace)
+	}
+	operatorConfig.SetOperatorNamespace()
 
 	printVersion()
 
