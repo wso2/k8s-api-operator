@@ -52,7 +52,7 @@ const (
 
 // Deployment returns a MGW deployment for the given API definition
 func Deployment(client *client.Client, api *wso2v1alpha1.API, controlConfigData map[string]string,
-	owner *[]metav1.OwnerReference, sidecarContainers []corev1.Container, artifactsNamespace string) (*appsv1.Deployment, error) {
+	owner *[]metav1.OwnerReference, sidecarContainers []corev1.Container) (*appsv1.Deployment, error) {
 	regConfig := registry.GetConfig()
 	labels := map[string]string{"app": api.Name}
 	liveDelay, _ := strconv.ParseInt(controlConfigData[livenessProbeInitialDelaySeconds], 10, 32)
@@ -67,7 +67,7 @@ func Deployment(client *client.Client, api *wso2v1alpha1.API, controlConfigData 
 	resLimitMemory := controlConfigData[resourceLimitMemory]
 
 	// Mount the user specified Config maps and secrets to mgw deploy volume
-	deployVolume, deployVolumeMount, envFromSources, errDeploy := UserDeploymentVolume(client, api, artifactsNamespace)
+	deployVolume, deployVolumeMount, envFromSources, errDeploy := UserDeploymentVolume(client, api)
 
 	if Configs.AnalyticsEnabled {
 		// mounts an empty dir volume to be used when analytics is enabled
@@ -160,7 +160,7 @@ func Deployment(client *client.Client, api *wso2v1alpha1.API, controlConfigData 
 	}
 
 	// set hostAliases
-	hostAliases := getHostAliases(client, artifactsNamespace)
+	hostAliases := getHostAliases(client)
 
 	deploy := k8s.NewDeployment()
 	deploy.ObjectMeta = metav1.ObjectMeta{

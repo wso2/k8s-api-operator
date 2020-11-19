@@ -16,10 +16,8 @@
 package targetendpoint
 
 const (
-	wso2NameSpaceConst 		= "wso2-system"
-	artifactsNamespaceConst 	= "ARTIFACTS_NAMESPACE"
-	privateJet         		= "privateJet"
-	serverless         		= "serverless"
+	privateJet = "privateJet"
+	serverless = "serverless"
 
 	hpaConfigMapName        = "hpa-configs"
 	maxReplicasConfigKey    = "targetEndpointMaxReplicas"

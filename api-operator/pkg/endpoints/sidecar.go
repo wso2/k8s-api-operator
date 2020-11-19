@@ -18,6 +18,7 @@ package endpoints
 
 import (
 	"errors"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
@@ -38,7 +39,7 @@ const (
 
 var logger = log.Log.WithName("endpoints.sidecar")
 
-func GetSidecarContainers(client *client.Client, apiNamespace string, sidecarEpNames *map[string]bool, artifactNs string) ([]corev1.Container, error) {
+func GetSidecarContainers(client *client.Client, apiNamespace string, sidecarEpNames *map[string]bool) ([]corev1.Container, error) {
 	containerList := make([]corev1.Container, 0, len(*sidecarEpNames))
 	isAdded := make(map[string]bool)
 
@@ -58,7 +59,7 @@ func GetSidecarContainers(client *client.Client, apiNamespace string, sidecarEpN
 					})
 				}
 
-				resourceRequirements, resourceLimits, err := getResourceMetadata(client, targetEndpointCr, artifactNs)
+				resourceRequirements, resourceLimits, err := getResourceMetadata(client, targetEndpointCr)
 				if err != nil {
 					if k8sError.IsNotFound(err) {
 						// Controller configmap is not found.
@@ -98,10 +99,10 @@ func GetSidecarContainers(client *client.Client, apiNamespace string, sidecarEpN
 }
 
 func getResourceMetadata(client *client.Client,
-	targetEndpointCr *wso2v1alpha1.TargetEndpoint, artifactNs string) (corev1.ResourceList, corev1.ResourceList, error) {
+	targetEndpointCr *wso2v1alpha1.TargetEndpoint) (corev1.ResourceList, corev1.ResourceList, error) {
 	controllerConfMap := &corev1.ConfigMap{}
 	err := k8s.Get(client,
-		types.NamespacedName{Namespace: artifactNs, Name: "controller-config"}, controllerConfMap)
+		types.NamespacedName{Namespace: config.SystemNamespace, Name: "controller-config"}, controllerConfMap)
 	if err != nil {
 		return nil, nil, err
 	}

@@ -18,6 +18,7 @@ package mgw
 
 import (
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
@@ -105,9 +106,9 @@ func ExternalIP(client *client.Client, apiInstance *wso2v1alpha1.API, operatorMo
 }
 
 // get hostAliases for the deployment
-func getHostAliases(client *client.Client, artifactNs string) []corev1.HostAlias {
+func getHostAliases(client *client.Client) []corev1.HostAlias {
 	mgwDeploymentConfMap := k8s.NewConfMap()
-	errGetDeploy := k8s.Get(client, types.NamespacedName{Name: mgwDeploymentConfigMapName, Namespace: artifactNs},
+	errGetDeploy := k8s.Get(client, types.NamespacedName{Name: mgwDeploymentConfigMapName, Namespace: config.SystemNamespace},
 		mgwDeploymentConfMap)
 	if errGetDeploy != nil {
 		logEp.Error(errGetDeploy, "Error getting mgw deployment configs")
