@@ -17,6 +17,8 @@
 package apim
 
 import (
+	"strings"
+
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/maps"
@@ -25,25 +27,11 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
-	"strings"
 )
 
 var logDelete = log.Log.WithName("apim.delete")
 
 func DeleteImportedAPI(client *client.Client, instance *wso2v1alpha1.API) error {
-	inputConf := k8s.NewConfMap()
-	errInput := k8s.Get(client, types.NamespacedName{Namespace: instance.Namespace, Name: instance.Name}, inputConf)
-
-	if errInput != nil {
-		if errors.IsNotFound(errInput) {
-			logDelete.Info("API project or swagger not found")
-			return errInput
-		} else {
-			logDelete.Error(errInput, "Error retrieving API configs to import")
-			return errInput
-		}
-	}
-
 	apimConfig, errInput := getRESTAPIConfigs(client)
 	if errInput != nil {
 		if errors.IsNotFound(errInput) {
@@ -72,20 +60,35 @@ func DeleteImportedAPI(client *client.Client, instance *wso2v1alpha1.API) error 
 		return errToken
 	}
 
-	if inputConf.BinaryData != nil {
-		deleteErr := deleteAPIFromProject(inputConf, accessToken, publisherEndpoint)
-		if deleteErr != nil {
-			logDelete.Error(deleteErr, "Error when deleting the API using zip")
-			return deleteErr
+	//itterate throught all API definition.
+	for _, configMapName := range instance.Spec.Definition.SwaggerConfigmapNames {
+		inputConf := k8s.NewConfMap()
+		errInput := k8s.Get(client, types.NamespacedName{Namespace: instance.Namespace, Name: configMapName}, inputConf)
+
+		if errInput != nil {
+			if errors.IsNotFound(errInput) {
+				logDelete.Info("API project or swagger not found")
+				return errInput
+			} else {
+				logDelete.Error(errInput, "Error retrieving API configs to import")
+				return errInput
+			}
 		}
-	} else {
-		deleteErr := deleteAPIFromSwagger(inputConf, accessToken, publisherEndpoint)
-		if deleteErr != nil {
-			logDelete.Error(deleteErr, "Error when deleting the API using swagger")
-			return deleteErr
+
+		if inputConf.BinaryData != nil {
+			deleteErr := deleteAPIFromProject(inputConf, accessToken, publisherEndpoint)
+			if deleteErr != nil {
+				logDelete.Error(deleteErr, "Error when deleting the API using zip")
+				return deleteErr
+			}
+		} else {
+			deleteErr := deleteAPIFromSwagger(inputConf, accessToken, publisherEndpoint)
+			if deleteErr != nil {
+				logDelete.Error(deleteErr, "Error when deleting the API using swagger")
+				return deleteErr
+			}
 		}
 	}
-
 	return nil
 }
 
