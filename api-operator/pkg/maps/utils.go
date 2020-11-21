@@ -18,6 +18,7 @@ package maps
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 )
 
@@ -29,7 +30,7 @@ func OneKey(m interface{}) (string, error) {
 	keys := reflect.ValueOf(m).MapKeys()
 
 	if len(keys) != 1 {
-		err := errors.New("length of the map should be 1 but was " + string(len(keys)))
+		err := fmt.Errorf("length of the map should be 1 but was %v", len(keys))
 		return "", err
 	}
 
