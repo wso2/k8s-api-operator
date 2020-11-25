@@ -16,23 +16,27 @@
 
 package maps
 
-import (
-	"errors"
-	"fmt"
-	"reflect"
-)
+import "testing"
 
-func OneKey(m interface{}) (string, error) {
-	if reflect.TypeOf(m).Kind().String() != "map" {
-		err := errors.New("type of the argument is not a map")
-		return "", err
-	}
-	keys := reflect.ValueOf(m).MapKeys()
+func TestOneKey(t *testing.T) {
+	var key string
+	var err error
 
-	if len(keys) != 1 {
-		err := fmt.Errorf("length of the map should be 1 but was %v", len(keys))
-		return "", err
+	key, err = OneKey("string")
+	if err == nil {
+		t.Error("string argument should return an error")
 	}
 
-	return keys[0].String(), nil
+	key, err = OneKey(map[string]int{"one": 1})
+	if err != nil {
+		t.Error("map with one key should not return an error")
+	}
+	if key != "one" {
+		t.Errorf("for map {\"one\": 1} want: 'key' but was: %s", key)
+	}
+
+	key, err = OneKey(map[string]int{"one": 1, "two": 2})
+	if err == nil {
+		t.Error("map with multiple keys should return error")
+	}
 }

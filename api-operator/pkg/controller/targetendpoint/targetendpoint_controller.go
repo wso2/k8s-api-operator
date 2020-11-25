@@ -611,7 +611,7 @@ func getConfigmap(r *ReconcileTargetEndpoint, mapName string, ns string) (*corev
 
 	if mapName == "apim-config" {
 		if err != nil && errors.IsNotFound(err) {
-			logrus.Warnf("missing APIM configurations ", err)
+			logrus.Warn("missing APIM configurations ", err)
 			return nil, err
 
 		} else if err != nil {
