@@ -4,10 +4,10 @@ import (
 	"context"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/controller/common"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/envoy/names"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/ingress"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/api/networking/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -35,7 +35,7 @@ func FromConfigMap(ctx context.Context, reqInfo *common.RequestInfo) (*ProjectsS
 }
 
 // NewFromIngresses returns a new ProjectsStatus from given Ingress objects
-func NewFromIngresses(ingresses ...*v1beta1.Ingress) *ProjectsStatus {
+func NewFromIngresses(ingresses ...*ingress.Ingress) *ProjectsStatus {
 	st := &ProjectsStatus{}
 	for _, ing := range ingresses {
 		updateFromIngress(st, ing)
@@ -43,7 +43,7 @@ func NewFromIngresses(ingresses ...*v1beta1.Ingress) *ProjectsStatus {
 	return st
 }
 
-func updateFromIngress(projects *ProjectsStatus, ing *v1beta1.Ingress) {
+func updateFromIngress(projects *ProjectsStatus, ing *ingress.Ingress) {
 	name := names.IngressToName(ing)
 	(*projects)[name] = make(map[string]string)
 

@@ -10,22 +10,24 @@ import (
 // Maps project -> action
 //
 // example1_com:
-//   Type: ForceUpdate
+//   Action: ForceUpdate
 //   OAS: swagger.yaml
 // example2_com:
-//   Type: Delete
+//   Action: Delete
 //   OAS: empty_swagger.yaml
 //
 type ProjectsMap map[string]*Project
 
 // Project represents action to be done to the envoy microgateway
 type Project struct {
-	// Type of the action
-	Type Type
+	// Action of the action
+	Action action
 	// OAS definition to be updated
 	OAS *openapi3.Swagger
 	// TlsCertificate of the project for TLS termination
 	TlsCertificate *TlsCertificate
+	// BackendCertificates of the backends for TLS origination
+	BackendCertificates []*TlsCertificate
 }
 
 type TlsCertificate struct {
@@ -49,25 +51,15 @@ func (c *TlsCertificate) String() string {
 	return fmt.Sprintf("{%s}", strings.Join(elem, ", "))
 }
 
-// Type represents the type of action
-type Type int
-
-func (t Type) String() string {
-	switch t {
-	case Delete:
-		return "Delete"
-	case ForceUpdate:
-		return "ForceUpdate"
-	case DoNothing:
-		return "DoNothing"
-	}
-	return "Unsupported Action Type"
-}
+// action represents the type of action
+type action string
 
 // Project types
 const (
-	Delete      = Type(1)
-	ForceUpdate = Type(2)
-	// DoNothing for new projects that are invalid
-	DoNothing = Type(3)
+	// Delete action defines an existing project should be deleted
+	Delete = action("Delete")
+	// ForceUpdate action defines an existing project should be updated or created if not exists
+	ForceUpdate = action("ForceUpdate")
+	// DoNothing action defines a new project that are invalid should be ignored
+	DoNothing = action("DoNothing")
 )

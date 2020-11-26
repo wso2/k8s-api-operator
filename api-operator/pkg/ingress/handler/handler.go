@@ -6,6 +6,7 @@ import (
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/envoy/action"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/envoy/client"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/envoy/status"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/ingress"
 	"k8s.io/api/networking/v1beta1"
 	"time"
 )
@@ -14,7 +15,7 @@ type Handler struct {
 	GatewayClient client.GatewayClient
 }
 
-func (h *Handler) UpdateWholeWorld(ctx context.Context, reqInfo *common.RequestInfo, ingresses []*v1beta1.Ingress) error {
+func (h *Handler) UpdateWholeWorld(ctx context.Context, reqInfo *common.RequestInfo, ingresses []*ingress.Ingress) error {
 	reqInfo.Log.Info("Handle whole world update of the ingresses")
 
 	// New state to be configured
@@ -24,18 +25,21 @@ func (h *Handler) UpdateWholeWorld(ctx context.Context, reqInfo *common.RequestI
 	return h.update(ctx, reqInfo, ingresses, sDiff)
 }
 
-func (h *Handler) UpdateDelta(ctx context.Context, reqInfo *common.RequestInfo, ingresses []*v1beta1.Ingress) error {
+func (h *Handler) UpdateDelta(ctx context.Context, reqInfo *common.RequestInfo, ingresses []*ingress.Ingress) error {
 	reqInfo.Log.Info("Handle delta update of the ingress")
 
 	// New state to be configured
 	instance := reqInfo.Object.(*v1beta1.Ingress)
-	newS := status.NewFromIngresses(instance)
+	// TODO: (renuka) handle error
+	ingWithAnnotations := ingress.WithAnnotations(instance)
+
+	newS := status.NewFromIngresses(ingWithAnnotations)
 	reqInfo.Log.V(1).Info("Changes in projects for ingress", "new_status_changes", newS)
 
 	return h.update(ctx, reqInfo, ingresses, newS)
 }
 
-func (h *Handler) update(ctx context.Context, reqInfo *common.RequestInfo, ingresses []*v1beta1.Ingress, sDiff *status.ProjectsStatus) error {
+func (h *Handler) update(ctx context.Context, reqInfo *common.RequestInfo, ingresses []*ingress.Ingress, sDiff *status.ProjectsStatus) error {
 	// Read current state
 	st, err := status.FromConfigMap(ctx, reqInfo)
 	if err != nil {

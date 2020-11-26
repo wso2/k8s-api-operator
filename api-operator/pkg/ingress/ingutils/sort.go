@@ -2,7 +2,7 @@ package ingutils
 
 import (
 	"fmt"
-	"k8s.io/api/networking/v1beta1"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/ingress"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sort"
 )
@@ -10,7 +10,7 @@ import (
 var log = logf.Log.WithName("controller_ingress")
 
 // SortIngressSlice sorts Ingresses using the CreationTimestamp field
-func SortIngressSlice(ingresses []*v1beta1.Ingress) {
+func SortIngressSlice(ingresses []*ingress.Ingress) {
 	sort.SliceStable(ingresses, func(i, j int) bool {
 		it := ingresses[i].CreationTimestamp
 		jt := ingresses[j].CreationTimestamp

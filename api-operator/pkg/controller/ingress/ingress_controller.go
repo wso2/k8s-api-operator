@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/controller/common"
 	gwclient "github.com/wso2/k8s-api-operator/api-operator/pkg/envoy/client"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/ingress"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/ingress/class"
 	inghandler "github.com/wso2/k8s-api-operator/api-operator/pkg/ingress/handler"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/ingress/ingutils"
@@ -135,7 +136,7 @@ func (r *ReconcileIngress) Reconcile(request reconcile.Request) (reconcile.Resul
 	return reconcile.Result{}, nil
 }
 
-func (r *ReconcileIngress) handleRequest(ctx context.Context, requestInfo *common.RequestInfo, ingresses []*v1beta1.Ingress) error {
+func (r *ReconcileIngress) handleRequest(ctx context.Context, requestInfo *common.RequestInfo, ingresses []*ingress.Ingress) error {
 	// Check startup
 	if !builtWholeWorld {
 		if successfullyHandledRequestCount == len(ingresses)-1 {
@@ -160,7 +161,7 @@ func (r *ReconcileIngress) handleRequest(ctx context.Context, requestInfo *commo
 	return nil
 }
 
-func getSortedIngressList(ctx context.Context, requestInfo *common.RequestInfo) ([]*v1beta1.Ingress, error) {
+func getSortedIngressList(ctx context.Context, requestInfo *common.RequestInfo) ([]*ingress.Ingress, error) {
 	requestInfo.Log.Info("Read all ingresses in the specified namespace", "namespace", common.WatchNamespace)
 	ingList := &v1beta1.IngressList{}
 	if err := requestInfo.Client.List(ctx, ingList, client.InNamespace(common.WatchNamespace)); err != nil {
@@ -170,10 +171,12 @@ func getSortedIngressList(ctx context.Context, requestInfo *common.RequestInfo) 
 	}
 
 	// Filter out ingresses managed by the microgateway ingress controller
-	ingresses := make([]*v1beta1.Ingress, 0, len(ingList.Items))
+	ingresses := make([]*ingress.Ingress, 0, len(ingList.Items))
 	for i := range ingList.Items {
 		if class.IsValid(&ingList.Items[i]) {
-			ingresses = append(ingresses, &ingList.Items[i])
+			ingresses = append(ingresses, &ingress.Ingress{
+				Ingress: ingList.Items[i],
+			})
 		}
 	}
 

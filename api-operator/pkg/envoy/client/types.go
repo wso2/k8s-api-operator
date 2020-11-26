@@ -22,22 +22,10 @@ type GatewayClient interface {
 //
 type Response map[string]ResponseType
 
-type ResponseType int
-
-func (t ResponseType) String() string {
-	switch t {
-	case Failed:
-		return "Failed"
-	case Updated:
-		return "Updated"
-	case Deleted:
-		return "Deleted"
-	}
-	return "Unsupported Response Type"
-}
+type ResponseType string
 
 const (
-	Failed  = ResponseType(0)
-	Updated = ResponseType(1)
-	Deleted = ResponseType(2)
+	Failed  = ResponseType("Failed")
+	Updated = ResponseType("Updated")
+	Deleted = ResponseType("Deleted")
 )

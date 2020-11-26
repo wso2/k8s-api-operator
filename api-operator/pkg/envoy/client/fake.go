@@ -30,7 +30,7 @@ func NewFakeAllSucceeded() *Fake {
 			r := Response{}
 
 			for name, project := range *projects {
-				switch project.Type {
+				switch project.Action {
 				case action.ForceUpdate:
 					r[name] = Updated
 				case action.Delete:
@@ -65,7 +65,7 @@ func NewFakeWithRandomResponse() *Fake {
 				if rand.Intn(2) == 0 {
 					r[name] = Failed
 				} else {
-					switch project.Type {
+					switch project.Action {
 					case action.ForceUpdate:
 						r[name] = Updated
 					case action.Delete:
@@ -83,9 +83,9 @@ func (c *Fake) Update(ctx context.Context, reqInfo *common.RequestInfo, projects
 		fmt.Println("")
 		fmt.Println("******* PRINT PROJECT ******")
 		fmt.Printf("Project name: %s\n", s)
-		fmt.Printf("Action: %s\n", project.Type)
+		fmt.Printf("Action: %s\n", project.Action)
 
-		if project.Type != action.ForceUpdate {
+		if project.Action != action.ForceUpdate {
 			continue
 		}
 		err := project.OAS.Validate(ctx)

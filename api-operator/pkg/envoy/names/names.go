@@ -2,7 +2,7 @@ package names
 
 import (
 	"fmt"
-	"k8s.io/api/networking/v1beta1"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/ingress"
 	"strings"
 )
 
@@ -21,6 +21,6 @@ func ProjectToHost(pj string) string {
 	return strings.ReplaceAll(p, "_", ".")
 }
 
-func IngressToName(ing *v1beta1.Ingress) string {
+func IngressToName(ing *ingress.Ingress) string {
 	return fmt.Sprintf("%v/%v", ing.Namespace, ing.Name)
 }
