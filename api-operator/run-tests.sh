@@ -17,4 +17,7 @@
 # under the License.
 
 # Modules to be tested
-go test ./pkg/maps
+go test -v ./pkg/maps
+go test -v ./pkg/envoy/names
+go test -v ./pkg/envoy/status
+go test -v ./pkg/controller/ingress

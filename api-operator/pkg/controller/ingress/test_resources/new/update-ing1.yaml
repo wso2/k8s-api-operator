@@ -11,7 +11,7 @@ metadata:
 spec:
   backend:
     serviceName: products
-    servicePort: 80
+    servicePort: 8080
   tls:
     - secretName: foo-dev
       hosts:

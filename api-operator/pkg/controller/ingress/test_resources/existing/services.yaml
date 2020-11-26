@@ -8,7 +8,7 @@ spec:
     app: MyApp
   ports:
     - protocol: TCP
-      port: 80
+      port: 8080
       targetPort: 9376
 ---
 
@@ -22,7 +22,7 @@ spec:
     app: MyApp
   ports:
     - protocol: TCP
-      port: 80
+      port: 8080
       targetPort: 9376
 ---
 
@@ -36,7 +36,7 @@ spec:
     app: MyApp
   ports:
     - protocol: TCP
-      port: 80
+      port: 8080
       targetPort: 9376
 ---
 
@@ -50,5 +50,5 @@ spec:
     app: MyApp
   ports:
     - protocol: TCP
-      port: 80
+      port: 8080
       targetPort: 9376

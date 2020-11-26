@@ -37,6 +37,10 @@ type TlsCertificate struct {
 }
 
 func (c *TlsCertificate) String() string {
+	if c == nil {
+		return "{}"
+	}
+
 	elem := make([]string, 0, 3)
 	if c.CertificateChain != nil {
 		elem = append(elem, "CertificateChain")
