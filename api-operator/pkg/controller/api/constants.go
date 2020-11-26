@@ -21,7 +21,6 @@ const (
 	kanikoArguments     = "kanikoArguments"
 	registryTypeConst   = "registryType"
 	repositoryNameConst = "repositoryName"
-	wso2NameSpaceConst  = "wso2-system"
 	controllerConfName  = "controller-config"
 	ingressConfigs      = "ingress-configs"
 	openShiftConfigs    = "route-configs"
@@ -42,7 +41,7 @@ const (
 	sidecar                           = "sidecar"
 	apiCrdDefaultVersion              = "v1.0.0"
 	generateKubernetesArtifactsForMgw = "generatekubernbetesartifactsformgw"
-
-	hpaConfigMapName = "hpa-configs"
-	hpaVersionConst  = "hpaVersion"
+	importAPIEnabledConst             = "importAPIToAPIManager"
+	hpaConfigMapName                  = "hpa-configs"
+	hpaVersionConst                   = "hpaVersion"
 )

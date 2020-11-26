@@ -18,7 +18,6 @@ package ratelimiting
 
 const (
 	policyFileConst        = "policies.yaml"
-	wso2NameSpaceConst     = "wso2-system"
 	policyConfMapNameConst = "policy-configmap"
 	resourceConst          = "Resource"
 	subscriptionConst      = "Subscription"

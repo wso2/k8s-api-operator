@@ -18,6 +18,7 @@ require (
 	github.com/operator-framework/operator-sdk v0.18.0
 	github.com/sirupsen/logrus v1.5.0
 	github.com/spf13/pflag v1.0.5
+	gopkg.in/resty.v1 v1.12.0
 	gopkg.in/yaml.v2 v2.2.8
 	istio.io/api v0.0.0-20200720192137-962b7ea3a72a
 	istio.io/client-go v0.0.0-20200717004237-1af75184beba

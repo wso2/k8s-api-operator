@@ -18,6 +18,7 @@ package endpoints
 
 import (
 	"errors"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
@@ -101,7 +102,7 @@ func getResourceMetadata(client *client.Client,
 	targetEndpointCr *wso2v1alpha1.TargetEndpoint) (corev1.ResourceList, corev1.ResourceList, error) {
 	controllerConfMap := &corev1.ConfigMap{}
 	err := k8s.Get(client,
-		types.NamespacedName{Namespace: "wso2-system", Name: "controller-config"}, controllerConfMap)
+		types.NamespacedName{Namespace: config.SystemNamespace, Name: "controller-config"}, controllerConfMap)
 	if err != nil {
 		return nil, nil, err
 	}

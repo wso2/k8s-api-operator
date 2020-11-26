@@ -18,7 +18,6 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: controller-config
-  namespace: wso2-system
 data:
   #mgw toolkit image to initialize/setup the micro gw project
   mgwToolkitImg: wso2am/wso2micro-gw-toolkit:3.2.0
@@ -57,25 +56,37 @@ data:
   operatorMode: "default"
   #Expose custom metrics. Default-> observabilityEnabled: "false"
   observabilityEnabled: "false"
+  #Import an API to APIM through Operator
+  importAPIToAPIManager: "false"
 
 ---
 apiVersion: v1
 kind: Secret
 metadata:
   name: apim-secret
-  namespace: wso2-system
 type: Opaque
 data:
-  #Base64 encoded username and password for APIM
+  #Base64 encoded username, password, and, APIM cert secret name for APIM
   username: YWRtaW4=
   password: YWRtaW4=
+  cert_security: YXBpbS1jZXJ0LXNlY3JldA==
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: apim-cert-secret
+  namespace: wso2-system
+data:
+  #Base64 encoded public cert of APIM instance
+  apim.pem: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tDQpNSUlEcVRDQ0FwR2dBd0lCQWdJRVhiQUJvekFOQmdrcWhraUc5dzBCQVFzRkFEQmtNUXN3Q1FZRFZRUUdFd0pWDQpVekVMTUFrR0ExVUVDQXdDUTBFeEZqQVVCZ05WQkFjTURVMXZkVzUwWVdsdUlGWnBaWGN4RFRBTEJnTlZCQW9NDQpCRmRUVHpJeERUQUxCZ05WQkFzTUJGZFRUekl4RWpBUUJnTlZCQU1NQ1d4dlkyRnNhRzl6ZERBZUZ3MHhPVEV3DQpNak13TnpNd05ETmFGdzB5TWpBeE1qVXdOek13TkROYU1HUXhDekFKQmdOVkJBWVRBbFZUTVFzd0NRWURWUVFJDQpEQUpEUVRFV01CUUdBMVVFQnd3TlRXOTFiblJoYVc0Z1ZtbGxkekVOTUFzR0ExVUVDZ3dFVjFOUE1qRU5NQXNHDQpBMVVFQ3d3RVYxTlBNakVTTUJBR0ExVUVBd3dKYkc5allXeG9iM04wTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGDQpBQU9DQVE4QU1JSUJDZ0tDQVFFQXhlcW9aWWJRL1NyOERPRlErL3FiRWJDcDZWemI1aHpIN29hM2hmMkZaeFJLDQpGMEg2YjhDT016ejgrMG12RWRZVnZiLzMxak1FTDJDSVFoa1FSb2wxSXJ1RDZuQk9ta2p1WEpTQmZpY2tsTWFKDQpaT1JodUNyQjRyb0h4em9HMTlhV21zY0EwZ25mQktvMm9HWFNqSm1uWnhJaCsyWDZzeUhDZnlNWlowMEx6RHlyDQpnb1hXUVh5RnZDQTJheDU0czdzS2lIT00zUDRBOVc0UVV3bW9FaTRIUW1QZ0pqSU00ZUdWUGgwR3RJQU5OK0JPDQpRMUtrVUk3T3p0ZUhDVEx1M1ZqeE0wc3c4UVJheVpkaG5pUEYrVTluM2ZhMW1PNEtMQnNXNG1ETGpnOFIvSnVBDQpHVFgvU0VFR2owQjVIV1FBUDZteXhLRnoyeHdEYUNHdlQrcmR2a2t0T3dJREFRQUJvMk13WVRBVUJnTlZIUkVFDQpEVEFMZ2dsc2IyTmhiR2h2YzNRd0hRWURWUjBPQkJZRUZFRHBMQjRQRGd6c2R4RDJGVjNyVm5Pci9BMERNQjBHDQpBMVVkSlFRV01CUUdDQ3NHQVFVRkJ3TUJCZ2dyQmdFRkJRY0RBakFMQmdOVkhROEVCQU1DQlBBd0RRWUpLb1pJDQpodmNOQVFFTEJRQURnZ0VCQUU4SC9heEFnWGp0OTNIR0NZR3VtVUxXMmxLa2dxRXZYcnlQMlFrUnBieVFTc1RZDQpjTDdaTFNWQjdNVlZIdElzSGg4ZjFDNFhxNlF1OE5VcnF1NVpMQzFwVUJ5YXFSMlpJemNqL09XTEdZUmpTVEhTDQpWbVZJcTlRcUJxMWo3cjZmM0JXcWFPSWlrbm1UekV1cUlWbE9UWTBnTytTSGRTNjJ2cjJGQ3o0eU9yQkV1bEdBDQp2b21zVThzcWc0UGhGbmtoeEk0TTkxMkx5KzJSZ045TDdBa2h6SytFelhZMS9RdGxJL1Z5c05mUzZ6ckhhc0t6DQo2Q3JLS0NHcVFuQm5TdlNUeUY5T1I1S0ZIbmtBd0U5OTVJWnJjU1FpY014c0xoVE1VSERMUS9nUnl5N1YvWnBEDQpNZkFXUis1T2VRaU5BcC9iRzRmakpvVGRvcWt1bDUxKzJiSEhWclU9DQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tDQo=
+type: Opaque
 
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: apim-config
-  namespace: wso2-system
 data:
   #By default hostname verification is disabled. In a production scenario, this has to be enabled.
   verifyHostname: "false"
@@ -84,6 +95,17 @@ data:
   #Ports from which the managed API service is getting exposed
   httpPort: "9090"
   httpsPort: "9095"
+  #The following 3 endpoints are related to importing API to API Manager
+  #API Manager Keymanager/DCR endpoint
+  apimKeymanagerEndpoint: "https://localhost:9443"
+  #API Manager Publisher endpoint
+  apimPublisherEndpoint: "https://localhost:9443"
+  #API Manager token endpoint
+  apimTokenEndpoint: "https://localhost:8243/token"
+  #Skip verification for the REST API invocations. If "false", you need to provide the cert
+  insecureSkipVerify: "true"
+  #Secret name containing APIM credentials and cert
+  apimCredentialsSecret: "apim-secret"
   #Enable distributed ratelimiting. Default value:false. If enabled please deploy API Portal
   enabledGlobalTMEventPublishing: "false"
   #The central traffic management solution URL (related to distributed ratelimiting)
@@ -155,7 +177,6 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: hpa-configs
-  namespace: wso2-system
 data:
   # Horizontal Pod Auto-Scaling for Micro-Gateways
   # Maximum number of replicas for the Horizontal Pod Auto-scale. Default->  maxReplicas: "5"
@@ -221,7 +242,6 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: ingress-configs
-  namespace: wso2-system
 data:
   ingress.properties: |
     nginx.ingress.kubernetes.io/backend-protocol: HTTPS
@@ -244,7 +264,6 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: kaniko-arguments
-  namespace: wso2-system
 data:
   kanikoArguments: |
   #kaniko additional flags should go here: Please refer https://github.com/GoogleContainerTools/kaniko#additional-flags
@@ -254,7 +273,6 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: route-configs
-  namespace: wso2-system
 data:
   route.properties: |
     openshift.io/host.generated: false
@@ -271,7 +289,6 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: istio-configs
-  namespace: wso2-system
 data:
   #Gateway name
   gatewayName: "wso2-gateway"
@@ -304,7 +321,6 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: mgw-deployment-configs
-  namespace: wso2-system
 data:
   hostAliases: |
   #  Host Alises to be added to mgw deployment. This is an example.
