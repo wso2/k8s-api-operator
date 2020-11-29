@@ -21,3 +21,4 @@ go test -v ./pkg/maps
 go test -v ./pkg/envoy/names
 go test -v ./pkg/envoy/status
 go test -v ./pkg/controller/ingress
+go test -v ./pkg/swagger

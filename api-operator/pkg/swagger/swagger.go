@@ -19,11 +19,14 @@ package swagger
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"github.com/getkin/kin-openapi/openapi2"
 	"github.com/getkin/kin-openapi/openapi2conv"
 	"github.com/getkin/kin-openapi/openapi3"
 	"gopkg.in/yaml.v2"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	"sort"
+	"strings"
 )
 
 var logger = log.Log.WithName("swagger")
@@ -51,14 +54,91 @@ func GetSwaggerV3(swaggerStr *string) (*openapi3.Swagger, error) {
 }
 
 func PrettyString(swagger *openapi3.Swagger) string {
-	var prettyJSON bytes.Buffer
-	final, err := swagger.MarshalJSON()
+	marshal, err := swagger.MarshalJSON()
 	if err != nil {
 		logger.Error(err, "Error marshalling swagger")
 	}
-	errIndent := json.Indent(&prettyJSON, final, "", "  ")
-	if errIndent != nil {
-		logger.Error(errIndent, "Error prettifying JSON")
+	prettyJSON, err := prettifyJSON(marshal)
+	if err != nil {
+		logger.Error(err, "Error prettifying swagger JSON")
 	}
-	return string(prettyJSON.Bytes())
+	return string(prettyJSON)
+}
+
+func PrettyStringOrderedByPath(swagger *openapi3.Swagger) string {
+	const emptyPath = ",\"paths\":{\"xxx\":{}}"
+	var emptySample = openapi3.Paths{"xxx": {}}
+	const emptyPathFmt = ",\"paths\":{%v}"
+
+	paths := swagger.Paths
+	pathNames := make([]string, 0, len(paths))
+	for path := range paths {
+		pathNames = append(pathNames, path)
+	}
+	orderPaths(pathNames)
+	pathsStr := make([]string, 0, len(paths))
+	for _, name := range pathNames {
+		marshal, err := json.Marshal(paths[name])
+		if err != nil {
+			logger.Error(err, "Error marshalling json path", "path", name, "path_item", paths[name])
+		}
+		pathsStr = append(pathsStr, fmt.Sprintf("\"%v\": %v", name, string(marshal)))
+	}
+	orderedPathsStr := strings.Join(pathsStr, ",")
+
+	swagger.Paths = emptySample
+	m, err := swagger.MarshalJSON()
+	if err != nil {
+		logger.Error(err, "Error marshalling swagger")
+	}
+	swaggerSplits := strings.Split(string(m), emptyPath)
+
+	var final string
+	if len(swaggerSplits) == 2 {
+		final = swaggerSplits[0] + fmt.Sprintf(emptyPathFmt, orderedPathsStr) + swaggerSplits[1]
+	} else {
+		logger.Error(nil, "Reserved text is used in swagger definition", "reserved_text", emptyPath)
+	}
+
+	prettyJSON, err := prettifyJSON([]byte(final))
+	if err != nil {
+		logger.Error(err, "Error prettifying swagger JSON")
+	}
+	return string(prettyJSON)
+}
+
+func prettifyJSON(b []byte) ([]byte, error) {
+	var prettyJSON bytes.Buffer
+	if err := json.Indent(&prettyJSON, b, "", "  "); err != nil {
+		return nil, err
+	}
+	return prettyJSON.Bytes(), nil
+}
+
+func orderPaths(paths []string) {
+	const prefixed = "*"
+	const separator = "/"
+	sort.SliceStable(paths, func(i, j int) bool {
+		ips := strings.Split(strings.TrimSuffix(paths[i], separator), separator)
+		jps := strings.Split(strings.TrimSuffix(paths[j], separator), separator)
+		ip := ips[len(ips)-1]
+		jp := jps[len(jps)-1]
+
+		// /products/* vs /products
+		if ip == prefixed && jp != prefixed {
+			return false
+		}
+		// /products vs /products/*
+		if ip != prefixed && jp == prefixed {
+			return true
+		}
+
+		// /products vs /orders
+		if len(ips) == len(jps) {
+			return paths[i] < paths[j]
+		}
+
+		// /products vs /products/tv
+		return len(ips) > len(jps)
+	})
 }
