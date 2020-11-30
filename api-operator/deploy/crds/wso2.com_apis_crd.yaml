@@ -101,6 +101,10 @@ spec:
               replicas:
                 description: Replica count of the API.
                 type: integer
+              swaggerConfigMapName:
+                description: Config map name of which the project zip or swagger file
+                  is included
+                type: string
               updateTimeStamp:
                 description: Update API definition creating a new docker image. Make
                   a rolling update to the existing API. with prefixing the timestamp
@@ -111,8 +115,7 @@ spec:
                   will be overridden by this value. Default value "<empty>".
                 type: string
             required:
-            - definition
-            - replicas
+            - swaggerConfigMapName
             type: object
           status:
             description: APIStatus defines the observed state of API

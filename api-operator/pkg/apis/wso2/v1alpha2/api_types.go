@@ -37,9 +37,9 @@ type APISpec struct {
 	// +optional
 	UpdateTimeStamp string `json:"updateTimeStamp,omitempty"`
 	// Replica count of the API.
-	Replicas int `json:"replicas"`
+	Replicas int `json:"replicas,omitempty"`
 	// Definition of the API.
-	Definition Definition `json:"definition"`
+	Definition Definition `json:"definition,omitempty"`
 	// Override the exiting API docker image.
 	// Default value "false".
 	// +optional
@@ -62,6 +62,8 @@ type APISpec struct {
 	// Default value "<empty>".
 	// +optional
 	IngressHostname string `json:"ingressHostname,omitempty"`
+	//Config map name of which the project zip or swagger file is included
+	SwaggerConfigMapName string `json:"swaggerConfigMapName"`
 }
 
 // APIStatus defines the observed state of API

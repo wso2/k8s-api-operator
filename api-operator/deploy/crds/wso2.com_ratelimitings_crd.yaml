@@ -46,8 +46,6 @@ spec:
                 description: Conditions is exported type in Ratelimiting Spec
                 properties:
                   headerCondition:
-                    description: HeaderCondition is exported type in Ratelimiting
-                      Spec
                     properties:
                       headerName:
                         type: string
@@ -100,11 +98,7 @@ spec:
               unitTime:
                 type: integer
             required:
-            - bandwidth
-            - conditions
-            - description
             - requestCount
-            - stopOnQuotaReach
             - timeUnit
             - type
             - unitTime
