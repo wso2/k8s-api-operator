@@ -65,6 +65,7 @@ rules:
   - ratelimitings
   - targetendpoints
   - securities
+  - integrations
   verbs:
   - '*'
 - apiGroups:
@@ -80,7 +81,7 @@ rules:
   verbs:
   - '*'
 - apiGroups:
-  - "extensions"
+  - extensions
   resources:
   - ingresses
   - ingress
@@ -101,7 +102,7 @@ rules:
 - apiGroups:
   - route.openshift.io
   resources:
-  - "*"
+  - '*'
   verbs:
   - get
   - list
@@ -113,7 +114,7 @@ rules:
 - apiGroups:
   - networking.istio.io
   resources:
-  - "*"
+  - '*'
   verbs:
   - get
   - list
