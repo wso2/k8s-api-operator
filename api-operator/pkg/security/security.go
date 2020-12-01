@@ -17,6 +17,8 @@
 package security
 
 import (
+	"strings"
+
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/cert"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
@@ -25,7 +27,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
-	"strings"
 )
 
 var logSec = log.Log.WithName("security")
@@ -34,7 +35,7 @@ type securitySchemeStruct struct {
 	SecurityType string             `json:"type"`
 	Scheme       string             `json:"scheme,omitempty"`
 	Flows        *authorizationCode `json:"flows,omitempty"`
-	In			 string             `json:"in"`
+	In           string             `json:"in"`
 	Name         string             `json:"name"`
 }
 
@@ -60,7 +61,7 @@ func Handle(client *client.Client, securityMap map[string][]string, userNameSpac
 		//retrieve security instances
 		errGetSec := k8s.Get(client, types.NamespacedName{Name: secName, Namespace: userNameSpace}, securityInstance)
 		if errGetSec != nil && errors.IsNotFound(errGetSec) {
-			return securityDefinition, &jwtConfArray, &apiKeyConfArray,errGetSec
+			return securityDefinition, &jwtConfArray, &apiKeyConfArray, errGetSec
 		}
 		if strings.EqualFold(securityInstance.Spec.Type, oauthConst) {
 			for _, securityConf := range securityInstance.Spec.SecurityConfig {
@@ -108,16 +109,21 @@ func Handle(client *client.Client, securityMap map[string][]string, userNameSpac
 			logSec.Info("retrieving data for security type JWT")
 			for _, securityConf := range securityInstance.Spec.SecurityConfig {
 				jwtConf := mgw.JwtTokenConfig{}
-				errc := k8s.Get(client, types.NamespacedName{Name: securityConf.Certificate, Namespace: userNameSpace}, certificateSecret)
-				if errc != nil && errors.IsNotFound(errc) {
-					logSec.Info("defined certificate is not found")
-					return securityDefinition, &jwtConfArray, &apiKeyConfArray,errc
-				} else {
-					logSec.Info("defined certificate successfully retrieved")
-				}
 				//mount certs
-				alias := cert.Add(certificateSecret, "security")
-				jwtConf.CertificateAlias = alias
+				if securityConf.JwksURL != "" {
+					jwtConf.JwksPresent = true
+					jwtConf.JwksURL = securityConf.JwksURL
+				} else {
+					errc := k8s.Get(client, types.NamespacedName{Name: securityConf.Certificate, Namespace: userNameSpace}, certificateSecret)
+					if errc != nil && errors.IsNotFound(errc) {
+						logSec.Info("defined certificate is not found")
+						return securityDefinition, &jwtConfArray, &apiKeyConfArray, errc
+					} else {
+						logSec.Info("defined certificate successfully retrieved")
+					}
+					alias := cert.Add(certificateSecret, "security")
+					jwtConf.CertificateAlias = alias
+				}
 				jwtConf.ValidateSubscription = securityConf.ValidateSubscription
 
 				if securityConf.Issuer != "" {
@@ -140,8 +146,8 @@ func Handle(client *client.Client, securityMap map[string][]string, userNameSpac
 					//creating security scheme
 					scheme := securitySchemeStruct{
 						SecurityType: apiKeyConst,
-						In: apiKeyIn,
-						Name: apiKeyName,
+						In:           apiKeyIn,
+						Name:         apiKeyName,
 					}
 					securityDefinition[secName] = scheme
 				}
@@ -179,5 +185,5 @@ func Handle(client *client.Client, securityMap map[string][]string, userNameSpac
 			}
 		}
 	}
-	return securityDefinition, &jwtConfArray, &apiKeyConfArray,nil
+	return securityDefinition, &jwtConfArray, &apiKeyConfArray, nil
 }

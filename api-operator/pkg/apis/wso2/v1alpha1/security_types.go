@@ -73,6 +73,7 @@ type SecurityConfig struct {
 	Audience             string `json:"audience"`
 	ValidateSubscription bool   `json:"validateSubscription,omitempty"`
 	ValidateAllowedAPIs  bool   `json:"validateAllowedAPIs,omitempty"`
+	JwksURL              string `json:"jwksURL"`
 }
 
 func init() {
