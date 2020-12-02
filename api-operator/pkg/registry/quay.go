@@ -22,12 +22,11 @@ import (
 
 const QUAY Type = "QUAY"
 
-// Copy of Docker Hub configs as Quay registry configs
-var quayReg = *dockerHub
-
+// getQuayRegConfigFunc Copies Docker Hub configs as Quay registry configs
 func getQuayRegConfigFunc(repoName string, imgName string, tag string) *Config {
+	var quayReg = getDockerHubConfigFunc(repoName, imgName, tag)
 	quayReg.ImagePath = fmt.Sprintf("%s/%s:%s", repoName, imgName, tag)
-	return &quayReg
+	return quayReg
 }
 
 func init() {

@@ -52,8 +52,8 @@ const (
 
 // Deployment returns a MGW deployment for the given API definition
 func Deployment(client *client.Client, api *wso2v1alpha1.API, controlConfigData map[string]string,
-	owner *[]metav1.OwnerReference, sidecarContainers []corev1.Container) (*appsv1.Deployment, error) {
-	regConfig := registry.GetConfig()
+	owner *[]metav1.OwnerReference, sidecarContainers []corev1.Container, img registry.Image) (*appsv1.Deployment, error) {
+	regConfig := registry.GetImageConfig(img)
 	labels := map[string]string{"app": api.Name}
 	liveDelay, _ := strconv.ParseInt(controlConfigData[livenessProbeInitialDelaySeconds], 10, 32)
 	livePeriod, _ := strconv.ParseInt(controlConfigData[livenessProbePeriodSeconds], 10, 32)

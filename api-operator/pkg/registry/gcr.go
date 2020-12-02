@@ -18,6 +18,7 @@ package registry
 
 import (
 	"fmt"
+
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/registry/utils"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -28,39 +29,38 @@ const SvcAccKeyMountPath = "/kaniko/.gcr/"
 const svcAccKeyVolume = "svc-acc-key-volume"
 
 // Google Container Registry Configs
-var gcr = &Config{
-	RegistryType: Gcr,
-	VolumeMounts: []corev1.VolumeMount{
-		{
-			Name:      svcAccKeyVolume,
-			MountPath: SvcAccKeyMountPath,
-			ReadOnly:  true,
+
+func getGcrConfigFunc(repoName string, imgName string, tag string) *Config {
+	return &Config{
+		RegistryType: Gcr,
+		VolumeMounts: []corev1.VolumeMount{
+			{
+				Name:      svcAccKeyVolume,
+				MountPath: SvcAccKeyMountPath,
+				ReadOnly:  true,
+			},
 		},
-	},
-	Volumes: []corev1.Volume{
-		{
-			Name: svcAccKeyVolume,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: utils.GcrSvcAccKeySecret,
+		Volumes: []corev1.Volume{
+			{
+				Name: svcAccKeyVolume,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: utils.GcrSvcAccKeySecret,
+					},
 				},
 			},
 		},
-	},
-	Env: []corev1.EnvVar{
-		{
-			Name:  GoogleSecretEnvVariable,
-			Value: SvcAccKeyMountPath + utils.GcrSvcAccKeyFile,
+		Env: []corev1.EnvVar{
+			{
+				Name:  GoogleSecretEnvVariable,
+				Value: SvcAccKeyMountPath + utils.GcrSvcAccKeyFile,
+			},
 		},
-	},
-	ImagePullSecrets: []corev1.LocalObjectReference{
-		{Name: utils.GcrPullSecret},
-	},
-}
-
-func getGcrConfigFunc(repoName string, imgName string, tag string) *Config {
-	gcr.ImagePath = fmt.Sprintf("gcr.io/%s/%s:%s", repoName, imgName, tag)
-	return gcr
+		ImagePullSecrets: []corev1.LocalObjectReference{
+			{Name: utils.GcrPullSecret},
+		},
+		ImagePath: fmt.Sprintf("gcr.io/%s/%s:%s", repoName, imgName, tag),
+	}
 }
 
 func init() {
