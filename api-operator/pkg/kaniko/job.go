@@ -18,6 +18,8 @@ package kaniko
 
 import (
 	"context"
+	"strings"
+
 	"github.com/golang/glog"
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/registry"
@@ -27,7 +29,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
-	"strings"
 )
 
 var logJob = log.Log.WithName("kaniko.job")
@@ -37,14 +38,14 @@ const (
 )
 
 // Job returns a kaniko job with mounted volumes
-func Job(api *wso2v1alpha1.API, controlConfigData map[string]string, kanikoArgs string, owner *[]metav1.OwnerReference) *batchv1.Job {
+func Job(api *wso2v1alpha1.API, controlConfigData map[string]string, kanikoArgs string, owner *[]metav1.OwnerReference, image registry.Image) *batchv1.Job {
 	rootUserVal := int64(0)
 	jobName := api.Name + "-kaniko"
 	if api.Spec.UpdateTimeStamp != "" {
 		jobName = jobName + "-" + api.Spec.UpdateTimeStamp
 	}
 
-	regConfig := registry.GetConfig()
+	regConfig := registry.GetImageConfig(image)
 	AddVolumes(&regConfig.Volumes, &regConfig.VolumeMounts)
 
 	kanikoImg := controlConfigData[kanikoImgConst]
