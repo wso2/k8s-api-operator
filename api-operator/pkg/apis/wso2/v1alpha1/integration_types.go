@@ -38,6 +38,8 @@ type IntegrationSpec struct {
 	InboundPorts []int32 `json:"inboundPorts,omitempty"`
 	// List of environment variables to set for the integration.
 	Env []corev1.EnvVar `json:"env,omitempty"`
+	// List of environment variable references set for the integration.
+	EnvFrom []corev1.EnvFromSource `json:"envFrom,omitempty"`
 }
 
 // IntegrationStatus defines the observed state of Integration
