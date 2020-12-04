@@ -17,7 +17,7 @@
 package mgw
 
 import (
-	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
+	wso2v1alpha2 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"gopkg.in/yaml.v2"
@@ -31,7 +31,7 @@ import (
 
 var logEp = logf.Log.WithName("endpoint.value")
 
-func ExternalIP(client *client.Client, apiInstance *wso2v1alpha1.API, operatorMode string, svc *corev1.Service,
+func ExternalIP(client *client.Client, apiInstance *wso2v1alpha2.API, operatorMode string, svc *corev1.Service,
 	ingressConfData map[string]string, openshiftConfData map[string]string, istioConfigs *IstioConfigs) string {
 
 	logger := logEp.WithValues("namespace", apiInstance.Namespace, "apiName", apiInstance.Name)

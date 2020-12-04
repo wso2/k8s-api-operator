@@ -17,7 +17,7 @@
 package mgw
 
 import (
-	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
+	wso2v1alpha2 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"k8s.io/api/extensions/v1beta1"
@@ -44,7 +44,7 @@ const (
 
 // ApplyIngressResource creates or updates an Ingress resource to expose mgw
 // Supports for multiple apiBasePaths when there are multiple swaggers for one API CRD
-func ApplyIngressResource(client *client.Client, api *wso2v1alpha1.API,
+func ApplyIngressResource(client *client.Client, api *wso2v1alpha2.API,
 	apiBasePathMap map[string]string, owner *[]metav1.OwnerReference) error {
 	logIng := loggerIng.WithValues("namespace", api.Namespace, "apiName", api.Name)
 	ingressConfMap := k8s.NewConfMap()

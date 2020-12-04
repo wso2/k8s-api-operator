@@ -22,7 +22,7 @@ metadata:
     istio-injection: enabled
 
 ---
-apiVersion: wso2.com/v1alpha1
+apiVersion: wso2.com/v1alpha2
 kind: TargetEndpoint
 metadata:
   name: products
@@ -43,7 +43,7 @@ spec:
   mode: privateJet
 
 ---
-apiVersion: wso2.com/v1alpha1
+apiVersion: wso2.com/v1alpha2
 kind: TargetEndpoint
 metadata:
   name: inventory
@@ -61,7 +61,7 @@ spec:
     dockerImage: pubudu/inventory:1.0.0
 
 ---
-apiVersion: wso2.com/v1alpha1
+apiVersion: wso2.com/v1alpha2
 kind: TargetEndpoint
 metadata:
   name: review

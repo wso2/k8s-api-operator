@@ -14,7 +14,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-apiVersion: wso2.com/v1alpha1
+apiVersion: wso2.com/v1alpha2
 kind: Security
 metadata:
   name: petstoreoauth
@@ -27,7 +27,7 @@ spec:
       credentials: oauth-credentials
 
 ---
-apiVersion: wso2.com/v1alpha1
+apiVersion: wso2.com/v1alpha2
 kind: Security
 metadata:
   name: petstorebasic
@@ -38,7 +38,7 @@ spec:
     - credentials: secret-basic
 
 ---
-apiVersion: wso2.com/v1alpha1
+apiVersion: wso2.com/v1alpha2
 kind: Security
 metadata:
   name: petstorejwt
@@ -53,7 +53,7 @@ spec:
       validateSubscription: false
 
 ---
-apiVersion: wso2.com/v1alpha1
+apiVersion: wso2.com/v1alpha2
 kind: Security
 metadata:
   name: petstoreapikey

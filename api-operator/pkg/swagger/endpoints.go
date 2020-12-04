@@ -21,7 +21,7 @@ import (
 	errs "errors"
 	"fmt"
 	"github.com/getkin/kin-openapi/openapi3"
-	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
+	wso2v1alpha2 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"k8s.io/apimachinery/pkg/types"
 	"net/url"
@@ -204,7 +204,7 @@ func processEndpoints(client *client.Client, endpointList []string,
 				prodEpVal = namespacedEp[0]
 			}
 
-			targetEpCr := &wso2v1alpha1.TargetEndpoint{} // CR of the Target Endpoint
+			targetEpCr := &wso2v1alpha2.TargetEndpoint{} // CR of the Target Endpoint
 			erCr := k8s.Get(client, types.NamespacedName{Namespace: epNamespace, Name: prodEpVal}, targetEpCr)
 			if erCr != nil {
 				return erCr

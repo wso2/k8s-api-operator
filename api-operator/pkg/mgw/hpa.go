@@ -18,7 +18,7 @@ package mgw
 
 import (
 	"errors"
-	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
+	wso2v1alpha2 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	appsv1 "k8s.io/api/apps/v1"
@@ -47,7 +47,7 @@ const (
 )
 
 // HPA checks whether the HPA version is v2beta1 or v2beta2
-func HPA(client *client.Client, api *wso2v1alpha1.API, dep *appsv1.Deployment,
+func HPA(client *client.Client, api *wso2v1alpha2.API, dep *appsv1.Deployment,
 	owner *[]metav1.OwnerReference) (*v2beta1.HorizontalPodAutoscaler,
 	*v2beta2.HorizontalPodAutoscaler) {
 	// get global hpa configs, return error if not found (required config map)
@@ -69,7 +69,7 @@ func HPA(client *client.Client, api *wso2v1alpha1.API, dep *appsv1.Deployment,
 }
 
 // HPA returns a HPA instance with specified config values for HPA version v2beta1
-func HPAv2beta1(api *wso2v1alpha1.API, dep *appsv1.Deployment, owner *[]metav1.OwnerReference) *v2beta1.HorizontalPodAutoscaler {
+func HPAv2beta1(api *wso2v1alpha2.API, dep *appsv1.Deployment, owner *[]metav1.OwnerReference) *v2beta1.HorizontalPodAutoscaler {
 	// target resource
 	targetResource := v2beta1.CrossVersionObjectReference{
 		Kind:       "Deployment",
@@ -97,7 +97,7 @@ func HPAv2beta1(api *wso2v1alpha1.API, dep *appsv1.Deployment, owner *[]metav1.O
 }
 
 // HPA returns a HPA instance with specified config values for HPA version v2beta2
-func HPAv2beta2(api *wso2v1alpha1.API, dep *appsv1.Deployment, owner *[]metav1.OwnerReference) *v2beta2.HorizontalPodAutoscaler {
+func HPAv2beta2(api *wso2v1alpha2.API, dep *appsv1.Deployment, owner *[]metav1.OwnerReference) *v2beta2.HorizontalPodAutoscaler {
 	// target resource
 	targetResource := v2beta2.CrossVersionObjectReference{
 		Kind:       "Deployment",

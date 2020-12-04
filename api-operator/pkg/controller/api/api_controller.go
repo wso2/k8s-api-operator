@@ -26,7 +26,7 @@ import (
 
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/analytics"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/apim"
-	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
+	wso2v1alpha2 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/endpoints"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/interceptors"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
@@ -89,7 +89,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	// Watch for changes to primary resource API
-	err = c.Watch(&source.Kind{Type: &wso2v1alpha1.API{}}, &handler.EnqueueRequestForObject{})
+	err = c.Watch(&source.Kind{Type: &wso2v1alpha2.API{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
@@ -98,7 +98,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Watch for changes to secondary resource Pods and requeue the owner API
 	err = c.Watch(&source.Kind{Type: &corev1.Pod{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
-		OwnerType:    &wso2v1alpha1.API{},
+		OwnerType:    &wso2v1alpha2.API{},
 	})
 	if err != nil {
 		return err
@@ -137,7 +137,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	apiBasePathMap := make(map[string]string) // API base paths with versions
 
 	// Fetch the API instance
-	instance := &wso2v1alpha1.API{}
+	instance := &wso2v1alpha2.API{}
 	err := k8s.Get(&r.client, request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -697,7 +697,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 }
 
 // setApiDependent sets API owner reference to dependents
-func setApiDependent(client *client.Client, api *wso2v1alpha1.API, ownerRef *[]metav1.OwnerReference) error {
+func setApiDependent(client *client.Client, api *wso2v1alpha2.API, ownerRef *[]metav1.OwnerReference) error {
 	confMap := &corev1.ConfigMap{}
 	// swagger configmaps
 	confMapNames := api.Spec.Definition.SwaggerConfigmapNames

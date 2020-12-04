@@ -14,7 +14,22 @@
 // specific language governing permissions and limitations
 // under the License.
 
-// Package v1alpha1 contains API Schema definitions for the wso2 v1alpha1 API group
+// NOTE: Boilerplate only.  Ignore this file.
+
+// Package v1alpha2 contains API Schema definitions for the wso2 v1alpha2 API group
 // +k8s:deepcopy-gen=package,register
 // +groupName=wso2.com
-package v1alpha1
+package v1alpha2
+
+import (
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"sigs.k8s.io/controller-runtime/pkg/runtime/scheme"
+)
+
+var (
+	// SchemeGroupVersion is group version used to register these objects
+	SchemeGroupVersion = schema.GroupVersion{Group: "wso2.com", Version: "v1alpha2"}
+
+	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
+	SchemeBuilder = &scheme.Builder{GroupVersion: SchemeGroupVersion}
+)

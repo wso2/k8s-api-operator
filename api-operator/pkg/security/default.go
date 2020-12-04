@@ -17,7 +17,7 @@
 package security
 
 import (
-	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
+	wso2v1alpha2 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/cert"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
@@ -34,7 +34,7 @@ var logDef = log.Log.WithName("security.default")
 func Default(client *client.Client, apiNamespace string, owner *[]metav1.OwnerReference) (*[]mgw.JwtTokenConfig, error) {
 	var defaultSecConfArray []mgw.JwtTokenConfig
 	//copy default sec in wso2-system to user namespace
-	securityDefault := &wso2v1alpha1.Security{}
+	securityDefault := &wso2v1alpha2.Security{}
 	//check default security already exist in user namespace
 	errGetSec := k8s.Get(client, types.NamespacedName{Name: defaultSecurity, Namespace: apiNamespace}, securityDefault)
 	if errGetSec != nil && errors.IsNotFound(errGetSec) {
@@ -131,11 +131,11 @@ func Default(client *client.Client, apiNamespace string, owner *[]metav1.OwnerRe
 	return &defaultSecConfArray, nil
 }
 
-func copyDefaultSecurity(securityDefault *wso2v1alpha1.Security, userNameSpace string, owner []metav1.OwnerReference) *wso2v1alpha1.Security {
-	securityConf := wso2v1alpha1.SecurityConfig{}
-	var securityConfArray []wso2v1alpha1.SecurityConfig
+func copyDefaultSecurity(securityDefault *wso2v1alpha2.Security, userNameSpace string, owner []metav1.OwnerReference) *wso2v1alpha2.Security {
+	securityConf := wso2v1alpha2.SecurityConfig{}
+	var securityConfArray []wso2v1alpha2.SecurityConfig
 	for _, securityDefaultConf := range securityDefault.Spec.SecurityConfig {
-		securityConf = wso2v1alpha1.SecurityConfig{
+		securityConf = wso2v1alpha2.SecurityConfig{
 			Certificate: securityDefaultConf.Certificate,
 			Audience:    securityDefaultConf.Audience,
 			Issuer:      securityDefaultConf.Issuer,
@@ -143,13 +143,13 @@ func copyDefaultSecurity(securityDefault *wso2v1alpha1.Security, userNameSpace s
 		securityConfArray = append(securityConfArray, securityConf)
 	}
 
-	return &wso2v1alpha1.Security{
+	return &wso2v1alpha2.Security{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            defaultSecurity,
 			Namespace:       userNameSpace,
 			OwnerReferences: owner,
 		},
-		Spec: wso2v1alpha1.SecuritySpec{
+		Spec: wso2v1alpha2.SecuritySpec{
 			Type:           securityDefault.Spec.Type,
 			SecurityConfig: securityConfArray,
 		},

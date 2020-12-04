@@ -17,7 +17,7 @@
 package security
 
 import (
-	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
+	wso2v1alpha2 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/cert"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/mgw"
@@ -54,7 +54,7 @@ func Handle(client *client.Client, securityMap map[string][]string, userNameSpac
 
 	var jwtConfArray []mgw.JwtTokenConfig
 	var apiKeyConfArray []mgw.APIKeyTokenConfig
-	securityInstance := &wso2v1alpha1.Security{}
+	securityInstance := &wso2v1alpha2.Security{}
 	var certificateSecret = k8s.NewSecret()
 	for secName, scopeList := range securityMap {
 		//retrieve security instances
