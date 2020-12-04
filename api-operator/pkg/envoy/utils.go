@@ -2,12 +2,17 @@ package envoy
 
 import (
 	"crypto/x509"
+	"fmt"
 	"github.com/ghodss/yaml"
 	"github.com/go-openapi/loads"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/apim"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/maps"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/utils"
+	yaml2 "gopkg.in/yaml.v2"
 	"io/ioutil"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"os"
 	"path/filepath"
@@ -90,4 +95,83 @@ func getCert(client *client.Client, mgwCertSecretConf string) error {
 	certPool.AppendCertsFromPEM(certData)
 
 	return nil
+}
+
+func getZipData (config *corev1.ConfigMap) (string, error){
+	file, err := ioutil.TempFile("", "api-binary.*.zip")
+	if err != nil {
+		return "", err
+	}
+	zipFileName, errZip := maps.OneKey(config.BinaryData)
+	if errZip != nil {
+		return "", errZip
+	}
+	zippedData := config.BinaryData[zipFileName]
+	if _, err := file.Write(zippedData); err != nil {
+		return "", err
+	}
+	err = file.Close()
+	return file.Name(), nil
+}
+
+func getSwaggerData (config *corev1.ConfigMap) (string, func(), error){
+	swaggerFileName, errSwagger := maps.OneKey(config.Data)
+	if errSwagger != nil {
+		logDeploy.Error(errSwagger, "Error in the swagger configMap data", "data", config.Data)
+		return "", nil, errSwagger
+	}
+	swaggerData := config.Data[swaggerFileName]
+
+	swaggerFile, errSwaggerFile := getTempFileForSwagger(swaggerData, swaggerFileName)
+	if errSwaggerFile != nil {
+		return "", nil, errSwaggerFile
+	}
+	doc, err := loadSwagger(swaggerFile.Name())
+	if err != nil {
+		return "", nil, err
+	}
+	def := &apim.APIDefinition{}
+
+	err = getAPIData(def, doc)
+	if err != nil {
+		return "", nil, err
+	}
+	if def.EndpointConfig != nil {
+		def.ProductionUrl = ""
+		def.SandboxUrl = ""
+	}
+	fmt.Println("API DEFINITION!!!")
+	fmt.Println(def)
+	apiData, err := yaml2.Marshal(def)
+	if err != nil {
+		return "", nil, err
+	}
+	fmt.Println("API DATA FILE!!!!")
+	fmt.Println(apiData)
+	// convert and save swagger as yaml
+	yamlSwagger, err := jsonToYaml(doc.Raw())
+	if err != nil {
+		return "", nil, err
+	}
+
+	swaggerDirectory, _ := ioutil.TempDir("", "api-swagger-dir*")
+	apiYamlPath := filepath.Join(swaggerDirectory, filepath.FromSlash("Meta-information/api.yaml"))
+	swaggerSavePath := filepath.Join(swaggerDirectory, filepath.FromSlash("Meta-information/swagger.yaml"))
+	errCreateDirectory := createDirectories(swaggerDirectory)
+	if errCreateDirectory != nil {
+		return "", nil, errCreateDirectory
+	}
+	errWrite := ioutil.WriteFile(swaggerSavePath, yamlSwagger, os.ModePerm)
+	if errWrite != nil {
+		return "", nil, errWrite
+	}
+	err = ioutil.WriteFile(apiYamlPath, apiData, os.ModePerm)
+	if err != nil {
+		return "", nil, err
+	}
+	swaggerZipFile, err, cleanupFunc := utils.CreateZipFileFromProject(swaggerDirectory, true)
+	if err != nil {
+		return "", nil, err
+	}
+	return swaggerZipFile, cleanupFunc, nil
 }

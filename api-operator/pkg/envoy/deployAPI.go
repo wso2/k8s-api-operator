@@ -7,12 +7,8 @@ import (
 	wso2v1alpha2 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
-	"github.com/wso2/k8s-api-operator/api-operator/pkg/maps"
-	"github.com/wso2/k8s-api-operator/api-operator/pkg/utils"
 	"gopkg.in/resty.v1"
-	yaml2 "gopkg.in/yaml.v2"
 	"io"
-	"io/ioutil"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -27,6 +23,7 @@ import (
 
 var logDeploy = log.Log.WithName("mgw.envoy.deploy")
 var insecureDeploy = true
+// var apiListConfig = k8s.NewConfMap()
 
 
 // Deploy API to Envoy Micro-gateway Adapter using zip file or swagger
@@ -111,23 +108,12 @@ func deployAPI(config *corev1.ConfigMap, token string, endpoint string, extraPar
 }
 
 func deployAPIZip(config *corev1.ConfigMap, token string, endpoint string, extraParams map[string]string) error {
-	file, err := ioutil.TempFile("", "api-binary.*.zip")
+	fileName, err := getZipData(config)
 	if err != nil {
 		return err
 	}
-	defer os.Remove(file.Name())
-	zipFileName, errZip := maps.OneKey(config.BinaryData)
-	if errZip != nil {
-		return errZip
-	}
-	zippedData := config.BinaryData[zipFileName]
-	if _, err := file.Write(zippedData); err != nil {
-		return err
-	}
-	err = file.Close()
-	fmt.Println(file.Name())
 	resp, errResp := executeNewFileUploadRequest(endpoint, extraParams, "file",
-		file.Name(), token)
+		fileName, token)
 	if errResp != nil {
 		return errResp
 	}
@@ -142,58 +128,11 @@ func deployAPIZip(config *corev1.ConfigMap, token string, endpoint string, extra
 }
 
 func deployAPISwagger(config *corev1.ConfigMap, token string, endpoint string, extraParams map[string]string) error{
-	swaggerFileName, errSwagger := maps.OneKey(config.Data)
-	if errSwagger != nil {
-		logDeploy.Error(errSwagger, "Error in the swagger configMap data", "data", config.Data)
-		return errSwagger
-	}
-	swaggerData := config.Data[swaggerFileName]
-	fmt.Println(swaggerData)
-
-	swaggerFile, errSwaggerFile := getTempFileForSwagger(swaggerData, swaggerFileName)
-	if errSwaggerFile != nil {
-		return errSwaggerFile
-	}
-	doc, err := loadSwagger(swaggerFile.Name())
-	if err != nil {
-		return err
-	}
-	def := &APIDefinition{}
-	err = swagger2Populate(def, doc)
-	if err != nil {
-		return err
-	}
-	fmt.Println(def)
-	apiData, err := yaml2.Marshal(def)
-	if err != nil {
-		return err
-	}
-	//fmt.Println(apiData)
-	// convert and save swagger as yaml
-	yamlSwagger, err := jsonToYaml(doc.Raw())
-	if err != nil {
-		return err
+	swaggerZipFile, cleanupFunc, errSwaggerData := getSwaggerData(config)
+	if errSwaggerData != nil {
+		return errSwaggerData
 	}
 
-	swaggerDirectory, _ := ioutil.TempDir("", "api-swagger-dir*")
-	apiJSONPath := filepath.Join(swaggerDirectory, filepath.FromSlash("Meta-information/api.yaml"))
-	swaggerSavePath := filepath.Join(swaggerDirectory, filepath.FromSlash("Meta-information/swagger.yaml"))
-	errCreateDirectory := createDirectories(swaggerDirectory)
-	if errCreateDirectory != nil {
-		return errCreateDirectory
-	}
-	errWrite := ioutil.WriteFile(swaggerSavePath, yamlSwagger, os.ModePerm)
-	if errWrite != nil {
-		return errWrite
-	}
-	err = ioutil.WriteFile(apiJSONPath, apiData, os.ModePerm)
-	if err != nil {
-		return err
-	}
-	swaggerZipFile, err, cleanupFunc := utils.CreateZipFileFromProject(swaggerDirectory, true)
-	if err != nil {
-		return err
-	}
 	resp, errResp := executeNewFileUploadRequest(endpoint, extraParams, "file",
 		swaggerZipFile, token)
 
@@ -247,5 +186,4 @@ func executeNewFileUploadRequest(uri string, params map[string]string, paramName
 	resp, err := invokePOSTRequestWithBytes(uri, headers, body.Bytes())
 
 	return resp, err
-
 }

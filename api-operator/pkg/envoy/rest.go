@@ -25,6 +25,5 @@ func invokePOSTRequestWithBytes(url string, headers map[string]string, body []by
 	}
 	resty.SetTimeout(time.Duration(DefaultHttpRequestTimeout) * time.Millisecond)
 	resp, err := resty.R().SetHeaders(headers).SetBody(body).Post(url)
-
 	return resp, err
 }

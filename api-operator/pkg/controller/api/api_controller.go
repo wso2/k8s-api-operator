@@ -17,8 +17,10 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/controller/common"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/envoy"
 	"strconv"
 	"time"
@@ -111,6 +113,13 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	reqLogger.Info("Reconciling API")
 
 	instance := &wso2v1alpha2.API{}
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	defer cancelFunc()
+	// Request info
+	requestInfo := &common.RequestInfo{Request: request, Client: r.client, Object: instance, Log: log, EvnRecorder:
+	r.recorder}
+	ctx = requestInfo.NewContext(ctx)
+
 	err := k8s.Get(&r.client, request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -140,9 +149,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	controlConfigData := controlConf.Data
-
 	instance.Status.Replicas = instance.Spec.Replicas
-
 	importAPIEnabled, err := strconv.ParseBool(controlConfigData[importAPIEnabledConst])
 	if err != nil {
 		reqLogger.Error(err, "Invalid boolean value for importAPIEnabled")
@@ -171,6 +178,18 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		fmt.Sprintf("Successfully deployed API to Envoy MGW Adapter"))
 	reqLogger.Info("Successfully deployed API to Envoy MGW Adapter", "api_name", instance.Name)
 
+	apiList := &wso2v1alpha2.APIList{}
+	if err := requestInfo.Client.List(ctx, apiList, client.InNamespace(common.WatchNamespace)); err != nil {
+		// Error reading the object - requeue the request.
+		reqLogger.Error(err, "Error reading all ingresses in the specified namespace", "namespace",
+			common.WatchNamespace)
+		return reconcile.Result{}, err
+	}
+	fmt.Println(apiList.Items)
+	err = envoy.CreateFileToSend(apiList, &r.client)
+	if err != nil {
+		reqLogger.Error(err, "Error 67!!!")
+	}
 
 	return reconcile.Result{}, nil
 }
