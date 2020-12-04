@@ -89,23 +89,7 @@ func processDefaultBackend(ctx context.Context, reqInfo *common.RequestInfo, pro
 			log.Info("Skipping the default backend configuration, since it is already defined by old ingress",
 				"new_ingress", ing)
 		} else {
-			svc := &v1.Service{}
-			if err := reqInfo.Client.Get(ctx, types.NamespacedName{Namespace: ing.Namespace, Name: ing.Spec.Backend.ServiceName}, svc); err != nil {
-				if k8serrors.IsNotFound(err) {
-					log.Error(err, "Service defined in the default backend is not found and skipping the default backend configuration in this ingress",
-						"ingress", ing)
-					// Skip this error without reconciling
-					return nil
-				}
-				return err
-			}
-			if !isPortExists(svc, ing.Spec.Backend.ServicePort.IntValue()) {
-				log.Error(nil, "Service defined in the default backend is not exposing the defined port",
-					"ingress", ing)
-				// Skip this error without reconciling
-				return nil
-			}
-
+			// Do not validate service and port existence since user may add ingress first and service later
 			u := urlFromIngBackend(ing, ing.Spec.Backend)
 			pMap[names.DefaultBackendProject].OAS.Servers = oasServers(u)
 
@@ -160,21 +144,7 @@ func processIngressRules(ctx context.Context, reqInfo *common.RequestInfo, proje
 					continue
 				}
 
-				svc := &v1.Service{}
-				if err := reqInfo.Client.Get(ctx, types.NamespacedName{Namespace: ing.Namespace, Name: path.Backend.ServiceName}, svc); err != nil {
-					if k8serrors.IsNotFound(err) {
-						log.Error(err, "Service defined in the ingress rule path is not found and skipping the ingress rule path defined in the ingress",
-							"ingress", ing, "rule_path", path)
-						continue
-					}
-					return err
-				}
-				if !isPortExists(svc, path.Backend.ServicePort.IntValue()) {
-					log.Error(nil, "Service defined in the ingress rule path is not exposing the defined port",
-						"ingress", ing, "rule_path", path)
-					continue
-				}
-
+				// Do not validate service and port existence since user may add ingress first and service later
 				u := urlFromIngBackend(ing, &path.Backend)
 				pMap[pj].OAS.Paths[oasPath] = oasPathItem(u)
 				validPj = true

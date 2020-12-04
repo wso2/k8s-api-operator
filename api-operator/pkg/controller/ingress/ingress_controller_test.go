@@ -140,12 +140,14 @@ func TestReconcile(t *testing.T) {
 			t.Error("Error building delta update")
 		}
 
-		projectMap := r.ingHandler.GatewayClient.(*gwclient.Fake).ProjectMap
-		testAction(t, projectMap, "Ing 5", "ingress-__bar_com", action.ForceUpdate)
-		testAction(t, projectMap, "Ing 5", "ingress-__no-service_com", action.DoNothing)
+		projectMap := r.ingHandler.AdapterClient.(*gwclient.Fake).ProjectMap
+		testAction(t, projectMap, "Ing 5", "ingress-__bar_com", build.ForceUpdate)
+		// although the service is no available, ingress should continue
+		testAction(t, projectMap, "Ing 5", "ingress-__no-service_com", build.ForceUpdate)
 
 		testCurrentStatus(k8sClient, t, true, "default/ing5", "ingress-__bar_com")
-		testCurrentStatus(k8sClient, t, false, "default/ing5", "ingress-__no-service_com")
+		// although the service is no available, ingress should continue
+		testCurrentStatus(k8sClient, t, true, "default/ing5", "ingress-__no-service_com")
 	})
 
 	// 3.  Update ingress: ing1
