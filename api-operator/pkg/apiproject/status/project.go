@@ -18,16 +18,16 @@ package status
 
 import (
 	"context"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/apiproject"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/apiproject/client"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/controller/common"
-	"github.com/wso2/k8s-api-operator/api-operator/pkg/envoy/client"
 	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 )
 
-// TODO: (renuka) operatorNamespace represents the namespace of the operator
-const operatorNamespace = "wso2-system"
 const ingressProjectStatusCm = "ingress-project-status"
 const ingressProjectStatusKey = "project-status"
 
@@ -45,6 +45,7 @@ const ingressProjectStatusKey = "project-status"
 // Since, only one go routine updates ingresses this is not required.
 type ProjectsStatus map[string]map[string]string
 
+// UpdateToConfigMap updates current project status in the ingress configmap
 func (s *ProjectsStatus) UpdateToConfigMap(ctx context.Context, reqInfo *common.RequestInfo) error {
 	// Marshal yaml
 	bytes, err := yaml.Marshal(s)
@@ -55,11 +56,11 @@ func (s *ProjectsStatus) UpdateToConfigMap(ctx context.Context, reqInfo *common.
 	// Check ingress-configs from configmap
 	ingresCm := &v1.ConfigMap{}
 	if err := reqInfo.Client.Get(ctx, types.NamespacedName{
-		Namespace: operatorNamespace, Name: ingressProjectStatusCm,
+		Namespace: config.SystemNamespace, Name: ingressProjectStatusCm,
 	}, ingresCm); err != nil {
 		if errors.IsNotFound(err) {
 			// ConfigMap not found and create it.
-			ingresCm.Namespace = operatorNamespace
+			ingresCm.Namespace = config.SystemNamespace
 			ingresCm.Name = ingressProjectStatusCm
 			ingresCm.Data = map[string]string{ingressProjectStatusKey: string(bytes)}
 			err = reqInfo.Client.Create(ctx, ingresCm)
@@ -69,7 +70,6 @@ func (s *ProjectsStatus) UpdateToConfigMap(ctx context.Context, reqInfo *common.
 	}
 
 	// Update ConfigMap
-	// TODO set to Data
 	if ingresCm.Data == nil {
 		ingresCm.Data = map[string]string{ingressProjectStatusKey: string(bytes)}
 	} else {
@@ -83,9 +83,9 @@ func (s *ProjectsStatus) UpdateToConfigMap(ctx context.Context, reqInfo *common.
 }
 
 // UpdatedProjects returns project names that needed to be updated with the new state
-func (s *ProjectsStatus) UpdatedProjects(sDiff *ProjectsStatus) map[string]bool {
+func (s *ProjectsStatus) UpdatedProjects(sDiff *ProjectsStatus) apiproject.ProjectSet {
 	// returns all projects in both s and sDiff
-	projects := make(map[string]bool)
+	projects := apiproject.ProjectSet{}
 	for ing, ps := range *sDiff {
 		// projects from new state: sDiff
 		for p := range ps {
@@ -162,8 +162,9 @@ func (s *ProjectsStatus) Update(sDiff *ProjectsStatus, gatewayResponse client.Re
 	}
 }
 
-func (s *ProjectsStatus) ProjectSet() map[string]bool {
-	projects := make(map[string]bool)
+// ProjectSet returns existing projects in the status configmap
+func (s *ProjectsStatus) ProjectSet() apiproject.ProjectSet {
+	projects := apiproject.ProjectSet{}
 	for _, ps := range *s {
 		for p := range ps {
 			projects[p] = true
@@ -171,6 +172,15 @@ func (s *ProjectsStatus) ProjectSet() map[string]bool {
 	}
 
 	return projects
+}
+
+// ContainsProject checks the given ingress is exists in the given project
+func (s *ProjectsStatus) ContainsProject(ing, project string) bool {
+	if _, ok := (*s)[ing]; ok {
+		_, found := (*s)[ing][project]
+		return found
+	}
+	return false
 }
 
 func (s *ProjectsStatus) removeProject(ing, project string) {
@@ -187,12 +197,4 @@ func (s *ProjectsStatus) addProject(ing, project string) {
 	} else {
 		(*s)[ing] = map[string]string{project: "_"}
 	}
-}
-
-func (s *ProjectsStatus) ContainsProject(ing, project string) bool {
-	if _, ok := (*s)[ing]; ok {
-		_, found := (*s)[ing][project]
-		return found
-	}
-	return false
 }

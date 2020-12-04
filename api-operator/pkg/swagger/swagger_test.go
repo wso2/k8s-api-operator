@@ -20,6 +20,8 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"io/ioutil"
 	"path/filepath"
+	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -51,7 +53,15 @@ func TestPrettyStringOrderedByPath(t *testing.T) {
 		t.Fatal("Error reading sample resource")
 	}
 	s := string(want)
-	if prettySwg != s {
+	wantSwg, err := GetSwaggerV3(&s)
+	if err != nil {
+		t.Fatal("Error marshalling swagger from resource file")
+	}
+
+	if reflect.DeepEqual(swg, wantSwg) {
+		t.Error("Prettified swagger struct not matches with original swagger struct")
+	}
+	if prettySwg != strings.TrimSpace(s) {
 		t.Error("Prettified json is not ordered with swagger paths")
 	}
 }

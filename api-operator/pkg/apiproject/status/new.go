@@ -18,8 +18,9 @@ package status
 
 import (
 	"context"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/apiproject/names"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/controller/common"
-	"github.com/wso2/k8s-api-operator/api-operator/pkg/envoy/names"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/ingress"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"gopkg.in/yaml.v2"
@@ -33,7 +34,7 @@ func FromConfigMap(ctx context.Context, reqInfo *common.RequestInfo) (*ProjectsS
 	// Fetch ingress-status from configmap
 	ingresCm := &v1.ConfigMap{}
 	if err := reqInfo.Client.Get(ctx, types.NamespacedName{
-		Namespace: operatorNamespace, Name: ingressProjectStatusCm,
+		Namespace: config.SystemNamespace, Name: ingressProjectStatusCm,
 	}, ingresCm); err != nil {
 		if !errors.IsNotFound(err) {
 			return &ProjectsStatus{}, nil

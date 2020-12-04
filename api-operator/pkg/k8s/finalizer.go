@@ -24,6 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+// HandleDeletion handles resource deletion by setting finalizers and executing handle function before deletion
 func HandleDeletion(ctx context.Context, requestInfo *common.RequestInfo, finalizer string, handle func(context.Context, *common.RequestInfo) error) (deleted, finalizerUpdated bool, err error) {
 	meta := requestInfo.Object.(v1.ObjectMetaAccessor).GetObjectMeta()
 	if meta.GetDeletionTimestamp().IsZero() {
@@ -58,6 +59,7 @@ func HandleDeletion(ctx context.Context, requestInfo *common.RequestInfo, finali
 	}
 }
 
+// IsDeleted checks the given object is being deleted
 func IsDeleted(object runtime.Object) bool {
 	meta := object.(v1.ObjectMetaAccessor).GetObjectMeta()
 	return !meta.GetDeletionTimestamp().IsZero()

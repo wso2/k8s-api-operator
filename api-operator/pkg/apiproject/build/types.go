@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package action
+package build
 
 import (
 	"fmt"
@@ -22,7 +22,7 @@ import (
 	"strings"
 )
 
-// ProjectsMap represents an action needed to be sent to the envoy microgateway
+// ProjectsMap represents an action needed to be sent to the Microgateway
 // Maps project -> action
 //
 // example1_com:
@@ -34,25 +34,26 @@ import (
 //
 type ProjectsMap map[string]*Project
 
-// Project represents action to be done to the envoy microgateway
+// Project represents action to be done to the Microgateway
 type Project struct {
-	// Action of the action
+	// Action of the Project
 	Action action
 	// OAS definition to be updated
 	OAS *openapi3.Swagger
 	// TlsCertificate of the project for TLS termination
-	TlsCertificate *TlsCertificate
+	TlsCertificate *TlsSecret
 	// BackendCertificates of the backends for TLS origination
-	BackendCertificates []*TlsCertificate
+	BackendCertificates []*TlsSecret
 }
 
-type TlsCertificate struct {
+// TlsSecret represents content of a TLS secret container certificate chain, private key and trusted CA
+type TlsSecret struct {
 	CertificateChain []byte
 	PrivateKey       []byte
 	TrustedCa        []byte
 }
 
-func (c *TlsCertificate) String() string {
+func (c *TlsSecret) String() string {
 	if c == nil {
 		return "{}"
 	}

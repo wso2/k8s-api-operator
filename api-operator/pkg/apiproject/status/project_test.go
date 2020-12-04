@@ -17,7 +17,8 @@
 package status
 
 import (
-	"github.com/wso2/k8s-api-operator/api-operator/pkg/envoy/client"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/apiproject"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/apiproject/client"
 	"reflect"
 	"testing"
 )
@@ -26,27 +27,27 @@ func TestUpdatedProjects(t *testing.T) {
 	var tests = []struct {
 		name      string
 		st, newSt *ProjectsStatus
-		want      map[string]bool
+		want      apiproject.ProjectSet
 	}{
 		// Same ingresses
 		{
 			name:  "No hosts added or deleted",
 			st:    &ProjectsStatus{"foo/ing1": map[string]string{"a_com": "_", "b_com": "_"}},
 			newSt: &ProjectsStatus{"foo/ing1": map[string]string{"a_com": "_", "b_com": "_"}},
-			want:  map[string]bool{"a_com": true, "b_com": true},
+			want:  apiproject.ProjectSet{"a_com": true, "b_com": true},
 		},
 		{
 			name:  "Add and delete hosts",
 			st:    &ProjectsStatus{"foo/ing1": map[string]string{"a_com": "_", "b_com": "_"}},
 			newSt: &ProjectsStatus{"foo/ing1": map[string]string{"a_com": "_", "c_com": "_"}},
-			want:  map[string]bool{"a_com": true, "b_com": true, "c_com": true},
+			want:  apiproject.ProjectSet{"a_com": true, "b_com": true, "c_com": true},
 		},
 		// Different ingresses
 		{
 			name:  "Add new ingress",
 			st:    &ProjectsStatus{"foo/ing1": map[string]string{"a_com": "_", "b_com": "_"}},
 			newSt: &ProjectsStatus{"foo/ing2": map[string]string{"b_com": "_", "c_com": "_"}},
-			want:  map[string]bool{"b_com": true, "c_com": true},
+			want:  apiproject.ProjectSet{"b_com": true, "c_com": true},
 		},
 	}
 

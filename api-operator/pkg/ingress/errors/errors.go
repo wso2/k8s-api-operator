@@ -25,10 +25,12 @@ const (
 	InvalidContent      Reason = "InvalidContent"
 )
 
+// Ingress defines errors with a reason
 type Ingress interface {
 	Reason() Reason
 }
 
+// IngressError represents errors for ingresses
 type IngressError struct {
 	ErrReason Reason
 	Message   string
@@ -42,6 +44,7 @@ func (e IngressError) Reason() Reason {
 	return e.ErrReason
 }
 
+// NewAnnotationNotExists returns a new IngressError with error Reason AnnotationNotExists
 func NewAnnotationNotExists(name string) IngressError {
 	return IngressError{
 		ErrReason: AnnotationNotExists,

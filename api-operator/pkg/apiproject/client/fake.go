@@ -18,38 +18,39 @@ package client
 
 import (
 	"context"
-	"fmt"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/apiproject/build"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/controller/common"
-	"github.com/wso2/k8s-api-operator/api-operator/pkg/envoy/action"
-	"github.com/wso2/k8s-api-operator/api-operator/pkg/swagger"
 	"math/rand"
 	"time"
 )
 
+// Fake Adapter client for testing
 type Fake struct {
-	ProjectMap     *action.ProjectsMap
+	ProjectMap     *build.ProjectsMap
 	Response       Response
-	responseMethod func(projects *action.ProjectsMap) Response
+	responseMethod func(projects *build.ProjectsMap) Response
 }
 
+// NewFake returns a Fake client which returns given response
 func NewFake(response Response) *Fake {
 	return &Fake{
-		responseMethod: func(projects *action.ProjectsMap) Response {
+		responseMethod: func(projects *build.ProjectsMap) Response {
 			return response
 		},
 	}
 }
 
+// NewFakeAllSucceeded returns a Fake client which returns success of all projects
 func NewFakeAllSucceeded() *Fake {
 	return &Fake{
-		responseMethod: func(projects *action.ProjectsMap) Response {
+		responseMethod: func(projects *build.ProjectsMap) Response {
 			r := Response{}
 
 			for name, project := range *projects {
 				switch project.Action {
-				case action.ForceUpdate:
+				case build.ForceUpdate:
 					r[name] = Updated
-				case action.Delete:
+				case build.Delete:
 					r[name] = Deleted
 				}
 			}
@@ -58,9 +59,10 @@ func NewFakeAllSucceeded() *Fake {
 	}
 }
 
+// NewFakeAllFailed returns a Fake client which returns of all projects updating failure
 func NewFakeAllFailed() *Fake {
 	return &Fake{
-		responseMethod: func(projects *action.ProjectsMap) Response {
+		responseMethod: func(projects *build.ProjectsMap) Response {
 			r := Response{}
 
 			for name := range *projects {
@@ -71,9 +73,10 @@ func NewFakeAllFailed() *Fake {
 	}
 }
 
+// NewFakeWithRandomResponse returns a Fake client which returns random failure and success of updating projects
 func NewFakeWithRandomResponse() *Fake {
 	return &Fake{
-		responseMethod: func(projects *action.ProjectsMap) Response {
+		responseMethod: func(projects *build.ProjectsMap) Response {
 			r := Response{}
 			rand.Seed(time.Now().UnixNano())
 
@@ -82,9 +85,9 @@ func NewFakeWithRandomResponse() *Fake {
 					r[name] = Failed
 				} else {
 					switch project.Action {
-					case action.ForceUpdate:
+					case build.ForceUpdate:
 						r[name] = Updated
-					case action.Delete:
+					case build.Delete:
 						r[name] = Deleted
 					}
 				}
@@ -94,21 +97,22 @@ func NewFakeWithRandomResponse() *Fake {
 	}
 }
 
-func (c *Fake) Update(ctx context.Context, reqInfo *common.RequestInfo, projects *action.ProjectsMap) (Response, error) {
-	for s, project := range *projects {
-		fmt.Println("")
-		fmt.Println("******* PRINT PROJECT ******")
-		fmt.Printf("Project name: %s\n", s)
-		fmt.Printf("Action: %s\n", project.Action)
-
-		if project.Action != action.ForceUpdate {
-			continue
-		}
-		err := project.OAS.Validate(ctx)
-		fmt.Printf("Swagger validation: %v\n", err == nil)
-		fmt.Printf("Tls certs: %v\n", project.TlsCertificate)
-		fmt.Println(swagger.PrettyString(project.OAS))
-	}
+func (c *Fake) Update(ctx context.Context, reqInfo *common.RequestInfo, projects *build.ProjectsMap) (Response, error) {
+	// TODO: (renuka) delete following comments after testing
+	//for s, project := range *projects {
+	//	fmt.Println("")
+	//	fmt.Println("******* PRINT PROJECT ******")
+	//	fmt.Printf("Project name: %s\n", s)
+	//	fmt.Printf("Action: %s\n", project.Action)
+	//
+	//	if project.Action != build.ForceUpdate {
+	//		continue
+	//	}
+	//	err := project.OAS.Validate(ctx)
+	//	fmt.Printf("Swagger validation: %v\n", err == nil)
+	//	fmt.Printf("Tls certs: %v\n", project.TlsCertificate)
+	//	fmt.Println(swagger.PrettyString(project.OAS))
+	//}
 
 	c.ProjectMap = projects
 	c.Response = c.responseMethod(projects)

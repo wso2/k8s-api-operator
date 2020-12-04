@@ -33,14 +33,17 @@ var (
 	Prefix = DefaultPrefix
 )
 
+// Parser defines annotation parser
 type Parser interface {
 	Parse(*networking.Ingress)
 }
 
+// GetAnnotationWithPrefix returns annotation key with the annotation prefix
 func GetAnnotationWithPrefix(name string) string {
 	return fmt.Sprintf("%v/%v", Prefix, name)
 }
 
+// GetStringAnnotation returns string value of the annotation from given ingress
 func GetStringAnnotation(ing *networking.Ingress, name string) (string, error) {
 	fullName := GetAnnotationWithPrefix(name)
 	val, ok := ing.Annotations[fullName]
@@ -51,6 +54,7 @@ func GetStringAnnotation(ing *networking.Ingress, name string) (string, error) {
 	return "", errors.NewAnnotationNotExists(fullName)
 }
 
+// GetBoolAnnotation returns boolean value of the annotation from given ingress
 func GetBoolAnnotation(ing *networking.Ingress, name string) (bool, error) {
 	fullName := GetAnnotationWithPrefix(name)
 	val, ok := ing.Annotations[fullName]

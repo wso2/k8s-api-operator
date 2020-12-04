@@ -18,19 +18,20 @@ package handler
 
 import (
 	"context"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/apiproject/build"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/apiproject/client"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/apiproject/status"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/controller/common"
-	"github.com/wso2/k8s-api-operator/api-operator/pkg/envoy/action"
-	"github.com/wso2/k8s-api-operator/api-operator/pkg/envoy/client"
-	"github.com/wso2/k8s-api-operator/api-operator/pkg/envoy/status"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/ingress"
 	"k8s.io/api/networking/v1beta1"
 	"time"
 )
 
 type Handler struct {
-	GatewayClient client.GatewayClient
+	AdapterClient client.AdapterClient
 }
 
+// UpdateWholeWorld handles all ingresses and updates the Router
 func (h *Handler) UpdateWholeWorld(ctx context.Context, reqInfo *common.RequestInfo, ingresses []*ingress.Ingress) error {
 	reqInfo.Log.Info("Handle whole world update of the ingresses")
 
@@ -41,6 +42,7 @@ func (h *Handler) UpdateWholeWorld(ctx context.Context, reqInfo *common.RequestI
 	return h.update(ctx, reqInfo, ingresses, sDiff)
 }
 
+// UpdateDelta handles changes to the API projects that needs to update by the ingress change request
 func (h *Handler) UpdateDelta(ctx context.Context, reqInfo *common.RequestInfo, ingresses []*ingress.Ingress) error {
 	reqInfo.Log.Info("Handle delta update of the ingress")
 
@@ -66,7 +68,7 @@ func (h *Handler) update(ctx context.Context, reqInfo *common.RequestInfo, ingre
 	projectsSet := st.UpdatedProjects(sDiff)
 	existingProjectSet := st.ProjectSet()
 	reqInfo.Log.V(1).Info("Project set that require changes", "projects", projectsSet)
-	projectsActions, err := action.FromProjects(ctx, reqInfo, ingresses, projectsSet, existingProjectSet)
+	projectsActions, err := build.FromIngress(ctx, reqInfo, ingresses, projectsSet, existingProjectSet)
 	if err != nil {
 		return err
 	}
@@ -75,7 +77,7 @@ func (h *Handler) update(ctx context.Context, reqInfo *common.RequestInfo, ingre
 
 	// Updated the gateway
 	reqInfo.Log.Info("Updating projects on Microgateway")
-	gatewayResponse, err := h.GatewayClient.Update(ctx, reqInfo, projectsActions)
+	gatewayResponse, err := h.AdapterClient.Update(ctx, reqInfo, projectsActions)
 	if err != nil {
 		return err
 	}

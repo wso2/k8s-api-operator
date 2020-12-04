@@ -18,12 +18,13 @@ package client
 
 import (
 	"context"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/apiproject/build"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/controller/common"
-	"github.com/wso2/k8s-api-operator/api-operator/pkg/envoy/action"
 )
 
-type GatewayClient interface {
-	Update(ctx context.Context, reqInfo *common.RequestInfo, projects *action.ProjectsMap) (Response, error)
+// AdapterClient is the interface for clients to update API projects to Adapter
+type AdapterClient interface {
+	Update(ctx context.Context, reqInfo *common.RequestInfo, projects *build.ProjectsMap) (Response, error)
 }
 
 // Response represents the response code list after updating the microgateway
@@ -38,6 +39,7 @@ type GatewayClient interface {
 //
 type Response map[string]ResponseType
 
+// ResponseType represents the response of Failed, Updated, Deleted of Adapter
 type ResponseType string
 
 const (

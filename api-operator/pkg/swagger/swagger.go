@@ -53,6 +53,7 @@ func GetSwaggerV3(swaggerStr *string) (*openapi3.Swagger, error) {
 	}
 }
 
+// PrettyString returns a prettified string from given OpenAPI v3
 func PrettyString(swagger *openapi3.Swagger) string {
 	marshal, err := swagger.MarshalJSON()
 	if err != nil {
@@ -65,6 +66,8 @@ func PrettyString(swagger *openapi3.Swagger) string {
 	return string(prettyJSON)
 }
 
+// PrettyStringOrderedByPath returns a prettified string from given OpenAPI v3 with ordering
+// paths by path type and path length
 func PrettyStringOrderedByPath(swagger *openapi3.Swagger) string {
 	const emptyPath = ",\"paths\":{\"xxx\":{}}"
 	var emptySample = openapi3.Paths{"xxx": {}}

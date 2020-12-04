@@ -18,8 +18,8 @@ package ingress
 
 import (
 	"context"
+	gwclient "github.com/wso2/k8s-api-operator/api-operator/pkg/apiproject/client"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/controller/common"
-	gwclient "github.com/wso2/k8s-api-operator/api-operator/pkg/envoy/client"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/ingress"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/ingress/class"
 	inghandler "github.com/wso2/k8s-api-operator/api-operator/pkg/ingress/handler"
@@ -61,7 +61,7 @@ func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 		client:      mgr.GetClient(),
 		scheme:      mgr.GetScheme(),
 		evnRecorder: mgr.GetEventRecorderFor("ingress-controller"),
-		ingHandler:  &inghandler.Handler{GatewayClient: &gwclient.Http{}},
+		ingHandler:  &inghandler.Handler{AdapterClient: &gwclient.Http{}},
 	}
 }
 

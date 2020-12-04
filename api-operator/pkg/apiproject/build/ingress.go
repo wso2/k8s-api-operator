@@ -14,18 +14,20 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package action
+package build
 
 import (
 	"context"
 	"errors"
 	"fmt"
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/apiproject"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/apiproject/names"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/controller/common"
-	"github.com/wso2/k8s-api-operator/api-operator/pkg/envoy/names"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/ingress"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/ingress/annotations/tls"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/swagger"
 	"k8s.io/api/core/v1"
 	"k8s.io/api/networking/v1beta1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -33,7 +35,8 @@ import (
 	"strings"
 )
 
-func FromProjects(ctx context.Context, reqInfo *common.RequestInfo, ingresses []*ingress.Ingress, projectsToBeUpdated, existingProjects map[string]bool) (*ProjectsMap, error) {
+// FromIngress builds build.ProjectsMap with actions needed updated in Router from given ingresses
+func FromIngress(ctx context.Context, reqInfo *common.RequestInfo, ingresses []*ingress.Ingress, projectsToBeUpdated, existingProjects apiproject.ProjectSet) (*ProjectsMap, error) {
 	projectMap := ProjectsMap{}
 	// Initialize project action with type delete
 	for p := range projectsToBeUpdated {
@@ -42,7 +45,7 @@ func FromProjects(ctx context.Context, reqInfo *common.RequestInfo, ingresses []
 			Action: Delete,
 			// Default OAS project
 			OAS: defaultOpenAPI(p),
-			// Keep TlsCertificate as nil to check whether, TlsCertificate is set by ingress
+			// Keep TlsSecret as nil to check whether, TlsSecret is set by ingress
 			TlsCertificate: nil,
 		}
 	}
@@ -77,7 +80,7 @@ func FromProjects(ctx context.Context, reqInfo *common.RequestInfo, ingresses []
 
 // processDefaultBackend go through ingress default backend (if default project should be updated) and updates the
 // Open API Spec (openapi3.Swagger) of names.DefaultBackendProject in the ProjectsMap and the action to ForceUpdate
-func processDefaultBackend(ctx context.Context, reqInfo *common.RequestInfo, projects map[string]bool, projectMap *ProjectsMap, ing *ingress.Ingress) error {
+func processDefaultBackend(ctx context.Context, reqInfo *common.RequestInfo, projects apiproject.ProjectSet, projectMap *ProjectsMap, ing *ingress.Ingress) error {
 	log := reqInfo.Log
 	pMap := *projectMap
 	// Default backend
@@ -108,7 +111,7 @@ func processDefaultBackend(ctx context.Context, reqInfo *common.RequestInfo, pro
 
 // processIngressRules go through ingress rules and updates the Open API Spec (openapi3.Swagger) in
 // the ProjectsMap and the action to ForceUpdate
-func processIngressRules(ctx context.Context, reqInfo *common.RequestInfo, projects map[string]bool, projectMap *ProjectsMap, ing *ingress.Ingress) error {
+func processIngressRules(ctx context.Context, reqInfo *common.RequestInfo, projects apiproject.ProjectSet, projectMap *ProjectsMap, ing *ingress.Ingress) error {
 	log := reqInfo.Log
 	pMap := *projectMap
 
@@ -167,7 +170,7 @@ func processIngressRules(ctx context.Context, reqInfo *common.RequestInfo, proje
 
 // processIngressTls go through ingress TLS rules and updates the Project.TlsCertificate in
 // the ProjectsMap and the action to ForceUpdate
-func processIngressTls(ctx context.Context, reqInfo *common.RequestInfo, projects map[string]bool, projectMap *ProjectsMap, ing *ingress.Ingress) error {
+func processIngressTls(ctx context.Context, reqInfo *common.RequestInfo, projects apiproject.ProjectSet, projectMap *ProjectsMap, ing *ingress.Ingress) error {
 	log := reqInfo.Log
 	pMap := *projectMap
 
@@ -213,9 +216,9 @@ func processIngressTls(ctx context.Context, reqInfo *common.RequestInfo, project
 }
 
 // getBackendCerts returns list of backend certificates in the given ingress
-func getBackendCerts(ctx context.Context, reqInfo *common.RequestInfo, ing *ingress.Ingress) ([]*TlsCertificate, error) {
+func getBackendCerts(ctx context.Context, reqInfo *common.RequestInfo, ing *ingress.Ingress) ([]*TlsSecret, error) {
 	log := reqInfo.Log
-	var certs []*TlsCertificate
+	var certs []*TlsSecret
 
 	for _, name := range ing.ParsedAnnotations.Tls.BackendCerts {
 		// Check secret
@@ -235,13 +238,13 @@ func getBackendCerts(ctx context.Context, reqInfo *common.RequestInfo, ing *ingr
 			// continue with other secrets
 			continue
 		}
-		certs = append(certs, &TlsCertificate{TrustedCa: caCert})
+		certs = append(certs, &TlsSecret{TrustedCa: caCert})
 	}
 	return certs, nil
 }
 
-func tlsCertFromIngTls(secret *v1.Secret, ing *ingress.Ingress) (*TlsCertificate, error) {
-	tlsCert := TlsCertificate{}
+func tlsCertFromIngTls(secret *v1.Secret, ing *ingress.Ingress) (*TlsSecret, error) {
+	tlsCert := TlsSecret{}
 
 	crt, ok := secret.Data["tls.crt"]
 	if !ok {
@@ -303,8 +306,8 @@ func defaultOpenAPI(projectName string) *openapi3.Swagger {
 	return &openapi3.Swagger{
 		ExtensionProps: openapi3.ExtensionProps{
 			Extensions: map[string]interface{}{
-				"x-wso2-vhost": names.ProjectToHost(projectName),
-				"x-wso2-spec":  "ingress",
+				swagger.VhostExtension: names.ProjectToHost(projectName),
+				swagger.SpecExtension:  "ingress",
 			},
 		},
 		OpenAPI: "3.0.0",

@@ -18,7 +18,7 @@
 
 # Modules to be tested
 go test -v ./pkg/maps
-go test -v ./pkg/envoy/names
-go test -v ./pkg/envoy/status
+go test -v ./pkg/apiproject/names
+go test -v ./pkg/apiproject/status
 go test -v ./pkg/controller/ingress
 go test -v ./pkg/swagger

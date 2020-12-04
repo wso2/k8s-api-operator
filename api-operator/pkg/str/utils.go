@@ -58,6 +58,7 @@ func RenderTemplate(templateText string, configs interface{}) (string, error) {
 	return strBuilder.String(), nil
 }
 
+// ContainsString checks whether the given slice of strings has the given string
 func ContainsString(slice []string, val string) bool {
 	for _, item := range slice {
 		if item == val {
@@ -67,6 +68,7 @@ func ContainsString(slice []string, val string) bool {
 	return false
 }
 
+// RemoveString removes the given string from the given slice
 func RemoveString(slice []string, val string) []string {
 	result := make([]string, 0, len(slice))
 	for _, item := range slice {

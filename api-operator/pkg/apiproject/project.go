@@ -14,23 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package ingress
+package apiproject
 
-import (
-	"github.com/wso2/k8s-api-operator/api-operator/pkg/ingress/annotations"
-	"k8s.io/api/networking/v1beta1"
-)
-
-// Ingress represents an ingres with parsed annotations
-type Ingress struct {
-	v1beta1.Ingress
-	ParsedAnnotations annotations.Ingress
-}
-
-// WithAnnotations returns an Ingress with parsed annotations
-func WithAnnotations(ingress *v1beta1.Ingress) *Ingress {
-	return &Ingress{
-		Ingress:           *ingress,
-		ParsedAnnotations: annotations.ParseIngress(ingress),
-	}
-}
+// ProjectSet represents a set of projects
+// { default/ing1, default/ing2 }
+type ProjectSet map[string]bool

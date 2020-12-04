@@ -18,10 +18,10 @@ package ingress
 
 import (
 	"context"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/apiproject/build"
+	gwclient "github.com/wso2/k8s-api-operator/api-operator/pkg/apiproject/client"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/apiproject/status"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/controller/common"
-	"github.com/wso2/k8s-api-operator/api-operator/pkg/envoy/action"
-	gwclient "github.com/wso2/k8s-api-operator/api-operator/pkg/envoy/client"
-	"github.com/wso2/k8s-api-operator/api-operator/pkg/envoy/status"
 	inghandler "github.com/wso2/k8s-api-operator/api-operator/pkg/ingress/handler"
 	"io/ioutil"
 	v1 "k8s.io/api/core/v1"
@@ -80,12 +80,12 @@ func TestReconcile(t *testing.T) {
 		client:      k8sClient,
 		scheme:      scheme.Scheme,
 		evnRecorder: &record.FakeRecorder{},
-		ingHandler:  &inghandler.Handler{GatewayClient: gwclient.NewFakeAllSucceeded()},
+		ingHandler:  &inghandler.Handler{AdapterClient: gwclient.NewFakeAllSucceeded()},
 	}
 	var request reconcile.Request
 
 	// 1.  Update whole world
-	t.Run("Build whole world", func(t *testing.T) {
+	t.Run("Build_whole_world", func(t *testing.T) {
 		for _, ingress := range ingresses {
 			ing := ingress.(*v1beta1.Ingress)
 			request = reconcile.Request{NamespacedName: types.NamespacedName{Namespace: ing.Namespace, Name: ing.Name}}
@@ -94,7 +94,7 @@ func TestReconcile(t *testing.T) {
 			}
 
 			// The following is not a required feature, but it can void unnecessary update of gateway
-			if r.ingHandler.GatewayClient.(*gwclient.Fake).ProjectMap != nil {
+			if r.ingHandler.AdapterClient.(*gwclient.Fake).ProjectMap != nil {
 				t.Error("Only last request should consider to build whole world")
 			}
 		}
@@ -108,20 +108,20 @@ func TestReconcile(t *testing.T) {
 			}
 
 			// The following is not a required feature, but it can provide unnecessary update of gateway
-			if i < len(ingresses)-1 && r.ingHandler.GatewayClient.(*gwclient.Fake).ProjectMap != nil {
+			if i < len(ingresses)-1 && r.ingHandler.AdapterClient.(*gwclient.Fake).ProjectMap != nil {
 				t.Error("Only last request should consider to build whole world")
 			}
 		}
 
-		projectMap := r.ingHandler.GatewayClient.(*gwclient.Fake).ProjectMap
+		projectMap := r.ingHandler.AdapterClient.(*gwclient.Fake).ProjectMap
 		tp := (*projectMap)["ingress-__bar_com"].Action
-		if tp != action.ForceUpdate {
+		if tp != build.ForceUpdate {
 			t.Errorf("Ing 5 project: ingress-__bar_com, action: %v; want: ForceUpdate", tp)
 		}
 	})
 
 	// 2.  Add new ingress: ing5
-	t.Run("Delta change: Add new ingress", func(t *testing.T) {
+	t.Run("Delta_change:_Add_new_ingress", func(t *testing.T) {
 		ing, err := readResources("test_resources/new/new-ing5.yaml", v1beta1.Ingress{})
 		if err != nil {
 			t.Fatal("Error reading ingress resource")
@@ -151,7 +151,7 @@ func TestReconcile(t *testing.T) {
 	})
 
 	// 3.  Update ingress: ing1
-	t.Run("Delta change: Update ingress", func(t *testing.T) {
+	t.Run("Delta_change:_Update_ingress", func(t *testing.T) {
 		ing, err := readResources("test_resources/new/update-ing1.yaml", v1beta1.Ingress{})
 		if err != nil {
 			t.Fatal("Error reading ingress resource")
@@ -171,13 +171,13 @@ func TestReconcile(t *testing.T) {
 			t.Error("Error building delta update; err: ", err)
 		}
 
-		projectMap := r.ingHandler.GatewayClient.(*gwclient.Fake).ProjectMap
-		testAction(t, projectMap, "Ing 1", "ingress-___default", action.ForceUpdate)
-		testAction(t, projectMap, "Ing 1", "ingress-__foo_com", action.ForceUpdate)
-		testAction(t, projectMap, "Ing 1", "ingress-prod_foo_com", action.ForceUpdate)
-		testAction(t, projectMap, "Ing 1", "ingress-deprecated_foo_com", action.Delete)
-		testAction(t, projectMap, "Ing 1", "ingress-no_existing-secret-host_com", action.DoNothing)
-		testAction(t, projectMap, "Ing 1", "ingress-__no-service_com", action.ForceUpdate)
+		projectMap := r.ingHandler.AdapterClient.(*gwclient.Fake).ProjectMap
+		testAction(t, projectMap, "Ing 1", "ingress-___default", build.ForceUpdate)
+		testAction(t, projectMap, "Ing 1", "ingress-__foo_com", build.ForceUpdate)
+		testAction(t, projectMap, "Ing 1", "ingress-prod_foo_com", build.ForceUpdate)
+		testAction(t, projectMap, "Ing 1", "ingress-deprecated_foo_com", build.Delete)
+		testAction(t, projectMap, "Ing 1", "ingress-no_existing-secret-host_com", build.DoNothing)
+		testAction(t, projectMap, "Ing 1", "ingress-__no-service_com", build.ForceUpdate)
 
 		testCurrentStatus(k8sClient, t, true, "default/ing1", "ingress-___default")
 		testCurrentStatus(k8sClient, t, true, "default/ing1", "ingress-__foo_com")
@@ -188,7 +188,7 @@ func TestReconcile(t *testing.T) {
 	})
 
 	// 4.  Delete ingress: ing3
-	t.Run("Delta change: Delete ingress", func(t *testing.T) {
+	t.Run("Delta_change:_Delete_ingress", func(t *testing.T) {
 		deleteIng3 := &v1beta1.Ingress{}
 		nsName := types.NamespacedName{Namespace: "default", Name: "ing3"}
 		request = reconcile.Request{NamespacedName: nsName}
@@ -203,16 +203,16 @@ func TestReconcile(t *testing.T) {
 			t.Error("Error building delta update")
 		}
 
-		projectMap := r.ingHandler.GatewayClient.(*gwclient.Fake).ProjectMap
-		testAction(t, projectMap, "Ing 3", "ingress-__bar_com", action.ForceUpdate)
-		testAction(t, projectMap, "Ing 3", "ingress-deprecated_bar_com", action.Delete)
+		projectMap := r.ingHandler.AdapterClient.(*gwclient.Fake).ProjectMap
+		testAction(t, projectMap, "Ing 3", "ingress-__bar_com", build.ForceUpdate)
+		testAction(t, projectMap, "Ing 3", "ingress-deprecated_bar_com", build.Delete)
 
 		testCurrentStatus(k8sClient, t, false, "default/ing3", "ingress-__bar_com")
 		testCurrentStatus(k8sClient, t, false, "default/ing3", "ingress-deprecated_bar_com")
 	})
 }
 
-func testAction(t *testing.T, projectsMap *action.ProjectsMap, ingName, projectName string, wantAction interface{}) {
+func testAction(t *testing.T, projectsMap *build.ProjectsMap, ingName, projectName string, wantAction interface{}) {
 	tp := (*projectsMap)[projectName].Action
 	if tp != wantAction {
 		t.Errorf("%v project: %v, action: %v; want: %v", ingName, projectName, tp, wantAction)

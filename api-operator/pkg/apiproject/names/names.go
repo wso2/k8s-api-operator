@@ -27,16 +27,19 @@ import (
 // So this name is not conflict with a project for a host in an ingress rule.
 const DefaultBackendProject = "ingress-___default"
 
+// HostToProject converts given virtual host to an API project
 func HostToProject(host string) string {
 	p := strings.ReplaceAll(host, "*.", "__")
 	return fmt.Sprintf("ingress-%v", strings.ReplaceAll(p, ".", "_"))
 }
 
+// ProjectToHost converts given API project to a virtual host name
 func ProjectToHost(pj string) string {
 	p := strings.TrimPrefix(strings.ReplaceAll(pj, "__", "*."), "ingress-")
 	return strings.ReplaceAll(p, "_", ".")
 }
 
+// IngressToName converts a given ingress to a unique name
 func IngressToName(ing *ingress.Ingress) string {
 	return fmt.Sprintf("%v/%v", ing.Namespace, ing.Name)
 }
