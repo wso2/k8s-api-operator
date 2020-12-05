@@ -23,11 +23,8 @@ import (
 
 var logDeploy = log.Log.WithName("mgw.envoy.deploy")
 var insecureDeploy = true
-// var apiListConfig = k8s.NewConfMap()
-
 
 // Deploy API to Envoy Micro-gateway Adapter using zip file or swagger
-
 func DeployAPItoMgw (client *client.Client, api *wso2v1alpha2.API) error {
 	var tempMap map[string]string
 	envoyMgwConfig := k8s.NewConfMap()
@@ -184,6 +181,5 @@ func executeNewFileUploadRequest(uri string, params map[string]string, paramName
 	headers[HeaderAccept] = "*/*"
 	headers[HeaderConnection] = HeaderValueKeepAlive
 	resp, err := invokePOSTRequestWithBytes(uri, headers, body.Bytes())
-
 	return resp, err
 }

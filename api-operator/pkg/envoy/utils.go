@@ -2,7 +2,6 @@ package envoy
 
 import (
 	"crypto/x509"
-	"fmt"
 	"github.com/ghodss/yaml"
 	"github.com/go-openapi/loads"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/apim"
@@ -140,14 +139,10 @@ func getSwaggerData (config *corev1.ConfigMap) (string, func(), error){
 		def.ProductionUrl = ""
 		def.SandboxUrl = ""
 	}
-	fmt.Println("API DEFINITION!!!")
-	fmt.Println(def)
 	apiData, err := yaml2.Marshal(def)
 	if err != nil {
 		return "", nil, err
 	}
-	fmt.Println("API DATA FILE!!!!")
-	fmt.Println(apiData)
 	// convert and save swagger as yaml
 	yamlSwagger, err := jsonToYaml(doc.Raw())
 	if err != nil {

@@ -185,7 +185,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			common.WatchNamespace)
 		return reconcile.Result{}, err
 	}
-	fmt.Println(apiList.Items)
 	err = envoy.CreateFileToSend(apiList, &r.client)
 	if err != nil {
 		reqLogger.Error(err, "Error 67!!!")
