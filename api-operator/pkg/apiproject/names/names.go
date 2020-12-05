@@ -22,19 +22,26 @@ import (
 	"strings"
 )
 
-// DefaultBackendProject represents the project of default backend of ingress
+// NoVHostProject represents the with no host is defined in the ingress
 // project for a host in an ingress rule can not have three "_" consecutively.
 // So this name is not conflict with a project for a host in an ingress rule.
-const DefaultBackendProject = "ingress-___default"
+const NoVHostProject = "ingress-___no_vhost"
 
 // HostToProject converts given virtual host to an API project
 func HostToProject(host string) string {
+	if host == "" || host == "*" {
+		return NoVHostProject
+	}
+
 	p := strings.ReplaceAll(host, "*.", "__")
 	return fmt.Sprintf("ingress-%v", strings.ReplaceAll(p, ".", "_"))
 }
 
 // ProjectToHost converts given API project to a virtual host name
 func ProjectToHost(pj string) string {
+	if pj == NoVHostProject {
+		return "*"
+	}
 	p := strings.TrimPrefix(strings.ReplaceAll(pj, "__", "*."), "ingress-")
 	return strings.ReplaceAll(p, "_", ".")
 }

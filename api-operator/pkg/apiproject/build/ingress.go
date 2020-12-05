@@ -35,6 +35,25 @@ import (
 	"strings"
 )
 
+const (
+	pathSeparator      = "/"
+	prefixedPathSymbol = "/*"
+)
+
+const (
+	// defaultBackendSummary meant the path is set by default backend
+	defaultBackendSummary = pathSummary("DEFAULT_BACKEND")
+	// ingressRuleSummary meant the path is set by ingress rule
+	ingressRuleSummary = pathSummary("INGRESS_RULE")
+)
+
+// pathSummary represents summary of PathItem in swagger definition
+type pathSummary string
+
+func (p pathSummary) equals(summary string) bool {
+	return string(p) == summary
+}
+
 // FromIngress builds build.ProjectsMap with actions needed updated in Router from given ingresses
 func FromIngress(ctx context.Context, reqInfo *common.RequestInfo, ingresses []*ingress.Ingress, projectsToBeUpdated, existingProjects apiproject.ProjectSet) (*ProjectsMap, error) {
 	projectMap := ProjectsMap{}
@@ -56,10 +75,12 @@ func FromIngress(ctx context.Context, reqInfo *common.RequestInfo, ingresses []*
 			continue
 		}
 
-		if err := processDefaultBackend(ctx, reqInfo, projectsToBeUpdated, &projectMap, ing); err != nil {
+		// handle Ingress rules first (more priority)
+		if err := processIngressRules(ctx, reqInfo, projectsToBeUpdated, &projectMap, ing); err != nil {
 			return nil, err
 		}
-		if err := processIngressRules(ctx, reqInfo, projectsToBeUpdated, &projectMap, ing); err != nil {
+		// handle default backends for hosts
+		if err := processDefaultBackend(ctx, reqInfo, projectsToBeUpdated, &projectMap, ing); err != nil {
 			return nil, err
 		}
 		if err := processIngressTls(ctx, reqInfo, projectsToBeUpdated, &projectMap, ing); err != nil {
@@ -78,32 +99,45 @@ func FromIngress(ctx context.Context, reqInfo *common.RequestInfo, ingresses []*
 	return &projectMap, nil
 }
 
-// processDefaultBackend go through ingress default backend (if default project should be updated) and updates the
-// Open API Spec (openapi3.Swagger) of names.DefaultBackendProject in the ProjectsMap and the action to ForceUpdate
+// processDefaultBackend go through ingress default backend and updates the
+// Open API Spec (openapi3.Swagger) of the relevant project in the ProjectsMap and update the action to ForceUpdate
 func processDefaultBackend(ctx context.Context, reqInfo *common.RequestInfo, projects apiproject.ProjectSet, projectMap *ProjectsMap, ing *ingress.Ingress) error {
 	log := reqInfo.Log
 	pMap := *projectMap
 	// Default backend
-	// Check whether the ingress contributes to the default backend project
-	if projects[names.DefaultBackendProject] && ing.Spec.Backend != nil {
-		if pMap[names.DefaultBackendProject].OAS.Servers != nil {
-			// skip this default backend configuration
+	if ing.Spec.Backend == nil {
+		return nil
+	}
+
+	for _, rule := range ing.Spec.Rules {
+		pj := names.HostToProject(rule.Host)
+		// Check whether the ingress contributes to the default backend project
+		if pj == names.NoVHostProject || !projects[pj] {
+			// Do not apply default backend for All Vhost project
+			continue
+		}
+
+		if pMap[pj].OAS.Paths[prefixedPathSymbol] != nil {
+			// skip this path
 			// give priority to older ingress
 			log.Info("Skipping the default backend configuration, since it is already defined by old ingress",
-				"new_ingress", ing)
-		} else {
-			// Do not validate service and port existence since user may add ingress first and service later
-			u := urlFromIngBackend(ing, ing.Spec.Backend)
-			pMap[names.DefaultBackendProject].OAS.Servers = oasServers(u)
-
-			certs, err := getBackendCerts(ctx, reqInfo, ing)
-			if err != nil {
-				log.Error(err, "Could not get backend certs and skipping the default backend configuration in this ingress",
-					"ingress", ing)
-			}
-			pMap[names.DefaultBackendProject].BackendCertificates = certs
-			pMap[names.DefaultBackendProject].Action = ForceUpdate
+				"new_ingress", ing, "host", rule.Host)
+			continue
 		}
+
+		// Do not validate service and port existence since user may add ingress first and service later
+		u := urlFromIngBackend(ing, ing.Spec.Backend)
+		pMap[pj].OAS.Paths[prefixedPathSymbol] = oasPathItem(ing, u, defaultBackendSummary)
+
+		// Update project certs and action here again.
+		// May be missed this in ingress rules with defining already exists ingress rule, but with new default backend.
+		certs, err := getBackendCerts(ctx, reqInfo, ing)
+		if err != nil {
+			log.Error(err, "Could not get backend certs in the ingress",
+				"ingress", ing, "ingress_project", pj)
+		}
+		pMap[pj].BackendCertificates = certs
+		pMap[pj].Action = ForceUpdate
 	}
 
 	return nil
@@ -120,48 +154,52 @@ func processIngressRules(ctx context.Context, reqInfo *common.RequestInfo, proje
 		validPj := false
 
 		// check whether the ingress contributes to the project
-		if projects[pj] {
-			for _, path := range rule.HTTP.Paths {
-				oasPath := path.Path
-				if *path.PathType == v1beta1.PathTypeExact {
-					if strings.HasSuffix(oasPath, "/*") {
-						// check debug level
-						// TODO: (renuka) should this be skipped or corrected with removing suffix or treat as prefixed type
-						log.Info("Skipping the path configuration for the host defined, since path type is \"exact\" and path is suffixed with \"*\"",
-							"ingress", ing, "host", rule.Host, "path", oasPath)
-						oasPath += "/*"
-					}
-				} else {
-					// path type is Prefix or ImplementationSpecific
-					// double check for the existence of suffix
-					if !strings.HasSuffix(oasPath, "/*") {
-						oasPath += "/*"
-					}
-				}
+		if !projects[pj] {
+			continue
+		}
 
-				if pMap[pj].OAS.Paths[oasPath] != nil {
-					// skip this path
-					// give priority to older ingress
-					log.Info("Skipping the path configuration for the host defined, since it is already defined by old ingress",
-						"new_ingress", ing, "host", rule.Host, "path", oasPath)
-					continue
-				}
+		for _, path := range rule.HTTP.Paths {
+			oasPath := strings.TrimSuffix(path.Path, pathSeparator)
 
-				// Do not validate service and port existence since user may add ingress first and service later
-				u := urlFromIngBackend(ing, &path.Backend)
-				pMap[pj].OAS.Paths[oasPath] = oasPathItem(u)
-				validPj = true
-			}
-			// Update the project if valid
-			if validPj {
-				certs, err := getBackendCerts(ctx, reqInfo, ing)
-				if err != nil {
-					log.Error(err, "Could not get backend certs in the ingress",
-						"ingress", ing, "ingress_project", pj)
+			if *path.PathType == v1beta1.PathTypeExact {
+				if strings.HasSuffix(oasPath, prefixedPathSymbol) {
+					// check debug level
+					// TODO: (renuka) should this be skipped or corrected with removing suffix or treat as prefixed type
+					log.Info("Skipping the path configuration for the host defined, since path type is \"exact\" and path is suffixed with \"*\"",
+						"ingress", ing, "host", rule.Host, "path", oasPath)
+					oasPath += prefixedPathSymbol
 				}
-				pMap[pj].BackendCertificates = certs
-				pMap[pj].Action = ForceUpdate
+			} else {
+				// path type is Prefix or ImplementationSpecific
+				// double check for the existence of suffix
+				if !strings.HasSuffix(oasPath, prefixedPathSymbol) {
+					oasPath += prefixedPathSymbol
+				}
 			}
+
+			// TODO: (renuka) we can handle this ingressRuleSummary.equals() with a new for loop iteration without checking this is set by ingress rule
+			if pMap[pj].OAS.Paths[oasPath] != nil && ingressRuleSummary.equals(pMap[pj].OAS.Paths[oasPath].Summary) {
+				// skip this path
+				// give priority to older ingress
+				log.Info("Skipping the path configuration for the host defined, since it is already defined by old ingress",
+					"new_ingress", ing, "host", rule.Host, "path", oasPath)
+				continue
+			}
+
+			// Do not validate service and port existence since user may add ingress first and service later
+			u := urlFromIngBackend(ing, &path.Backend)
+			pMap[pj].OAS.Paths[oasPath] = oasPathItem(ing, u, ingressRuleSummary)
+			validPj = true
+		}
+		// Update the project if valid
+		if validPj {
+			certs, err := getBackendCerts(ctx, reqInfo, ing)
+			if err != nil {
+				log.Error(err, "Could not get backend certs in the ingress",
+					"ingress", ing, "ingress_project", pj)
+			}
+			pMap[pj].BackendCertificates = certs
+			pMap[pj].Action = ForceUpdate
 		}
 	}
 
@@ -203,7 +241,8 @@ func processIngressTls(ctx context.Context, reqInfo *common.RequestInfo, project
 
 				tlsCertificate, err := tlsCertFromIngTls(secret, ing)
 				if err != nil {
-					log.Error(err, "Invalid tls secret and skipping TLS configuration for the host defined in the ingress", "ingress", ing, "host", host)
+					log.Error(err, "Invalid tls secret and skipping TLS configuration for the host defined in the ingress",
+						"ingress", ing, "host", host)
 					continue
 				}
 				pMap[pj].TlsCertificate = tlsCertificate
@@ -287,10 +326,10 @@ func urlFromIngBackend(ing *ingress.Ingress, backend *v1beta1.IngressBackend) st
 	return fmt.Sprintf("%s://%s.%s:%s", protocol, ing.Namespace, backend.ServiceName, backend.ServicePort.String())
 }
 
-func oasPathItem(url string) *openapi3.PathItem {
+func oasPathItem(ing *ingress.Ingress, url string, summary pathSummary) *openapi3.PathItem {
 	return &openapi3.PathItem{
-		Summary:     "",
-		Description: "",
+		Summary:     string(summary),
+		Description: fmt.Sprintf("Ingress Resource: %v", names.IngressToName(ing)),
 		Servers:     oasServers(url),
 	}
 }

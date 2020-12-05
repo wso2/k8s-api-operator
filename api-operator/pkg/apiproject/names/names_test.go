@@ -69,6 +69,10 @@ func TestProjectToHost(t *testing.T) {
 			project: "ingress-__org",
 			want:    "*.org",
 		},
+		{
+			project: NoVHostProject,
+			want:    "*",
+		},
 	}
 
 	for _, tt := range tests {

@@ -33,6 +33,7 @@ const (
 	DeploymentModeExtension     = "x-wso2-mode"
 	VhostExtension              = "x-wso2-vhost"
 	SpecExtension               = "x-wso2-spec"
+	EngageEnforcerExtension     = "x-wso2-engage-enforcer"
 	SecurityExtension           = "security"
 	PathsExtension              = "paths"
 	SecuritySchemeExtension     = "securitySchemes"

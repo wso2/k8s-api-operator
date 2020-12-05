@@ -19,8 +19,8 @@ apiVersion: networking.k8s.io/v1beta1
 metadata:
   name: products
   namespace: default
-annotations:
-  kubernetes.io/ingress.class: "wso2-microgateway"
+  annotations:
+    kubernetes.io/ingress.class: "wso2-microgateway"
 spec:
   backend:
     serviceName: products

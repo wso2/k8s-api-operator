@@ -37,6 +37,7 @@ spec:
             backend:
               serviceName: orders-exact
               servicePort: 8080
+    # Override path
     - host: "*.bar.com"
       http:
         paths:

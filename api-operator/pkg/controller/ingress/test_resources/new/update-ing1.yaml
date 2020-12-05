@@ -25,9 +25,6 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: "microgateway"
 spec:
-  backend:
-    serviceName: products
-    servicePort: 8080
   tls:
     - secretName: foo-dev
       hosts:

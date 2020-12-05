@@ -20,6 +20,7 @@ import (
 	"context"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/apiproject/build"
 	gwclient "github.com/wso2/k8s-api-operator/api-operator/pkg/apiproject/client"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/apiproject/names"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/apiproject/status"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/controller/common"
 	inghandler "github.com/wso2/k8s-api-operator/api-operator/pkg/ingress/handler"
@@ -114,10 +115,8 @@ func TestReconcile(t *testing.T) {
 		}
 
 		projectMap := r.ingHandler.AdapterClient.(*gwclient.Fake).ProjectMap
-		tp := (*projectMap)["ingress-__bar_com"].Action
-		if tp != build.ForceUpdate {
-			t.Errorf("Ing 5 project: ingress-__bar_com, action: %v; want: ForceUpdate", tp)
-		}
+		testAction(t, projectMap, "Ing 1", "ingress-__bar_com", build.ForceUpdate)
+		testAction(t, projectMap, "Ing 1", names.NoVHostProject, build.ForceUpdate)
 	})
 
 	// 2.  Add new ingress: ing5
@@ -172,14 +171,15 @@ func TestReconcile(t *testing.T) {
 		}
 
 		projectMap := r.ingHandler.AdapterClient.(*gwclient.Fake).ProjectMap
-		testAction(t, projectMap, "Ing 1", "ingress-___default", build.ForceUpdate)
+		testAction(t, projectMap, "Ing 1", names.NoVHostProject, build.ForceUpdate)
 		testAction(t, projectMap, "Ing 1", "ingress-__foo_com", build.ForceUpdate)
 		testAction(t, projectMap, "Ing 1", "ingress-prod_foo_com", build.ForceUpdate)
 		testAction(t, projectMap, "Ing 1", "ingress-deprecated_foo_com", build.Delete)
 		testAction(t, projectMap, "Ing 1", "ingress-no_existing-secret-host_com", build.DoNothing)
 		testAction(t, projectMap, "Ing 1", "ingress-__no-service_com", build.ForceUpdate)
 
-		testCurrentStatus(k8sClient, t, true, "default/ing1", "ingress-___default")
+		testCurrentStatus(k8sClient, t, false, "default/ing1", names.NoVHostProject)
+		testCurrentStatus(k8sClient, t, true, "default/ing2", names.NoVHostProject)
 		testCurrentStatus(k8sClient, t, true, "default/ing1", "ingress-__foo_com")
 		testCurrentStatus(k8sClient, t, false, "default/ing1", "ingress-prod_foo_com")
 		testCurrentStatus(k8sClient, t, false, "default/ing1", "ingress-deprecated_foo_com")
@@ -212,6 +212,7 @@ func TestReconcile(t *testing.T) {
 	})
 }
 
+// testAction tests the action of HTTP request to the Adapter
 func testAction(t *testing.T, projectsMap *build.ProjectsMap, ingName, projectName string, wantAction interface{}) {
 	tp := (*projectsMap)[projectName].Action
 	if tp != wantAction {
@@ -219,6 +220,7 @@ func testAction(t *testing.T, projectsMap *build.ProjectsMap, ingName, projectNa
 	}
 }
 
+// testCurrentStatus tests the current status configmap with the given ingress object and project
 func testCurrentStatus(k8sClient client.Client, t *testing.T, shouldExists bool, ing, project string) {
 	st, err := status.FromConfigMap(context.TODO(), &common.RequestInfo{Client: k8sClient})
 	if err != nil {
