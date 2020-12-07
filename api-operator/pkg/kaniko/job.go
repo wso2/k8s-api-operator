@@ -19,7 +19,7 @@ package kaniko
 import (
 	"context"
 	"github.com/golang/glog"
-	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
+	wso2v1alpha2 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/registry"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -37,7 +37,7 @@ const (
 )
 
 // Job returns a kaniko job with mounted volumes
-func Job(api *wso2v1alpha1.API, controlConfigData map[string]string, kanikoArgs string, owner *[]metav1.OwnerReference) *batchv1.Job {
+func Job(api *wso2v1alpha2.API, controlConfigData map[string]string, kanikoArgs string, owner *[]metav1.OwnerReference) *batchv1.Job {
 	rootUserVal := int64(0)
 	jobName := api.Name + "-kaniko"
 	if api.Spec.UpdateTimeStamp != "" {

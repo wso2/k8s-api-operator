@@ -25,7 +25,7 @@ of the API that these Ratelimiting policies are being referred should be "wso2-t
 
 - Application throttling
     ```yaml
-    apiVersion: wso2.com/v1alpha1
+    apiVersion: wso2.com/v1alpha2
     kind: RateLimiting
     metadata:
       name: app4
@@ -41,7 +41,7 @@ of the API that these Ratelimiting policies are being referred should be "wso2-t
 
 - Subscription throttling
     ```yaml
-    apiVersion: wso2.com/v1alpha1
+    apiVersion: wso2.com/v1alpha2
     kind: RateLimiting
     metadata:
       name: sub6
@@ -56,7 +56,7 @@ of the API that these Ratelimiting policies are being referred should be "wso2-t
     ```
 - Advance throttling 
     ```yaml
-    apiVersion: wso2.com/v1alpha1
+    apiVersion: wso2.com/v1alpha2
     kind: RateLimiting
     metadata:
       name: advance3

@@ -20,7 +20,7 @@ import (
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 	"strings"
 
-	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
+	wso2v1alpha2 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
@@ -50,7 +50,7 @@ type DeploymentConfig struct {
 var logDeploy = log.Log.WithName("mgw.userDeploymentVolume")
 
 // UserDeploymentVolume returns the deploy volumes and volume mounts with user defined config maps and secrets
-func UserDeploymentVolume(client *client.Client, api *wso2v1alpha1.API) ([]corev1.Volume, []corev1.VolumeMount, []corev1.EnvFromSource,
+func UserDeploymentVolume(client *client.Client, api *wso2v1alpha2.API) ([]corev1.Volume, []corev1.VolumeMount, []corev1.EnvFromSource,
 	error) {
 	var deployVolume []corev1.Volume
 	var deployVolumeMount []corev1.VolumeMount

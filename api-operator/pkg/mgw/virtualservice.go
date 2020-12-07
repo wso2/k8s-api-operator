@@ -18,7 +18,7 @@ package mgw
 
 import (
 	"errors"
-	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
+	wso2v1alpha2 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	istioapi "istio.io/api/networking/v1alpha3"
@@ -54,7 +54,7 @@ type tlsRoutesConfigs struct {
 
 var logVsc = log.Log.WithName("mgw.virtualservice")
 
-func IstioVirtualService(istioConfigs *IstioConfigs, api *wso2v1alpha1.API, apiBasePathMap map[string]string,
+func IstioVirtualService(istioConfigs *IstioConfigs, api *wso2v1alpha2.API, apiBasePathMap map[string]string,
 	owner []metav1.OwnerReference) *istioclient.VirtualService {
 	// labels
 	labels := map[string]string{
@@ -92,7 +92,7 @@ func IstioVirtualService(istioConfigs *IstioConfigs, api *wso2v1alpha1.API, apiB
 	return &virtualService
 }
 
-func getHttpRoutes(istioConfigs *IstioConfigs, api *wso2v1alpha1.API, apiBasePathMap map[string]string) []*istioapi.HTTPRoute {
+func getHttpRoutes(istioConfigs *IstioConfigs, api *wso2v1alpha2.API, apiBasePathMap map[string]string) []*istioapi.HTTPRoute {
 	// http route matches
 	var httpRouteMatches []*istioapi.HTTPMatchRequest
 	for basePath, version := range apiBasePathMap {
@@ -126,7 +126,7 @@ func getHttpRoutes(istioConfigs *IstioConfigs, api *wso2v1alpha1.API, apiBasePat
 	return httpRoutes
 }
 
-func getTlsRoutes(istioConfigs *IstioConfigs, api *wso2v1alpha1.API) []*istioapi.TLSRoute {
+func getTlsRoutes(istioConfigs *IstioConfigs, api *wso2v1alpha2.API) []*istioapi.TLSRoute {
 	tlsRoutes := []*istioapi.TLSRoute{
 		{
 			Match: []*istioapi.TLSMatchAttributes{{
@@ -149,7 +149,7 @@ func getTlsRoutes(istioConfigs *IstioConfigs, api *wso2v1alpha1.API) []*istioapi
 
 // ValidateIstioConfigs validate the Istio yaml config read from config map "istio-configs"
 // and setting values
-func ValidateIstioConfigs(client *client.Client, api *wso2v1alpha1.API) (*IstioConfigs, error) {
+func ValidateIstioConfigs(client *client.Client, api *wso2v1alpha2.API) (*IstioConfigs, error) {
 	istioConfigs := &IstioConfigs{}
 
 	istioConfigMap := k8s.NewConfMap()

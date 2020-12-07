@@ -291,7 +291,7 @@ Once you have done any changes to above configs, you have to execute the followi
 
 - Default configurations are shown below.
     ```yaml
-    apiVersion: wso2.com/v1alpha1
+    apiVersion: wso2.com/v1alpha2
     kind: Security
     metadata:
       name: default-security-jwt

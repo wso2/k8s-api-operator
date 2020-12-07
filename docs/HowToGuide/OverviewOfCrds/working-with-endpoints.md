@@ -39,7 +39,7 @@
    Sample definition of endpoint kind can be specified as follow
    
     ```yaml
-    apiVersion: wso2.com/v1alpha1
+    apiVersion: wso2.com/v1alpha2
     kind: TargetEndpoint
     metadata:
       name: products-privatejet

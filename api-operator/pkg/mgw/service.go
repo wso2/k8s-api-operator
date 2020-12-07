@@ -17,7 +17,7 @@
 package mgw
 
 import (
-	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
+	wso2v1alpha2 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -37,7 +37,7 @@ const (
 )
 
 //Creating a LB balancer service to expose mgw
-func Service(api *wso2v1alpha1.API, operatorMode string, owner []metav1.OwnerReference) *corev1.Service {
+func Service(api *wso2v1alpha2.API, operatorMode string, owner []metav1.OwnerReference) *corev1.Service {
 	var serviceType corev1.ServiceType
 	serviceType = corev1.ServiceTypeLoadBalancer
 

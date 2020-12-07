@@ -19,7 +19,7 @@ Security supports different security types: basic-auth, OAuth2, JWT, etc.
 The following YAML shows a sample payload for Security with JWT.
 
 ```yaml
-apiVersion: wso2.com/v1alpha1
+apiVersion: wso2.com/v1alpha2
 kind: Security
 metadata:
   name: petstorejwt
@@ -40,7 +40,7 @@ spec:
 **RateLimiting** here. The following YAML shows sample payload.
 
 ```yaml
-apiVersion: wso2.com/v1alpha1
+apiVersion: wso2.com/v1alpha2
 kind: RateLimiting
 metadata:
   name: app1
@@ -69,7 +69,7 @@ the gateway will run in the same POD adjacent to the backend service.
 The following YAML shows a sample payload for Target endpoint.
 
 ```yaml
-apiVersion: wso2.com/v1alpha1
+apiVersion: wso2.com/v1alpha2
 kind: TargetEndpoint
 metadata:
   name: products-privatejet
@@ -98,7 +98,7 @@ API takes the Swagger definition as a configMap along with replica count and mic
 The following YAML shows sample payload for API.
 
 ```yaml
-apiVersion: wso2.com/v1alpha1
+apiVersion: wso2.com/v1alpha2
 kind: API
 metadata:
   name: online-store
