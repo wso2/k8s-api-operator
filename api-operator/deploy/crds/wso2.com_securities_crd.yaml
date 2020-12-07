@@ -71,6 +71,8 @@ spec:
                     type: boolean
                   validateSubscription:
                     type: boolean
+                  jwksURL:
+                    type: string  
                 type: object
               type: array
             type:

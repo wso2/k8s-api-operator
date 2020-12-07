@@ -121,7 +121,11 @@ data:
       {{ if .AudiencePresent }}
       audience = "{{.Audience}}"
       {{ end }}
+      {{ if .JwksPresent }}
+      jwksURL = "{{.JwksURL}}"
+      {{ else }}
       certificateAlias = "{{.CertificateAlias}}"
+      {{ end }}
       # Validate subscribed APIs
       validateSubscription = {{.ValidateSubscription}}
     {{end}}
