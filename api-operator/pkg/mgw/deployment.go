@@ -55,6 +55,7 @@ func Deployment(client *client.Client, api *wso2v1alpha1.API, controlConfigData 
 	owner *[]metav1.OwnerReference, sidecarContainers []corev1.Container) (*appsv1.Deployment, error) {
 	regConfig := registry.GetConfig()
 	labels := map[string]string{"app": api.Name}
+	annotations := map[string]string{}
 	liveDelay, _ := strconv.ParseInt(controlConfigData[livenessProbeInitialDelaySeconds], 10, 32)
 	livePeriod, _ := strconv.ParseInt(controlConfigData[livenessProbePeriodSeconds], 10, 32)
 	readDelay, _ := strconv.ParseInt(controlConfigData[readinessProbeInitialDelaySeconds], 10, 32)
@@ -98,6 +99,8 @@ func Deployment(client *client.Client, api *wso2v1alpha1.API, controlConfigData 
 		containerPorts = append(containerPorts, corev1.ContainerPort{
 			ContainerPort: observabilityPrometheusPort,
 		})
+		annotations["prometheus.io/port"] = strconv.Itoa(observabilityPrometheusPort)
+		annotations["prometheus.io/scrape"] = "true"
 	}
 
 	// setting environment variables
@@ -176,7 +179,8 @@ func Deployment(client *client.Client, api *wso2v1alpha1.API, controlConfigData 
 		},
 		Template: corev1.PodTemplateSpec{
 			ObjectMeta: metav1.ObjectMeta{
-				Labels: labels,
+				Labels:      labels,
+				Annotations: annotations,
 			},
 			Spec: corev1.PodSpec{
 				HostAliases:      hostAliases,
