@@ -1,0 +1,80 @@
+{
+  "components": {},
+  "info": {
+    "description": "Sample Project for Testing",
+    "title": "Sample Project",
+    "version": "v1"
+  },
+  "openapi": "3.0.0",
+  "paths": {
+    "/products/electronics/": {
+      "servers": [
+        {
+          "url": "https://bar.com:443/",
+          "description": "Foo server"
+        }
+      ]
+    },
+    "/products/tv/": {
+      "servers": [
+        {
+          "url": "https://bar.com:443/",
+          "description": "Foo server"
+        }
+      ]
+    },
+    "/products": {
+      "servers": [
+        {
+          "url": "https://prod.foo.com:443/",
+          "description": "Foo server"
+        }
+      ]
+    },
+    "/": {
+      "servers": [
+        {
+          "url": "https://foo.com:443/",
+          "description": "Foo server"
+        }
+      ]
+    },
+    "/products/tv/*": {
+      "servers": [
+        {
+          "url": "https://tv.prod.foo.com:443/",
+          "description": "Foo server"
+        }
+      ]
+    },
+    "/products/*": {
+      "servers": [
+        {
+          "url": "https://prods.foo.com:443/",
+          "description": "Foo server"
+        }
+      ]
+    },
+    "/*": {
+      "servers": [
+        {
+          "url": "https://legacy.foo.com:443/",
+          "description": "Foo server"
+        }
+      ]
+    }
+  },
+  "security": [
+    {
+      "bar": [
+        "read"
+      ],
+      "foo": [
+        "read",
+        "write"
+      ]
+    }
+  ],
+  "x-wso2-spec": "ingress",
+  "x-wso2-vhost": "ingress-foo_com"
+}

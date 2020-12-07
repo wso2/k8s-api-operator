@@ -1,5 +1,3 @@
-#!/bin/bash
-# ----------------------------------------------------------------------------
 # Copyright (c)  WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
 
 # WSO2 Inc. licenses this file to you under the Apache License,
@@ -16,9 +14,18 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# Modules to be tested
-go test -v ./pkg/maps
-go test -v ./pkg/apiproject/names
-go test -v ./pkg/apiproject/status
-go test -v ./pkg/controller/ingress
-go test -v ./pkg/swagger
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ingress-project-status
+  namespace: wso2-system
+data:
+  project-status: |
+    default/ing1:
+      ingress-__existing_foo_com: _
+      ingress-prod_foo_com: _
+    default/ing2:
+      ingress-__bar_com: _
+      ingress-__foo_com: _
+    default/ing3:
+      ingress-__bar_com: _

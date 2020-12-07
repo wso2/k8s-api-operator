@@ -20,6 +20,8 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/controller/common"
 	v1 "k8s.io/api/core/v1"
 	"os"
 	"runtime"
@@ -86,6 +88,13 @@ func main() {
 
 	printVersion()
 
+	namespace, err := k8sutil.GetWatchNamespace()
+	if err != nil {
+		log.Error(err, "Failed to get watch namespace")
+		os.Exit(1)
+	}
+	common.WatchNamespace = namespace
+
 	// Get a config to talk to the apiserver
 	cfg, err := config.GetConfig()
 	if err != nil {
@@ -106,7 +115,7 @@ func main() {
 
 	// Create a new Cmd to provide shared dependencies and start components
 	mgr, err := manager.New(cfg, manager.Options{
-		Namespace:          "",
+		Namespace:          namespace,
 		MetricsBindAddress: fmt.Sprintf("%s:%d", metricsHost, metricsPort),
 	})
 	if err != nil {
