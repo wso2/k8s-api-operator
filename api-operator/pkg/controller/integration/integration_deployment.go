@@ -84,6 +84,7 @@ func (r *ReconcileIntegration) deploymentForIntegration(m *wso2v1alpha1.Integrat
 						Name:            "micro-integrator",
 						Ports:           exposePorts,
 						Env:             m.Spec.Env,
+						EnvFrom: 	 m.Spec.EnvFrom,
 						ImagePullPolicy: corev1.PullAlways,
 					}},
 					ImagePullSecrets: imageSecrets,
