@@ -8,23 +8,29 @@ require (
 	github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7 // indirect
 	github.com/emicklei/go-restful v2.13.0+incompatible // indirect
 	github.com/getkin/kin-openapi v0.2.0
-	github.com/go-logr/logr v0.1.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-logr/logr v0.1.0
-	github.com/go-openapi/loads v0.19.4
-	github.com/go-openapi/spec v0.19.4
+	github.com/go-openapi/errors v0.19.6
+	github.com/go-openapi/loads v0.19.5
+	github.com/go-openapi/runtime v0.19.22
+	github.com/go-openapi/spec v0.19.8
+	github.com/go-openapi/strfmt v0.19.5
+	github.com/go-openapi/swag v0.19.9
+	github.com/go-openapi/validate v0.19.10
 	github.com/gogo/protobuf v1.3.1 // indirect
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/heroku/docker-registry-client v0.0.0-20181004091502-47ecf50fd8d4
+	github.com/jessevdk/go-flags v1.4.0
 	github.com/json-iterator/go v1.1.10 // indirect
-	github.com/mitchellh/mapstructure v1.1.2 // indirect
+	github.com/mitchellh/mapstructure v1.3.2
 	github.com/openshift/api v3.9.0+incompatible
 	github.com/operator-framework/operator-sdk v0.18.0
 	github.com/sirupsen/logrus v1.5.0
 	github.com/spf13/pflag v1.0.5
+	golang.org/x/net v0.0.0-20200602114024-627f9648deb9
 	gopkg.in/resty.v1 v1.12.0
-	gopkg.in/yaml.v2 v2.2.8
+	gopkg.in/yaml.v2 v2.3.0
 	istio.io/api v0.0.0-20200720192137-962b7ea3a72a
 	istio.io/client-go v0.0.0-20200717004237-1af75184beba
 	k8s.io/api v0.18.2

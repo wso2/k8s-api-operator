@@ -120,6 +120,15 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	r.recorder}
 	ctx = requestInfo.NewContext(ctx)
 
+	apiList := &wso2v1alpha2.APIList{}
+	if err := requestInfo.Client.List(ctx, apiList, client.InNamespace(common.WatchNamespace)); err != nil {
+		// Error reading the object - requeue the request.
+		reqLogger.Error(err, "Error reading all APIs in the specified namespace", "namespace",
+			common.WatchNamespace)
+		return reconcile.Result{}, err
+	}
+
+
 	err := k8s.Get(&r.client, request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -130,6 +139,10 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		}
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
+	}
+	err = envoy.CreateFileToSend(apiList, &r.client)
+	if err != nil {
+		reqLogger.Error(err, "Error when sending all the APIs to MGW Adapter")
 	}
 
 	//get configurations file for the controller
@@ -177,18 +190,5 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	r.recorder.Event(instance, corev1.EventTypeNormal, "APIDeploy",
 		fmt.Sprintf("Successfully deployed API to Envoy MGW Adapter"))
 	reqLogger.Info("Successfully deployed API to Envoy MGW Adapter", "api_name", instance.Name)
-
-	apiList := &wso2v1alpha2.APIList{}
-	if err := requestInfo.Client.List(ctx, apiList, client.InNamespace(common.WatchNamespace)); err != nil {
-		// Error reading the object - requeue the request.
-		reqLogger.Error(err, "Error reading all ingresses in the specified namespace", "namespace",
-			common.WatchNamespace)
-		return reconcile.Result{}, err
-	}
-	err = envoy.CreateFileToSend(apiList, &r.client)
-	if err != nil {
-		reqLogger.Error(err, "Error 67!!!")
-	}
-
 	return reconcile.Result{}, nil
 }

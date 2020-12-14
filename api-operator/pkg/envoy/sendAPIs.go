@@ -19,22 +19,19 @@ package envoy
 import (
 	wso2v1alpha2 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
-	"github.com/wso2/k8s-api-operator/api-operator/pkg/utils"
-	"io/ioutil"
 	"k8s.io/apimachinery/pkg/types"
 	"os"
-	"path/filepath"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 var logSendAPIs = log.Log.WithName("mgw.envoy.sendAPIs")
 
+// CreateFileToSend creates the zipped file with all the APIs
 func CreateFileToSend(apiList *wso2v1alpha2.APIList, client *client.Client) error {
 	var fileName string
 	var cleanupFunc func()
-	dir, _ := ioutil.TempDir("", "test")
-
+	var files []string
 	for _, api := range apiList.Items {
 		inputConf := k8s.NewConfMap()
 		err := k8s.Get(client, types.NamespacedName{Namespace: api.Namespace,
@@ -53,31 +50,39 @@ func CreateFileToSend(apiList *wso2v1alpha2.APIList, client *client.Client) erro
 				return err
 			}
 		}
-		filePath := filepath.Join(dir, filepath.FromSlash(fileName))
-		err = os.MkdirAll(filePath, os.ModePerm)
-		if err != nil {
-			return err
-		}
+		files = append(files, fileName)
 	}
-	tmp, _ := ioutil.TempFile("", "test.zip")
-	_ = utils.Zip(dir, tmp.Name())
-	testMethod(tmp)
+
+	tmp := os.TempDir() + "/done.zip"
+	err := ZipFiles(tmp, files)
+	if err != nil {
+		logSendAPIs.Error(err, "Error adding the zip files to a single zip file")
+		return err
+	}
+	//TODO: Send APIs set by set when there are many APIs (Eg: 1000s of APIs)
+	//// Split the files array into chunks of 100 in size (100 APIs in one chunk)
+	//limit := 100
+	//for i := 0; i < len(files); i += limit {
+	//	batch := files[i:min(i+limit, len(files))]
+	//	tmp := fmt.Sprintf(os.TempDir()+ "/done-%d.zip", i)
+	//	// Add files to zip
+	//	err := ZipFiles(tmp, batch)
+	//	if err != nil {
+	//		logSendAPIs.Error(err, "Error adding the zip files to a single zip file")
+	//		return err
+	//	}
+	//}
+
 	//cleanup the temporary artifacts once consuming the zip file
 	if cleanupFunc != nil {
 		defer cleanupFunc()
 	}
-
 	return nil
 }
 
-// testMethod tests whether the created zip file has data or not (Temporary test method)
-//TODO: Send the Zipped APIs file to MGW Adapter
-func testMethod(tmp *os.File) {
-	filename := tmp.Name()
-	data, _ := ioutil.ReadFile(filename)
-	if data != nil {
-		logSendAPIs.Info("ZIP FILE HAS DATA")
-	} else {
-		logSendAPIs.Info("NO DATA !!!!")
-	}
-}
+//func min(a, b int) int {
+//	if a <= b {
+//		return a
+//	}
+//	return b
+//}
