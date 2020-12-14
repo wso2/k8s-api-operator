@@ -198,6 +198,8 @@ func CreateZipFileFromProject(projectPath string, skipCleanup bool) (string, err
 		if err != nil {
 			return "", err, nil
 		}
+		if err := os.Chmod(tmp.Name(), 0777); err != nil {
+			return "", err, nil }
 		err = Zip(projectPath, tmp.Name())
 		if err != nil {
 			return "", err, nil
