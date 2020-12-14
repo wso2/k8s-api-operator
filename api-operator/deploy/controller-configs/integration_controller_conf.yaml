@@ -14,21 +14,20 @@
 # specific language governing permissions and limitations
 # under the License.
 
-apiVersion: wso2.com/v1alpha1
-kind: Integration
+apiVersion: v1
+kind: ConfigMap
 metadata:
-  name: test-integration
-spec:
-  image: sajithaliyanage/k8s-samples:helloservice
-  deploySpec:
-    minReplicas: 1
-    requestCPU: "500m"
-    reqMemory: "512Mi"
-    cpuLimit: "2000m"
-    memoryLimit: "2048Mi"
-  autoScale:
-    enabled: "true"
-    maxReplicas: 3
-  env:
-    - name: DEV_ENV_USER_EP
-      value: "https://reqres.in/api"
+  name: integration-config
+data:
+  host: wso2ei
+  autoIngressCreation: "true"
+  enableAutoScale: "false"
+  minReplicas: "1"
+  maxReplicas: "5"
+  hpaMetrics: |
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 50

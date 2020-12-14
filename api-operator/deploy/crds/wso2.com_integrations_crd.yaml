@@ -41,6 +41,43 @@ spec:
         spec:
           description: IntegrationSpec defines the desired state of Integration
           properties:
+            autoScale:
+              description: Auto scale spec
+              properties:
+                enabled:
+                  description: Defines if auto scaling needs to be enabled Default
+                    value "<empty>".
+                  type: string
+                maxReplicas:
+                  description: Defines maximum number of replicas of the Integration
+                    deployment Default value "<empty>".
+                  format: int32
+                  type: integer
+              type: object
+            deploySpec:
+              description: Specification related to deployment
+              properties:
+                cpuLimit:
+                  description: CPU limit of containers in the pod Default value "<empty>".
+                  type: string
+                memoryLimit:
+                  description: Memory limit of containers in the pod Default value
+                    "<empty>".
+                  type: string
+                minReplicas:
+                  description: Initial minimum number of replicas in Integration Default
+                    value "<empty>".
+                  format: int32
+                  type: integer
+                reqMemory:
+                  description: Memory request of containers in the pod Default value
+                    "<empty>".
+                  type: string
+                requestCPU:
+                  description: Cpu request of containers in the pod Default value
+                    "<empty>".
+                  type: string
+              type: object
             env:
               description: List of environment variables to set for the integration.
               items:
@@ -187,13 +224,8 @@ spec:
                 format: int32
                 type: integer
               type: array
-            replicas:
-              description: Size of the integration deployment
-              format: int32
-              type: integer
           required:
           - image
-          - replicas
           type: object
         status:
           description: IntegrationStatus defines the observed state of Integration

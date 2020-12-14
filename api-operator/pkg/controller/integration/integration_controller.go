@@ -21,6 +21,7 @@ package integration
 import (
 	"context"
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1beta1 "k8s.io/api/extensions/v1beta1"
@@ -36,6 +37,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+	"strconv"
 )
 
 var log = logf.Log.WithName("controller_integration")
@@ -134,12 +136,16 @@ func (r *ReconcileIntegration) Reconcile(request reconcile.Request) (reconcile.R
 		return reconcile.Result{}, err
 	}
 
+	// Create ei config struct using default ei configmap yaml
+	eiConfig := r.UpdateDefaultConfigs(integration)
+
 	// Check if the deployment already exists, if not create a new one
 	deploymentObj := &appsv1.Deployment{}
+
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: nameForDeployment(integration), Namespace: integration.Namespace}, deploymentObj)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new deployment
-		deployment := r.deploymentForIntegration(integration)
+		deployment := r.deploymentForIntegration(integration, eiConfig)
 		reqLogger.Info("Creating a new Deployment", "Deployment.Namespace", deployment.Namespace, "Deployment.Name", deployment.Name)
 		err = r.client.Create(context.TODO(), deployment)
 		if err != nil {
@@ -154,7 +160,7 @@ func (r *ReconcileIntegration) Reconcile(request reconcile.Request) (reconcile.R
 	}
 
 	// Ensure the deployment replicas is the same as the spec
-	replicas := integration.Spec.Replicas
+	replicas := integration.Spec.DeploySpec.MinReplicas
 	if *deploymentObj.Spec.Replicas != replicas {
 		deploymentObj.Spec.Replicas = &replicas
 		err = r.client.Update(context.TODO(), deploymentObj)
@@ -164,6 +170,24 @@ func (r *ReconcileIntegration) Reconcile(request reconcile.Request) (reconcile.R
 		}
 		// Spec updated - return and requeue
 		return reconcile.Result{Requeue: true}, nil
+	}
+
+	// Check auto scaling and create/update horizontal autoscaler for the deployment
+	var autoScaleEnabled bool
+	if integration.Spec.AutoScale.Enabled != "" {
+		autoScaleEnabled, _ = strconv.ParseBool(integration.Spec.AutoScale.Enabled)
+	} else {
+		autoScaleEnabled = eiConfig.EnableAutoScale
+	}
+	if autoScaleEnabled {
+		owner := getOwnerDetails(integration)
+		hpa := createIntegrationHPA(integration, deploymentObj, eiConfig, owner)
+		// create or apply HPA
+		err = k8s.Apply(&r.client, hpa)
+		if err != nil {
+			reqLogger.Info("Failed to create/update HPA", "HPA.Namespace", hpa.Namespace, "HPA.Name", hpa.Name)
+			return reconcile.Result{}, err
+		}
 	}
 
 	// Check if the service already exists, if not create a new one
@@ -186,13 +210,12 @@ func (r *ReconcileIntegration) Reconcile(request reconcile.Request) (reconcile.R
 	}
 
 	// Check if the ingress already exists, if not create a new one, if yes update it
-	eiController := r.UpdateDefaultConfigs(integration)
-	if eiController.AutoCreateIngress != false {
+	if eiConfig.AutoCreateIngress != false {
 		ingress := &v1beta1.Ingress{}
 		err = r.client.Get(context.TODO(), types.NamespacedName{Name: nameForIngress(), Namespace: integration.Namespace}, ingress)
 		if err != nil && errors.IsNotFound(err) {
 			// Define a new Ingress
-			eiIngress := r.ingressForIntegration(integration, &eiController)
+			eiIngress := r.ingressForIntegration(integration, &eiConfig)
 			reqLogger.Info("Creating a new Ingress", "Ingress.Namespace", integration.Namespace, "Ingress.Name", nameForIngress())
 			err = r.client.Create(context.TODO(), eiIngress)
 			if err != nil {
@@ -203,9 +226,9 @@ func (r *ReconcileIntegration) Reconcile(request reconcile.Request) (reconcile.R
 			reqLogger.Info("Ingress created successfully")
 
 		} else if err == nil {
-			_, ruleExists := CheckIngressRulesExist(integration, &eiController, ingress)
+			_, ruleExists := CheckIngressRulesExist(integration, &eiConfig, ingress)
 			if !ruleExists {
-				eiIngress := r.updateIngressForIntegration(integration, &eiController, ingress)
+				eiIngress := r.updateIngressForIntegration(integration, &eiConfig, ingress)
 				reqLogger.Info("Updating a new Ingress", "Ingress.Namespace", integration.Namespace, "Ingress.Name", nameForIngress())
 				err = r.client.Update(context.TODO(), eiIngress)
 				if err != nil {

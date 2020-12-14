@@ -19,32 +19,40 @@
 package integration
 
 import (
-	"context"
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/api/autoscaling/v2beta2"
+	"sigs.k8s.io/yaml"
+	"strconv"
 )
 
-// EIController control all deployments of the ei-ingress
-type EIController struct {
+// EIConfig control all deployments of the ei-ingress
+type EIConfig struct {
 	AutoCreateIngress bool
 	SSLRedirect       string
 	TLS               string
 	Host              string
+	EnableAutoScale   bool
+	MinReplicas       int32
+	MaxReplicas       int32
+	HPAMetricSpec     []v2beta2.MetricSpec
 }
 
 // UpdateDefaultConfigs updates the default configs of Host, TLS, and ingress creation
-func (r *ReconcileIntegration) UpdateDefaultConfigs(integration *wso2v1alpha1.Integration) EIController {
-	eic := EIController{
+func (r *ReconcileIntegration) UpdateDefaultConfigs(integration *wso2v1alpha1.Integration) EIConfig {
+	eic := EIConfig {
 		Host:              "wso2",
 		AutoCreateIngress: true,
 		SSLRedirect:       "true",
+		EnableAutoScale:   false,
+		MinReplicas:       1,
+		MaxReplicas:       1,
+		HPAMetricSpec:     nil,
 	}
 
-	configMap := &corev1.ConfigMap{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: nameForConfigMap(), Namespace: integration.Namespace}, configMap)
+	var configMap, err = r.GetConfigMap(integration, nameForConfigMap())
 
 	if err == nil {
+
 		if configMap.Data["host"] != "" {
 			eic.Host = configMap.Data["host"]
 		}
@@ -67,6 +75,33 @@ func (r *ReconcileIntegration) UpdateDefaultConfigs(integration *wso2v1alpha1.In
 
 		if configMap.Data["ingressTLS"] != "" {
 			eic.TLS = configMap.Data["ingressTLS"]
+		}
+
+		if configMap.Data[enableAutoScaleKey] != "" {
+			eic.EnableAutoScale, err = strconv.ParseBool(configMap.Data[enableAutoScaleKey])
+			if err != nil {
+				log.Error(err, "Cannot parse enableAutoScaleKey to a boolean value. Setting false")
+				eic.EnableAutoScale = false
+			}
+		}
+
+		if configMap.Data[minReplicasKey] != "" {
+			minReplicas, _ := strconv.ParseInt(configMap.Data[minReplicasKey],10,32)
+			eic.MinReplicas = int32(minReplicas)
+		}
+
+		if configMap.Data[maxReplicasKey] != "" {
+			maxReplicas, _ := strconv.ParseInt(configMap.Data[maxReplicasKey],10,32)
+			eic.MaxReplicas = int32(maxReplicas)
+		}
+
+		if configMap.Data[hpaMetricsConfigKey] != "" {
+			var hpaMetrics []v2beta2.MetricSpec
+			yamlErr := yaml.Unmarshal([]byte(configMap.Data[hpaMetricsConfigKey]), &hpaMetrics)
+			eic.HPAMetricSpec = hpaMetrics
+			if yamlErr != nil {
+				log.Error(yamlErr, "Error while reading HPAConfig")
+			}
 		}
 	}
 	return eic

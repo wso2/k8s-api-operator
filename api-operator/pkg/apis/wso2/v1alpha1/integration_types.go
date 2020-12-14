@@ -28,10 +28,12 @@ import (
 
 // IntegrationSpec defines the desired state of Integration
 type IntegrationSpec struct {
-	// Size of the integration deployment
-	Replicas int32 `json:"replicas"`
 	// Docker image consist of micro integrator runtime and synapse configs
 	Image string `json:"image"`
+	// Specification related to deployment
+	DeploySpec DeploySpec `json:"deploySpec,omitempty"`
+	// Auto scale spec
+	AutoScale AutoScale `json:"autoScale,omitempty"`
 	// Docker image credentials if the Image is in private registry
 	ImagePullSecret string `json:"imagePullSecret,omitempty"`
 	// InboundPorts traffic serving port of the micro integrator runtime
@@ -40,6 +42,42 @@ type IntegrationSpec struct {
 	Env []corev1.EnvVar `json:"env,omitempty"`
 	// List of environment variable references set for the integration.
 	EnvFrom []corev1.EnvFromSource `json:"envFrom,omitempty"`
+}
+
+// DeploySpec contains properties related to deployment
+type DeploySpec struct {
+	// Initial minimum number of replicas in Integration
+	// Default value "<empty>".
+	// +optional
+	MinReplicas int32 `json:"minReplicas,omitempty"`
+	// Cpu request of containers in the pod
+	// Default value "<empty>".
+	// +optional
+	ReqCpu string `json:"requestCPU,omitempty"`
+	// Memory request of containers in the pod
+	// Default value "<empty>".
+	// +optional
+	ReqMemory string `json:"reqMemory,omitempty"`
+	// CPU limit of containers in the pod
+	// Default value "<empty>".
+	// +optional
+	LimitCpu string `json:"cpuLimit,omitempty"`
+	// Memory limit of containers in the pod
+	// Default value "<empty>".
+	// +optional
+	MemoryLimit string `json:"memoryLimit,omitempty"`
+}
+
+// AutoScale defines the properties related to Auto scaling of pods
+type AutoScale struct {
+	// Defines if auto scaling needs to be enabled
+	// Default value "<empty>".
+	// +optional
+	Enabled string `json:"enabled,omitempty"`
+	// Defines maximum number of replicas of the Integration deployment
+	// Default value "<empty>".
+	// +optional
+	MaxReplicas int32 `json:"maxReplicas,omitempty"`
 }
 
 // IntegrationStatus defines the observed state of Integration
