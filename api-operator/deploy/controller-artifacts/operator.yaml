@@ -32,25 +32,14 @@ spec:
       containers:
         - name: api-operator
           # Replace this with the built image name
-          image: jayanieb/envoy-k8s-api-operator:v2.1.0
+          image: jayanieb/envoy-k8s-api-operator:v2.2.0
           volumeMounts:
-            - mountPath: /home/wso2/security/operator.key
-              subPath: operator.key
-              name: operator-key-vol
-            - mountPath: /home/wso2/security/operator.pem
-              subPath: operator.pem
-              name: operator-pem-vol
+            - mountPath: /home/wso2/security/
+              name: operator-vol
           ports:
             - containerPort: 9445
           command:
-<<<<<<< HEAD
-          - api-operator
-=======
             - api-operator
-#          args:
-#            # Zap log level: "info" or "debug"
-#            - "--zap-level=info"
->>>>>>> d25a63c2... Implementing Rest server in operator side
           imagePullPolicy: Always
           env:
             - name: WATCH_NAMESPACE
@@ -63,22 +52,15 @@ spec:
               value: "api-operator"
             - name: SYSTEM_NAMESPACE
               value: "wso2-system"
-<<<<<<< HEAD
-=======
       volumes:
-        - name: operator-key-vol
+        - name: operator-vol
           secret:
-            secretName: operator-key-secret
+            secretName: operator-secret
             items:
-              - key: operator.key
-                path: operator.key
-        - name: operator-pem-vol
-          secret:
-            secretName: operator-pem-secret
-            items:
-              - key: operator.pem
-                path: operator.pem
-
+              - key: tls.key
+                path: tls.key
+              - key: tls.crt
+                path: tls.crt
 # Expose a service in port 9445 for Rest server to send APIs to adapter
 ---
 apiVersion: v1
@@ -97,4 +79,3 @@ spec:
       targetPort: 9445
       protocol: TCP
       nodePort: 30445
->>>>>>> d25a63c2... Implementing Rest server in operator side

@@ -96,7 +96,7 @@ func configureAPI(api *operations.RestapiAPI) http.Handler {
 func configureTLS(tlsConfig *tls.Config) {
 	// Make all necessary changes to the TLS configuration here.
 
-	tlsConfig.Certificates, _ = getCertificates("/home/wso2/security/operator.pem", "/home/wso2/security/operator.key")
+	tlsConfig.Certificates, _ = getCertificates("/home/wso2/security/tls.crt", "/home/wso2/security/tls.key")
 }
 
 func getCertificates(publicKeyPath, privateKeyPath string) ([]tls.Certificate, error) {
