@@ -25,7 +25,7 @@ import (
 )
 
 // ingressForIntegration returns a ingress object
-func (r *ReconcileIntegration) ingressForIntegration(m *wso2v1alpha1.Integration, eic *EIController) *v1beta1.Ingress {
+func (r *ReconcileIntegration) ingressForIntegration(m *wso2v1alpha1.Integration, eic *EIConfig) *v1beta1.Ingress {
 	ingressPaths := GenerateIngressPaths(m)
 
 	var ingressSpec v1beta1.IngressSpec
@@ -83,7 +83,7 @@ func (r *ReconcileIntegration) ingressForIntegration(m *wso2v1alpha1.Integration
 	return ingress
 }
 
-func (r *ReconcileIntegration) updateIngressForIntegration(m *wso2v1alpha1.Integration, eic *EIController, currentIngress *v1beta1.Ingress) *v1beta1.Ingress {
+func (r *ReconcileIntegration) updateIngressForIntegration(m *wso2v1alpha1.Integration, eic *EIConfig, currentIngress *v1beta1.Ingress) *v1beta1.Ingress {
 	currentRules, _ := CheckIngressRulesExist(m, eic, currentIngress)
 
 	var ingressSpec v1beta1.IngressSpec

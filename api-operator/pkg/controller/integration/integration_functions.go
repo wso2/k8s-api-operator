@@ -19,8 +19,12 @@
 package integration
 
 import (
+    "context"
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
+	corev1 "k8s.io/api/core/v1"
 	v1beta1 "k8s.io/api/extensions/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"reflect"
 	"strconv"
@@ -54,11 +58,11 @@ func nameForIngress() string {
 
 // nameForConfigMap gives the name for the config map
 func nameForConfigMap() string {
-	return "ei-operator-config"
+	return "integration-config"
 }
 
 // CheckIngressRulesExist checks the ingress rules are exist in current ingress
-func CheckIngressRulesExist(m *wso2v1alpha1.Integration, eic *EIController, currentIngress *v1beta1.Ingress) ([]v1beta1.IngressRule, bool) {
+func CheckIngressRulesExist(m *wso2v1alpha1.Integration, eic *EIConfig, currentIngress *v1beta1.Ingress) ([]v1beta1.IngressRule, bool) {
 
 	ingressPaths := GenerateIngressPaths(m)
 
@@ -123,4 +127,29 @@ func GenerateIngressPaths(m *wso2v1alpha1.Integration) []v1beta1.HTTPIngressPath
 	}
 
 	return ingressPaths
+}
+
+// Get configmap by the given name
+func (r *ReconcileIntegration) GetConfigMap(integration *wso2v1alpha1.Integration, configMapName string) (*corev1.ConfigMap, error) {
+	configMap := &corev1.ConfigMap{}
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: configMapName, Namespace: integration.Namespace}, configMap)
+	if err != nil {
+		log.Error(err, "Error getting the ConfigMap " + configMapName)
+	}
+	return configMap, err
+}
+
+//gets the details of the targetEndPoint crd object for owner reference
+func getOwnerDetails(cr *wso2v1alpha1.Integration) []metav1.OwnerReference {
+	setOwner := true
+	return []metav1.OwnerReference{
+		{
+			APIVersion:         cr.APIVersion,
+			Kind:               cr.Kind,
+			Name:               cr.Name,
+			UID:                cr.UID,
+			Controller:         &setOwner,
+			BlockOwnerDeletion: &setOwner,
+		},
+	}
 }
