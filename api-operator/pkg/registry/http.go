@@ -37,7 +37,7 @@ func getHttpRegConfigFunc(repoName string, imgName string, tag string) *Config {
 	httpReg.IsImageExist = func(config *Config, auth utils.RegAuth, imageRepository string, imageName string, tag string) (b bool, err error) {
 		auth.RegistryUrl = strings.Replace(auth.RegistryUrl, "https://", "http://", 1)
 		logger.Info("Checking for image in HTTP registry", "Registry URL", auth.RegistryUrl)
-		return utils.IsImageExists(auth, "", imageName, tag)
+		return utils.IsImageExists(auth, getPathWithoutReg(repoName), imageName, tag)
 	}
 
 	return httpReg

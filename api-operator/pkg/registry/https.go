@@ -18,6 +18,7 @@ package registry
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/registry/utils"
 )
@@ -30,9 +31,15 @@ func getHttpsRegConfigFunc(repoName string, imgName string, tag string) *Config 
 	httpsReg.ImagePath = fmt.Sprintf("%s/%s:%s", repoName, imgName, tag)
 	httpsReg.IsImageExist = func(config *Config, auth utils.RegAuth, imageRepository string, imageName string, tag string) (b bool, err error) {
 		logger.Info("Checking for image in HTTPS registry", "Registry URL", auth.RegistryUrl)
-		return utils.IsImageExists(auth, "", imageName, tag)
+		return utils.IsImageExists(auth, getPathWithoutReg(repoName), imageName, tag)
 	}
 	return httpsReg
+}
+
+// getPathWithoutReg remove registry host name if it exists in the image path
+func getPathWithoutReg(image string) string {
+	splits := strings.Split(image, "/")
+	return strings.Join(splits[1:], "/")
 }
 
 func init() {
