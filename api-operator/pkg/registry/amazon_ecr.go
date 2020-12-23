@@ -18,12 +18,13 @@ package registry
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ecr"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/registry/utils"
 	corev1 "k8s.io/api/core/v1"
-	"strings"
 )
 
 const AmazonECR Type = "AMAZON_ECR"
@@ -32,85 +33,83 @@ const AmazonCredHelperMountPath = "/kaniko/.docker/"
 const AwsCredFileVolume = "aws-credentials"
 const AwsCredFileMountPath = "/root/.aws/"
 
-// Amazon ECR Configs
-var amazonEcr = &Config{
-	RegistryType: AmazonECR,
-	VolumeMounts: []corev1.VolumeMount{
-		{
-			Name:      AmazonCredHelperVolume,
-			MountPath: AmazonCredHelperMountPath,
-			ReadOnly:  true,
+func getAmazonEcrConfigFunc(repoName string, imgName string, tag string) *Config {
+	// Amazon ECR Configs
+	return &Config{
+		RegistryType: AmazonECR,
+		VolumeMounts: []corev1.VolumeMount{
+			{
+				Name:      AmazonCredHelperVolume,
+				MountPath: AmazonCredHelperMountPath,
+				ReadOnly:  true,
+			},
+			{
+				Name:      AwsCredFileVolume,
+				MountPath: AwsCredFileMountPath,
+				ReadOnly:  true,
+			},
 		},
-		{
-			Name:      AwsCredFileVolume,
-			MountPath: AwsCredFileMountPath,
-			ReadOnly:  true,
-		},
-	},
-	Volumes: []corev1.Volume{
-		{
-			Name: AmazonCredHelperVolume,
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: utils.AmazonCredHelperConfMap,
+		Volumes: []corev1.Volume{
+			{
+				Name: AmazonCredHelperVolume,
+				VolumeSource: corev1.VolumeSource{
+					ConfigMap: &corev1.ConfigMapVolumeSource{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: utils.AmazonCredHelperConfMap,
+						},
+					},
+				},
+			},
+			{
+				Name: AwsCredFileVolume,
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						SecretName: utils.AwsCredentialsSecret,
 					},
 				},
 			},
 		},
-		{
-			Name: AwsCredFileVolume,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: utils.AwsCredentialsSecret,
-				},
-			},
-		},
-	},
-	IsImageExist: func(config *Config, auth utils.RegAuth, image string, tag string) (bool, error) {
-		repoNameSplits := strings.Split(dockerImage.RepositoryName, ".")
-		awsRegistryId := repoNameSplits[0]
-		awsRegion := repoNameSplits[3]
-		awsRepoName := strings.Split(dockerImage.RepositoryName, "/")[1]
+		IsImageExist: func(config *Config, auth utils.RegAuth, imageRepository string, imageName string, tag string) (bool, error) {
+			repoNameSplits := strings.Split(imageRepository, ".")
+			awsRegistryId := repoNameSplits[0]
+			awsRegion := repoNameSplits[3]
+			awsRepoName := strings.Split(imageRepository, "/")[1]
 
-		sess, err := session.NewSession(&aws.Config{
-			Region: aws.String(awsRegion)},
-		)
-		if err != nil {
-			logger.Error(err, "Error creating aws session")
-			return false, err
-		}
-
-		svc := ecr.New(sess)
-		images, err := svc.ListImages(&ecr.ListImagesInput{
-			RegistryId:     &awsRegistryId,
-			RepositoryName: &awsRepoName,
-		})
-		if err != nil {
-			logger.Error(err, "Error getting list of images in AWS ECR repository", "RegistryId", awsRegistryId, "RepositoryName", awsRepoName)
-			return false, err
-		}
-
-		for _, id := range images.ImageIds {
-			// found the image with tag
-			// untagged images 'id.ImageTag' returns nil; check nil before accessing the pointer
-			if id.ImageTag != nil && *id.ImageTag == fmt.Sprintf("%s-%s", dockerImage.Name, tag) {
-				logger.Info("Found the image tag from the AWS ECR repository",
-					"RegistryId", awsRegistryId, "RepositoryName", awsRepoName, "image", dockerImage.Name, "tag", tag)
-				return true, nil
+			sess, err := session.NewSession(&aws.Config{
+				Region: aws.String(awsRegion)},
+			)
+			if err != nil {
+				logger.Error(err, "Error creating aws session")
+				return false, err
 			}
-		}
 
-		// not found the image with tag
-		return false, nil
-	},
-}
+			svc := ecr.New(sess)
+			images, err := svc.ListImages(&ecr.ListImagesInput{
+				RegistryId:     &awsRegistryId,
+				RepositoryName: &awsRepoName,
+			})
+			if err != nil {
+				logger.Error(err, "Error getting list of images in AWS ECR repository", "RegistryId", awsRegistryId, "RepositoryName", awsRepoName)
+				return false, err
+			}
 
-func getAmazonEcrConfigFunc(repoName string, imgName string, tag string) *Config {
-	// repository = <aws_account_id.dkr.ecr.region.amazonaws.com>/repository"
-	// image path = <aws_account_id.dkr.ecr.region.amazonaws.com>/repository:imageName-v1"
-	amazonEcr.ImagePath = fmt.Sprintf("%s:%s-%s", repoName, imgName, tag)
-	return amazonEcr
+			for _, id := range images.ImageIds {
+				// found the image with tag
+				// untagged images 'id.ImageTag' returns nil; check nil before accessing the pointer
+				if id.ImageTag != nil && *id.ImageTag == fmt.Sprintf("%s-%s", imageName, tag) {
+					logger.Info("Found the image tag from the AWS ECR repository",
+						"RegistryId", awsRegistryId, "RepositoryName", awsRepoName, "image", imageName, "tag", tag)
+					return true, nil
+				}
+			}
+
+			// not found the image with tag
+			return false, nil
+		},
+		// repository = <aws_account_id.dkr.ecr.region.amazonaws.com>/repository"
+		// image path = <aws_account_id.dkr.ecr.region.amazonaws.com>/repository:imageName-v1"
+		ImagePath: fmt.Sprintf("%s:%s-%s", repoName, imgName, tag),
+	}
 }
 
 func init() {

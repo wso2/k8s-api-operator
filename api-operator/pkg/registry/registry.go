@@ -18,8 +18,10 @@ package registry
 
 import (
 	"encoding/json"
-	"fmt"
+	"strings"
+
 	operatorConfig "github.com/wso2/k8s-api-operator/api-operator/pkg/config"
+
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/maps"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/registry/utils"
@@ -31,7 +33,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
-	"strings"
 )
 
 var logger = log.Log.WithName("registry")
@@ -55,25 +56,22 @@ type Config struct {
 	Env              []corev1.EnvVar               // Environment variables to be set in the pod that runs Kaniko Job
 	Args             []string                      // Args to be passed to the Kaniko Job
 	ImagePullSecrets []corev1.LocalObjectReference // Secrets for the pod which runs the final micro-gateway setup
-	IsImageExist     func(config *Config, auth utils.RegAuth, image string,
+	IsImageExist     func(config *Config, auth utils.RegAuth, imageRepository string, imageName string,
 		tag string) (bool, error) // Function to check the already existence of the image
 }
 
 // registry details
-var dockerImage Image
 var registryConfigs = map[Type]func(repoName string, imgName string, tag string) *Config{}
 
 // SetRegistry sets the registry type, repository and image
 func SetRegistry(client *client.Client, namespace string, img Image) error {
 	logger.Info("Setting registry type", "image", img)
-	dockerImage = img
-
-	return copyConfigVolumes(client, namespace)
+	return copyConfigVolumes(client, namespace, img)
 }
 
-// GetConfig returns the registry config
-func GetConfig() *Config {
-	return registryConfigs[dockerImage.RegistryType](dockerImage.RepositoryName, dockerImage.Name, dockerImage.Tag)
+// GetImageConfig returns the registry config for a specific image
+func GetImageConfig(image Image) *Config {
+	return registryConfigs[image.RegistryType](image.RepositoryName, image.Name, image.Tag)
 }
 
 // IsRegistryType validates the given regType is a valid registry type
@@ -83,7 +81,7 @@ func IsRegistryType(regType string) bool {
 }
 
 // IsImageExist checks if the image exists in the given registry using the secret in the user-namespace
-func IsImageExist(client *client.Client) (bool, error) {
+func IsImageExist(client *client.Client, image Image) (bool, error) {
 	// Auth represents the pull secret of registries
 	// local struct since not used in other places
 	type Auth struct {
@@ -94,7 +92,7 @@ func IsImageExist(client *client.Client) (bool, error) {
 		} `json:"auths"`
 	}
 
-	config := GetConfig()
+	config := GetImageConfig(image)
 	// checks if the pull secret is available
 	regPullSecret := k8s.NewSecret()
 	err := k8s.Get(client, types.NamespacedName{Name: config.ImagePullSecrets[0].Name,
@@ -128,24 +126,23 @@ func IsImageExist(client *client.Client) (bool, error) {
 	if !strings.HasPrefix(registryUrl, "https://") {
 		registryUrl = "https://" + registryUrl
 	}
-	image := fmt.Sprintf("%s/%s", dockerImage.RepositoryName, dockerImage.Name)
 	regAuth := utils.RegAuth{RegistryUrl: registryUrl, Username: username, Password: password}
 
 	// check registry specific image existence functionality is defined
 	// if not use default function
 	imageCheckFunc := config.IsImageExist
 	if imageCheckFunc == nil {
-		return utils.IsImageExists(regAuth, image, dockerImage.Tag)
+		return utils.IsImageExists(regAuth, image.RepositoryName, image.Name, image.Tag)
 	}
 	// otherwise defined function
-	return imageCheckFunc(config, regAuth, image, dockerImage.Tag)
+	return imageCheckFunc(config, regAuth, image.RepositoryName, image.Name, image.Tag)
 }
 
 // copyConfigVolumes copy the configured secrets and config maps to user's namespace
 // from wso2's system namespace
-func copyConfigVolumes(client *client.Client, namespace string) error {
+func copyConfigVolumes(client *client.Client, namespace string, image Image) error {
 	logger.Info("Replacing configured secrets and config maps for the registry")
-	config := GetConfig()
+	config := GetImageConfig(image)
 	// registry volumes map: name -> runtime object
 	var regVolumes = make(map[string]runtime.Object, len(config.Volumes)+len(config.ImagePullSecrets))
 

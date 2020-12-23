@@ -17,8 +17,10 @@
 package utils
 
 import (
-	registryclient "github.com/heroku/docker-registry-client/registry"
+	"fmt"
 	"net/url"
+
+	registryclient "github.com/heroku/docker-registry-client/registry"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
@@ -30,7 +32,8 @@ type RegAuth struct {
 	Password    string
 }
 
-func IsImageExists(auth RegAuth, image string, tag string) (bool, error) {
+func IsImageExists(auth RegAuth, imageRepository string, imageName string, tag string) (bool, error) {
+	image := fmt.Sprintf("%s/%s", imageRepository, imageName)
 	hub, err := registryclient.New(auth.RegistryUrl, auth.Username, auth.Password)
 	if err != nil {
 		logger.Error(err, "Error connecting to the docker registry", "registry-url", auth.RegistryUrl)
