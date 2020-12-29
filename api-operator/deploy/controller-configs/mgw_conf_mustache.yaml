@@ -399,3 +399,13 @@ data:
     [b7a.observability.metrics.prometheus]
       port=9797
     {{ end }}
+
+    {{ if .TracingEnabled }}
+    [b7a.observability.tracing]
+      # Flag to enable Tracing
+      enabled = true
+      name = "jaeger"
+    [b7a.observability.tracing.jaeger.reporter]
+      port={{$.TracingJaegerPort}}
+      hostname="{{$.TracingJaegerHost}}"
+    {{ end }}

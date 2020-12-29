@@ -93,6 +93,9 @@ const (
 	jwtTokenCacheExpiryTimeConst        = "jwtTokenCacheExpiryTime"
 	jwtTokenCacheCapacityConst          = "jwtTokenCacheCapacity"
 	jwtTokenCacheEvictionFactorConst    = "jwtTokenCacheEvictionFactor"
+	tracingEnabledConst                 = "tracingEnabled"
+	tracingJaegerPortConst              = "tracingJaegerPort"
+	tracingJaegerHostConst              = "tracingJaegerHost"
 )
 
 // Configuration represents configurations for MGW
@@ -166,6 +169,11 @@ type Configuration struct {
 
 	// enable observability of MGW
 	ObservabilityEnabled bool
+
+	// enable Tracing with Jaeger
+	TracingEnabled    bool
+	TracingJaegerPort int32
+	TracingJaegerHost string
 
 	// JWT Header Configs
 	JwtHeader string
@@ -290,6 +298,9 @@ var Configs = &Configuration{
 
 	// enable observability of MGW
 	ObservabilityEnabled: false,
+
+	//enable tracing of MGW with Jeager
+	TracingEnabled: false,
 
 	// JWT Header Configs
 	JwtHeader: "X-JWT-Assertion",
@@ -436,6 +447,16 @@ func SetApimConfigs(client *client.Client) error {
 		Configs.JwtTokenCacheEvictionFactor = jwtTokenCacheEvictionFactor
 	}
 
+	Configs.TracingEnabled = strings.EqualFold(apimConfig.Data[tracingEnabledConst], "true")
+	if Configs.TracingEnabled {
+		jaegerPort, err := strconv.Atoi(apimConfig.Data[tracingJaegerPortConst])
+		if err != nil {
+			logConf.Error(err, "Provided jaeger port is not valid.")
+		} else {
+			Configs.TracingJaegerPort = int32(jaegerPort)
+		}
+		Configs.TracingJaegerHost = apimConfig.Data[tracingJaegerHostConst]
+	}
 	return nil
 }
 
