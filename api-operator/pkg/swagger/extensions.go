@@ -20,14 +20,14 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/getkin/kin-openapi/openapi3"
-	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
+	wso2v1alpha2 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
 var logExt = log.Log.WithName("swagger.extensions")
 
 const (
-	EndpointExtension 			= "x-wso2-endpoints"
+	EndpointExtension           = "x-wso2-endpoints"
 	ProductionEndpointExtension = "x-wso2-production-endpoints"
 	ApiBasePathExtension    	= "x-wso2-basePath"
 	DeploymentModeExtension 	= "x-wso2-mode"
@@ -57,7 +57,7 @@ func ApiBasePath(swagger *openapi3.Swagger) string {
 	return apiBasePath
 }
 
-func EpDeployMode(api *wso2v1alpha1.API, swagger *openapi3.Swagger) (string, error) {
+func EpDeployMode(api *wso2v1alpha2.API, swagger *openapi3.Swagger) (string, error) {
 	var epDeployMode string
 	numOfSwaggers := len(api.Spec.Definition.SwaggerConfigmapNames)
 

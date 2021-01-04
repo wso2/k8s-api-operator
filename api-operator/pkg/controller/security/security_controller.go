@@ -17,7 +17,7 @@ package security
 
 import (
 	"context"
-	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
+	wso2v1alpha2 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -60,7 +60,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	// Watch for changes to primary resource Security
-	err = c.Watch(&source.Kind{Type: &wso2v1alpha1.Security{}}, &handler.EnqueueRequestForObject{})
+	err = c.Watch(&source.Kind{Type: &wso2v1alpha2.Security{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
@@ -69,7 +69,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Watch for changes to secondary resource Pods and requeue the owner Security
 	err = c.Watch(&source.Kind{Type: &corev1.Pod{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
-		OwnerType:    &wso2v1alpha1.Security{},
+		OwnerType:    &wso2v1alpha2.Security{},
 	})
 	if err != nil {
 		return err
@@ -100,7 +100,7 @@ func (r *ReconcileSecurity) Reconcile(request reconcile.Request) (reconcile.Resu
 	reqLogger.Info("Reconciling Security")
 
 	// Fetch the Security instance
-	instance := &wso2v1alpha1.Security{}
+	instance := &wso2v1alpha2.Security{}
 	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {

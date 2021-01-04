@@ -32,7 +32,7 @@ import (
 	"strings"
 
 	v1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/serving/v1alpha1"
-	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
+	wso2v1alpha2 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -76,7 +76,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	// Watch for changes to primary resource TargetEndpoint
-	err = c.Watch(&source.Kind{Type: &wso2v1alpha1.TargetEndpoint{}}, &handler.EnqueueRequestForObject{})
+	err = c.Watch(&source.Kind{Type: &wso2v1alpha2.TargetEndpoint{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
@@ -85,7 +85,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Watch for changes to secondary resource Pods and requeue the owner TargetEndpoint
 	err = c.Watch(&source.Kind{Type: &corev1.Pod{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
-		OwnerType:    &wso2v1alpha1.TargetEndpoint{},
+		OwnerType:    &wso2v1alpha2.TargetEndpoint{},
 	})
 	if err != nil {
 		return err
@@ -116,7 +116,7 @@ func (r *ReconcileTargetEndpoint) Reconcile(request reconcile.Request) (reconcil
 	reqLogger.Info("Reconciling TargetEndpoint")
 
 	// Fetch the Endpoint instance
-	instance := &wso2v1alpha1.TargetEndpoint{}
+	instance := &wso2v1alpha2.TargetEndpoint{}
 	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -224,7 +224,7 @@ func (r *ReconcileTargetEndpoint) Reconcile(request reconcile.Request) (reconcil
 }
 
 // Create newDeploymentForCR method to create a deployment.
-func (r *ReconcileTargetEndpoint) newDeploymentForCR(m *wso2v1alpha1.TargetEndpoint, resourceReqCPU string, resourceReqMemory string,
+func (r *ReconcileTargetEndpoint) newDeploymentForCR(m *wso2v1alpha2.TargetEndpoint, resourceReqCPU string, resourceReqMemory string,
 	resourceLimitCPU string, resourceLimitMemory string, minReplicas int32) *appsv1.Deployment {
 
 	replicas := int32(minReplicas)
@@ -287,7 +287,7 @@ func (r *ReconcileTargetEndpoint) newDeploymentForCR(m *wso2v1alpha1.TargetEndpo
 }
 
 // Create newKnativeDeploymentForCR method to create a deployment.
-func (r *ReconcileTargetEndpoint) newKnativeDeploymentForCR(m *wso2v1alpha1.TargetEndpoint) *v1.Service {
+func (r *ReconcileTargetEndpoint) newKnativeDeploymentForCR(m *wso2v1alpha2.TargetEndpoint) *v1.Service {
 	// set container ports
 	containerPorts := make([]corev1.ContainerPort, 0, len(m.Spec.Ports))
 	for _, port := range m.Spec.Ports {
@@ -336,7 +336,7 @@ func (r *ReconcileTargetEndpoint) newKnativeDeploymentForCR(m *wso2v1alpha1.Targ
 	return ser
 }
 
-func (r *ReconcileTargetEndpoint) reconcileService(m *wso2v1alpha1.TargetEndpoint) error {
+func (r *ReconcileTargetEndpoint) reconcileService(m *wso2v1alpha2.TargetEndpoint) error {
 	newService := r.newServiceForCR(m)
 
 	err := r.client.Create(context.TODO(), newService)
@@ -364,7 +364,7 @@ func (r *ReconcileTargetEndpoint) reconcileService(m *wso2v1alpha1.TargetEndpoin
 	return r.client.Update(context.TODO(), currentService)
 }
 
-func (r *ReconcileTargetEndpoint) reconcileDeployment(m *wso2v1alpha1.TargetEndpoint, resourceReqCPU string, resourceReqMemory string,
+func (r *ReconcileTargetEndpoint) reconcileDeployment(m *wso2v1alpha2.TargetEndpoint, resourceReqCPU string, resourceReqMemory string,
 	resourceLimitCPU string, resourceLimitMemory string, minReplicas int32) error {
 
 	found := &appsv1.Deployment{}
@@ -387,7 +387,7 @@ func (r *ReconcileTargetEndpoint) reconcileDeployment(m *wso2v1alpha1.TargetEndp
 	return nil
 }
 
-func (r *ReconcileTargetEndpoint) reconcileKnativeDeployment(m *wso2v1alpha1.TargetEndpoint) error {
+func (r *ReconcileTargetEndpoint) reconcileKnativeDeployment(m *wso2v1alpha2.TargetEndpoint) error {
 
 	found := &v1.Service{}
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: m.Name, Namespace: m.Namespace}, found)
@@ -410,7 +410,7 @@ func (r *ReconcileTargetEndpoint) reconcileKnativeDeployment(m *wso2v1alpha1.Tar
 }
 
 // NewService assembles the ClusterIP service for the Nginx
-func (r *ReconcileTargetEndpoint) newServiceForCR(m *wso2v1alpha1.TargetEndpoint) *corev1.Service {
+func (r *ReconcileTargetEndpoint) newServiceForCR(m *wso2v1alpha2.TargetEndpoint) *corev1.Service {
 	// set service ports
 	servicePorts := make([]corev1.ServicePort, 0, len(m.Spec.Ports))
 	for _, port := range m.Spec.Ports {
@@ -464,7 +464,7 @@ func (r *ReconcileTargetEndpoint) newServiceForCR(m *wso2v1alpha1.TargetEndpoint
 }
 
 // createHPA checks whether the HPA version is v2beta1 or v2beta2
-func createHPA(client *client.Client, targetEp *wso2v1alpha1.TargetEndpoint, dep *appsv1.Deployment, minReplicas int32,
+func createHPA(client *client.Client, targetEp *wso2v1alpha2.TargetEndpoint, dep *appsv1.Deployment, minReplicas int32,
 	owner []metav1.OwnerReference) error {
 	// get global hpa configs, return error if not found (required config map)
 	hpaConfMap := k8s.NewConfMap()
@@ -492,7 +492,7 @@ func createHPA(client *client.Client, targetEp *wso2v1alpha1.TargetEndpoint, dep
 }
 
 // createHPA creates (or update) HPA for the Target Endpoint with HPA version v2beta1
-func createHPAv2beta1(client *client.Client, targetEp *wso2v1alpha1.TargetEndpoint, dep *appsv1.Deployment, minReplicas int32,
+func createHPAv2beta1(client *client.Client, targetEp *wso2v1alpha2.TargetEndpoint, dep *appsv1.Deployment, minReplicas int32,
 	owner []metav1.OwnerReference) (*v2beta1.HorizontalPodAutoscaler, error) {
 	// target resource
 	targetResource := v2beta1.CrossVersionObjectReference{
@@ -549,7 +549,7 @@ func createHPAv2beta1(client *client.Client, targetEp *wso2v1alpha1.TargetEndpoi
 }
 
 // createHPA creates (or update) HPA for the Target Endpoint with HPA version v2beta1
-func createHPAv2beta2(client *client.Client, targetEp *wso2v1alpha1.TargetEndpoint, dep *appsv1.Deployment, minReplicas int32,
+func createHPAv2beta2(client *client.Client, targetEp *wso2v1alpha2.TargetEndpoint, dep *appsv1.Deployment, minReplicas int32,
 	owner []metav1.OwnerReference) (*v2beta2.HorizontalPodAutoscaler, error) {
 	// target resource
 	targetResource := v2beta2.CrossVersionObjectReference{
@@ -631,7 +631,7 @@ func getConfigmap(r *ReconcileTargetEndpoint, mapName string, ns string) (*corev
 }
 
 //gets the details of the targetEndPoint crd object for owner reference
-func getOwnerDetails(cr *wso2v1alpha1.TargetEndpoint) []metav1.OwnerReference {
+func getOwnerDetails(cr *wso2v1alpha2.TargetEndpoint) []metav1.OwnerReference {
 	setOwner := true
 	return []metav1.OwnerReference{
 		{

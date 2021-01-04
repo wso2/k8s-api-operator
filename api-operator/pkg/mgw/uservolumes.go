@@ -20,7 +20,7 @@ import (
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 	"strings"
 
-	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
+	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"

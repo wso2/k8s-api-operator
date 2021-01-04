@@ -33,6 +33,7 @@ spec:
     plural: securities
     singular: security
   scope: Namespaced
+  subresources: {}
   validation:
     openAPIV3Schema:
       description: Security is the Schema for the securities API
@@ -80,14 +81,15 @@ spec:
                 https://book.kubebuilder.io/beyond_basics/generating_crd.html'
               type: string
           required:
+          - securityConfig
           - type
           type: object
         status:
           description: SecurityStatus defines the observed state of Security
           type: object
       type: object
-  version: v1alpha1
+  version: v1alpha2
   versions:
-  - name: v1alpha1
+  - name: v1alpha2
     served: true
     storage: true

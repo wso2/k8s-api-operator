@@ -27,7 +27,7 @@ import (
 	"strconv"
 	"strings"
 
-	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
+	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/maps"
 	corev1 "k8s.io/api/core/v1"

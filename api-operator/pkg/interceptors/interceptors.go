@@ -18,7 +18,7 @@ package interceptors
 
 import (
 	"fmt"
-	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
+	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/kaniko"
 	"k8s.io/apimachinery/pkg/types"
