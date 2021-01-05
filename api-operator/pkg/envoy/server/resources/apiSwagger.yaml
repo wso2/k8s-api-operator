@@ -1,0 +1,101 @@
+swagger: "2.0"
+info:
+  description: "This document specifies a **RESTful API** for allowing you to access internal data
+  .\nPlease see [full swagger definition](https://raw.githubusercontent.com/wso2/carbon-apimgt/master/components/apimgt/org.wso2.carbon.apimgt.internal.service/src/main/resources/api.yaml)\
+        \ of the API which is written using [swagger 2.0](http://swagger.io/) specification.\n"
+  version: "1.0.0"
+  title: "Internal Utility API"
+  contact:
+    name: "WSO2"
+    url: "http://wso2.com/products/api-manager/"
+    email: "architecture@wso2.com"
+  license:
+    name: "Apache 2.0"
+    url: "http://www.apache.org/licenses/LICENSE-2.0.html"
+host: "apis.wso2.com"
+basePath: "/operator/2.0"
+schemes:
+  - "https"
+consumes:
+  - "application/json"
+produces:
+  - "application/zip"
+paths:
+  /apis:
+    get:
+      tags:
+        - "APIs (All)"
+      summary: "Get all apis in a zip file"
+      description: "This operation can be used to get all the APIs deployed in Kubernetes.\n"
+      produces:
+        - "application/zip"
+      responses:
+        "200":
+          description: "Sent.\nAPIs sent Successfully.\n"
+          schema:
+            type: "string"
+            format: "binary"
+        "403":
+          description: "Forbidden\nNot Authorized to send.\n"
+          schema:
+            $ref: "#/definitions/Error"
+        "404":
+          description: "Not Found.\nRequested APIs to send not found.\n"
+          schema:
+            $ref: "#/definitions/Error"
+        "500":
+          description: "Internal Server Error.\nError in sending APIs.\n"
+          schema:
+            $ref: "#/definitions/Error"
+      security:
+        - BasicAuth: []
+securityDefinitions:
+  BasicAuth:     # <-- arbitrary name for the security scheme
+    type: "basic"
+definitions:
+  Error:
+    required:
+      - "code"
+      - "message"
+    properties:
+      code:
+        type: "integer"
+        format: "int64"
+        description: "Error code"
+      message:
+        type: "string"
+        description: "Error message."
+      description:
+        type: "string"
+        description: "A detail description about the error message.\n"
+      moreInfo:
+        type: "string"
+        description: "Preferably an url with more details about the error.\n"
+      error:
+        type: "array"
+        description: "If there are more than one error list them out.\nFor example,\
+              \ list out validation errors by each field.\n"
+        items:
+          $ref: "#/definitions/ErrorListItem"
+    title: "Error object returned with 4XX HTTP status"
+  ErrorListItem:
+    required:
+      - "code"
+      - "message"
+    properties:
+      code:
+        type: "string"
+        description: "Error code"
+      message:
+        type: "string"
+        description: "Description about individual errors occurred\n"
+    title: "Description of individual errors that may have occurred during a request."
+  Principal:
+    type: object
+    properties:
+      username:
+        type: string
+      tenant:
+        type: string
+      token:
+        type: string

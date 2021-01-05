@@ -17,6 +17,7 @@
 package envoy
 
 import (
+	"archive/zip"
 	"crypto/x509"
 	"github.com/ghodss/yaml"
 	"github.com/go-openapi/loads"
@@ -26,6 +27,7 @@ import (
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/maps"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/utils"
 	yaml2 "gopkg.in/yaml.v2"
+	"io"
 	"io/ioutil"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -75,7 +77,8 @@ func getTempFileForSwagger(swaggerData string, swaggerFileName string) (*os.File
 	} else {
 		swaggerFile, _ = ioutil.TempFile("", "api-swagger*.json")
 	}
-
+	if err := os.Chmod(swaggerFile.Name(), 0777); err != nil {
+		return nil, err }
 	if _, err := swaggerFile.Write([]byte(swaggerData)); err != nil {
 		logDeploy.Error(err, "Error while writing to temp swagger file")
 		return nil, err
@@ -117,6 +120,8 @@ func getZipData (config *corev1.ConfigMap) (string, error){
 	if err != nil {
 		return "", err
 	}
+	if err := os.Chmod(file.Name(), 0777); err != nil {
+		return "", err }
 	zipFileName, errZip := maps.OneKey(config.BinaryData)
 	if errZip != nil {
 		return "", errZip
@@ -185,4 +190,61 @@ func getSwaggerData (config *corev1.ConfigMap) (string, func(), error){
 		return "", nil, err
 	}
 	return swaggerZipFile, cleanupFunc, nil
+}
+
+// ZipFiles compresses one or many files into a single zip archive file.
+// Param 1: filename is the output zip file's name.
+// Param 2: files is a list of files to add to the zip.
+func ZipFiles(filename string, files []string) error {
+	newZipFile, err1 := os.Create(filename)
+	if err1 != nil {
+		return err1
+	}
+	if err := os.Chmod(newZipFile.Name(), 0777); err != nil {
+		return err }
+	defer newZipFile.Close()
+
+	zipWriter := zip.NewWriter(newZipFile)
+	defer zipWriter.Close()
+
+	// Add files to zip
+	for _, file := range files {
+		if err := AddFileToZip(zipWriter, file); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func AddFileToZip(zipWriter *zip.Writer, filename string) error {
+	fileToZip, err := os.Open(filename)
+	if err != nil {
+		return err
+	}
+	defer fileToZip.Close()
+
+	// Get the file information
+	info, err := fileToZip.Stat()
+	if err != nil {
+		return err
+	}
+
+	header, err := zip.FileInfoHeader(info)
+	if err != nil {
+		return err
+	}
+
+	// Using FileInfoHeader() above only uses the basename of the file. If we want
+	// to preserve the folder structure we can overwrite this with the full path.
+	header.Name = filename
+
+	// Change to deflate to gain better compression
+	header.Method = zip.Deflate
+
+	writer, err := zipWriter.CreateHeader(header)
+	if err != nil {
+		return err
+	}
+	_, err = io.Copy(writer, fileToZip)
+	return err
 }

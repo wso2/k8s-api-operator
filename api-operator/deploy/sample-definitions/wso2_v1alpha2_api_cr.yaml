@@ -17,14 +17,6 @@
 apiVersion: wso2.com/v1alpha2
 kind: API
 metadata:
-  name: test-api-publisher
-  namespace: wso2-system
+  name: petstore-api
 spec:
-  definition:
-    interceptors: {}
-    swaggerConfigmapNames:
-      - online-store-1-swagger
-    type: swagger
-  mode: privateJet
-  override: true
-  replicas: 1
+  swaggerConfigMapName: petstore-cm
