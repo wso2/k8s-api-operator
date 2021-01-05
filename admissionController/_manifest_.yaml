@@ -75,7 +75,7 @@ webhooks:
     rules:
       - operations: ["CREATE","UPDATE"]
         apiGroups: ["cache.example.com"]
-        apiVersions: ["v1alpha1"]
+        apiVersions: ["v1alpha2"]
         resources:
           - securities
     failurePolicy: Ignore

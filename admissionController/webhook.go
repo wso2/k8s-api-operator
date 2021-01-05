@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	cachev1alpha1 "github.com/Shehanir/k8s-securityOperator/security-operator/pkg/apis/cache/v1alpha1"
+	cachev1alpha1 "github.com/Shehanir/k8s-securityOperator/security-operator/pkg/apis/cache/v1alpha2"
 	"net/http"
 
 	"github.com/golang/glog"

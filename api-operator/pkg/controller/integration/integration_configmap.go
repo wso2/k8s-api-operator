@@ -19,7 +19,7 @@
 package integration
 
 import (
-	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
+	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
 	"k8s.io/api/autoscaling/v2beta2"
 	"sigs.k8s.io/yaml"
 	"strconv"
