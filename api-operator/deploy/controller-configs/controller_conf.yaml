@@ -102,6 +102,10 @@ data:
   enableResponseValidation: "false"
   # Enable configurations for retrieving API and subscription data from API Manager.
   enabledEventhub: "false"
+  #Enable Jaeger tracing
+  tracingEnabled: "false"
+  tracingJaegerPort: ""
+  tracingJaegerHost: ""
   #APIKey issuer configurations
   #APIKey STS token configurations
   enabledAPIKeyIssuer: "true"
