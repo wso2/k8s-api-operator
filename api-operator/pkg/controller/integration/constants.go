@@ -19,6 +19,30 @@
 package integration
 
 const (
+
+	integrationControllerName = "integration-controller"
+	integrationConfigMapName  = "integration-config"
+	integrationIngressConfigMapName = "integration-ingress-config"
+	eiContainerName           = "micro-integrator"
+	passthroPort              = 8290
+
+	deploymentNamePostfix = "-deployment"
+	serviceNamePostfix = "-service"
+	inboundServicePostfix = "-inbound"
+	eiIngressName = "ei-operator-ingress"
+
+	ingressHostNameKey = "ingressHostName"
+	autoIngressCreationKey = "autoIngressCreation"
+	ingressProperties    = "ingress.properties"
+	sslRedirectKey = "sslRedirect"
+	tlsSecretNameKey = "tlsSecretName"
+
+
+	requestCPUKey = "requestCPU"
+	reqMemoryKey = "reqMemory"
+	cpuLimitKey = "cpuLimit"
+	memoryLimitKey = "memoryLimit"
+
 	hpaMetricsConfigKey = "hpaMetrics"
 	enableAutoScaleKey = "enableAutoScale"
 	minReplicasKey = "minReplicas"

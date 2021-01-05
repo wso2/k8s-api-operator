@@ -38,37 +38,32 @@ func labelsForIntegration(name string) map[string]string {
 
 // nameForDeployment gives the name for the deployment
 func nameForDeployment(m *wso2v1alpha1.Integration) string {
-	return m.Name + "-deployment"
+	return m.Name + deploymentNamePostfix
 }
 
 // nameForService gives the name for the service
 func nameForService(m *wso2v1alpha1.Integration) string {
-	return m.Name + "-service"
+	return m.Name + serviceNamePostfix
 }
 
 // nameForInboundService gives the name for the inbound service
 func nameForInboundService(m *wso2v1alpha1.Integration) string {
-	return m.Name + "-inbound"
+	return m.Name + inboundServicePostfix
 }
 
 // nameForIngress gives the name for the ingress
 func nameForIngress() string {
-	return "ei-operator-ingress"
-}
-
-// nameForConfigMap gives the name for the config map
-func nameForConfigMap() string {
-	return "integration-config"
+	return eiIngressName
 }
 
 // CheckIngressRulesExist checks the ingress rules are exist in current ingress
-func CheckIngressRulesExist(m *wso2v1alpha1.Integration, eic *EIConfig, currentIngress *v1beta1.Ingress) ([]v1beta1.IngressRule, bool) {
-
-	ingressPaths := GenerateIngressPaths(m)
+func CheckIngressRulesExist(config *EIConfigNew, currentIngress *v1beta1.Ingress) ([]v1beta1.IngressRule, bool) {
+	var integration = config.integration
+	ingressPaths := GenerateIngressPaths(&integration)
 
 	currentRules := currentIngress.Spec.Rules
 	newRule := v1beta1.IngressRule{
-		Host: eic.Host,
+		Host: config.ingressConfigMap.Data[ingressHostNameKey],
 		IngressRuleValue: v1beta1.IngressRuleValue{
 			HTTP: &v1beta1.HTTPIngressRuleValue{
 				Paths: ingressPaths,
@@ -103,7 +98,7 @@ func GenerateIngressPaths(m *wso2v1alpha1.Integration) []v1beta1.HTTPIngressPath
 			ServiceName: nameForService(m),
 			ServicePort: intstr.IntOrString{
 				Type:   Int,
-				IntVal: 8290,
+				IntVal: passthroPort,
 			},
 		},
 	}
@@ -140,7 +135,7 @@ func (r *ReconcileIntegration) GetConfigMap(integration *wso2v1alpha1.Integratio
 }
 
 //gets the details of the targetEndPoint crd object for owner reference
-func getOwnerDetails(cr *wso2v1alpha1.Integration) []metav1.OwnerReference {
+func getOwnerDetails(cr wso2v1alpha1.Integration) []metav1.OwnerReference {
 	setOwner := true
 	return []metav1.OwnerReference{
 		{

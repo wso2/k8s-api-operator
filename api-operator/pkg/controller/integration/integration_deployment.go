@@ -19,7 +19,6 @@
 package integration
 
 import (
-	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
@@ -27,14 +26,18 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/yaml"
 )
 
 // deploymentForIntegration returns a integration Deployment object
-func (r *ReconcileIntegration) deploymentForIntegration(m *wso2v1alpha1.Integration, config EIConfig) *appsv1.Deployment {
+func (r *ReconcileIntegration) deploymentForIntegration(config EIConfigNew) *appsv1.Deployment {
+
+	var m = config.integration
+
 	//set HTTP and HTTPS ports for as container ports
 	exposePorts := []corev1.ContainerPort{
-		corev1.ContainerPort{
-			ContainerPort: 8290,
+		{
+			ContainerPort: passthroPort,
 		},
 	}
 
@@ -49,7 +52,7 @@ func (r *ReconcileIntegration) deploymentForIntegration(m *wso2v1alpha1.Integrat
 	}
 
 	// check ImagePullPolicy has given with the integration
-	imageSecrets := []corev1.LocalObjectReference{}
+	var imageSecrets []corev1.LocalObjectReference
 	if m.Spec.ImagePullSecret != "" {
 		imageSecrets = append(
 			imageSecrets,
@@ -62,10 +65,6 @@ func (r *ReconcileIntegration) deploymentForIntegration(m *wso2v1alpha1.Integrat
 	labels := labelsForIntegration(m.Name)
 
 	replicas := m.Spec.DeploySpec.MinReplicas
-
-	if replicas == 0 {
-		replicas = config.MinReplicas
-	}
 
 	request :=  corev1.ResourceList{}
 	if m.Spec.DeploySpec.ReqCpu != "" {
@@ -89,7 +88,7 @@ func (r *ReconcileIntegration) deploymentForIntegration(m *wso2v1alpha1.Integrat
 			Kind:       "Deployment",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      nameForDeployment(m),
+			Name:      nameForDeployment(&m),
 			Namespace: m.Namespace,
 		},
 		Spec: appsv1.DeploymentSpec{
@@ -104,7 +103,7 @@ func (r *ReconcileIntegration) deploymentForIntegration(m *wso2v1alpha1.Integrat
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{{
 						Image:           m.Spec.Image,
-						Name:            "micro-integrator",
+						Name:            eiContainerName,
 						Ports:           exposePorts,
 						Resources: corev1.ResourceRequirements{
 							Limits:   limit,
@@ -133,13 +132,16 @@ func (r *ReconcileIntegration) deploymentForIntegration(m *wso2v1alpha1.Integrat
 		},
 	}
 	// Set Integration instance as the owner and controller
-	controllerutil.SetControllerReference(m, deployment, r.scheme)
+	controllerutil.SetControllerReference(&m, deployment, r.scheme)
 	return deployment
 }
 
 // returns HPA for the Integration deployment with HPA version v2beta2
-func createIntegrationHPA(integration *wso2v1alpha1.Integration, dep *appsv1.Deployment, eiConfig EIConfig,
-	owner []metav1.OwnerReference) *v2beta2.HorizontalPodAutoscaler {
+func createIntegrationHPA(dep appsv1.Deployment, eiConfig EIConfigNew) *v2beta2.HorizontalPodAutoscaler {
+
+	var integration = eiConfig.integration
+	owner := getOwnerDetails(eiConfig.integration)
+
 	// target resource
 	targetResource := v2beta2.CrossVersionObjectReference{
 		Kind:       dep.Kind,
@@ -149,9 +151,6 @@ func createIntegrationHPA(integration *wso2v1alpha1.Integration, dep *appsv1.Dep
 
 	// setting max replicas
 	maxReplicas := integration.Spec.AutoScale.MaxReplicas
-	if maxReplicas <= 0 {
-		maxReplicas = eiConfig.MaxReplicas
-	}
 
 	// HPA instance for integration deployment
 	hpa := &v2beta2.HorizontalPodAutoscaler{
@@ -164,8 +163,21 @@ func createIntegrationHPA(integration *wso2v1alpha1.Integration, dep *appsv1.Dep
 			MinReplicas:    &integration.Spec.DeploySpec.MinReplicas,
 			MaxReplicas:    maxReplicas,
 			ScaleTargetRef: targetResource,
-			Metrics:        eiConfig.HPAMetricSpec,
+			Metrics:        getHPAMetrics(eiConfig),
 		},
 	}
 	return hpa
+}
+
+func getHPAMetrics(config EIConfigNew) []v2beta2.MetricSpec {
+	var hpaMetricsVal = config.integrationConfigMap.Data[hpaMetricsConfigKey]
+	var hpaMetrics []v2beta2.MetricSpec
+	if hpaMetricsVal != "" {
+		yamlErr := yaml.Unmarshal([]byte(hpaMetricsVal), &hpaMetrics)
+		if yamlErr != nil {
+			log.Error(yamlErr, "Error while reading HPAConfig from config")
+		}
+		return hpaMetrics
+	}
+	return nil
 }
