@@ -17,8 +17,10 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/controller/common"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/envoy"
 	"strconv"
 	"time"
@@ -111,6 +113,21 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	reqLogger.Info("Reconciling API")
 
 	instance := &wso2v1alpha2.API{}
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	defer cancelFunc()
+	// Request info
+	requestInfo := &common.RequestInfo{Request: request, Client: r.client, Object: instance, Log: log, EvnRecorder:
+	r.recorder}
+	ctx = requestInfo.NewContext(ctx)
+
+	apiList := &wso2v1alpha2.APIList{}
+	if err := requestInfo.Client.List(ctx, apiList, client.InNamespace(common.WatchNamespace)); err != nil {
+		// Error reading the object - requeue the request.
+		reqLogger.Error(err, "Error reading all APIs in the specified namespace", "namespace",
+			common.WatchNamespace)
+		return reconcile.Result{}, err
+	}
+
 
 	err := k8s.Get(&r.client, request.NamespacedName, instance)
 	if err != nil {
@@ -122,6 +139,10 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		}
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
+	}
+	err = envoy.CreateFileToSend(apiList, &r.client)
+	if err != nil {
+		reqLogger.Error(err, "Error when sending all the APIs to MGW Adapter")
 	}
 
 	//get configurations file for the controller
@@ -169,7 +190,5 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	r.recorder.Event(instance, corev1.EventTypeNormal, "APIDeploy",
 		fmt.Sprintf("Successfully deployed API to Envoy MGW Adapter"))
 	reqLogger.Info("Successfully deployed API to Envoy MGW Adapter", "api_name", instance.Name)
-
-
 	return reconcile.Result{}, nil
 }
