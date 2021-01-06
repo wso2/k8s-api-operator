@@ -69,35 +69,35 @@ func ImportAPI(client *client.Client, api *wso2v1alpha1.API) error {
 		return errToken
 	}
 
-	//itterate throught all API definition.
-	for _, configMapName := range api.Spec.Definition.SwaggerConfigmapNames {
-		inputConf := k8s.NewConfMap()
-		errInput := k8s.Get(client, types.NamespacedName{Namespace: api.Namespace, Name: configMapName}, inputConf)
+	inputConf := k8s.NewConfMap()
+	errInput = k8s.Get(client, types.NamespacedName{
+		Namespace: api.Namespace,
+		Name:      api.Spec.SwaggerConfigMapName,
+	}, inputConf)
 
-		if errInput != nil {
-			if errors.IsNotFound(errInput) {
-				logImport.Info("API project or swagger not found")
-				return errInput
-			} else {
-				logImport.Error(errInput, "Error retrieving API configs to import")
-				return errInput
-			}
-		}
-
-		if inputConf.BinaryData != nil {
-			logImport.Info("Importing API using project zip")
-			importErr := importAPIFromZip(inputConf, accessToken, publisherEndpoint)
-			if importErr != nil {
-				logImport.Error(importErr, "Error when importing the API using zip")
-				return importErr
-			}
+	if errInput != nil {
+		if errors.IsNotFound(errInput) {
+			logImport.Info("API project or swagger not found")
+			return errInput
 		} else {
-			logImport.Info("Importing API using swagger")
-			importErr := importAPIFromSwagger(inputConf, accessToken, publisherEndpoint)
-			if importErr != nil {
-				logImport.Error(importErr, "Error when importing the API using swagger")
-				return importErr
-			}
+			logImport.Error(errInput, "Error retrieving API configs to import")
+			return errInput
+		}
+	}
+
+	if inputConf.BinaryData != nil {
+		logImport.Info("Importing API using project zip")
+		importErr := importAPIFromZip(inputConf, accessToken, publisherEndpoint)
+		if importErr != nil {
+			logImport.Error(importErr, "Error when importing the API using zip")
+			return importErr
+		}
+	} else {
+		logImport.Info("Importing API using swagger")
+		importErr := importAPIFromSwagger(inputConf, accessToken, publisherEndpoint)
+		if importErr != nil {
+			logImport.Error(importErr, "Error when importing the API using swagger")
+			return importErr
 		}
 	}
 
