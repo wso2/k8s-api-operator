@@ -142,7 +142,7 @@ func (r *ReconcileIntegration) Reconcile(request reconcile.Request) (reconcile.R
 		return reconcile.Result{}, err
 	}
 
-	err = r.createOrUpdateHPA(*deploymentObj, eiConfig)
+	err = r.createOrUpdateHPA(eiConfig)
 	if err != nil {
 		reqLogger.Info("Failed to create/update HPA for the deployment.",
 			"Integration.Namespace", integration.Namespace, "Integration.Name", integration.Name)
@@ -171,76 +171,34 @@ func (r *ReconcileIntegration) Reconcile(request reconcile.Request) (reconcile.R
 		return reconcile.Result{}, err
 	}
 
-	return reconcile.Result{Requeue: true}, nil
+	return reconcile.Result{}, nil
 }
 
+// createOrUpdateDeployment updates the existing deployment, if not create a new one
 func (r *ReconcileIntegration) createOrUpdateDeployment(config EIConfigNew) (*appsv1.Deployment, error) {
-	// Check if the deployment already exists, if not create a new one
-	//deploymentObj := &appsv1.Deployment{}
-	//var integration = config.integration
-	//namespace := types.NamespacedName{Name: nameForDeployment(&integration), Namespace: integration.Namespace}
-	//err := k8s.Get(&r.client, namespace, deploymentObj)
-	// Define a new deployment
 	deployment := r.deploymentForIntegration(config)
-	err := k8s.Apply(&r.client, deployment)
-	if err != nil {
-		return deployment, err
-	}
-	//if err != nil && errors.IsNotFound(err) {
-	//	log.Info("Creating a new Deployment", "Deployment.Namespace",
-	//		deployment.Namespace, "Deployment.Name", deployment.Name)
-	//} else if err != nil {
-	//	return deploymentObj, err
-	//}
-	return deployment, nil
+	err := k8s.Apply(&r.client, deployment)		//this call modifies the deployment
+	return deployment, err
 }
 
 // createOrUpdateHPA Checks if auto scaling is enabled and
 //create or update horizontal autoscaler for the deployment
-func (r *ReconcileIntegration) createOrUpdateHPA(deploymentObj appsv1.Deployment, config EIConfigNew) error {
+func (r *ReconcileIntegration) createOrUpdateHPA(config EIConfigNew) error {
 	var autoScaleEnabled bool
 	autoScaleEnabled, _ = strconv.ParseBool(config.integration.Spec.AutoScale.Enabled)
 	if autoScaleEnabled {
-		hpa := createIntegrationHPA(deploymentObj, config)
-		// create or update HPA
+		hpa := createIntegrationHPA(config)
 		err := k8s.Apply(&r.client, hpa)
 		return err
 	}
 	return nil
 }
 
-// createOrUpdateService Creates or updates k8s service
+// createOrUpdateService Creates or updates k8s service for the deployment
 func (r *ReconcileIntegration) createOrUpdateService(config EIConfigNew) error {
-	// Check if the service already exists, if not create a new one
-	serviceObj := &corev1.Service{}
-	var integration = config.integration
-	namespace := types.NamespacedName{Name: nameForDeployment(&integration), Namespace: integration.Namespace}
-	err := k8s.Get(&r.client, namespace, serviceObj)
-	if err != nil && errors.IsNotFound(err) {
-		// Define a new service
-		service := r.serviceForIntegration(config)
-		//reqLogger.Info("Creating a new Service", "Service.Namespace", service.Namespace, "Service.Name", service.Name)
-		err = k8s.Apply(&r.client, service)
-		if err != nil {
-			//reqLogger.Error(err, "Failed to create new Service", "Service.Namespace", service.Namespace, "Service.Name", service.Name)
-			return err
-		}
-		// Service created successfully - return and requeue
-		//return reconcile.Result{Requeue: true}, nil
-	} else if err != nil {
-		//reqLogger.Error(err, "Failed to get Service")
-		return err
-	} else {			//TODO: check if we need to handle via k8s.Apply
-		// Update status.ServiceName if needed
-		serviceName := nameForService(&config.integration)
-		if !reflect.DeepEqual(serviceName, integration.Status.ServiceName) {
-			integration.Status.ServiceName = serviceName
-			err := r.client.Status().Update(context.TODO(), &config.integration)
-			return err
-		}
-	}
-
-	return nil
+	service := r.serviceForIntegration(config)
+	err := k8s.CreateIfNotExists(&r.client, service)
+	return err
 }
 
 // createOrUpdateIngress check if the ingress already exists, if not create a new one, if yes update it
@@ -255,27 +213,21 @@ func (r *ReconcileIntegration) createOrUpdateIngress(config *EIConfigNew) error 
 	if autoCreateIngress {
 		ingress := &v1beta1.Ingress{}
 		var integration = config.integration
-		namespace := types.NamespacedName{Name: nameForDeployment(&integration), Namespace: integration.Namespace}
+		namespace := types.NamespacedName{Name: nameForIngress(), Namespace: integration.Namespace}
 		err := k8s.Get(&r.client, namespace, ingress)
 		if err != nil {
-			if errors.IsNotFound(err) {
-				// Define a new Ingress
+			if errors.IsNotFound(err) {		// No ingress found, define a new Ingress
 				eiIngress := r.ingressForIntegration(config)
-				//reqLogger.Info("Creating a new Ingress", "Ingress.Namespace", integration.Namespace, "Ingress.Name", nameForIngress())
 				err = k8s.Apply(&r.client, eiIngress)
 				if err != nil {
-					//reqLogger.Error(err, "Failed to create new Ingress", "Ingress.Namespace", integration.Namespace, "Ingress.Name", nameForIngress())
 					return err
 				}
-				// Ingress created successfully - return and requeue
-				//reqLogger.Info("Ingress created successfully")
 			} else {
 				log.Error(err, "Failed to get Ingress")
 				return err
-				//return reconcile.Result{}, err
 			}
 
-		} else {
+		} else {		//  ingress already exists, check and update the rules
 			_, ruleExists := CheckIngressRulesExist(config, ingress)
 			if !ruleExists {
 				eiIngress := r.updateIngressForIntegration(config, ingress)
@@ -286,16 +238,14 @@ func (r *ReconcileIntegration) createOrUpdateIngress(config *EIConfigNew) error 
 					log.Error(err, "Failed to updated new Ingress", "Ingress.Namespace",
 						integration.Namespace, "Ingress.Name", nameForIngress())
 					return err
-					//return reconcile.Result{}, err
 				}
-				// Ingress updated successfully - return and requeue
-				//reqLogger.Info("Ingress updated successfully")
 			}
 		}
 	}
 	return nil
 }
 
+//updateStatus updates the status of the integration
 func (r *ReconcileIntegration) updateStatus(deploymentObj *appsv1.Deployment, config EIConfigNew) error {
 	// Update status.Status if needed
 	availableReplicas := deploymentObj.Status.AvailableReplicas
@@ -308,27 +258,14 @@ func (r *ReconcileIntegration) updateStatus(deploymentObj *appsv1.Deployment, co
 		err := r.client.Status().Update(context.TODO(), &config.integration)
 		return err
 	}
-	return nil
-}
 
-
-
-
-
-//TODO: do we need this
-func verifyAndUpdateDeployment(config EIConfigNew) error {
-	// Ensure the deployment replicas is the same as the spec
-	//replicas := integration.Spec.DeploySpec.MinReplicas
-	//if *deploymentObj.Spec.Replicas != replicas {
-	//	deploymentObj.Spec.Replicas = &replicas
-	//	err = r.client.Update(context.TODO(), deploymentObj)
-	//	if err != nil {
-	//		reqLogger.Error(err, "Failed to update Deployment", "Deployment.Namespace", deploymentObj.Namespace, "Deployment.Name", deploymentObj.Name)
-	//		return reconcile.Result{}, err
-	//	}
-	//	// Spec updated - return and requeue
-	//	return reconcile.Result{Requeue: true}, nil
-	//}
+	// Update status.ServiceName if needed
+	serviceName := nameForService(&config.integration)
+	if !reflect.DeepEqual(serviceName, config.integration.Status.ServiceName) {
+		config.integration.Status.ServiceName = serviceName
+		err := r.client.Status().Update(context.TODO(), &config.integration)
+		return err
+	}
 	return nil
 }
 

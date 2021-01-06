@@ -210,6 +210,21 @@ spec:
                     type: object
                 type: object
               type: array
+            expose:
+              description: Ports to expose
+              properties:
+                inboundPorts:
+                  description: InboundPorts any traffic serving port that needs to
+                    be exposed
+                  items:
+                    format: int32
+                    type: integer
+                  type: array
+                passthroPort:
+                  description: PassthroPort HTTP/HTTPs traffic serving ports
+                  format: int32
+                  type: integer
+              type: object
             image:
               description: Docker image consist of micro integrator runtime and synapse
                 configs
@@ -217,13 +232,6 @@ spec:
             imagePullSecret:
               description: Docker image credentials if the Image is in private registry
               type: string
-            inboundPorts:
-              description: InboundPorts traffic serving port of the micro integrator
-                runtime
-              items:
-                format: int32
-                type: integer
-              type: array
           required:
           - image
           type: object

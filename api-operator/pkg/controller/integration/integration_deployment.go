@@ -37,12 +37,12 @@ func (r *ReconcileIntegration) deploymentForIntegration(config EIConfigNew) *app
 	//set HTTP and HTTPS ports for as container ports
 	exposePorts := []corev1.ContainerPort{
 		{
-			ContainerPort: passthroPort,
+			ContainerPort: m.Spec.Expose.PassthroPort,
 		},
 	}
 
 	// check inbound endpoint port is exist and append to the container port
-	for _, port := range m.Spec.InboundPorts {
+	for _, port := range m.Spec.Expose.InboundPorts {
 		exposePorts = append(
 			exposePorts,
 			corev1.ContainerPort{
@@ -84,8 +84,8 @@ func (r *ReconcileIntegration) deploymentForIntegration(config EIConfigNew) *app
 
 	deployment := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "apps/v1",
-			Kind:       "Deployment",
+			APIVersion: deploymentAPIVersion,
+			Kind:       deploymentKind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      nameForDeployment(&m),
@@ -137,16 +137,16 @@ func (r *ReconcileIntegration) deploymentForIntegration(config EIConfigNew) *app
 }
 
 // returns HPA for the Integration deployment with HPA version v2beta2
-func createIntegrationHPA(dep appsv1.Deployment, eiConfig EIConfigNew) *v2beta2.HorizontalPodAutoscaler {
+func createIntegrationHPA(eiConfig EIConfigNew) *v2beta2.HorizontalPodAutoscaler {
 
 	var integration = eiConfig.integration
 	owner := getOwnerDetails(eiConfig.integration)
 
 	// target resource
 	targetResource := v2beta2.CrossVersionObjectReference{
-		Kind:       dep.Kind,
-		Name:       dep.Name,
-		APIVersion: dep.APIVersion,
+		Kind:       deploymentKind,
+		Name:       nameForDeployment(&integration),
+		APIVersion: deploymentAPIVersion,
 	}
 
 	// setting max replicas
@@ -155,8 +155,8 @@ func createIntegrationHPA(dep appsv1.Deployment, eiConfig EIConfigNew) *v2beta2.
 	// HPA instance for integration deployment
 	hpa := &v2beta2.HorizontalPodAutoscaler{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:            dep.Name,
-			Namespace:       dep.Namespace,
+			Name:            nameForHPA(&integration),
+			Namespace:       integration.Namespace,
 			OwnerReferences: owner,
 		},
 		Spec: v2beta2.HorizontalPodAutoscalerSpec{

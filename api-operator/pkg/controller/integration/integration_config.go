@@ -149,6 +149,10 @@ func (r *ReconcileIntegration) PopulateConfigurations(integration *wso2v1alpha1.
 		}
 	}
 
+	if integration.Spec.Expose.PassthroPort == 0 {
+		integration.Spec.Expose.PassthroPort = defaultPassthroPort
+	}
+
 	//if integrationConfigMap.Data[hpaMetricsConfigKey] != "" {
 	//	var hpaMetrics []v2beta2.MetricSpec
 	//	yamlErr := yaml.Unmarshal([]byte(integrationConfigMap.Data[hpaMetricsConfigKey]), &hpaMetrics)

@@ -34,14 +34,14 @@ func (r *ReconcileIntegration) serviceForIntegration(config EIConfigNew) *corev1
 	//set HTTP and HTTPS ports for as ServiceSpec ports
 	exposeServicePorts := []corev1.ServicePort{
 		{
-			Name:       m.Name + strconv.Itoa(8290),
-			Port:       8290,
-			TargetPort: intstr.FromInt(8290),
+			Name:       m.Name + strconv.Itoa(int(m.Spec.Expose.PassthroPort)),
+			Port:       m.Spec.Expose.PassthroPort,
+			TargetPort: intstr.FromInt(int(m.Spec.Expose.PassthroPort)),
 		},
 	}
 
 	// check inbound endpoint port is exist and append to the container port
-	for _, port := range m.Spec.InboundPorts {
+	for _, port := range m.Spec.Expose.InboundPorts {
 		exposeServicePorts = append(
 			exposeServicePorts,
 			corev1.ServicePort{

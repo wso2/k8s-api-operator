@@ -34,10 +34,10 @@ type IntegrationSpec struct {
 	DeploySpec DeploySpec `json:"deploySpec,omitempty"`
 	// Auto scale spec
 	AutoScale AutoScale `json:"autoScale,omitempty"`
+	// Ports to expose
+	Expose Expose  `json:"expose,omitempty"`
 	// Docker image credentials if the Image is in private registry
 	ImagePullSecret string `json:"imagePullSecret,omitempty"`
-	// InboundPorts traffic serving port of the micro integrator runtime
-	InboundPorts []int32 `json:"inboundPorts,omitempty"`
 	// List of environment variables to set for the integration.
 	Env []corev1.EnvVar `json:"env,omitempty"`
 	// List of environment variable references set for the integration.
@@ -78,6 +78,14 @@ type AutoScale struct {
 	// Default value "<empty>".
 	// +optional
 	MaxReplicas int32 `json:"maxReplicas,omitempty"`
+}
+
+// Expose defines the ports needs to be exposed
+type Expose struct {
+	// PassthroPort HTTP/HTTPs traffic serving ports
+	PassthroPort int32 `json:"passthroPort,omitempty"`
+	// InboundPorts any traffic serving port that needs to be exposed
+	InboundPorts []int32 `json:"inboundPorts,omitempty"`
 }
 
 // IntegrationStatus defines the observed state of Integration

@@ -46,6 +46,11 @@ func nameForService(m *wso2v1alpha1.Integration) string {
 	return m.Name + serviceNamePostfix
 }
 
+// nameForHPA gives the name for the HPA instance
+func nameForHPA(m *wso2v1alpha1.Integration) string {
+	return m.Name + hpaNamePostfix
+}
+
 // nameForInboundService gives the name for the inbound service
 func nameForInboundService(m *wso2v1alpha1.Integration) string {
 	return m.Name + inboundServicePostfix
@@ -98,14 +103,14 @@ func GenerateIngressPaths(m *wso2v1alpha1.Integration) []v1beta1.HTTPIngressPath
 			ServiceName: nameForService(m),
 			ServicePort: intstr.IntOrString{
 				Type:   Int,
-				IntVal: passthroPort,
+				IntVal: m.Spec.Expose.PassthroPort,
 			},
 		},
 	}
 	ingressPaths = append(ingressPaths, httpIngressPath)
 
 	// check inbound endpoint port is exist and update the ingress path
-	for _, port := range m.Spec.InboundPorts {
+	for _, port := range m.Spec.Expose.InboundPorts {
 		inboundPath := "/" + nameForInboundService(m) +
 			"/" + strconv.Itoa(int(port)) + "(/|$)(.*)"
 		inboundIngressPath := v1beta1.HTTPIngressPath{

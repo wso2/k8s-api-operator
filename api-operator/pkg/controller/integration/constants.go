@@ -20,13 +20,17 @@ package integration
 
 const (
 
-	integrationControllerName = "integration-controller"
-	integrationConfigMapName  = "integration-config"
+	deploymentAPIVersion = "apps/v1"
+	deploymentKind = "Deployment"
+
+	integrationControllerName       = "integration-controller"
+	integrationConfigMapName        = "integration-config"
 	integrationIngressConfigMapName = "integration-ingress-config"
-	eiContainerName           = "micro-integrator"
-	passthroPort              = 8290
+	eiContainerName                 = "micro-integrator"
+	defaultPassthroPort             = 8290
 
 	deploymentNamePostfix = "-deployment"
+	hpaNamePostfix = "-hpa"
 	serviceNamePostfix = "-service"
 	inboundServicePostfix = "-inbound"
 	eiIngressName = "ei-operator-ingress"
