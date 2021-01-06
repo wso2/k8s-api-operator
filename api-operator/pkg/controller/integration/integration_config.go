@@ -31,31 +31,9 @@ type EIConfigNew struct {
 	ingressConfigMap     corev1.ConfigMap
 }
 
-// EIConfig control all deployments of the ei-ingress
-//type EIConfig struct {
-//	AutoCreateIngress bool
-//	SSLRedirect       string
-//	TLS               string
-//	Host              string
-//	EnableAutoScale   bool
-//	MinReplicas       int32
-//	MaxReplicas       int32
-//	HPAMetricSpec     []v2beta2.MetricSpec
-//}
-
 // PopulateConfigurations updates the default configs of Host, TLS, and ingress creation. Read from Integration first,
 // If not defined, read defaults from integrationConfigMap and update integration
 func (r *ReconcileIntegration) PopulateConfigurations(integration *wso2v1alpha1.Integration) (EIConfigNew, error) {
-
-	//eic := EIConfig{
-	//	Host:              "wso2",
-	//	AutoCreateIngress: true,
-	//	SSLRedirect:       "true",
-	//	EnableAutoScale:   false,
-	//	MinReplicas:       1,
-	//	MaxReplicas:       1,
-	//	HPAMetricSpec:     nil,
-	//}
 
 	var integrationConfigMap, err = r.GetConfigMap(integration, integrationConfigMapName)
 	if err != nil {
@@ -68,30 +46,6 @@ func (r *ReconcileIntegration) PopulateConfigurations(integration *wso2v1alpha1.
 		log.Error(err, "There is no integration config-map found, or there's an error reading it")
 		return EIConfigNew{}, err1
 	}
-
-	//if integrationConfigMap.Data["host"] != "" {
-	//	eic.Host = integrationConfigMap.Data["host"]
-	//}
-
-	//if integrationConfigMap.Data["autoIngressCreation"] != "" {
-	//	if integrationConfigMap.Data["autoIngressCreation"] == "true" {
-	//		eic.AutoCreateIngress = true
-	//	} else {
-	//		eic.AutoCreateIngress = false
-	//	}
-	//}
-	//
-	//if integrationConfigMap.Data["sslRedirect"] != "" {
-	//	if integrationConfigMap.Data["sslRedirect"] == "true" {
-	//		eic.SSLRedirect = "true"
-	//	} else {
-	//		eic.SSLRedirect = "false"
-	//	}
-	//}
-	//
-	//if integrationConfigMap.Data["ingressTLS"] != "" {
-	//	eic.TLS = integrationConfigMap.Data["ingressTLS"]
-	//}
 
 	if integration.Spec.DeploySpec.MinReplicas == 0 {
 		if integrationConfigMap.Data[minReplicasKey] != "" {
@@ -152,15 +106,6 @@ func (r *ReconcileIntegration) PopulateConfigurations(integration *wso2v1alpha1.
 	if integration.Spec.Expose.PassthroPort == 0 {
 		integration.Spec.Expose.PassthroPort = defaultPassthroPort
 	}
-
-	//if integrationConfigMap.Data[hpaMetricsConfigKey] != "" {
-	//	var hpaMetrics []v2beta2.MetricSpec
-	//	yamlErr := yaml.Unmarshal([]byte(integrationConfigMap.Data[hpaMetricsConfigKey]), &hpaMetrics)
-	//	eic.HPAMetricSpec = hpaMetrics
-	//	if yamlErr != nil {
-	//		log.Error(yamlErr, "Error while reading HPAConfig")
-	//	}
-	//}
 
 	eiConfig := EIConfigNew {
 		integration:          *integration,
