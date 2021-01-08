@@ -40,7 +40,7 @@ const (
 	HeaderValueXWWWFormUrlEncoded = "application/x-www-form-urlencoded"
 	DefaultHttpRequestTimeout     = 10000
 
-	adminAPIImportEndpoint                  = "api/am/admin/v1/import/api"
+	publisherAPIImportEndpoint              = "api/am/publisher/v1/apis/import?overwrite=true"
 	defaultClientRegistrationEndpointSuffix = "client-registration/v0.17/register"
 	defaultApiListEndpointSuffix            = "api/am/publisher/v1/apis"
 	defaultTokenEndpoint                    = "oauth2/token"
