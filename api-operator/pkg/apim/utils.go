@@ -20,6 +20,7 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -41,7 +42,7 @@ import (
 // getRESTAPIConfigs returns the APIM configs for REST API invocation
 func getRESTAPIConfigs(client *client.Client) (*RESTConfig, error) {
 	apimConfig := k8s.NewConfMap()
-	errApim := k8s.Get(client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: apimConfName}, apimConfig)
+	errApim := k8s.Get(client, types.NamespacedName{Namespace: config.SystemNamespace, Name: apimConfName}, apimConfig)
 
 	if errApim != nil {
 		if errors.IsNotFound(errApim) {
@@ -91,7 +92,7 @@ func deleteAPIById(url, apiId, token string) error {
 // getCert gets the public cert of APIM instance when skip verification is false
 func getCert(client *client.Client, certConf string) error {
 	apimCert := k8s.NewSecret()
-	errCert := k8s.Get(client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: certConf}, apimCert)
+	errCert := k8s.Get(client, types.NamespacedName{Namespace: config.SystemNamespace, Name: certConf}, apimCert)
 	if errCert != nil {
 		return errCert
 	}

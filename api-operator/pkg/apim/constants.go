@@ -27,7 +27,6 @@ const (
 	apimTokenEndpointConst        = "apimTokenEndpoint"
 	apimCredentialsConst          = "apimCredentialsSecret"
 	skipVerifyConst               = "insecureSkipVerify"
-	wso2NameSpaceConst            = "wso2-system"
 
 	HeaderAuthorization           = "Authorization"
 	HeaderAccept                  = "Accept"
