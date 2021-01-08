@@ -18,17 +18,19 @@ package mgw
 
 import (
 	"errors"
+	"strings"
+
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	istioapi "istio.io/api/networking/v1alpha3"
 	istioclient "istio.io/client-go/pkg/apis/networking/v1alpha3"
+	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/yaml"
-	"strings"
 )
 
 const (
@@ -54,11 +56,25 @@ type tlsRoutesConfigs struct {
 
 var logVsc = log.Log.WithName("mgw.virtualservice")
 
-func IstioVirtualService(istioConfigs *IstioConfigs, api *wso2v1alpha1.API, apiBasePathMap map[string]string,
-	owner []metav1.OwnerReference) *istioclient.VirtualService {
+func ApplyIstioVirtualService(client *client.Client, istioConfigs *IstioConfigs, api *wso2v1alpha1.API, apiBasePathMap map[string]string,
+	owner []metav1.OwnerReference) (*istioclient.VirtualService, error) {
 	// labels
 	labels := map[string]string{
 		"app": api.Name,
+	}
+
+	virtualService := &istioclient.VirtualService{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            api.Name,
+			Namespace:       api.Namespace,
+			Generation:      0,
+			Labels:          labels,
+			OwnerReferences: owner,
+		},
+	}
+	errVtlSvc := k8s.Get(client, types.NamespacedName{Namespace: api.Namespace, Name: api.Name}, virtualService)
+	if errVtlSvc != nil && !apiErrors.IsNotFound(errVtlSvc) {
+		return nil, errVtlSvc
 	}
 
 	// route mode TLS/HTTP
@@ -73,23 +89,16 @@ func IstioVirtualService(istioConfigs *IstioConfigs, api *wso2v1alpha1.API, apiB
 	}
 
 	// Istio virtual service
-	virtualService := istioclient.VirtualService{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:            api.Name,
-			Namespace:       api.Namespace,
-			Generation:      0,
-			Labels:          labels,
-			OwnerReferences: owner,
-		},
-		Spec: istioapi.VirtualService{
-			Hosts:    []string{istioConfigs.Host},
-			Gateways: []string{istioConfigs.GatewayName},
-			Http:     httpRoutes,
-			Tls:      tlsRoutes,
-		},
+	virtualService.Spec = istioapi.VirtualService{
+		Hosts:    []string{istioConfigs.Host},
+		Gateways: []string{istioConfigs.GatewayName},
+		Http:     httpRoutes,
+		Tls:      tlsRoutes,
 	}
 
-	return &virtualService
+	err := k8s.Apply(client, virtualService)
+
+	return virtualService, err
 }
 
 func getHttpRoutes(istioConfigs *IstioConfigs, api *wso2v1alpha1.API, apiBasePathMap map[string]string) []*istioapi.HTTPRoute {

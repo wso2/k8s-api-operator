@@ -617,9 +617,9 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 		// creating Istio virtual service
 		if strings.EqualFold(operatorMode, istioMode) {
-			vtlSvc := mgw.IstioVirtualService(istioConfigs, instance, apiBasePathMap, *ownerRef)
-			if errVtlSvc := k8s.CreateIfNotExists(&r.client, vtlSvc); errVtlSvc != nil {
-				reqLogger.Error(errVtlSvc, "Error creating the Istio virtual service",
+			vtlSvc, errVtlSvc := mgw.ApplyIstioVirtualService(&r.client, istioConfigs, instance, apiBasePathMap, *ownerRef)
+			if errVtlSvc != nil {
+				reqLogger.Error(errVtlSvc, "Error creating the Istio virtual service2",
 					"virtual_service", vtlSvc)
 				return reconcile.Result{}, errVtlSvc
 			}
