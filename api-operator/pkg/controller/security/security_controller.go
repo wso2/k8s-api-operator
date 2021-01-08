@@ -17,8 +17,9 @@ package security
 
 import (
 	"context"
-	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
 	"strings"
+
+	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -123,12 +124,15 @@ func (r *ReconcileSecurity) Reconcile(request reconcile.Request) (reconcile.Resu
 			if securityConfig.Audience == "" {
 				reqLogger.Info("Audience is not Provided")
 			}
-			certificateSecret := &corev1.Secret{}
-			errcertificate := r.client.Get(context.TODO(), types.NamespacedName{Name: securityConfig.Certificate, Namespace: userNamespace}, certificateSecret)
 
-			if errcertificate != nil && errors.IsNotFound(errcertificate) {
-				reqLogger.Info("defined secret for cretificate is not found")
-				return reconcile.Result{}, errcertificate
+			if securityConfig.JwksURL == "" {
+				certificateSecret := &corev1.Secret{}
+				errcertificate := r.client.Get(context.TODO(), types.NamespacedName{Name: securityConfig.Certificate, Namespace: userNamespace}, certificateSecret)
+
+				if errcertificate != nil && errors.IsNotFound(errcertificate) {
+					reqLogger.Info("defined secret for cretificate is not found")
+					return reconcile.Result{}, errcertificate
+				}
 			}
 		}
 	}
@@ -148,14 +152,16 @@ func (r *ReconcileSecurity) Reconcile(request reconcile.Request) (reconcile.Resu
 				reqLogger.Error(err, "Required fields are missing")
 				return reconcile.Result{}, err
 			}
-			credentialSecret := &corev1.Secret{}
-			errcertificate := r.client.Get(context.TODO(), types.NamespacedName{Name: securityConfig.Credentials, Namespace: userNamespace}, credentialSecret)
 
-			if errcertificate != nil && errors.IsNotFound(errcertificate) {
-				reqLogger.Info("defined secret for credentials is not found")
-				return reconcile.Result{}, errcertificate
+			if securityConfig.JwksURL == "" {
+				credentialSecret := &corev1.Secret{}
+				errcertificate := r.client.Get(context.TODO(), types.NamespacedName{Name: securityConfig.Credentials, Namespace: userNamespace}, credentialSecret)
+
+				if errcertificate != nil && errors.IsNotFound(errcertificate) {
+					reqLogger.Info("defined secret for credentials is not found")
+					return reconcile.Result{}, errcertificate
+				}
 			}
-
 		}
 	}
 
