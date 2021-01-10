@@ -16,32 +16,7 @@
 package api
 
 const (
-	mgwToolkitImgConst  = "mgwToolkitImg"
-	mgwRuntimeImgConst  = "mgwRuntimeImg"
-	kanikoArguments     = "kanikoArguments"
-	registryTypeConst   = "registryType"
-	repositoryNameConst = "repositoryName"
-	controllerConfName  = "controller-config"
-	ingressConfigs      = "ingress-configs"
-	openShiftConfigs    = "route-configs"
-	dockerRegConfigs    = "docker-registry-config"
-	kanikoArgsConfigs   = "kaniko-arguments"
-
-	operatorModeConst             = "operatorMode"
-	istioMode                     = "Istio"
-	ingressMode                   = "Ingress"
-	routeMode                     = "Route"
-	observabilityEnabledConfigKey = "observabilityEnabled"
-
-	eventTypeError = "Error"
-
-	ingressHostName = "ingressHostName"
-	routeHost       = "routeHost"
-
-	sidecar                           = "sidecar"
-	apiCrdDefaultVersion              = "v1.0.0"
-	generateKubernetesArtifactsForMgw = "generatekubernbetesartifactsformgw"
-	importAPIEnabledConst             = "importAPIToAPIManager"
-	hpaConfigMapName                  = "hpa-configs"
-	hpaVersionConst                   = "hpaVersion"
+	controllerConfName    = "api-controller-config"
+	eventTypeError        = "Error"
+	importAPIEnabledConst = "importAPIToAPIManager"
 )

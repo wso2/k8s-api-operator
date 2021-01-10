@@ -1,0 +1,97 @@
+# Copyright (c) WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+#
+# WSO2 Inc. licenses this file to you under the Apache License,
+# Version 2.0 (the "License"); you may not use this file except
+# in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-controller-config
+data:
+  # Import an API to APIM through Operator
+  importAPIToAPIManager: "false"
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: apim-secret
+type: Opaque
+data:
+  #Base64 encoded username, password, and, APIM cert secret name for APIM
+  username: YWRtaW4=
+  password: YWRtaW4=
+  cert_security: YXBpbS1jZXJ0LXNlY3JldA==
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: apim-cert-secret
+data:
+  #Base64 encoded public cert of APIM instance
+  apim.pem: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tDQpNSUlEcVRDQ0FwR2dBd0lCQWdJRVhiQUJvekFOQmdrcWhraUc5dzBCQVFzRkFEQmtNUXN3Q1FZRFZRUUdFd0pWDQpVekVMTUFrR0ExVUVDQXdDUTBFeEZqQVVCZ05WQkFjTURVMXZkVzUwWVdsdUlGWnBaWGN4RFRBTEJnTlZCQW9NDQpCRmRUVHpJeERUQUxCZ05WQkFzTUJGZFRUekl4RWpBUUJnTlZCQU1NQ1d4dlkyRnNhRzl6ZERBZUZ3MHhPVEV3DQpNak13TnpNd05ETmFGdzB5TWpBeE1qVXdOek13TkROYU1HUXhDekFKQmdOVkJBWVRBbFZUTVFzd0NRWURWUVFJDQpEQUpEUVRFV01CUUdBMVVFQnd3TlRXOTFiblJoYVc0Z1ZtbGxkekVOTUFzR0ExVUVDZ3dFVjFOUE1qRU5NQXNHDQpBMVVFQ3d3RVYxTlBNakVTTUJBR0ExVUVBd3dKYkc5allXeG9iM04wTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGDQpBQU9DQVE4QU1JSUJDZ0tDQVFFQXhlcW9aWWJRL1NyOERPRlErL3FiRWJDcDZWemI1aHpIN29hM2hmMkZaeFJLDQpGMEg2YjhDT016ejgrMG12RWRZVnZiLzMxak1FTDJDSVFoa1FSb2wxSXJ1RDZuQk9ta2p1WEpTQmZpY2tsTWFKDQpaT1JodUNyQjRyb0h4em9HMTlhV21zY0EwZ25mQktvMm9HWFNqSm1uWnhJaCsyWDZzeUhDZnlNWlowMEx6RHlyDQpnb1hXUVh5RnZDQTJheDU0czdzS2lIT00zUDRBOVc0UVV3bW9FaTRIUW1QZ0pqSU00ZUdWUGgwR3RJQU5OK0JPDQpRMUtrVUk3T3p0ZUhDVEx1M1ZqeE0wc3c4UVJheVpkaG5pUEYrVTluM2ZhMW1PNEtMQnNXNG1ETGpnOFIvSnVBDQpHVFgvU0VFR2owQjVIV1FBUDZteXhLRnoyeHdEYUNHdlQrcmR2a2t0T3dJREFRQUJvMk13WVRBVUJnTlZIUkVFDQpEVEFMZ2dsc2IyTmhiR2h2YzNRd0hRWURWUjBPQkJZRUZFRHBMQjRQRGd6c2R4RDJGVjNyVm5Pci9BMERNQjBHDQpBMVVkSlFRV01CUUdDQ3NHQVFVRkJ3TUJCZ2dyQmdFRkJRY0RBakFMQmdOVkhROEVCQU1DQlBBd0RRWUpLb1pJDQpodmNOQVFFTEJRQURnZ0VCQUU4SC9heEFnWGp0OTNIR0NZR3VtVUxXMmxLa2dxRXZYcnlQMlFrUnBieVFTc1RZDQpjTDdaTFNWQjdNVlZIdElzSGg4ZjFDNFhxNlF1OE5VcnF1NVpMQzFwVUJ5YXFSMlpJemNqL09XTEdZUmpTVEhTDQpWbVZJcTlRcUJxMWo3cjZmM0JXcWFPSWlrbm1UekV1cUlWbE9UWTBnTytTSGRTNjJ2cjJGQ3o0eU9yQkV1bEdBDQp2b21zVThzcWc0UGhGbmtoeEk0TTkxMkx5KzJSZ045TDdBa2h6SytFelhZMS9RdGxJL1Z5c05mUzZ6ckhhc0t6DQo2Q3JLS0NHcVFuQm5TdlNUeUY5T1I1S0ZIbmtBd0U5OTVJWnJjU1FpY014c0xoVE1VSERMUS9nUnl5N1YvWnBEDQpNZkFXUis1T2VRaU5BcC9iRzRmakpvVGRvcWt1bDUxKzJiSEhWclU9DQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tDQo=
+type: Opaque
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: apim-config
+data:
+  # The following 3 endpoints are related to importing API to API Manager
+    # API Manager Keymanager/DCR endpoint
+  apimKeymanagerEndpoint: "https://localhost:9443"
+    # API Manager Publisher endpoint
+  apimPublisherEndpoint: "https://localhost:9443"
+    # API Manager token endpoint
+  apimTokenEndpoint: "https://localhost:8243/token"
+
+  # Skip verification for the REST API invocations. If "false", you need to provide the cert
+  insecureSkipVerify: "true"
+  # Secret name containing APIM credentials and cert
+  apimCredentialsSecret: "apim-secret"
+  # Enable configurations for retrieving API and subscription data from API Manager.
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: envoymgw-adapter-secret
+type: Opaque
+data:
+  # Base64 encoded username and password for Envoy MGW Adapter
+  username: YWRtaW4=
+  password: YWRtaW4=
+  mgwCertSecretName: ZW52b3ltZ3ctY2VydC1zZWNyZXQ=
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: envoy-mgw-configs
+data:
+  mgwAdapterHost: "https://localhost:30200"
+  #Skip verification for Adapter endpoint call. If "false", you need to provide the cert
+  mgwInsecureSkipVerify: "true"
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: envoymgw-cert-secret
+data:
+  #Base64 encoded public cert of Envoy MGW Adapter
+  adapter.pem: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUR4VENDQXEyZ0F3SUJBZ0lVRG8xdUJKT1lQN2lMbXM5WnhWQ0YxQ1J1YldRd0RRWUpLb1pJaHZjTkFRRUwKQlFBd2NqRUxNQWtHQTFVRUJoTUNWVk14Q3pBSkJnTlZCQWdNQWtOQk1SWXdGQVlEVlFRSERBMU5iM1Z1ZEdGcApiaUJXYVdWM01RMHdDd1lEVlFRS0RBUlhVMDh5TVEwd0N3WURWUVFMREFSWFUwOHlNU0F3SGdZRFZRUUREQmRoClpHRndkR1Z5TFhObGNuWnBZMlV1WkdWbVlYVnNkREFlRncweU1ERXhNalF4TXpJME5UVmFGdzB5TXpBeU1ESXgKTXpJME5UVmFNSEl4Q3pBSkJnTlZCQVlUQWxWVE1Rc3dDUVlEVlFRSURBSkRRVEVXTUJRR0ExVUVCd3dOVFc5MQpiblJoYVc0Z1ZtbGxkekVOTUFzR0ExVUVDZ3dFVjFOUE1qRU5NQXNHQTFVRUN3d0VWMU5QTWpFZ01CNEdBMVVFCkF3d1hZV1JoY0hSbGNpMXpaWEoyYVdObExtUmxabUYxYkhRd2dnRWlNQTBHQ1NxR1NJYjNEUUVCQVFVQUE0SUIKRHdBd2dnRUtBb0lCQVFDZHQyT3hVaGZocWNlc0QrcU5TRXgxNUhRVGx0U0Q2Z2VSbUVQME1NQnViY2pHdm16UgpveTdmVyt0UHV5WlliR0M0ZjRFSGRPRzBma0FZK0hBK256b1RXYVNBNm9heVVPZzlGbXloMDNHN0FEbnlKRENICnVoMW1NUXpHdkJVL2hrTnpramdDcHNCaFlWaWd4NGFQTE9IUmZHSkk2TGtQMWtWbWRuR1lEbERkdUEyRTAyQnEKamFjN0E3Nlc5YWplMGlUaGRBcE9ZYS82VDRQajU3bnIyQnZXNkthT2tMTlEvZjljdm41NW01RW1oL0NISExVMQpUWTlTTUtsZVUzZWdzeTBjS2dVLzYvSXFFWjBrVFBFaDdxTk1oaDZHa1FsMWlUN0JNMGJlalo5YjlVMS9rVTJoCkZLb0VEY1FHa3FSOUhBWkgxaUY1M0o2M0UwLzB3ZE9wa280WEFnTUJBQUdqVXpCUk1CMEdBMVVkRGdRV0JCU2cKeVNpMXpXbnpTOXBySGp2TmdURHVHa1VMRlRBZkJnTlZIU01FR0RBV2dCU2d5U2kxelduelM5cHJIanZOZ1REdQpHa1VMRlRBUEJnTlZIUk1CQWY4RUJUQURBUUgvTUEwR0NTcUdTSWIzRFFFQkN3VUFBNElCQVFCM2Urb3JMajIxCkxiMldPMGtXbDVXV1F5aHZWZ0hHVGYvSzRJa1RzYzdrWnM0THdNWlBhaXN1SGVTQklGVm4zRFRTQmRaaHJ6UUMKQTBCS1dKcjZxakxkVW5YbGhTWWsxbWhTOG4zN1NZclVwWEpJNGxTQlpsdGwwdmxiT1ZZbjFMNUlEcWRCMUdjKwp4amFoVzNIc3NPNGhWRTdPa0s3dFZlYmVWdHUyRjNPZmFMaW1nNGdtaFVUSE12WkVVTGlkUUFqVzJkcUkwVzRQCnpUWmJjdjFxNGNGZ05aVU9QbkhvWTM1UmkwSGI2U25nQ3RGV09DWVA4c3ZkdHVoV0J5ZFdtNmx5ME1EOEZxVTkKUk1iK0NlK3B0RlR2UFFmT0o0bjhxTUpUTnAwaGJ3OXlNUnhpWlhXbFQzNkZROGlOd1VMdFFYcFJTVlp6Yzg0KwpVLy8vOEZ6aVE3MTMKLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQ==
+type: Opaque
