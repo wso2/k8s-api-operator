@@ -16,7 +16,8 @@
 package api
 
 const (
-	controllerConfName    = "api-controller-config"
-	eventTypeError        = "Error"
-	importAPIEnabledConst = "importAPIToAPIManager"
+	controllerConfName          = "api-controller-config"
+	eventTypeError              = "Error"
+	importAPIToAPIMEnabledConst = "deployAPIToAPIManager"
+	deployAPIToMGWEnabledConst  = "deployAPIToMicrogateway"
 )

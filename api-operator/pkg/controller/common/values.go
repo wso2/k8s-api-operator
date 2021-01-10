@@ -16,8 +16,11 @@
 
 package common
 
+import "time"
+
 var (
 	// WatchNamespace defines the namespaced to be watched for resources
 	// empty mean watch for all namespaces
-	WatchNamespace = ""
+	WatchNamespace                = ""
+	RequeueDurationForConfigError = 10 * time.Second
 )

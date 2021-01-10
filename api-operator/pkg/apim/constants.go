@@ -18,7 +18,6 @@ package apim
 
 const (
 	apimConfName                  = "apim-config"
-	apimSecretName                = "apim-secret"
 	clientRegistrationSecret      = "ckcs-secret"
 	clientIdConst                 = "clientId"
 	clientSecretConst             = "clientSecret"
@@ -45,6 +44,68 @@ const (
 	defaultTokenEndpoint                    = "oauth2/token"
 	importAPIFromSwaggerEndpoint            = "api/am/publisher/v1/apis/import-openapi"
 )
+
+// APIDefinition represents an API artifact in APIM
+type APIDefinitionFile struct {
+	Type        string           `json:"type,omitempty" yaml:"type,omitempty"`
+	ApimVersion string           `json:"version,omitempty" yaml:"version,omitempty"`
+	Data        APIDTODefinition `json:"data,omitempty" yaml:"data,omitempty"`
+}
+
+// APIDTODefinition represents an APIDTO artifact in APIM
+type APIDTODefinition struct {
+	ID                           string            `json:"id,omitempty" yaml:"id,omitempty"`
+	Name                         string            `json:"name,omitempty" yaml:"name,omitempty"`
+	Description                  string            `json:"description,omitempty" yaml:"description,omitempty"`
+	Context                      string            `json:"context,omitempty" yaml:"context,omitempty"`
+	Version                      string            `json:"version,omitempty" yaml:"version,omitempty"`
+	Provider                     string            `json:"provider,omitempty" yaml:"provider,omitempty"`
+	LifeCycleStatus              string            `json:"lifeCycleStatus,omitempty" yaml:"lifeCycleStatus,omitempty"`
+	WsdlInfo                     interface{}       `json:"wsdlInfo,omitempty" yaml:"wsdlInfo,omitempty"`
+	WsdlURL                      string            `json:"wsdlUrl,omitempty" yaml:"wsdlUrl,omitempty"`
+	TestKey                      string            `json:"testKey,omitempty" yaml:"testKey,omitempty"`
+	ResponseCachingEnabledKey    bool              `json:"responseCachingEnabled,omitempty" yaml:"responseCachingEnabled,omitempty"`
+	CacheTimeout                 int               `json:"cacheTimeout,omitempty" yaml:"cacheTimeout,omitempty"`
+	DestinationStatsEnabled      string            `json:"destinationStatsEnabled,omitempty" yaml:"destinationStatsEnabled,omitempty"`
+	HasThumbnail                 bool              `json:"hasThumbnail,omitempty" yaml:"hasThumbnail,omitempty"`
+	IsDefaultVersion             bool              `json:"isDefaultVersion,omitempty" yaml:"isDefaultVersion,omitempty"`
+	EnableSchemaValidation       bool              `json:"enableSchemaValidation,omitempty" yaml:"enableSchemaValidation,omitempty"`
+	EnableStore                  bool              `json:"enableStore,omitempty" yaml:"enableStore,omitempty"`
+	Type                         string            `json:"type,omitempty" yaml:"type,omitempty"`
+	Transport                    []string          `json:"transport,omitempty" yaml:"transport,omitempty"`
+	Tags                         []string          `json:"tags,omitempty" yaml:"tags,omitempty"`
+	Policies                     []string          `json:"policies,omitempty" yaml:"policies,omitempty"`
+	APIThrottlingPolicy          string            `json:"apiThrottlingPolicy,omitempty" yaml:"apiThrottlingPolicy,omitempty"`
+	AuthorizationHeader          string            `json:"authorizationHeader,omitempty" yaml:"authorizationHeader,omitempty"`
+	SecurityScheme               []string          `json:"securityScheme,omitempty" yaml:"securityScheme,omitempty"`
+	MaxTPS                       interface{}       `json:"maxTps,omitempty" yaml:"maxTps,omitempty"`
+	Visibility                   string            `json:"visibility,omitempty" yaml:"visibility,omitempty"`
+	VisibleRoles                 []string          `json:"visibleRoles,omitempty" yaml:"visibleRoles,omitempty"`
+	VisibleTenants               []string          `json:"visibleTenants,omitempty" yaml:"visibleTenants,omitempty"`
+	EndpointSecurity             interface{}       `json:"endpointSecurity,omitempty" yaml:"endpointSecurity,omitempty"`
+	GatewayEnvironments          []string          `json:"gatewayEnvironments,omitempty" yaml:"gatewayEnvironments,omitempty"`
+	DeploymentEnvironments       []interface{}     `json:"deploymentEnvironments,omitempty" yaml:"deploymentEnvironments,omitempty"`
+	Labels                       []string          `json:"labels,omitempty" yaml:"labels,omitempty"`
+	MediationPolicies            []interface{}     `json:"mediationPolicies,omitempty" yaml:"mediationPolicies,omitempty"`
+	SubscriptionAvailability     string            `json:"subscriptionAvailability,omitempty" yaml:"subscriptionAvailability,omitempty"`
+	SubscriptionAvailableTenants []string          `json:"subscriptionAvailableTenants,omitempty" yaml:"subscriptionAvailableTenants,omitempty"`
+	AdditionalProperties         map[string]string `json:"additionalProperties,omitempty" yaml:"additionalProperties,omitempty"`
+	Monetization                 interface{}       `json:"monetization,omitempty" yaml:"monetization,omitempty"`
+	AccessControl                string            `json:"accessControl,omitempty" yaml:"accessControl,omitempty"`
+	AcessControlRoles            []string          `json:"accessControlRoles,omitempty" yaml:"accessControlRoles,omitempty"`
+	BusinessInformation          interface{}       `json:"businessInformation,omitempty" yaml:"businessInformation,omitempty"`
+	CorsConfiguration            interface{}       `json:"corsConfiguration,omitempty" yaml:"corsConfiguration,omitempty"`
+	WorkflowStatus               []string          `json:"workflowStatus,omitempty" yaml:"workflowStatus,omitempty"`
+	CreatedTime                  string            `json:"createdTime,omitempty" yaml:"createdTime,omitempty"`
+	LastUpdatedTime              string            `json:"lastUpdatedTime,omitempty" yaml:"lastUpdatedTime,omitempty"`
+	EndpointConfig               interface{}       `json:"endpointConfig,omitempty" yaml:"endpointConfig,omitempty"`
+	EndpointImplementationType   string            `json:"endpointImplementationType,omitempty" yaml:"endpointImplementationType,omitempty"`
+	Scopes                       []interface{}     `json:"scopes,omitempty" yaml:"scopes,omitempty"`
+	Operations                   []interface{}     `json:"operations,omitempty" yaml:"operations,omitempty"`
+	ThreatProtectionPolicies     interface{}       `json:"threatProtectionPolicies,omitempty" yaml:"threatProtectionPolicies,omitempty"`
+	Categories                   []string          `json:"categories,omitempty" yaml:"categories,omitempty"`
+	KeyManagers                  []string          `json:"keyManagers,omitempty" yaml:"keyManagers,omitempty"`
+}
 
 // APIDefinition represents an API artifact in APIM
 type APIDefinition struct {

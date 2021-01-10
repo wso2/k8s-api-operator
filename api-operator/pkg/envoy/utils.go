@@ -39,7 +39,7 @@ import (
 
 // directories to be created
 var dirs = []string{
-	"Meta-information",
+	"Definitions",
 	"Image",
 	"Docs",
 	"Docs/FileContents",
@@ -47,6 +47,8 @@ var dirs = []string{
 	"Sequences/fault-sequence",
 	"Sequences/in-sequence",
 	"Sequences/out-sequence",
+	"Client-certificates",
+	"Endpoint-certificates",
 	"Interceptors",
 	"libs",
 }
@@ -78,7 +80,8 @@ func getTempFileForSwagger(swaggerData string, swaggerFileName string) (*os.File
 		swaggerFile, _ = ioutil.TempFile("", "api-swagger*.json")
 	}
 	if err := os.Chmod(swaggerFile.Name(), 0777); err != nil {
-		return nil, err }
+		return nil, err
+	}
 	if _, err := swaggerFile.Write([]byte(swaggerData)); err != nil {
 		logDeploy.Error(err, "Error while writing to temp swagger file")
 		return nil, err
@@ -115,13 +118,14 @@ func getCert(client *client.Client, mgwCertSecretConf string) error {
 	return nil
 }
 
-func getZipData (config *corev1.ConfigMap) (string, error){
+func getZipData(config *corev1.ConfigMap) (string, error) {
 	file, err := ioutil.TempFile("", "api-binary.*.zip")
 	if err != nil {
 		return "", err
 	}
 	if err := os.Chmod(file.Name(), 0777); err != nil {
-		return "", err }
+		return "", err
+	}
 	zipFileName, errZip := maps.OneKey(config.BinaryData)
 	if errZip != nil {
 		return "", errZip
@@ -134,7 +138,7 @@ func getZipData (config *corev1.ConfigMap) (string, error){
 	return file.Name(), nil
 }
 
-func getSwaggerData (config *corev1.ConfigMap) (string, func(), error){
+func getSwaggerData(config *corev1.ConfigMap) (string, func(), error) {
 	swaggerFileName, errSwagger := maps.OneKey(config.Data)
 	if errSwagger != nil {
 		logDeploy.Error(errSwagger, "Error in the swagger configMap data", "data", config.Data)
@@ -150,16 +154,17 @@ func getSwaggerData (config *corev1.ConfigMap) (string, func(), error){
 	if err != nil {
 		return "", nil, err
 	}
-	def := &apim.APIDefinition{}
+	definitionFile := &apim.APIDefinitionFile{}
+	def := &definitionFile.Data
 
 	err = getAPIData(def, doc)
 	if err != nil {
 		return "", nil, err
 	}
-	if def.EndpointConfig != nil {
-		def.ProductionUrl = ""
-		def.SandboxUrl = ""
-	}
+	//if def.EndpointConfig != nil {
+	//	def.ProductionUrl = ""
+	//	def.SandboxUrl = ""
+	//}
 	apiData, err := yaml2.Marshal(def)
 	if err != nil {
 		return "", nil, err
@@ -171,8 +176,8 @@ func getSwaggerData (config *corev1.ConfigMap) (string, func(), error){
 	}
 
 	swaggerDirectory, _ := ioutil.TempDir("", "api-swagger-dir*")
-	apiYamlPath := filepath.Join(swaggerDirectory, filepath.FromSlash("Meta-information/api.yaml"))
-	swaggerSavePath := filepath.Join(swaggerDirectory, filepath.FromSlash("Meta-information/swagger.yaml"))
+	apiYamlPath := filepath.Join(swaggerDirectory, filepath.FromSlash("api.yaml"))
+	swaggerSavePath := filepath.Join(swaggerDirectory, filepath.FromSlash("Definitions/swagger.yaml"))
 	errCreateDirectory := createDirectories(swaggerDirectory)
 	if errCreateDirectory != nil {
 		return "", nil, errCreateDirectory
@@ -201,7 +206,8 @@ func ZipFiles(filename string, files []string) error {
 		return err1
 	}
 	if err := os.Chmod(newZipFile.Name(), 0777); err != nil {
-		return err }
+		return err
+	}
 	defer newZipFile.Close()
 
 	zipWriter := zip.NewWriter(newZipFile)

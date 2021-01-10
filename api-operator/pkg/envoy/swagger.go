@@ -17,6 +17,7 @@
 package envoy
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/Jeffail/gabs"
 	"github.com/go-openapi/loads"
@@ -33,46 +34,42 @@ const (
 )
 
 // generateFieldsFromSwagger3 using swagger
-func getAPIData(def *apim.APIDefinition, swaggerDoc *loads.Document) error {
-	def.ID.APIName = swaggerDoc.Spec().Info.Title
-	def.ID.Version = swaggerDoc.Spec().Info.Version
-	def.ID.ProviderName = "admin"
+func getAPIData(def *apim.APIDTODefinition, swaggerDoc *loads.Document) error {
+	def.Name = swaggerDoc.Spec().Info.Title
+	def.Version = swaggerDoc.Spec().Info.Version
+	def.Provider = "admin"
 	def.Description = swaggerDoc.Spec().Info.Description
-	def.Context = fmt.Sprintf("/%s/%s", def.ID.APIName, def.ID.Version)
-	def.ContextTemplate = fmt.Sprintf("/%s/{version}", def.ID.APIName)
+	def.Context = fmt.Sprintf("/%s/%s", def.Name, def.Version)
 	def.Tags = swaggerTags(swaggerDoc)
 
 	// fill basepath from swagger
 	if swaggerDoc.BasePath() != "" {
-		def.Context = path.Clean(fmt.Sprintf("/%s/%s", swaggerDoc.BasePath(), def.ID.Version))
-		def.ContextTemplate = path.Clean(fmt.Sprintf("/%s/{version}", swaggerDoc.BasePath()))
+		def.Context = path.Clean(fmt.Sprintf("/%s/%s", swaggerDoc.BasePath(), def.Version))
 	}
 
 	// override basepath if wso2 extension provided
 	if basepath, ok := swaggerXWO2BasePath(swaggerDoc); ok {
 		def.Context = path.Clean(basepath)
-		def.ContextTemplate = path.Clean(basepath)
 		if !strings.Contains(basepath, "{version}") {
-			def.Context = path.Clean(basepath + "/" + def.ID.Version)
-			def.ContextTemplate = path.Clean(basepath + "/{version}")
+			def.Context = path.Clean(basepath + "/" + def.Version)
 			def.IsDefaultVersion = true
 		} else {
-			def.ContextTemplate = path.Clean(basepath)
-			def.Context = path.Clean(strings.ReplaceAll(basepath, "{version}", def.ID.Version))
+			def.Context = path.Clean(strings.ReplaceAll(basepath, "{version}", def.Version))
 		}
 	}
 
 	// trim spaces if available
-	def.ID.APIName = strings.ReplaceAll(def.ID.APIName, " ", "")
-	def.ID.Version = strings.ReplaceAll(def.ID.Version, " ", "")
+	def.Name = strings.ReplaceAll(def.Name, " ", "")
+	def.Version = strings.ReplaceAll(def.Version, " ", "")
 	def.Context = strings.ReplaceAll(def.Context, " ", "")
-	def.ContextTemplate = strings.ReplaceAll(def.ContextTemplate, " ", "")
 
-	def.EnableStore = true
-	def.Status = "CREATED"
-	def.Transports = "http,https"
-	def.Type = "http"
-	def.Visibility = "public"
+	cors, ok, err := swagger2XWSO2Cors(swaggerDoc)
+	if err != nil && ok {
+		return err
+	}
+	if ok {
+		def.CorsConfiguration = cors
+	}
 
 	prodEp, foundProdEp, err := swaggerXWSO2ProductionEndpoints(swaggerDoc)
 	if err != nil && foundProdEp {
@@ -88,12 +85,31 @@ func getAPIData(def *apim.APIDefinition, swaggerDoc *loads.Document) error {
 		if err != nil {
 			return err
 		}
-		def.EndpointConfig = &ep
+		var endpointConfig map[string]interface{}
+		err = json.Unmarshal([]byte(ep), &endpointConfig)
+		if err != nil {
+			return err
+		}
+		def.EndpointConfig = &endpointConfig
 	}
 	return nil
 }
+
 type Tag struct {
 	Name string `json:"name"`
+}
+
+func swagger2XWSO2Cors(document *loads.Document) (*apim.CorsConfiguration, bool, error) {
+	if v, ok := document.Spec().Extensions["x-wso2-cors"]; ok {
+		var cors apim.CorsConfiguration
+		err := mapstructure.Decode(v, &cors)
+		if err != nil {
+			return nil, true, err
+		}
+		cors.CorsConfigurationEnabled = true
+		return &cors, true, nil
+	}
+	return nil, false, nil
 }
 
 func swaggerTags(document *loads.Document) []string {
@@ -273,4 +289,3 @@ func buildHttpEndpoint(production *Endpoints, sandbox *Endpoints) string {
 	}
 	return jsonObj.String()
 }
-
