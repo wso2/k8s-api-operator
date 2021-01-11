@@ -161,10 +161,7 @@ func getSwaggerData(config *corev1.ConfigMap) (string, func(), error) {
 	if err != nil {
 		return "", nil, err
 	}
-	//if def.EndpointConfig != nil {
-	//	def.ProductionUrl = ""
-	//	def.SandboxUrl = ""
-	//}
+
 	apiData, err := yaml2.Marshal(def)
 	if err != nil {
 		return "", nil, err

@@ -49,7 +49,14 @@ func GetSwaggerV3(swaggerStr *string) (*openapi3.Swagger, error) {
 // GetSwaggerV2 returns the openapi2.Swagger of given swagger string
 func GetSwaggerV2(swaggerStr *string) (*openapi3.Swagger, error) {
 	var swagger2 openapi2.Swagger
-	err2 := yaml.Unmarshal([]byte(*swaggerStr), &swagger2)
+	// ignore error
+	_ = json.Unmarshal([]byte(*swaggerStr), &swagger2)
+	if swagger2.BasePath == "" {
+		if err := yaml.Unmarshal([]byte(*swaggerStr), &swagger2); err != nil {
+			return nil, err
+		}
+	}
+
 	swaggerV3, err2 := openapi2conv.ToV3Swagger(&swagger2)
 	return swaggerV3, err2
 }

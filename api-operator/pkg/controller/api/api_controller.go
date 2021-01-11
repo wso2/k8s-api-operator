@@ -161,13 +161,13 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	controlConfigData := controlConf.Data
 	instance.Status.Replicas = instance.Spec.Replicas
-	importAPIEnabled, err := strconv.ParseBool(controlConfigData[importAPIToAPIMEnabledConst])
+	deployAPIMEnabled, err := strconv.ParseBool(controlConfigData[deployAPIMEnabledConst])
 	if err != nil {
-		reqLogger.Error(err, "Invalid boolean value for importAPIEnabled",
-			"value", controlConfigData[importAPIToAPIMEnabledConst])
+		reqLogger.Error(err, "Invalid boolean value for deployAPIMEnabled",
+			"value", controlConfigData[deployAPIMEnabledConst])
 		return reconcile.Result{RequeueAfter: common.RequeueDurationForConfigError}, err
 	}
-	if importAPIEnabled {
+	if deployAPIMEnabled {
 		importErr := apim.ImportAPI(&r.client, instance)
 		if importErr != nil {
 			r.recorder.Event(instance, eventTypeError, "FailedAPIImport",

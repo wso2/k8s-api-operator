@@ -21,22 +21,21 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
-	"io/ioutil"
-	"net/http"
-	"net/url"
-	"os"
-	"path"
-	"strconv"
-	"strings"
-
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/maps"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/swagger"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/utils"
+	"io/ioutil"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"net/http"
+	"net/url"
+	"os"
+	"path"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
+	"strconv"
+	"strings"
 )
 
 // getRESTAPIConfigs returns the APIM configs for REST API invocation
@@ -188,9 +187,9 @@ func getAdditionalProperties(swaggerData string) (string, string, string, error)
 	}
 	var name, context, version string
 
-	name = swaggerDoc.Info.Title
+	name = strings.ReplaceAll(swaggerDoc.Info.Title, " ", "")
 	version = swaggerDoc.Info.Version
-	context = strings.Split(swagger.ApiBasePath(swaggerDoc), "/")[1]
+	context = fmt.Sprintf("%v/%v", swagger.ApiBasePath(swaggerDoc), version)
 
 	dataString := `{"name":"` + name + `","version":"` + version + `","context":"` + context + `"}`
 
