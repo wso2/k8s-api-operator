@@ -17,8 +17,8 @@
 package envoy
 
 const (
-	mgBasePath                 = "/mgw/1.0"
-	mgDeployResourcePath       = "/import/api"
+	mgBasePath                 = "/api/mgw/adapter/0.1"
+	mgDeployResourcePath       = "/apis"
 	envoyMgwConfName           = "envoy-mgw-configs"
 	envoyMgwSecretName         = "envoymgw-adapter-secret"
 	mgwAdapterHostConst        = "mgwAdapterHost"

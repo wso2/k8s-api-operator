@@ -116,8 +116,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	defer cancelFunc()
 	// Request info
-	requestInfo := &common.RequestInfo{Request: request, Client: r.client, Object: instance, Log: log, EvnRecorder:
-	r.recorder}
+	requestInfo := &common.RequestInfo{Request: request, Client: r.client, Object: instance, Log: log, EvnRecorder: r.recorder}
 	ctx = requestInfo.NewContext(ctx)
 
 	apiList := &wso2v1alpha2.APIList{}
@@ -127,7 +126,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			common.WatchNamespace)
 		return reconcile.Result{}, err
 	}
-
 
 	err := k8s.Get(&r.client, request.NamespacedName, instance)
 	if err != nil {
@@ -163,12 +161,13 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	controlConfigData := controlConf.Data
 	instance.Status.Replicas = instance.Spec.Replicas
-	importAPIEnabled, err := strconv.ParseBool(controlConfigData[importAPIEnabledConst])
+	deployAPIMEnabled, err := strconv.ParseBool(controlConfigData[deployAPIMEnabledConst])
 	if err != nil {
-		reqLogger.Error(err, "Invalid boolean value for importAPIEnabled")
-		return reconcile.Result{}, err
+		reqLogger.Error(err, "Invalid boolean value for deployAPIMEnabled",
+			"value", controlConfigData[deployAPIMEnabledConst])
+		return reconcile.Result{RequeueAfter: common.RequeueDurationForConfigError}, err
 	}
-	if importAPIEnabled {
+	if deployAPIMEnabled {
 		importErr := apim.ImportAPI(&r.client, instance)
 		if importErr != nil {
 			r.recorder.Event(instance, eventTypeError, "FailedAPIImport",
@@ -181,14 +180,23 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	// Deploy the API to MGW Adapter
-	deployErr := envoy.DeployAPItoMgw(&r.client, instance)
-	if deployErr != nil {
-		r.recorder.Event(instance, eventTypeError, "FailedAPIDeployToMGW",
-			fmt.Sprintf("Error occured while deploying API to Envoy MGW Adapter"))
-		return reconcile.Result{}, deployErr
+	deployMgwEnabled, err := strconv.ParseBool(controlConfigData[deployAPIToMGWEnabledConst])
+	if err != nil {
+		reqLogger.Error(err, "Invalid boolean value for deployAPIToMGWEnabled",
+			"value", controlConfigData[deployAPIToMGWEnabledConst])
+		return reconcile.Result{RequeueAfter: common.RequeueDurationForConfigError}, nil
 	}
-	r.recorder.Event(instance, corev1.EventTypeNormal, "APIDeploy",
-		fmt.Sprintf("Successfully deployed API to Envoy MGW Adapter"))
-	reqLogger.Info("Successfully deployed API to Envoy MGW Adapter", "api_name", instance.Name)
+
+	if deployMgwEnabled {
+		deployErr := envoy.DeployAPItoMgw(&r.client, instance)
+		if deployErr != nil {
+			r.recorder.Event(instance, eventTypeError, "FailedAPIDeployToMGW",
+				fmt.Sprintf("Error occured while deploying API to Envoy MGW Adapter"))
+			return reconcile.Result{}, deployErr
+		}
+		r.recorder.Event(instance, corev1.EventTypeNormal, "APIDeploy",
+			fmt.Sprintf("Successfully deployed API to Envoy MGW Adapter"))
+		reqLogger.Info("Successfully deployed API to Envoy MGW Adapter", "api_name", instance.Name)
+	}
 	return reconcile.Result{}, nil
 }

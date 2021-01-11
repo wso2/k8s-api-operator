@@ -22,6 +22,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	wso2v1alpha2 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	"strings"
 )
 
 var logExt = log.Log.WithName("swagger.extensions")
@@ -29,11 +30,11 @@ var logExt = log.Log.WithName("swagger.extensions")
 const (
 	EndpointExtension           = "x-wso2-endpoints"
 	ProductionEndpointExtension = "x-wso2-production-endpoints"
-	ApiBasePathExtension    	= "x-wso2-basePath"
-	DeploymentModeExtension 	= "x-wso2-mode"
-	SecurityExtension       	= "security"
-	PathsExtension          	= "paths"
-	SecuritySchemeExtension 	= "securitySchemes"
+	ApiBasePathExtension        = "x-wso2-basePath"
+	DeploymentModeExtension     = "x-wso2-mode"
+	SecurityExtension           = "security"
+	PathsExtension              = "paths"
+	SecuritySchemeExtension     = "securitySchemes"
 )
 
 func ApiBasePath(swagger *openapi3.Swagger) string {
@@ -51,6 +52,10 @@ func ApiBasePath(swagger *openapi3.Swagger) string {
 			logExt.Error(nil, "Wrong format of API base path in the swagger")
 		}
 	} else {
+		if len(swagger.Servers) > 0 {
+			splits := strings.Split(swagger.Servers[0].URL, "/")
+			return splits[len(splits)-1]
+		}
 		logExt.Error(nil, "API base path extension not found in the swagger")
 	}
 
