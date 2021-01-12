@@ -19,7 +19,7 @@ kind: ConfigMap
 metadata:
   name: integration-config
 data:
-  reconcileInterval: "5"
+  reconcileInterval: "10"
   autoIngressCreation: "true"
   enableAutoScale: "false"
   minReplicas: "1"
