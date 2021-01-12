@@ -28,6 +28,7 @@ const (
 	integrationIngressConfigMapName = "integration-ingress-config"
 	eiContainerName                 = "micro-integrator"
 	defaultPassthroPort             = 8290
+	reconcileIntervalKey            = "reconcileInterval"
 
 	deploymentNamePostfix = "-deployment"
 	hpaNamePostfix = "-hpa"
@@ -38,7 +39,6 @@ const (
 	ingressHostNameKey = "ingressHostName"
 	autoIngressCreationKey = "autoIngressCreation"
 	ingressProperties    = "ingress.properties"
-	sslRedirectKey = "sslRedirect"
 	tlsSecretNameKey = "tlsSecretName"
 
 
