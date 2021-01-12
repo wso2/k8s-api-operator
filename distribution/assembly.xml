@@ -33,54 +33,55 @@
             <outputDirectory>/</outputDirectory>
             <includes>
                 <include>README*</include>
-                <include>LICENSE*</include>
+                <include>LICENSE</include>
             </includes>
         </fileSet>
-        <fileSet>
-            <directory>../api-operator/deploy</directory>
-            <outputDirectory>/api-operator</outputDirectory>
-            <useDefaultExcludes>true</useDefaultExcludes>
-            <excludes>
-                <exclude>crds/**</exclude>
-                <exclude>controller-configs/**</exclude>
-            </excludes>
-        </fileSet>
+<!--        <fileSet>-->
+<!--            <directory>../api-operator/deploy</directory>-->
+<!--            <outputDirectory>/api-operator</outputDirectory>-->
+<!--            <useDefaultExcludes>true</useDefaultExcludes>-->
+<!--            <excludes>-->
+<!--                <exclude>crds/**</exclude>-->
+<!--                <exclude>controller-configs/**</exclude>-->
+<!--                <exclude>kustomization.yaml</exclude>-->
+<!--            </excludes>-->
+<!--        </fileSet>-->
         <fileSet>
             <directory>../api-operator/deploy/crds</directory>
-            <outputDirectory>/api-operator/controller-artifacts/</outputDirectory>
+            <outputDirectory>/controller-artifacts/</outputDirectory>
             <useDefaultExcludes>true</useDefaultExcludes>
         </fileSet>
         <fileSet>
             <directory>../api-operator/deploy/controller-configs</directory>
-            <outputDirectory>/api-operator/controller-artifacts/</outputDirectory>
+            <outputDirectory>//controller-artifacts/</outputDirectory>
             <useDefaultExcludes>true</useDefaultExcludes>
         </fileSet>
-        <fileSet>
-            <directory>../api-operator/deploy/controller-artifacts</directory>
-            <outputDirectory>/api-operator/operatorhub-controller-configs/</outputDirectory>
-            <includes>
-                <include>namespace.yaml</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>../api-operator/deploy/controller-configs</directory>
-            <outputDirectory>/api-operator/operatorhub-controller-configs/</outputDirectory>
-            <useDefaultExcludes>true</useDefaultExcludes>
-        </fileSet>
-        <fileSet>
-            <useDefaultExcludes>true</useDefaultExcludes>
-            <outputDirectory>/k8s-artifacts</outputDirectory>
-            <directory>../k8s-artifacts</directory>
-        </fileSet>
-        <fileSet>
-            <directory>../scenarios</directory>
-            <outputDirectory>/scenarios</outputDirectory>
-            <useDefaultExcludes>true</useDefaultExcludes>
-        </fileSet>
-        <fileSet>
-            <directory>../docs</directory>
-            <outputDirectory>/docs</outputDirectory>
-            <useDefaultExcludes>true</useDefaultExcludes>
-        </fileSet>
+<!--        <fileSet>-->
+<!--            <directory>../api-operator/deploy/controller-artifacts</directory>-->
+<!--            <outputDirectory>/api-operator/operatorhub-controller-configs/</outputDirectory>-->
+<!--            <includes>-->
+<!--                <include>namespace.yaml</include>-->
+<!--            </includes>-->
+<!--        </fileSet>-->
+<!--        <fileSet>-->
+<!--            <directory>../api-operator/deploy/controller-configs</directory>-->
+<!--            <outputDirectory>/api-operator/operatorhub-controller-configs/</outputDirectory>-->
+<!--            <useDefaultExcludes>true</useDefaultExcludes>-->
+<!--        </fileSet>-->
+<!--        <fileSet>-->
+<!--            <useDefaultExcludes>true</useDefaultExcludes>-->
+<!--            <outputDirectory>/k8s-artifacts</outputDirectory>-->
+<!--            <directory>../k8s-artifacts</directory>-->
+<!--        </fileSet>-->
+<!--        <fileSet>-->
+<!--            <directory>../scenarios</directory>-->
+<!--            <outputDirectory>/scenarios</outputDirectory>-->
+<!--            <useDefaultExcludes>true</useDefaultExcludes>-->
+<!--        </fileSet>-->
+<!--        <fileSet>-->
+<!--            <directory>../docs</directory>-->
+<!--            <outputDirectory>/docs</outputDirectory>-->
+<!--            <useDefaultExcludes>true</useDefaultExcludes>-->
+<!--        </fileSet>-->
     </fileSets>
 </assembly>

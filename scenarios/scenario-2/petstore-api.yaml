@@ -1,4 +1,4 @@
-#Copyright (c)  WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+# Copyright (c) WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
 #
 # WSO2 Inc. licenses this file to you under the Apache License,
 # Version 2.0 (the "License"); you may not use this file except
@@ -13,20 +13,10 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
----
-openapi: 3.0.0
-info:
-  title: hello-world
-  version: 1.0.0
-  description: This API contains operations related to node.
-x-wso2-basePath: /node/1.0.0
-x-wso2-production-endpoints:
-  urls:
-    - hello-world-serverless.micro
-x-wso2-mode: Serverless
-paths:
-  /hello/node:
-    get:
-      responses:
-        "200":
-          description: ""
+
+apiVersion: wso2.com/v1alpha2
+kind: API
+metadata:
+  name: petstore-api
+spec:
+  swaggerConfigMapName: petstore-cm

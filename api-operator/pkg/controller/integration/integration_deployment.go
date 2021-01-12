@@ -19,7 +19,7 @@
 package integration
 
 import (
-	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
+	wso2v1alpha2 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
@@ -30,7 +30,7 @@ import (
 )
 
 // deploymentForIntegration returns a integration Deployment object
-func (r *ReconcileIntegration) deploymentForIntegration(m *wso2v1alpha1.Integration, config EIConfig) *appsv1.Deployment {
+func (r *ReconcileIntegration) deploymentForIntegration(m *wso2v1alpha2.Integration, config EIConfig) *appsv1.Deployment {
 	//set HTTP and HTTPS ports for as container ports
 	exposePorts := []corev1.ContainerPort{
 		corev1.ContainerPort{
@@ -67,7 +67,7 @@ func (r *ReconcileIntegration) deploymentForIntegration(m *wso2v1alpha1.Integrat
 		replicas = config.MinReplicas
 	}
 
-	request :=  corev1.ResourceList{}
+	request := corev1.ResourceList{}
 	if m.Spec.DeploySpec.ReqCpu != "" {
 		request[corev1.ResourceCPU] = resource.MustParse(m.Spec.DeploySpec.ReqCpu)
 	}
@@ -79,7 +79,7 @@ func (r *ReconcileIntegration) deploymentForIntegration(m *wso2v1alpha1.Integrat
 	if m.Spec.DeploySpec.LimitCpu != "" {
 		limit[corev1.ResourceCPU] = resource.MustParse(m.Spec.DeploySpec.LimitCpu)
 	}
-	if m.Spec.DeploySpec.MemoryLimit !="" {
+	if m.Spec.DeploySpec.MemoryLimit != "" {
 		limit[corev1.ResourceMemory] = resource.MustParse(m.Spec.DeploySpec.MemoryLimit)
 	}
 
@@ -103,15 +103,15 @@ func (r *ReconcileIntegration) deploymentForIntegration(m *wso2v1alpha1.Integrat
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{{
-						Image:           m.Spec.Image,
-						Name:            "micro-integrator",
-						Ports:           exposePorts,
+						Image: m.Spec.Image,
+						Name:  "micro-integrator",
+						Ports: exposePorts,
 						Resources: corev1.ResourceRequirements{
 							Limits:   limit,
 							Requests: request,
 						},
 						Env:             m.Spec.Env,
-						EnvFrom: 	 m.Spec.EnvFrom,
+						EnvFrom:         m.Spec.EnvFrom,
 						ImagePullPolicy: corev1.PullAlways,
 					}},
 					ImagePullSecrets: imageSecrets,
@@ -138,7 +138,7 @@ func (r *ReconcileIntegration) deploymentForIntegration(m *wso2v1alpha1.Integrat
 }
 
 // returns HPA for the Integration deployment with HPA version v2beta2
-func createIntegrationHPA(integration *wso2v1alpha1.Integration, dep *appsv1.Deployment, eiConfig EIConfig,
+func createIntegrationHPA(integration *wso2v1alpha2.Integration, dep *appsv1.Deployment, eiConfig EIConfig,
 	owner []metav1.OwnerReference) *v2beta2.HorizontalPodAutoscaler {
 	// target resource
 	targetResource := v2beta2.CrossVersionObjectReference{

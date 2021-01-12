@@ -43,7 +43,7 @@ tags:
     externalDocs:
       description: Find out more about our store
       url: http://swagger.io
-x-wso2-basePath: /petstoredistrate/{version}
+x-wso2-basePath: /petstoredistrate/v1
 x-wso2-throttling-tier: fourreqpolicy
 paths:
   "/pet/findByStatus":

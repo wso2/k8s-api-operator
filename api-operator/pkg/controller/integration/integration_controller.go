@@ -20,7 +20,7 @@ package integration
 
 import (
 	"context"
-	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
+	wso2v1alpha2 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -74,7 +74,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	// Watch for changes to primary resource Integration
-	err = c.Watch(&source.Kind{Type: &wso2v1alpha1.Integration{}}, &handler.EnqueueRequestForObject{})
+	err = c.Watch(&source.Kind{Type: &wso2v1alpha2.Integration{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
@@ -84,13 +84,13 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Watch for deployment
 	err = c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
-		OwnerType:    &wso2v1alpha1.Integration{},
+		OwnerType:    &wso2v1alpha2.Integration{},
 	})
 
 	// Watch for service
 	err = c.Watch(&source.Kind{Type: &corev1.Service{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
-		OwnerType:    &wso2v1alpha1.Integration{},
+		OwnerType:    &wso2v1alpha2.Integration{},
 	})
 
 	if err != nil {
@@ -123,7 +123,7 @@ func (r *ReconcileIntegration) Reconcile(request reconcile.Request) (reconcile.R
 	reqLogger.Info("Reconciling Integration")
 
 	// Fetch the Integration integration
-	integration := &wso2v1alpha1.Integration{}
+	integration := &wso2v1alpha2.Integration{}
 	err := r.client.Get(context.TODO(), request.NamespacedName, integration)
 	if err != nil {
 		if errors.IsNotFound(err) {

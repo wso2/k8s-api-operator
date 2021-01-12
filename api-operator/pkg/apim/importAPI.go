@@ -25,7 +25,7 @@ import (
 	"os"
 	"strings"
 
-	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
+	wso2v1alpha2 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/maps"
 	corev1 "k8s.io/api/core/v1"
@@ -39,7 +39,7 @@ var logImport = log.Log.WithName("apim.import")
 var insecure = true
 
 // ImportAPI imports an API to APIM using either project zip or swagger
-func ImportAPI(client *client.Client, api *wso2v1alpha1.API) error {
+func ImportAPI(client *client.Client, api *wso2v1alpha2.API) error {
 	apimConfig, errInput := getRESTAPIConfigs(client)
 	if errInput != nil {
 		if errors.IsNotFound(errInput) {

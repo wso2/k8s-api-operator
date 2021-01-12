@@ -19,7 +19,7 @@
 package integration
 
 import (
-	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
+	wso2v1alpha2 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
 	"k8s.io/api/autoscaling/v2beta2"
 	"sigs.k8s.io/yaml"
 	"strconv"
@@ -38,8 +38,8 @@ type EIConfig struct {
 }
 
 // UpdateDefaultConfigs updates the default configs of Host, TLS, and ingress creation
-func (r *ReconcileIntegration) UpdateDefaultConfigs(integration *wso2v1alpha1.Integration) EIConfig {
-	eic := EIConfig {
+func (r *ReconcileIntegration) UpdateDefaultConfigs(integration *wso2v1alpha2.Integration) EIConfig {
+	eic := EIConfig{
 		Host:              "wso2",
 		AutoCreateIngress: true,
 		SSLRedirect:       "true",
@@ -86,12 +86,12 @@ func (r *ReconcileIntegration) UpdateDefaultConfigs(integration *wso2v1alpha1.In
 		}
 
 		if configMap.Data[minReplicasKey] != "" {
-			minReplicas, _ := strconv.ParseInt(configMap.Data[minReplicasKey],10,32)
+			minReplicas, _ := strconv.ParseInt(configMap.Data[minReplicasKey], 10, 32)
 			eic.MinReplicas = int32(minReplicas)
 		}
 
 		if configMap.Data[maxReplicasKey] != "" {
-			maxReplicas, _ := strconv.ParseInt(configMap.Data[maxReplicasKey],10,32)
+			maxReplicas, _ := strconv.ParseInt(configMap.Data[maxReplicasKey], 10, 32)
 			eic.MaxReplicas = int32(maxReplicas)
 		}
 
