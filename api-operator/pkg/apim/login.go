@@ -21,6 +21,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 	"net/http"
 	"net/url"
 	"strings"
@@ -63,7 +64,7 @@ func login(client *client.Client, username string, password string, endpoint str
 
 	clientInfo[clientIdConst] = clientId
 	clientInfo[clientSecretConst] = clientSecret
-	clientConfName := types.NamespacedName{Namespace: wso2NameSpaceConst, Name: clientRegistrationSecret}
+	clientConfName := types.NamespacedName{Namespace: config.SystemNamespace, Name: clientRegistrationSecret}
 	clientConfSecret := k8s.NewSecretWith(clientConfName, nil, &clientInfo, nil)
 
 	err := k8s.Apply(client, clientConfSecret)
@@ -123,7 +124,7 @@ func getAccessToken(client *client.Client,
 	var username, password, clientId, clientSecret string
 
 	apimSecret := k8s.NewSecret()
-	errToken := k8s.Get(client, types.NamespacedName{Namespace: wso2NameSpaceConst, Name: secretName}, apimSecret)
+	errToken := k8s.Get(client, types.NamespacedName{Namespace: config.SystemNamespace, Name: secretName}, apimSecret)
 	if errToken != nil {
 		return "", errToken
 	}
@@ -145,7 +146,7 @@ func getAccessToken(client *client.Client,
 	} else {
 		ckcsSecret := k8s.NewSecret()
 		errToken = k8s.Get(client,
-			types.NamespacedName{Namespace: wso2NameSpaceConst, Name: clientRegistrationSecret}, ckcsSecret)
+			types.NamespacedName{Namespace: config.SystemNamespace, Name: clientRegistrationSecret}, ckcsSecret)
 		if errToken != nil {
 			if errors.IsNotFound(errToken) {
 				logLogin.Info("Client ID, Client Secret not found. Logging in...")

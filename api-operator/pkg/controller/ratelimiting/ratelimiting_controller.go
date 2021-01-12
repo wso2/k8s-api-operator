@@ -20,7 +20,7 @@ import (
 	"context"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 
-	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
+	wso2v1alpha2 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -69,7 +69,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	// Watch for changes to primary resource RateLimiting
-	err = c.Watch(&source.Kind{Type: &wso2v1alpha1.RateLimiting{}}, &handler.EnqueueRequestForObject{})
+	err = c.Watch(&source.Kind{Type: &wso2v1alpha2.RateLimiting{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
@@ -78,7 +78,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Watch for changes to secondary resource Pods and requeue the owner RateLimiting
 	err = c.Watch(&source.Kind{Type: &corev1.Pod{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
-		OwnerType:    &wso2v1alpha1.RateLimiting{},
+		OwnerType:    &wso2v1alpha2.RateLimiting{},
 	})
 	if err != nil {
 		return err
@@ -109,7 +109,7 @@ func (r *ReconcileRateLimiting) Reconcile(request reconcile.Request) (reconcile.
 	reqLogger.Info("Reconciling RateLimiting")
 
 	// Fetch the RateLimiting instance
-	instance := &wso2v1alpha1.RateLimiting{}
+	instance := &wso2v1alpha2.RateLimiting{}
 	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {

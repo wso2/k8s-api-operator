@@ -1,4 +1,4 @@
-apiVersion: wso2.com/v1alpha1
+apiVersion: wso2.com/v1alpha2
 kind: RateLimiting
 metadata:
   name: testing1ratelimiting
