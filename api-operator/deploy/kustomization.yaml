@@ -19,6 +19,7 @@ kind: Kustomization
 resources:
   # CRDs
   - crds/wso2.com_apis_crd.yaml
+  - crds/wso2.com_targetendpoints_crd.yaml
   - crds/wso2.com_integrations_crd.yaml
   # Controller Artifacts
   - controller-artifacts/operator.yaml

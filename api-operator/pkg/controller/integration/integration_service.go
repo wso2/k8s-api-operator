@@ -19,7 +19,7 @@
 package integration
 
 import (
-	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
+	wso2v1alpha2 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -28,7 +28,7 @@ import (
 )
 
 // serviceForIntegration returns a service object
-func (r *ReconcileIntegration) serviceForIntegration(m *wso2v1alpha1.Integration) *corev1.Service {
+func (r *ReconcileIntegration) serviceForIntegration(m *wso2v1alpha2.Integration) *corev1.Service {
 	//set HTTP and HTTPS ports for as ServiceSpec ports
 	exposeServicePorts := []corev1.ServicePort{
 		corev1.ServicePort{

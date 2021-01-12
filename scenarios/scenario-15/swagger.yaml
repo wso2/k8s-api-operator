@@ -43,7 +43,7 @@ tags:
     externalDocs:
       description: Find out more about our store
       url: http://swagger.io
-x-wso2-basePath: /petstore/{version}
+x-wso2-basePath: /petstore/v1
 x-wso2-request-interceptor: java:org.wso2.micro.gateway.interceptor.SampleInterceptor
 x-wso2-response-interceptor: java:org.wso2.micro.gateway.interceptor.SampleInterceptor
 paths:

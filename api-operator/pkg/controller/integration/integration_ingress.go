@@ -19,13 +19,13 @@
 package integration
 
 import (
-	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
+	wso2v1alpha2 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
 	v1beta1 "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // ingressForIntegration returns a ingress object
-func (r *ReconcileIntegration) ingressForIntegration(m *wso2v1alpha1.Integration, eic *EIConfig) *v1beta1.Ingress {
+func (r *ReconcileIntegration) ingressForIntegration(m *wso2v1alpha2.Integration, eic *EIConfig) *v1beta1.Ingress {
 	ingressPaths := GenerateIngressPaths(m)
 
 	var ingressSpec v1beta1.IngressSpec
@@ -83,7 +83,7 @@ func (r *ReconcileIntegration) ingressForIntegration(m *wso2v1alpha1.Integration
 	return ingress
 }
 
-func (r *ReconcileIntegration) updateIngressForIntegration(m *wso2v1alpha1.Integration, eic *EIConfig, currentIngress *v1beta1.Ingress) *v1beta1.Ingress {
+func (r *ReconcileIntegration) updateIngressForIntegration(m *wso2v1alpha2.Integration, eic *EIConfig, currentIngress *v1beta1.Ingress) *v1beta1.Ingress {
 	currentRules, _ := CheckIngressRulesExist(m, eic, currentIngress)
 
 	var ingressSpec v1beta1.IngressSpec
