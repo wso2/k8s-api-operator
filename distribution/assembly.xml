@@ -47,13 +47,18 @@
 <!--            </excludes>-->
 <!--        </fileSet>-->
         <fileSet>
+            <directory>../api-operator/deploy/controller-artifacts</directory>
+            <outputDirectory>/controller-artifacts/</outputDirectory>
+            <useDefaultExcludes>true</useDefaultExcludes>
+        </fileSet>
+        <fileSet>
             <directory>../api-operator/deploy/crds</directory>
             <outputDirectory>/controller-artifacts/</outputDirectory>
             <useDefaultExcludes>true</useDefaultExcludes>
         </fileSet>
         <fileSet>
             <directory>../api-operator/deploy/controller-configs</directory>
-            <outputDirectory>//controller-artifacts/</outputDirectory>
+            <outputDirectory>/controller-artifacts/</outputDirectory>
             <useDefaultExcludes>true</useDefaultExcludes>
         </fileSet>
 <!--        <fileSet>-->

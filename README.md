@@ -16,3 +16,12 @@ as managed API in Kubernetes environment without any additional work.
 
 Follow the [Quick Start with Kubernetes](https://apim.docs.wso2.com/en/next/publish/api-microgateway/quick-start-with-kubernetes/)
 to work with K8s API Operator.
+
+## Standalone Installation
+
+Use the following command to install API Operator
+
+```sh
+>> kubectl create ns wso2-system;
+   kubectl apply -n wso2-system -f https://github.com/wso2/k8s-api-operator/releases/download/v2.0.0-m3/api-operator-configs.yaml
+```
