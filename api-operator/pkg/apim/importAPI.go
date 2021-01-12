@@ -22,12 +22,10 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
-	"net/url"
 	"os"
-	"strconv"
 	"strings"
 
-	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
+	wso2v1alpha2 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/maps"
 	corev1 "k8s.io/api/core/v1"
@@ -41,7 +39,7 @@ var logImport = log.Log.WithName("apim.import")
 var insecure = true
 
 // ImportAPI imports an API to APIM using either project zip or swagger
-func ImportAPI(client *client.Client, api *wso2v1alpha1.API) error {
+func ImportAPI(client *client.Client, api *wso2v1alpha2.API) error {
 	apimConfig, errInput := getRESTAPIConfigs(client)
 	if errInput != nil {
 		if errors.IsNotFound(errInput) {
@@ -69,35 +67,35 @@ func ImportAPI(client *client.Client, api *wso2v1alpha1.API) error {
 		return errToken
 	}
 
-	//itterate throught all API definition.
-	for _, configMapName := range api.Spec.Definition.SwaggerConfigmapNames {
-		inputConf := k8s.NewConfMap()
-		errInput := k8s.Get(client, types.NamespacedName{Namespace: api.Namespace, Name: configMapName}, inputConf)
+	inputConf := k8s.NewConfMap()
+	errInput = k8s.Get(client, types.NamespacedName{
+		Namespace: api.Namespace,
+		Name:      api.Spec.SwaggerConfigMapName,
+	}, inputConf)
 
-		if errInput != nil {
-			if errors.IsNotFound(errInput) {
-				logImport.Info("API project or swagger not found")
-				return errInput
-			} else {
-				logImport.Error(errInput, "Error retrieving API configs to import")
-				return errInput
-			}
-		}
-
-		if inputConf.BinaryData != nil {
-			logImport.Info("Importing API using project zip")
-			importErr := importAPIFromZip(inputConf, accessToken, publisherEndpoint)
-			if importErr != nil {
-				logImport.Error(importErr, "Error when importing the API using zip")
-				return importErr
-			}
+	if errInput != nil {
+		if errors.IsNotFound(errInput) {
+			logImport.Info("API project or swagger not found")
+			return errInput
 		} else {
-			logImport.Info("Importing API using swagger")
-			importErr := importAPIFromSwagger(inputConf, accessToken, publisherEndpoint)
-			if importErr != nil {
-				logImport.Error(importErr, "Error when importing the API using swagger")
-				return importErr
-			}
+			logImport.Error(errInput, "Error retrieving API configs to import")
+			return errInput
+		}
+	}
+
+	if inputConf.BinaryData != nil {
+		logImport.Info("Importing API using project zip")
+		importErr := importAPIFromZip(inputConf, accessToken, publisherEndpoint)
+		if importErr != nil {
+			logImport.Error(importErr, "Error when importing the API using zip")
+			return importErr
+		}
+	} else {
+		logImport.Info("Importing API using swagger")
+		importErr := importAPIFromSwagger(inputConf, accessToken, publisherEndpoint)
+		if importErr != nil {
+			logImport.Error(importErr, "Error when importing the API using swagger")
+			return importErr
 		}
 	}
 
@@ -105,25 +103,11 @@ func ImportAPI(client *client.Client, api *wso2v1alpha1.API) error {
 }
 
 func importAPIFromZip(config *corev1.ConfigMap, token string, endpoint string) error {
-	updateAPI := false
 	zipFileName, errZip := maps.OneKey(config.BinaryData)
 	if errZip != nil {
 		return errZip
 	}
 	zippedData := config.BinaryData[zipFileName]
-
-	tmpPath, err := getTempPathOfExtractedArchive(zippedData)
-	if err != nil {
-		logImport.Error(err, "Error while getting extracted temporary directory")
-		return err
-	}
-
-	// Get API info
-	apiInfo, err := getAPIDefinition(tmpPath)
-	if err != nil {
-		logImport.Error(err, "Error while getting API definition")
-		return err
-	}
 
 	requestBody := &bytes.Buffer{}
 	writer := multipart.NewWriter(requestBody)
@@ -136,28 +120,12 @@ func importAPIFromZip(config *corev1.ConfigMap, token string, endpoint string) e
 		return err
 	}
 
-	// checks whether the API exists in APIM
-	apiId, err := getAPIId(token, endpoint+"/"+defaultApiListEndpointSuffix, apiInfo.ID.APIName, apiInfo.ID.Version)
-	if err != nil {
-		return err
-	}
-	if !strings.EqualFold(apiId, "") {
-		updateAPI = true
-	}
-
 	requestHeaders := make(map[string]string)
 	requestHeaders[HeaderContentType] = writer.FormDataContentType()
 	requestHeaders[HeaderAuthorization] = HeaderValueAuthBearerPrefix + " " + token
 	requestHeaders[HeaderAccept] = "*/*"
 	requestHeaders[HeaderConnection] = HeaderValueKeepAlive
-
-	importEndpoint := endpoint + "/" + adminAPIImportEndpoint
-
-	if updateAPI {
-		logImport.Info("Updating the existing API using zip", "api",
-			apiInfo.ID.APIName+":"+apiInfo.ID.Version)
-		importEndpoint += "?overwrite=" + url.QueryEscape(strconv.FormatBool(true))
-	}
+	importEndpoint := endpoint + "/" + publisherAPIImportEndpoint
 
 	resp, err := invokePOSTRequest(importEndpoint, requestHeaders, requestBody.Bytes())
 	if err != nil {

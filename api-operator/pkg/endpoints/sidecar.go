@@ -20,7 +20,7 @@ import (
 	"errors"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 
-	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
+	wso2v1alpha2 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	corev1 "k8s.io/api/core/v1"
 	k8sError "k8s.io/apimachinery/pkg/api/errors"
@@ -46,7 +46,7 @@ func GetSidecarContainers(client *client.Client, apiNamespace string, sidecarEpN
 	for sidecarEpName := range *sidecarEpNames {
 		// deploy sidecar only if endpoint name is not empty and not already deployed
 		if sidecarEpName != "" && !isAdded[sidecarEpName] {
-			targetEndpointCr := &wso2v1alpha1.TargetEndpoint{}
+			targetEndpointCr := &wso2v1alpha2.TargetEndpoint{}
 			erCr := k8s.Get(client,
 				types.NamespacedName{Namespace: apiNamespace, Name: sidecarEpName}, targetEndpointCr)
 			if erCr == nil && targetEndpointCr.Spec.Deploy.DockerImage != "" {
@@ -99,7 +99,7 @@ func GetSidecarContainers(client *client.Client, apiNamespace string, sidecarEpN
 }
 
 func getResourceMetadata(client *client.Client,
-	targetEndpointCr *wso2v1alpha1.TargetEndpoint) (corev1.ResourceList, corev1.ResourceList, error) {
+	targetEndpointCr *wso2v1alpha2.TargetEndpoint) (corev1.ResourceList, corev1.ResourceList, error) {
 	controllerConfMap := &corev1.ConfigMap{}
 	err := k8s.Get(client,
 		types.NamespacedName{Namespace: config.SystemNamespace, Name: "controller-config"}, controllerConfMap)

@@ -32,8 +32,7 @@ var logger = log.Log.WithName("swagger")
 func GetSwaggerV3(swaggerStr *string) (*openapi3.Swagger, error) {
 	swagger, err := openapi3.NewSwaggerLoader().LoadSwaggerFromData([]byte(*swaggerStr))
 	if err != nil {
-		logger.Error(err, "Error loading swagger")
-		return nil, err
+		return GetSwaggerV2(swaggerStr)
 	}
 
 	swaggerV3Version := swagger.OpenAPI
@@ -43,11 +42,23 @@ func GetSwaggerV3(swaggerStr *string) (*openapi3.Swagger, error) {
 		return swagger, err
 	} else {
 		logger.Info("OpenAPI v3 not found. Hence converting Swagger v2 to Swagger v3")
-		var swagger2 openapi2.Swagger
-		err2 := yaml.Unmarshal([]byte(*swaggerStr), &swagger2)
-		swaggerV3, err2 := openapi2conv.ToV3Swagger(&swagger2)
-		return swaggerV3, err2
+		return GetSwaggerV2(swaggerStr)
 	}
+}
+
+// GetSwaggerV2 returns the openapi2.Swagger of given swagger string
+func GetSwaggerV2(swaggerStr *string) (*openapi3.Swagger, error) {
+	var swagger2 openapi2.Swagger
+	// ignore error
+	_ = json.Unmarshal([]byte(*swaggerStr), &swagger2)
+	if swagger2.BasePath == "" {
+		if err := yaml.Unmarshal([]byte(*swaggerStr), &swagger2); err != nil {
+			return nil, err
+		}
+	}
+
+	swaggerV3, err2 := openapi2conv.ToV3Swagger(&swagger2)
+	return swaggerV3, err2
 }
 
 func PrettyString(swagger *openapi3.Swagger) string {

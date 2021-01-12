@@ -1,0 +1,82 @@
+
+This product is licensed by WSO2 Inc. under Apache License 2.0. The license
+can be downloaded from the following locations:
+	http://www.apache.org/licenses/LICENSE-2.0.html
+	http://www.apache.org/licenses/LICENSE-2.0.txt
+
+This product also contains software under different licenses. This table below
+all the contained got client libraries and the license under which they are 
+provided to you.
+
+
+Name                                                                                                License
+_________________________________________________________________________________________________________________________________________________
+
+
+k8s.io/api                                                                                          Apache-2.0
+
+github.com/aws/aws-sdk-go                                                                           Apache-2.0
+
+github.com/docker/libtrust                                                                          Apache-2.0
+
+github.com/emicklei/go-restful                                                                      MIT
+
+github.com/getkin/kin-openapi                                                                       MIT
+
+github.com/go-openapi/spec                                                                          Apache-2.0
+
+github.com/gogo/protobuf                                                                            BSD-3-Clause
+
+github.com/golang/glog                                                                              Apache-2.0
+
+github.com/google/gofuzz                                                                            Apache-2.0
+
+github.com/heroku/docker-registry-client                                                            BSD-3-Clause 
+
+github.com/json-iterator/go                                                                         MIT
+
+github.com/openshift/api                                                                            Apache-2.0
+
+github.com/operator-framework/operator-sdk                                                          Apache-2.0
+
+github.com/sirupsen/logrus                                                                          MIT
+
+github.com/spf13/pflag                                                                              BSD-3-Clause
+
+gopkg.in/resty.v1                                                                                   MIT
+
+gopkg.in/yaml.v2                                                                                    Apache-2.0
+
+istio.io/api                                                                                        Apache-2.0 
+
+istio.io/client-go                                                                                  Apache-2.0
+
+k8s.io/api                                                                                          Apache-2.0
+
+k8s.io/apimachinery                                                                                 Apache-2.0
+
+k8s.io/client-go                                                                                    Apache-2.0 
+
+sigs.k8s.io/yaml                                                                                    MIT
+
+k8s.io/client-go                                                                                    Apache-2.0
+
+k8s.io/code-generator                                                                               Apache-2.0
+
+k8s.io/kube-openapi                                                                                 Apache-2.0
+
+sigs.k8s.io/controller-runtime                                                                      Apache-2.0
+
+sigs.k8s.io/yaml                                                                                    MIT
+
+
+The license types used by the above libraries and their information is given below:
+
+Apache-2.0                  Apache License Version 2.0
+                            http://www.apache.org/licenses/LICENSE-2.0.html
+
+BSD-3-Clause                Berkeley License - 3
+                            https://opensource.org/licenses/BSD-3-Clause
+
+MIT                         MIT License
+                            http://www.opensource.org/licenses/mit-license.php

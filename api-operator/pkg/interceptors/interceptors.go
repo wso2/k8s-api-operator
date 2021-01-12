@@ -18,7 +18,7 @@ package interceptors
 
 import (
 	"fmt"
-	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
+	wso2v1alpha2 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/kaniko"
 	"k8s.io/apimachinery/pkg/types"
@@ -34,7 +34,7 @@ const (
 var logger = log.Log.WithName("interceptors")
 
 // Handle handles ballerina and java interceptors
-func Handle(client *client.Client, instance *wso2v1alpha1.API) error {
+func Handle(client *client.Client, instance *wso2v1alpha2.API) error {
 	// handle ballerina interceptors
 	balFound, err := handle(client, &instance.Spec.Definition.Interceptors.Ballerina, instance.Namespace, balIntPath)
 	if err != nil {

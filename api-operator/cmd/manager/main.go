@@ -20,6 +20,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/envoy/server/api/restserver"
 	v1 "k8s.io/api/core/v1"
 	"os"
 	"runtime"
@@ -57,6 +58,9 @@ func printVersion() {
 }
 
 func main() {
+	go restserver.StartRestServer()
+	log.Info("Starting Rest server in Operator side")
+
 	// Add the zap logger flag set to the CLI. The flag set must
 	// be added before calling pflag.Parse().
 	pflag.CommandLine.AddFlagSet(zap.FlagSet())

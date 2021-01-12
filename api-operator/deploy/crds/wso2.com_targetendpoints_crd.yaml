@@ -1,4 +1,4 @@
-#Copyright (c)  WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+# Copyright (c) WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
 #
 # WSO2 Inc. licenses this file to you under the Apache License,
 # Version 2.0 (the "License"); you may not use this file except
@@ -70,8 +70,8 @@ spec:
                 requestCPU:
                   type: string
               required:
-              - dockerImage
-              - name
+                - dockerImage
+                - name
               type: object
             mode:
               description: Mode of the Target Endpoint. Supports "privateJet", "sidecar",
@@ -98,22 +98,22 @@ spec:
                     format: int32
                     type: integer
                 required:
-                - name
-                - port
-                - targetPort
+                  - name
+                  - port
+                  - targetPort
                 type: object
               type: array
           required:
-          - applicationProtocol
-          - deploy
-          - ports
+            - applicationProtocol
+            - deploy
+            - ports
           type: object
         status:
           description: TargetEndpointStatus defines the observed state of TargetEndpoint
           type: object
       type: object
-  version: v1alpha1
+  version: v1alpha2
   versions:
-  - name: v1alpha1
-    served: true
-    storage: true
+    - name: v1alpha2
+      served: true
+      storage: true

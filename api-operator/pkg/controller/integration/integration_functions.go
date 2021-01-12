@@ -20,7 +20,7 @@ package integration
 
 import (
     "context"
-	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
+	wso2v1alpha2 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
 	corev1 "k8s.io/api/core/v1"
 	v1beta1 "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,22 +37,22 @@ func labelsForIntegration(name string) map[string]string {
 }
 
 // nameForDeployment gives the name for the deployment
-func nameForDeployment(m *wso2v1alpha1.Integration) string {
+func nameForDeployment(m *wso2v1alpha2.Integration) string {
 	return m.Name + deploymentNamePostfix
 }
 
 // nameForService gives the name for the service
-func nameForService(m *wso2v1alpha1.Integration) string {
+func nameForService(m *wso2v1alpha2.Integration) string {
 	return m.Name + serviceNamePostfix
 }
 
 // nameForHPA gives the name for the HPA instance
-func nameForHPA(m *wso2v1alpha1.Integration) string {
+func nameForHPA(m *wso2v1alpha2.Integration) string {
 	return m.Name + hpaNamePostfix
 }
 
 // nameForInboundService gives the name for the inbound service
-func nameForInboundService(m *wso2v1alpha1.Integration) string {
+func nameForInboundService(m *wso2v1alpha2.Integration) string {
 	return m.Name + inboundServicePostfix
 }
 
@@ -92,7 +92,7 @@ func CheckIngressRulesExist(config *EIConfigNew, currentIngress *v1beta1.Ingress
 }
 
 // GenerateIngressPaths generates the ingress paths
-func GenerateIngressPaths(m *wso2v1alpha1.Integration) []v1beta1.HTTPIngressPath {
+func GenerateIngressPaths(m *wso2v1alpha2.Integration) []v1beta1.HTTPIngressPath {
 	var ingressPaths []v1beta1.HTTPIngressPath
 
 	//Set HTTP ingress path
@@ -130,7 +130,7 @@ func GenerateIngressPaths(m *wso2v1alpha1.Integration) []v1beta1.HTTPIngressPath
 }
 
 // Get configmap by the given name
-func (r *ReconcileIntegration) GetConfigMap(integration *wso2v1alpha1.Integration, configMapName string) (*corev1.ConfigMap, error) {
+func (r *ReconcileIntegration) GetConfigMap(integration *wso2v1alpha2.Integration, configMapName string) (*corev1.ConfigMap, error) {
 	configMap := &corev1.ConfigMap{}
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: configMapName, Namespace: integration.Namespace}, configMap)
 	if err != nil {
@@ -140,7 +140,7 @@ func (r *ReconcileIntegration) GetConfigMap(integration *wso2v1alpha1.Integratio
 }
 
 //gets the details of the targetEndPoint crd object for owner reference
-func getOwnerDetails(cr wso2v1alpha1.Integration) []metav1.OwnerReference {
+func getOwnerDetails(cr wso2v1alpha2.Integration) []metav1.OwnerReference {
 	setOwner := true
 	return []metav1.OwnerReference{
 		{

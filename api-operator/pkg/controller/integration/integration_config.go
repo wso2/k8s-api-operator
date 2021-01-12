@@ -19,21 +19,21 @@
 package integration
 
 import (
-	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
+	wso2v1alpha2 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
 	corev1 "k8s.io/api/core/v1"
 	"strconv"
 )
 
 // EIConfigNew bares all configurations related to EI deployment
 type EIConfigNew struct {
-	integration          wso2v1alpha1.Integration
+	integration          wso2v1alpha2.Integration
 	integrationConfigMap corev1.ConfigMap
 	ingressConfigMap     corev1.ConfigMap
 }
 
 // PopulateConfigurations updates the default configs of Host, TLS, and ingress creation. Read from Integration first,
 // If not defined, read defaults from integrationConfigMap and update integration
-func (r *ReconcileIntegration) PopulateConfigurations(integration *wso2v1alpha1.Integration) (EIConfigNew, error) {
+func (r *ReconcileIntegration) PopulateConfigurations(integration *wso2v1alpha2.Integration) (EIConfigNew, error) {
 
 	var integrationConfigMap, err = r.GetConfigMap(integration, integrationConfigMapName)
 	if err != nil {
