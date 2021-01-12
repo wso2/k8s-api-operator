@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 WSO2 Inc. (http:www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2021 WSO2 Inc. (http:www.wso2.org) All Rights Reserved.
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -19,27 +19,31 @@
 package integration
 
 import (
-	wso2v1alpha2 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
-	v1beta1 "k8s.io/api/extensions/v1beta1"
+	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"strings"
 )
 
 // ingressForIntegration returns a ingress object
-func (r *ReconcileIntegration) ingressForIntegration(m *wso2v1alpha2.Integration, eic *EIConfig) *v1beta1.Ingress {
-	ingressPaths := GenerateIngressPaths(m)
+func (r *ReconcileIntegration) ingressForIntegration(config *EIConfigNew) *v1beta1.Ingress {
+	var m = config.integration
+	var ingressConfig = config.ingressConfigMap
+	var tlsSecretName = ingressConfig.Data[tlsSecretNameKey]
+	var ingressHostName = ingressConfig.Data[ingressHostNameKey]
+	ingressPaths := GenerateIngressPaths(&m)
 
 	var ingressSpec v1beta1.IngressSpec
-	if eic.TLS != "" {
+	if tlsSecretName != "" {
 		ingressSpec = v1beta1.IngressSpec{
 			TLS: []v1beta1.IngressTLS{
-				v1beta1.IngressTLS{
-					Hosts:      []string{eic.Host},
-					SecretName: eic.TLS,
+				{
+					Hosts:      []string{ingressHostName},
+					SecretName: tlsSecretName,
 				},
 			},
 			Rules: []v1beta1.IngressRule{
 				{
-					Host: eic.Host,
+					Host: ingressHostName,
 					IngressRuleValue: v1beta1.IngressRuleValue{
 						HTTP: &v1beta1.HTTPIngressRuleValue{
 							Paths: ingressPaths,
@@ -52,7 +56,7 @@ func (r *ReconcileIntegration) ingressForIntegration(m *wso2v1alpha2.Integration
 		ingressSpec = v1beta1.IngressSpec{
 			Rules: []v1beta1.IngressRule{
 				{
-					Host: eic.Host,
+					Host: ingressHostName,
 					IngressRuleValue: v1beta1.IngressRuleValue{
 						HTTP: &v1beta1.HTTPIngressRuleValue{
 							Paths: ingressPaths,
@@ -63,6 +67,16 @@ func (r *ReconcileIntegration) ingressForIntegration(m *wso2v1alpha2.Integration
 		}
 	}
 
+	//Read ingress annotations
+	ingressAnnotationMap := make(map[string]string)
+	splitArray := strings.Split(ingressConfig.Data[ingressProperties], "\n")
+	for _, element := range splitArray {
+		if element != "" && strings.ContainsAny(element, ":") {
+			splitValues := strings.Split(element, ":")
+			ingressAnnotationMap[strings.TrimSpace(splitValues[0])] = strings.TrimSpace(splitValues[1])
+		}
+	}
+
 	// create ingress object using provided or default values
 	ingress := &v1beta1.Ingress{
 		TypeMeta: metav1.TypeMeta{
@@ -70,29 +84,27 @@ func (r *ReconcileIntegration) ingressForIntegration(m *wso2v1alpha2.Integration
 			Kind:       "Ingress",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      nameForIngress(),
-			Namespace: m.Namespace,
-			Annotations: map[string]string{
-				"kubernetes.io/ingress.class":                "nginx",
-				"nginx.ingress.kubernetes.io/rewrite-target": "/$2",
-				"nginx.ingress.kubernetes.io/ssl-redirect":   eic.SSLRedirect,
-			},
+			Name:        nameForIngress(),
+			Namespace:   m.Namespace,
+			Annotations: ingressAnnotationMap,
 		},
 		Spec: ingressSpec,
 	}
 	return ingress
 }
 
-func (r *ReconcileIntegration) updateIngressForIntegration(m *wso2v1alpha2.Integration, eic *EIConfig, currentIngress *v1beta1.Ingress) *v1beta1.Ingress {
-	currentRules, _ := CheckIngressRulesExist(m, eic, currentIngress)
+func (r *ReconcileIntegration) updateIngressForIntegration(config *EIConfigNew, currentIngress *v1beta1.Ingress) *v1beta1.Ingress {
+	currentRules, _ := CheckIngressRulesExist(config, currentIngress)
 
 	var ingressSpec v1beta1.IngressSpec
-	if eic.TLS != "" {
+	var tlsSecretName = config.ingressConfigMap.Data[tlsSecretNameKey]
+	var ingressHostName = config.ingressConfigMap.Data[ingressHostNameKey]
+	if tlsSecretName != "" {
 		ingressSpec = v1beta1.IngressSpec{
 			TLS: []v1beta1.IngressTLS{
-				v1beta1.IngressTLS{
-					Hosts:      []string{eic.Host},
-					SecretName: eic.TLS,
+				{
+					Hosts:      []string{ingressHostName},
+					SecretName: tlsSecretName,
 				},
 			},
 			Rules: currentRules,

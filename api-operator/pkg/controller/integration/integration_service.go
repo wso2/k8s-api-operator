@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 WSO2 Inc. (http:www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2021 WSO2 Inc. (http:www.wso2.org) All Rights Reserved.
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -19,7 +19,6 @@
 package integration
 
 import (
-	wso2v1alpha2 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -28,18 +27,21 @@ import (
 )
 
 // serviceForIntegration returns a service object
-func (r *ReconcileIntegration) serviceForIntegration(m *wso2v1alpha2.Integration) *corev1.Service {
+func (r *ReconcileIntegration) serviceForIntegration(config EIConfigNew) *corev1.Service {
+
+	m := config.integration
+
 	//set HTTP and HTTPS ports for as ServiceSpec ports
 	exposeServicePorts := []corev1.ServicePort{
-		corev1.ServicePort{
-			Name:       m.Name + strconv.Itoa(8290),
-			Port:       8290,
-			TargetPort: intstr.FromInt(8290),
+		{
+			Name:       m.Name + strconv.Itoa(int(m.Spec.Expose.PassthroPort)),
+			Port:       m.Spec.Expose.PassthroPort,
+			TargetPort: intstr.FromInt(int(m.Spec.Expose.PassthroPort)),
 		},
 	}
 
 	// check inbound endpoint port is exist and append to the container port
-	for _, port := range m.Spec.InboundPorts {
+	for _, port := range m.Spec.Expose.InboundPorts {
 		exposeServicePorts = append(
 			exposeServicePorts,
 			corev1.ServicePort{
@@ -61,7 +63,7 @@ func (r *ReconcileIntegration) serviceForIntegration(m *wso2v1alpha2.Integration
 			Kind:       "Service",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      nameForService(m),
+			Name:      nameForService(&m),
 			Namespace: m.Namespace,
 		},
 		Spec: corev1.ServiceSpec{
@@ -70,6 +72,6 @@ func (r *ReconcileIntegration) serviceForIntegration(m *wso2v1alpha2.Integration
 		},
 	}
 	// Set Integration instance as the owner and controller
-	controllerutil.SetControllerReference(m, service, r.scheme)
+	controllerutil.SetControllerReference(&m, service, r.scheme)
 	return service
 }
