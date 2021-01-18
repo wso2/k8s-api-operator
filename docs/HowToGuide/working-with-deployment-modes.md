@@ -46,5 +46,5 @@ This will expose those APIs via the same Microgateway using their respective bas
 
 - The scenario related to this mode can be found [here](../../scenarios/scenario-16/README.md).
 
-![Sahred](../images/shared-mode.png)  
+![Shared](../images/shared-mode.png)  
 
