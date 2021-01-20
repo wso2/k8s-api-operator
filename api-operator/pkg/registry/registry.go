@@ -60,6 +60,8 @@ type Config struct {
 		tag string) (bool, error) // Function to check the already existence of the image
 }
 
+var DockerPullSecretName = utils.DockerRegCredSecret
+
 // registry details
 var registryConfigs = map[Type]func(repoName string, imgName string, tag string) *Config{}
 

@@ -53,7 +53,7 @@ func getDockerHubConfigFunc(repoName string, imgName string, tag string) *Config
 			},
 		},
 		ImagePullSecrets: []corev1.LocalObjectReference{
-			{Name: utils.DockerRegCredSecret},
+			{Name: DockerPullSecretName},
 		},
 		ImagePath: fmt.Sprintf("%s/%s:%s", repoName, imgName, tag),
 	}
