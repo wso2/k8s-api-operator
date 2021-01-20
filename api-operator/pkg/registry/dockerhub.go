@@ -38,7 +38,7 @@ func getDockerHubConfigFunc(repoName string, imgName string, tag string) *Config
 		},
 		Volumes: []corev1.Volume{
 			{
-				Name: "reg-secret-volume",
+				Name: utils.DockerRegCredVolumeName,
 				VolumeSource: corev1.VolumeSource{
 					Secret: &corev1.SecretVolumeSource{
 						SecretName: utils.DockerRegCredSecret,
