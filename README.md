@@ -86,7 +86,7 @@ This will deploy a pod and service for the sample service.
         >> minikube service products --url
         ```
         
-        The IP you receive from above output can be used as the "EXTERNAL_IP" in the following command.
+        The URL you receive from above output can be used to replace `http://<EXTERNAL_IP>:80` in the following CURL command.
     
     </p>
     </details>
