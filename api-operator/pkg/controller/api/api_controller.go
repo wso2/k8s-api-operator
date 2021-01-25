@@ -216,6 +216,22 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	mgwDockerImage.RepositoryName = dockerRegistryConf.Data[repositoryNameConst]
 	operatorMode := controlConfigData[operatorModeConst]
 
+	//optional get push docker registry configs
+	dockerPushRegistryConf := k8s.NewConfMap()
+	if controlConfigData[dockerPushRegName] != "" {
+		k8s.Get(&r.client, types.NamespacedName{Namespace: config.SystemNamespace, Name: controlConfigData[dockerPushRegName]},
+			dockerPushRegistryConf)
+
+		registryPushTypeStr := dockerPushRegistryConf.Data[registryTypeConst]
+		if !registry.IsRegistryType(registryPushTypeStr) {
+			reqLogger.Error(err, "Invalid push registry type. Requeue request after 10 seconds",
+				"registry-type", registryPushTypeStr)
+			// Registry type is invalid, user should update this with valid type.
+			// Return and requeue
+			return reconcile.Result{RequeueAfter: 10 * time.Second}, nil
+		}
+	}
+
 	// log controller configurations
 	reqLogger.Info(
 		"Controller configurations",
