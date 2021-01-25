@@ -43,4 +43,3 @@ spec:
   name: api-operator
   source: wso2am-operators
   sourceNamespace: marketplace
-  
