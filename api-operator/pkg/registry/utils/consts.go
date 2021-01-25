@@ -18,6 +18,7 @@ package utils
 
 const DockerConfigKeyConst = ".dockerconfigjson"
 const DockerRegCredSecret = "docker-registry-credentials"
+const DockerRegCredVolumeName = "reg-secret-volume"
 
 const AmazonCredHelperConfMap = "amazon-credential-helper"
 const AwsCredentialsSecret = "aws-credentials"

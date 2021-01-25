@@ -19,10 +19,11 @@ package api
 import (
 	"context"
 	"fmt"
-	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/analytics"
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
@@ -166,7 +167,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	controlConf := k8s.NewConfMap()
 	errConf := k8s.Get(&r.client, types.NamespacedName{Namespace: config.SystemNamespace, Name: controllerConfName},
 		controlConf)
-	//get docker registry configs
+	//get pull docker registry configs
 	dockerRegistryConf := k8s.NewConfMap()
 	errRegConf := k8s.Get(&r.client, types.NamespacedName{Namespace: config.SystemNamespace, Name: dockerRegConfigs},
 		dockerRegistryConf)
@@ -197,6 +198,10 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	controlOpenshiftConf := OpenshiftConf.Data
 	kaniko.DocFileProp.ToolkitImage = controlConfigData[mgwToolkitImgConst]
 	kaniko.DocFileProp.RuntimeImage = controlConfigData[mgwRuntimeImgConst]
+
+	if controlConfigData[imagePullSecretNameConst] != "" {
+		registry.DockerPullSecretName = controlConfigData[imagePullSecretNameConst]
+	}
 
 	mgwDockerImage := registry.Image{}
 	registryTypeStr := dockerRegistryConf.Data[registryTypeConst]
@@ -426,6 +431,18 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		return reconcile.Result{}, errReg
 	}
 
+	//If push registry is set
+	if dockerPushRegistryConf != nil {
+		mgwDockerImage.RegistryType = registry.Type(dockerPushRegistryConf.Data[registryTypeConst])
+		mgwDockerImage.RepositoryName = dockerPushRegistryConf.Data[repositoryNameConst]
+
+		errReg := registry.SetRegistry(&r.client, userNamespace, mgwDockerImage)
+		if errReg != nil {
+			reqLogger.Error(errReg, "Error setting docker push registry", "docker_image", mgwDockerImage)
+			return reconcile.Result{}, errReg
+		}
+	}
+
 	// if Spec.Image is supplied do not need to build the image (i.e. don't run kaniko job)
 	if instance.Spec.Image != "" {
 		reqLogger.Info("Image is specified in the in API CRD. Skipping the kaniko job")
@@ -536,6 +553,12 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 					reqLogger.Info("Kaniko job is completed successfully", "job_status", kanikoJob.Status)
 					r.recorder.Event(instance, corev1.EventTypeNormal, "KanikoJob",
 						"Kaniko job completed successfully.")
+
+					//If Job is completed and we use special Push registry we must rewrite MGW image back to pull registry
+					if dockerPushRegistryConf != nil {
+						mgwDockerImage.RegistryType = registry.Type(dockerRegistryConf.Data[registryTypeConst])
+						mgwDockerImage.RepositoryName = dockerRegistryConf.Data[repositoryNameConst]
+					}
 				}
 			}
 		}

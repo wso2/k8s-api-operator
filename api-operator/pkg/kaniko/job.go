@@ -34,7 +34,9 @@ import (
 var logJob = log.Log.WithName("kaniko.job")
 
 const (
-	kanikoImgConst = "kanikoImg"
+	kanikoImgConst           = "kanikoImg"
+	imagePushSecretNameConst = "imagePushSecretName"
+	dockerRegCredVolumeName  = "reg-secret-volume"
 )
 
 // Job returns a kaniko job with mounted volumes
@@ -46,6 +48,10 @@ func Job(api *wso2v1alpha1.API, controlConfigData map[string]string, kanikoArgs 
 	}
 
 	regConfig := registry.GetImageConfig(image)
+	pushSecret := controlConfigData[imagePushSecretNameConst]
+	if pushSecret != "" {
+		regConfig.Volumes[0].VolumeSource.Secret.SecretName = pushSecret
+	}
 	AddVolumes(&regConfig.Volumes, &regConfig.VolumeMounts)
 
 	kanikoImg := controlConfigData[kanikoImgConst]

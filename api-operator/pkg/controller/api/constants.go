@@ -27,6 +27,9 @@ const (
 	dockerRegConfigs    = "docker-registry-config"
 	kanikoArgsConfigs   = "kaniko-arguments"
 
+	dockerPushRegName        = "pushRegistryName"
+	imagePullSecretNameConst = "imagePullSecretName"
+
 	operatorModeConst             = "operatorMode"
 	istioMode                     = "Istio"
 	ingressMode                   = "Ingress"
