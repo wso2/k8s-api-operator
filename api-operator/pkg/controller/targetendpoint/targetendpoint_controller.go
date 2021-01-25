@@ -19,6 +19,10 @@ package targetendpoint
 import (
 	"context"
 	"fmt"
+	"reflect"
+	"strconv"
+	"strings"
+
 	"github.com/sirupsen/logrus"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
@@ -26,10 +30,7 @@ import (
 	"k8s.io/api/autoscaling/v2beta2"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"reflect"
 	"sigs.k8s.io/yaml"
-	"strconv"
-	"strings"
 
 	v1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/serving/v1alpha1"
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
@@ -77,16 +78,6 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 
 	// Watch for changes to primary resource TargetEndpoint
 	err = c.Watch(&source.Kind{Type: &wso2v1alpha1.TargetEndpoint{}}, &handler.EnqueueRequestForObject{})
-	if err != nil {
-		return err
-	}
-
-	// TODO(user): Modify this to be the types you create that are owned by the primary resource
-	// Watch for changes to secondary resource Pods and requeue the owner TargetEndpoint
-	err = c.Watch(&source.Kind{Type: &corev1.Pod{}}, &handler.EnqueueRequestForOwner{
-		IsController: true,
-		OwnerType:    &wso2v1alpha1.TargetEndpoint{},
-	})
 	if err != nil {
 		return err
 	}

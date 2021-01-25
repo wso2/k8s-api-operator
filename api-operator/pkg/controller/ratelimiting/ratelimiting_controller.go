@@ -18,6 +18,7 @@ package ratelimiting
 
 import (
 	"context"
+
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
@@ -70,16 +71,6 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 
 	// Watch for changes to primary resource RateLimiting
 	err = c.Watch(&source.Kind{Type: &wso2v1alpha1.RateLimiting{}}, &handler.EnqueueRequestForObject{})
-	if err != nil {
-		return err
-	}
-
-	// TODO(user): Modify this to be the types you create that are owned by the primary resource
-	// Watch for changes to secondary resource Pods and requeue the owner RateLimiting
-	err = c.Watch(&source.Kind{Type: &corev1.Pod{}}, &handler.EnqueueRequestForOwner{
-		IsController: true,
-		OwnerType:    &wso2v1alpha1.RateLimiting{},
-	})
 	if err != nil {
 		return err
 	}
