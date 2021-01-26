@@ -2,8 +2,6 @@ package registry
 
 import (
 	"testing"
-
-	"github.com/go-playground/assert/v2"
 )
 
 func TestGetPathWithoutReg(t *testing.T) {
@@ -24,6 +22,8 @@ func TestGetPathWithoutReg(t *testing.T) {
 
 	for _, data := range datas {
 		result := getPathWithoutReg(data.in)
-		assert.Equal(t, result, data.out)
+		if result != data.out {
+			t.Errorf("Registry image path without registry host is not matching, getPathWithoutReg(%v) = %v, want = %v", data.in, result, data.out)
+		}
 	}
 }
