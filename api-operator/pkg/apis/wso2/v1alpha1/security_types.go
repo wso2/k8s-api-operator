@@ -65,15 +65,15 @@ type SecurityList struct {
 }
 
 type SecurityConfig struct {
-	Certificate          string `json:"certificate"`
-	Alias                string `json:"alias"`
-	Endpoint             string `json:"endpoint"`
-	Credentials          string `json:"credentials"`
-	Issuer               string `json:"issuer"`
-	Audience             string `json:"audience"`
+	Certificate          string `json:"certificate,omitempty"`
+	Alias                string `json:"alias,omitempty"`
+	Endpoint             string `json:"endpoint,omitempty"`
+	Credentials          string `json:"credentials,omitempty"`
+	Issuer               string `json:"issuer,omitempty"`
+	Audience             string `json:"audience,omitempty"`
 	ValidateSubscription bool   `json:"validateSubscription,omitempty"`
 	ValidateAllowedAPIs  bool   `json:"validateAllowedAPIs,omitempty"`
-	JwksURL              string `json:"jwksURL"`
+	JwksURL              string `json:"jwksURL,omitempty"`
 }
 
 func init() {
