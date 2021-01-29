@@ -102,7 +102,7 @@ To try out the scenario navigate to ```k8s-api-operator-<version>``` directory.
 - By deploying the analytics configmaps, you can enable analytics as follows.
 
     ```
-    >> apictl apply -f api-operator/apim-analytics-configs
+    >> apictl apply -f api-operator/deploy/apim-analytics-configs
     
     ---
     configmap/analytics-config created
@@ -140,11 +140,11 @@ By changing the following artifacts, you can point the API Operator to use the A
     1. Secret 1: Analytics certificate
     2. Secret 2: Include admin credentials (base64 encoded username and password) and secret name of the secret 1.
     
-    Samples can be found in api-operator/apim-analytics-configs/apim_analytics_secret_template.yaml
+    Samples can be found in api-operator/deploy/apim-analytics-configs/apim_analytics_secret_template.yaml
     
 - To enable analytics you can change the apim_analytics_conf.yaml analyticsEnabled to true. Give the name of the secret you created above in the analyticsSecret field value.
 
-    Samples can be found api-operator/apim-analytics-configs/apim_analytics_conf.yaml
+    Samples can be found api-operator/deploy/apim-analytics-configs/apim_analytics_conf.yaml
 
 #### Clean Up
 
@@ -158,5 +158,5 @@ By changing the following artifacts, you can point the API Operator to use the A
     ```
 - Delete Analytics configs
     ```shell script
-    >> apictl delete -f api-operator/apim-analytics-configs
+    >> apictl delete -f api-operator/deploy/apim-analytics-configs
     ```
