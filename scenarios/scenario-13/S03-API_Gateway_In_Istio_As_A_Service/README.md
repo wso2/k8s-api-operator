@@ -169,6 +169,11 @@ This guide is based on https://istio.io/docs/tasks/traffic-management/ingress/se
             -out internal.wso2.com.crt
     ```
 
+- Create namespace "istio-system"
+    ```sh
+    >> apictl create ns istio-system
+    ```
+
 - Create a secret in K8s
     ```sh
     >> apictl create secret tls internal-wso2-credential \
