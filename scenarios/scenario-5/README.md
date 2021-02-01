@@ -93,23 +93,18 @@ In this swagger definition, the security schema of the "petstore" service has be
             Creating: Petstore-Oauth v1
             Successfully imported API
             ```
-        - Obtain OAuth2 access token
-            ```$xslt
-            >> apictl set --token-type oauth
-          
+
+        - Subscribe the API to to default application and get an access token using the following command.
+                
+            ```    
+            >> apictl get-keys -n Petstore-Oauth -v v1 -r admin -k -e k8s
+                
             Output: 
-            Token type set to:  oauth
+            API name:  Petstore-Oauth & version:  v1 exists
+            API  Petstore-Oauth : v1 subscribed successfully.
+            Access Token:  a68e6467-023e-3670-909c-11752449997e
             ```
-            - Subscribe the API to to default application and get an access token using the following command.
-                
-                ```    
-                >> apictl get-keys -n Petstore-Oauth -v v1 -r admin -k -e k8s
-                
-                Output: 
-                API name:  Petstore-Oauth & version:  v1 exists
-                API  Petstore-Oauth : v1 subscribed successfully.
-                Access Token:  a68e6467-023e-3670-909c-11752449997e
-                ```
+            
 - Invoking the API <br />
 
     - Get service details to invoke the API. (Please wait until the external-IP is populated in the corresponding service)
