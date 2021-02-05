@@ -422,18 +422,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		return reconcile.Result{}, errReg
 	}
 
-	// //If push registry is set
-	// if dockerPushRegistryConf != nil {
-	// 	mgwDockerImage.RegistryType = registry.Type(dockerPushRegistryConf.Data[registryTypeConst])
-	// 	mgwDockerImage.RepositoryName = dockerPushRegistryConf.Data[repositoryNameConst]
-
-	// 	errReg := registry.SetRegistry(&r.client, userNamespace, mgwDockerImage)
-	// 	if errReg != nil {
-	// 		reqLogger.Error(errReg, "Error setting docker push registry", "docker_image", mgwDockerImage)
-	// 		return reconcile.Result{}, errReg
-	// 	}
-	// }
-
 	// if Spec.Image is supplied do not need to build the image (i.e. don't run kaniko job)
 	if instance.Spec.Image != "" {
 		reqLogger.Info("Image is specified in the in API CRD. Skipping the kaniko job")

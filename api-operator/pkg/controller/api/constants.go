@@ -28,7 +28,7 @@ const (
 	kanikoArgsConfigs   = "kaniko-arguments"
 
 	dockerPushRegName        = "pushRegistryName"
-	imagePullSecretNameConst = "imagePullSecretName"
+	imagePullSecretNameConst = "imagePullSecretNames"
 
 	operatorModeConst             = "operatorMode"
 	istioMode                     = "Istio"
