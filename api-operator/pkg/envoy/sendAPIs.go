@@ -79,10 +79,3 @@ func CreateFileToSend(apiList *wso2v1alpha2.APIList, client *client.Client) erro
 	}
 	return nil
 }
-
-//func min(a, b int) int {
-//	if a <= b {
-//		return a
-//	}
-//	return b
-//}
