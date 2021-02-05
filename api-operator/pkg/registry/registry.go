@@ -39,6 +39,8 @@ var logger = log.Log.WithName("registry")
 
 type Type string
 
+var PullSecretDefined string
+
 // Image defines a docker image
 type Image struct {
 	RegistryType   Type   // Type of the registry
@@ -48,6 +50,7 @@ type Image struct {
 }
 
 // Config defines the registry specific configurations
+// TODO: Introduce new 'ImagePush Secrets' field
 type Config struct {
 	RegistryType     Type                          // Type of the registry
 	ImagePath        string                        // Full image path to be pushed by the Kaniko Job

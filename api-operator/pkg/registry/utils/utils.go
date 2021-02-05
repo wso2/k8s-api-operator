@@ -19,8 +19,10 @@ package utils
 import (
 	"fmt"
 	"net/url"
+	"strings"
 
 	registryclient "github.com/heroku/docker-registry-client/registry"
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
@@ -58,4 +60,25 @@ func IsImageExists(auth RegAuth, imageRepository string, imageName string, tag s
 		}
 	}
 	return false, nil
+}
+
+func GetPullSecrets(pullSecretDef string, pullSecretName string) []corev1.LocalObjectReference {
+	// var pullSecretDef = &PullSecretDefined
+	// var pushSecretDef = &registry.PushSecretDefned
+	var pullSecretArray = []corev1.LocalObjectReference{}
+	var secret = corev1.LocalObjectReference{}
+
+	switch pullSecretDef {
+	case "":
+		secret.Name = pullSecretName
+		pullSecretArray = append(pullSecretArray, secret)
+	default:
+		secretValues := strings.Split(strings.TrimSpace(pullSecretDef), ",")
+		for _, secretValue := range secretValues {
+			secret.Name = secretValue
+			pullSecretArray = append(pullSecretArray, secret)
+		}
+	}
+
+	return pullSecretArray
 }

@@ -68,6 +68,9 @@ func Job(api *wso2v1alpha1.API, controlConfigData map[string]string, kanikoArgs 
 		args = append(args, kanikoArguments...)
 	}
 
+	var secretArray []corev1.LocalObjectReference
+	secretArray = append(secretArray, regConfig.ImagePullSecrets...)
+
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            jobName,
@@ -98,7 +101,7 @@ func Job(api *wso2v1alpha1.API, controlConfigData map[string]string, kanikoArgs 
 					},
 					RestartPolicy:    "Never",
 					Volumes:          *JobVolume,
-					ImagePullSecrets: regConfig.ImagePullSecrets,
+					ImagePullSecrets: secretArray,
 				},
 			},
 		},

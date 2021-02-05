@@ -27,6 +27,11 @@ const DockerHub Type = "DOCKER_HUB"
 
 func getDockerHubConfigFunc(repoName string, imgName string, tag string) *Config {
 	// Docker Hub configs
+
+	var pullSecretArray []corev1.LocalObjectReference
+
+	pullSecretArray = utils.GetPullSecrets(PullSecretDefined, DockerPullSecretName)
+
 	return &Config{
 		RegistryType: DockerHub,
 		VolumeMounts: []corev1.VolumeMount{
@@ -52,10 +57,8 @@ func getDockerHubConfigFunc(repoName string, imgName string, tag string) *Config
 				},
 			},
 		},
-		ImagePullSecrets: []corev1.LocalObjectReference{
-			{Name: DockerPullSecretName},
-		},
-		ImagePath: fmt.Sprintf("%s/%s:%s", repoName, imgName, tag),
+		ImagePullSecrets: pullSecretArray,
+		ImagePath:        fmt.Sprintf("%s/%s:%s", repoName, imgName, tag),
 	}
 }
 
