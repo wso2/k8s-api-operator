@@ -25,4 +25,4 @@ data:
   #docker repository name which the mgw image to be pushed.  eg->  repositoryName: docker.io/{USER_NAME of Docker Hub account}
   repositoryName: DOCKER_REPOSITORY_NAME
   #pull secret array
-  imagePullSecretName: docker-my-secret-pull
+  imagePullSecretName:
