@@ -17,10 +17,10 @@ Create a Ratelimiting policy using the Ratelimiting kind. You can create 3 types
 as shown below.
 Include the limit from which you want to throttle the API requests.
 
-**Note:** When an API refers a Ratelimiting policy in swagger definition under **x-wso2-throttling-tier** keyword you
-need to make sure that the namespace that you have provided the Ratelimiting policy is same as the namespace of the API. 
+**Note:** When an API refers a Ratelimiting policy in swagger definition under **x-wso2-throttling-tier** keyword, you
+need to make sure that the namespace of the ratelimiting policy is same as the namespace of the API. 
 
-Example: In the following Ratelimiting policies the namespace is provided as "wso2-test-ns". Therefore the namespace
+Example: In the following Ratelimiting policies, the namespace is provided as "wso2-test-ns". Therefore the namespace
 of the API that these Ratelimiting policies are being referred should be "wso2-test-ns".
 
 - Application throttling
