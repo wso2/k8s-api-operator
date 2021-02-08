@@ -3,6 +3,7 @@
 ### Build from source
 
 The api-operator was built using the [operator-sdk (version v0.18.2)][operator_sdk].
+To generate crds, use operator sdk version of [0.16.0][operator_sdk_0.16.0] .
 Follow the [quick start guide][operator_sdk_quick_start] of operator-sdk for more information.
 
 You should build the image when changes are added to the project. The steps to build the image are listed below. 
@@ -39,3 +40,4 @@ You should build the image when changes are added to the project. The steps to b
 
 [operator_sdk]: https://github.com/operator-framework/operator-sdk/releases/tag/v0.18.2
 [operator_sdk_quick_start]: https://v0-18-x.sdk.operatorframework.io/docs/golang/quickstart/
+[operator_sdk_0.16.0]: https://github.com/operator-framework/operator-sdk/releases/tag/v0.16.0
