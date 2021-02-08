@@ -81,7 +81,7 @@
 it takes the default ingress hostname (mgw.ingress.wso2.com).
 
    ```
-        >> apictl add api -n hello-world-api --from-file=swagger.yaml --override --hostname=mgw.group1.wso2.com
+    >> apictl add api -n hello-world-api --from-file=swagger.yaml --override --hostname=mgw.group1.wso2.com
     
     Output:
     Processing swagger 1: swagger.yaml

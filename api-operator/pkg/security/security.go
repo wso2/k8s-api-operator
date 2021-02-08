@@ -34,7 +34,7 @@ type securitySchemeStruct struct {
 	SecurityType string             `json:"type"`
 	Scheme       string             `json:"scheme,omitempty"`
 	Flows        *authorizationCode `json:"flows,omitempty"`
-	In			 string             `json:"in"`
+	In           string             `json:"in"`
 	Name         string             `json:"name"`
 }
 
@@ -60,7 +60,7 @@ func Handle(client *client.Client, securityMap map[string][]string, userNameSpac
 		//retrieve security instances
 		errGetSec := k8s.Get(client, types.NamespacedName{Name: secName, Namespace: userNameSpace}, securityInstance)
 		if errGetSec != nil && errors.IsNotFound(errGetSec) {
-			return securityDefinition, &jwtConfArray, &apiKeyConfArray,errGetSec
+			return securityDefinition, &jwtConfArray, &apiKeyConfArray, errGetSec
 		}
 		if strings.EqualFold(securityInstance.Spec.Type, oauthConst) {
 			for _, securityConf := range securityInstance.Spec.SecurityConfig {
@@ -111,7 +111,7 @@ func Handle(client *client.Client, securityMap map[string][]string, userNameSpac
 				errc := k8s.Get(client, types.NamespacedName{Name: securityConf.Certificate, Namespace: userNameSpace}, certificateSecret)
 				if errc != nil && errors.IsNotFound(errc) {
 					logSec.Info("defined certificate is not found")
-					return securityDefinition, &jwtConfArray, &apiKeyConfArray,errc
+					return securityDefinition, &jwtConfArray, &apiKeyConfArray, errc
 				} else {
 					logSec.Info("defined certificate successfully retrieved")
 				}
@@ -140,8 +140,8 @@ func Handle(client *client.Client, securityMap map[string][]string, userNameSpac
 					//creating security scheme
 					scheme := securitySchemeStruct{
 						SecurityType: apiKeyConst,
-						In: apiKeyIn,
-						Name: apiKeyName,
+						In:           apiKeyIn,
+						Name:         apiKeyName,
 					}
 					securityDefinition[secName] = scheme
 				}
@@ -179,5 +179,5 @@ func Handle(client *client.Client, securityMap map[string][]string, userNameSpac
 			}
 		}
 	}
-	return securityDefinition, &jwtConfArray, &apiKeyConfArray,nil
+	return securityDefinition, &jwtConfArray, &apiKeyConfArray, nil
 }

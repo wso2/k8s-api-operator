@@ -94,7 +94,8 @@ func configureAPI(api *operations.RestapiAPI) http.Handler {
 	// Example:
 	// api.APIAuthorizer = security.Authorized()
 	if api.ApIsAllGetApisHandler == nil {
-		api.ApIsAllGetApisHandler = a_p_is_all.GetApisHandlerFunc(func(params a_p_is_all.GetApisParams, principal *models.Principal) middleware.Responder {
+		api.ApIsAllGetApisHandler = a_p_is_all.GetApisHandlerFunc(func(params a_p_is_all.GetApisParams,
+			principal *models.Principal) middleware.Responder {
 			return middleware.NotImplemented("operation a_p_is_all.GetApis has not yet been implemented")
 		})
 	}
