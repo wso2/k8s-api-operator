@@ -325,6 +325,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		_, secSchemeDefined := swaggerDoc.Extensions[swagger.SecuritySchemeExtension]
 
 		securityMap, isDefinedSecurity, resourceLevelSec, securityErr := swagger.GetSecurityMap(swaggerDoc)
+		pathCount := len(swaggerDoc.Paths)
+
 		if securityErr != nil {
 			return reconcile.Result{}, securityErr
 		}
@@ -392,7 +394,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		kaniko.AddVolume(k8s.ConfigMapVolumeMount(swaggerConfMapMgw.Name, fmt.Sprintf(kaniko.SwaggerLocation, i+1)))
 
 		// Default security
-		if !isDefinedSecurity && resourceLevelSec == 0 {
+		if !isDefinedSecurity && resourceLevelSec != pathCount {
 			reqLogger.Info("Use default security")
 			defaultJwtConfArray, err := security.Default(&r.client, userNamespace, ownerRef)
 			for _, secConf := range *defaultJwtConfArray {
