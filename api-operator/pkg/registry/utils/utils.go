@@ -63,8 +63,6 @@ func IsImageExists(auth RegAuth, imageRepository string, imageName string, tag s
 }
 
 func GetPullSecrets(pullSecretDef string, pullSecretName string) []corev1.LocalObjectReference {
-	// var pullSecretDef = &PullSecretDefined
-	// var pushSecretDef = &registry.PushSecretDefned
 	var pullSecretArray = []corev1.LocalObjectReference{}
 	var secret = corev1.LocalObjectReference{}
 
