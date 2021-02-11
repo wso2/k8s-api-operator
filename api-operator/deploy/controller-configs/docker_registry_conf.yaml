@@ -23,6 +23,6 @@ data:
   #docker registry type which the mgw image to be pushed. supported types: DOCKER_HUB, AMAZON_ECR, GCR, HTTP.   Default->  registryType: DOCKER_HUB
   registryType: DOCKER_HUB
   #docker repository name which the mgw image to be pushed.  eg->  repositoryName: docker.io/{USER_NAME of Docker Hub account}
-  repositoryName: DOCKER_REPOSITORY_NAME
+  repositoryName: benura123
   #pull secret array
-  imagePullSecretNames:
+  imagePullSecretNames: #docker-my-secret-pull, docker-my-secret-1
