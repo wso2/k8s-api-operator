@@ -71,7 +71,7 @@ func GetPullSecrets(pullSecretDef string, pullSecretName string) []corev1.LocalO
 		secret.Name = pullSecretName
 		pullSecretArray = append(pullSecretArray, secret)
 	default:
-		secretValues := strings.Split(strings.TrimSpace(pullSecretDef), ",")
+		secretValues := strings.Split(strings.TrimSpace(strings.ReplaceAll(pullSecretDef, " ", "")), ",")
 		for _, secretValue := range secretValues {
 			secret.Name = secretValue
 			pullSecretArray = append(pullSecretArray, secret)
