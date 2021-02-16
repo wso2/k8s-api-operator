@@ -20,15 +20,16 @@ import (
 	"encoding/json"
 	errs "errors"
 	"fmt"
+	"net/url"
+	"strconv"
+	"strings"
+
 	"github.com/getkin/kin-openapi/openapi3"
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"k8s.io/apimachinery/pkg/types"
-	"net/url"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
-	"strconv"
-	"strings"
 )
 
 var logEp = log.Log.WithName("swagger.endpoints")
@@ -167,7 +168,7 @@ func updateSwaggerWithProdEPs(client *client.Client, swaggerExtensions map[strin
 	prodEpStr := string(endpointJson)
 	// check if endpoint is a reference
 	if strings.EqualFold(prodEpStr[1:2], "#") {
-		swaggerExtensions[ProductionEndpointExtension] = prodEpStr[1:len(prodEpStr)-1]
+		swaggerExtensions[ProductionEndpointExtension] = prodEpStr[1 : len(prodEpStr)-1]
 		return nil
 	}
 
@@ -217,7 +218,7 @@ func processEndpoints(client *client.Client, endpointList []string,
 				sideCarEndpoints[prodEpVal] = true
 				updatedEndpoint.Urls[index] = sidecarUrl
 			} else if strings.EqualFold(mode, ServerLess) {
-				prodEpVal = fmt.Sprintf("%v://%v.%v.svc.cluster.local", protocol, prodEpVal, epNamespace)
+				prodEpVal = fmt.Sprintf("%v://%v.%v", protocol, prodEpVal, epNamespace)
 				updatedEndpoint.Urls[index] = prodEpVal
 			} else {
 				prodEpVal = fmt.Sprintf("%v://%v.%v:%v", protocol, prodEpVal, epNamespace, port)
