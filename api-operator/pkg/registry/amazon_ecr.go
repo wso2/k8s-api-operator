@@ -34,6 +34,7 @@ const AwsCredFileVolume = "aws-credentials"
 const AwsCredFileMountPath = "/root/.aws/"
 
 func getAmazonEcrConfigFunc(repoName string, imgName string, tag string) *Config {
+
 	// Amazon ECR Configs
 	return &Config{
 		RegistryType: AmazonECR,

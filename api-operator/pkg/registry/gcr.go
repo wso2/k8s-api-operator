@@ -31,6 +31,11 @@ const svcAccKeyVolume = "svc-acc-key-volume"
 // Google Container Registry Configs
 
 func getGcrConfigFunc(repoName string, imgName string, tag string) *Config {
+
+	var pullSecretArray []corev1.LocalObjectReference
+
+	pullSecretArray = utils.GetPullSecrets(PullSecretDefined, utils.GcrPullSecret)
+
 	return &Config{
 		RegistryType: Gcr,
 		VolumeMounts: []corev1.VolumeMount{
@@ -56,10 +61,8 @@ func getGcrConfigFunc(repoName string, imgName string, tag string) *Config {
 				Value: SvcAccKeyMountPath + utils.GcrSvcAccKeyFile,
 			},
 		},
-		ImagePullSecrets: []corev1.LocalObjectReference{
-			{Name: utils.GcrPullSecret},
-		},
-		ImagePath: fmt.Sprintf("gcr.io/%s/%s:%s", repoName, imgName, tag),
+		ImagePullSecrets: pullSecretArray,
+		ImagePath:        fmt.Sprintf("gcr.io/%s/%s:%s", repoName, imgName, tag),
 	}
 }
 

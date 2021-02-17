@@ -17,7 +17,7 @@
 #### Installing Knative
 
 Follow the document
-[Installing the Serving component (version v0.16)](https://knative.dev/v0.16-docs/install/any-kubernetes-cluster/#installing-the-serving-component)
+[Installing the Serving component (version v0.20.0)](https://knative.dev/docs/#installing-the-serving-component)
 with picking the networking layer as **Istio**. No need to follow the section "Installing the Eventing component" of the
 document.
 
