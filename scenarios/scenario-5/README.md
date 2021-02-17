@@ -80,6 +80,7 @@ In this swagger definition, the security schema of the "petstore" service has be
         - First line of the output shows the location of the API project.
         - Import the API to API Manager deployment
             ```$xslt
+            >> apictl login k8s -k
             >> apictl import-api -f petstore-oauth -e k8s -k
             
             Output:
