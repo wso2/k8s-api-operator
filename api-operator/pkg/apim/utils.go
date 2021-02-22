@@ -109,7 +109,7 @@ func getCert(client *client.Client, certConf string) error {
 }
 
 // GetAPIDefinition scans filePath and returns APIDefinition or an error
-func getAPIDefinition(filePath string) (*APIDefinition, error) {
+func GetAPIDefinition(filePath string) (*APIDefinitionFile, error) {
 	info, err := os.Stat(filePath)
 	if err != nil {
 		return nil, err
@@ -117,7 +117,7 @@ func getAPIDefinition(filePath string) (*APIDefinition, error) {
 
 	var buffer []byte
 	if info.IsDir() {
-		_, content, err := resolveYamlOrJSON(path.Join(filePath, "Meta-information", "api"))
+		_, content, err := resolveYamlOrJSON(path.Join(filePath, "api"))
 		if err != nil {
 			return nil, err
 		}
@@ -169,8 +169,8 @@ func resolveYamlOrJSON(filename string) (string, []byte, error) {
 }
 
 // extractAPIDefinition extracts API information from jsonContent
-func extractAPIDefinition(jsonContent []byte) (*APIDefinition, error) {
-	api := &APIDefinition{}
+func extractAPIDefinition(jsonContent []byte) (*APIDefinitionFile, error) {
+	api := &APIDefinitionFile{}
 	err := json.Unmarshal(jsonContent, &api)
 	if err != nil {
 		return nil, err
@@ -180,7 +180,7 @@ func extractAPIDefinition(jsonContent []byte) (*APIDefinition, error) {
 }
 
 // getAdditionalProperties returns additional data required by REST API when adding an API using swagger definition
-func getAdditionalProperties(swaggerData string) (string, string, string, error) {
+func GetAdditionalProperties(swaggerData string) (string, string, string, error) {
 	swaggerDoc, err := swagger.GetSwaggerV3(&swaggerData)
 	if err != nil {
 		return "", "", "", err
@@ -249,7 +249,7 @@ func getAPIList(accessToken, apiListEndpoint, query, limit string) (count int32,
 	}
 }
 
-func getTempPathOfExtractedArchive(data []byte) (string, error) {
+func GetTempPathOfExtractedArchive(data []byte) (string, error) {
 	file, err := ioutil.TempFile("", "api-raw.*.zip")
 	if err != nil {
 		return "", err

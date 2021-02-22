@@ -133,6 +133,26 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		reqLogger.Error(err, "Error when sending all the APIs to MGW Adapter")
 	}
 
+
+	// Handle deletion with finalizers
+	if _, finUpdated, err := k8s.HandleDeletion(instance, ctx, requestInfo, finalizerName, r.finalizeDeletion); finUpdated || err != nil {
+		// If finalizer updated, end the flow as a new request will queue
+		// If error should requeue request
+		return reconcile.Result{}, err
+	}
+
+	if err := requestInfo.Client.List(ctx, apiList, client.InNamespace(common.WatchNamespace)); err != nil {
+		// Error reading the object - requeue the request.
+		reqLogger.Error(err, "Error reading all APIs in the specified namespace", "namespace",
+			common.WatchNamespace)
+		return reconcile.Result{}, err
+	}
+	// Create the zip file with APIs in k8s cluster to be sent to MGW Adapter
+	err = envoy.CreateFileToSend(apiList, &r.client)
+	if err != nil {
+		reqLogger.Error(err, "Error when sending all the APIs to MGW Adapter")
+	}
+
 	//get configurations file for the controller
 	controlConf := k8s.NewConfMap()
 	errConf := k8s.Get(&r.client, types.NamespacedName{Namespace: config.SystemNamespace, Name: controllerConfName},
@@ -150,7 +170,6 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	controlConfigData := controlConf.Data
-	instance.Status.Replicas = instance.Spec.Replicas
 	deployAPIMEnabled, err := strconv.ParseBool(controlConfigData[deployAPIMEnabledConst])
 	if err != nil {
 		reqLogger.Error(err, "Invalid boolean value for deployAPIMEnabled",

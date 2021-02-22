@@ -149,7 +149,7 @@ func importAPIFromSwagger(config *corev1.ConfigMap, token string, endpoint strin
 	}
 	swaggerData := config.Data[swaggerFileName]
 
-	dataString, name, version, err := getAdditionalProperties(swaggerData)
+	dataString, name, version, err := GetAdditionalProperties(swaggerData)
 	if err != nil {
 		logImport.Error(err, "Error getting additional data")
 		return err

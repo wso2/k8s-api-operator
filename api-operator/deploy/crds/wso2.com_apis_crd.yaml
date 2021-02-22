@@ -1,34 +1,9 @@
-#Copyright (c)  WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
-#
-# WSO2 Inc. licenses this file to you under the Apache License,
-# Version 2.0 (the "License"); you may not use this file except
-# in compliance with the License.
-# You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
-
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
   name: apis.wso2.com
 spec:
   additionalPrinterColumns:
-  - JSONPath: .spec.replicas
-    name: INITIAL-REPLICAS
-    type: integer
-  - JSONPath: .spec.mode
-    name: Mode
-    type: string
-  - JSONPath: .spec.apiEndPoint
-    name: ENDPOINT
-    type: string
   - JSONPath: .metadata.creationTimestamp
     name: Age
     type: date
@@ -62,34 +37,10 @@ spec:
           properties:
             apiEndPoint:
               type: string
-            definition:
-              description: Definition of the API.
-              properties:
-                interceptors:
-                  description: Interceptors for API. Default value "<empty>".
-                  properties:
-                    ballerina:
-                      description: Ballerina interceptors. Default value "<empty>".
-                      items:
-                        type: string
-                      type: array
-                    java:
-                      description: Java interceptors. Default value "<empty>".
-                      items:
-                        type: string
-                      type: array
-                  type: object
-                swaggerConfigmapNames:
-                  description: Array of config map names of swagger definitions for
-                    the API.
-                  items:
-                    type: string
-                  type: array
-                type:
-                  type: string
-              required:
-              - swaggerConfigmapNames
-              type: object
+            certsValues:
+              description: Config map name of the certs values of the API project
+                Default value "<empty>".
+              type: string
             environmentVariables:
               description: Environment variables to be added to the API deployment.
                 Default value "<empty>".
@@ -113,8 +64,12 @@ spec:
             override:
               description: Override the exiting API docker image. Default value "false".
               type: boolean
+            paramsValues:
+              description: Config map name of the param values of the API project
+                Default value "<empty>".
+              type: string
             replicas:
-              description: Replica count of the API.
+              description: Replica count of the API. Default value "<empty>".
               type: integer
             swaggerConfigMapName:
               description: Config map name of which the project zip or swagger file
@@ -131,17 +86,6 @@ spec:
               type: string
           required:
           - swaggerConfigMapName
-          type: object
-        status:
-          description: APIStatus defines the observed state of API
-          properties:
-            replicas:
-              description: replicas field in the status sub-resource will define the
-                initial replica count allocated to the API.This will be the minimum
-                replica count for a single API
-              type: integer
-          required:
-          - replicas
           type: object
       type: object
   version: v1alpha2

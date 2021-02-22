@@ -18,7 +18,6 @@ package interceptors
 
 import (
 	"fmt"
-	wso2v1alpha2 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/kaniko"
 	"k8s.io/apimachinery/pkg/types"
@@ -34,25 +33,25 @@ const (
 var logger = log.Log.WithName("interceptors")
 
 // Handle handles ballerina and java interceptors
-func Handle(client *client.Client, instance *wso2v1alpha2.API) error {
-	// handle ballerina interceptors
-	balFound, err := handle(client, &instance.Spec.Definition.Interceptors.Ballerina, instance.Namespace, balIntPath)
-	if err != nil {
-		logger.Error(err, "Error handling Ballerina interceptors", "namespace", instance.Namespace, "apiName", instance.Name)
-		return err
-	}
-	kaniko.DocFileProp.BalInterceptorsFound = balFound
-
-	// handle java interceptors
-	javaFound, err := handle(client, &instance.Spec.Definition.Interceptors.Java, instance.Namespace, javaIntPath)
-	if err != nil {
-		logger.Error(err, "Error handling Java interceptors", "namespace", instance.Namespace, "apiName", instance.Name)
-		return err
-	}
-	kaniko.DocFileProp.JavaInterceptorsFound = javaFound
-
-	return nil
-}
+//func Handle(client *client.Client, instance *wso2v1alpha2.API) error {
+//	// handle ballerina interceptors
+//	balFound, err := handle(client, &instance.Spec.Definition.Interceptors.Ballerina, instance.Namespace, balIntPath)
+//	if err != nil {
+//		logger.Error(err, "Error handling Ballerina interceptors", "namespace", instance.Namespace, "apiName", instance.Name)
+//		return err
+//	}
+//	kaniko.DocFileProp.BalInterceptorsFound = balFound
+//
+//	// handle java interceptors
+//	javaFound, err := handle(client, &instance.Spec.Definition.Interceptors.Java, instance.Namespace, javaIntPath)
+//	if err != nil {
+//		logger.Error(err, "Error handling Java interceptors", "namespace", instance.Namespace, "apiName", instance.Name)
+//		return err
+//	}
+//	kaniko.DocFileProp.JavaInterceptorsFound = javaFound
+//
+//	return nil
+//}
 
 // handle handles interceptors and returns existence of interceptors and error occurred
 func handle(client *client.Client, configs *[]string, ns, mountPath string) (bool, error) {
