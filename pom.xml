@@ -23,10 +23,48 @@
     <groupId>org.wso2.apim</groupId>
     <artifactId>k8s-api-operator</artifactId>
     <version>2.0.0-m3</version>
-    <name>API Operator For K8S</name>
+    <name>API Operator For K8s</name>
     <packaging>pom</packaging>
 
     <modules>
         <module>distribution</module>
     </modules>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <artifactId>exec-maven-plugin</artifactId>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <version>${exec.maven.plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>com.spotify</groupId>
+                    <artifactId>dockerfile-maven-plugin</artifactId>
+                    <version>${dockerfile-maven-plugin.version}</version>
+                    <executions>
+                        <execution>
+                            <id>docker.io</id>
+                            <goals>
+                                <goal>push</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                    <configuration>
+                        <repository>${docker.repository}</repository>
+                        <tag>v${project.version}</tag>
+                        <useMavenSettingsForAuth>true</useMavenSettingsForAuth>
+                        <skip>false</skip>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+
+    <properties>
+        <docker.repository>wso2/k8s-api-operator</docker.repository>
+        <exec.maven.plugin.version>3.0.0</exec.maven.plugin.version>
+        <dockerfile-maven-plugin.version>1.4.10</dockerfile-maven-plugin.version>
+    </properties>
+
 </project>
