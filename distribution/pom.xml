@@ -20,6 +20,13 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
+    <parent>
+        <groupId>org.wso2.apim</groupId>
+        <artifactId>k8s-api-operator</artifactId>
+        <version>2.0.0-m3</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.wso2.apim</groupId>
     <artifactId>k8s-api-operator-distribution</artifactId>
@@ -28,6 +35,27 @@
 
     <build>
         <plugins>
+            <plugin>
+                <artifactId>exec-maven-plugin</artifactId>
+                <groupId>org.codehaus.mojo</groupId>
+                <executions>
+                    <execution>
+                        <id>Build API Operator Docker Image</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>operator-sdk</executable>
+                            <workingDirectory>${basedir}/../api-operator</workingDirectory>
+                            <arguments>
+                                <argument>build</argument>
+                                <argument>${docker.repository}:v${project.version}</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <executions>
@@ -49,4 +77,5 @@
             </plugin>
         </plugins>
     </build>
+
 </project>

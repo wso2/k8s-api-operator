@@ -2,10 +2,46 @@
 
 ### Build from source
 
-The api-operator was built using the [operator-sdk (version v0.18.2)][operator_sdk].
-Follow the [quick start guide][operator_sdk_quick_start] of operator-sdk for more information.
+#### Prerequisites
 
-You should build the image when changes are added to the project. The steps to build the image are listed below. 
+- Maven
+- Docker  
+- [Operator-sdk v0.18.2]
+
+    Follow the [quick start guide][operator_sdk_quick_start] of operator-sdk for more information.
+
+#### Build the source and the Docker image
+
+```sh
+>> mvn clean install
+```
+
+- The docker image of the operator gets created. 
+
+#### Push the docker image (Optional)
+
+- Create a settings.xml file in ~/.m2 directory of Maven.
+- Include the following in the settings.xml and replace USERNAME AND PASSWORD fields
+
+```code
+<settings xmlns="http://maven.apache.org/SETTINGS/1.1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.1.0 http://maven.apache.org/xsd/settings-1.1.0.xsd">
+  <servers>
+  	<server>
+   		<id>docker.io</id>
+   		<username>USERNAME</username>
+   		<password>PASSWORD</password>
+  	</server>
+  </servers>
+</settings>
+```
+
+- Execute the following command to push the docker image to the repository
+```sh
+>> mvn dockerfile:push
+```
+
+### Advanced Configurations
 
 1.  After modifying the *_types.go files run the following command to update the generated code for that resource type
     ```sh
@@ -13,7 +49,7 @@ You should build the image when changes are added to the project. The steps to b
     >> operator-sdk generate crds
     ```
 
-1.  Build the api-operator image 
+1.  Build the api-operator image (Optional: Use mvn clean install)
     ```sh
     >> operator-sdk build wso2/k8s-api-operator:v2.0.0-m3
     ```
@@ -37,5 +73,5 @@ You should build the image when changes are added to the project. The steps to b
    >> operator-sdk add controller --api-version=wso2.com/v1alpha1 --kind=<kind name>
    ```
 
-[operator_sdk]: https://github.com/operator-framework/operator-sdk/releases/tag/v0.18.2
+[Operator-sdk v0.18.2]: https://github.com/operator-framework/operator-sdk/releases/tag/v0.18.2
 [operator_sdk_quick_start]: https://v0-18-x.sdk.operatorframework.io/docs/golang/quickstart/
