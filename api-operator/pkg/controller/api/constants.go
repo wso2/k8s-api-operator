@@ -20,4 +20,6 @@ const (
 	eventTypeError             = "Error"
 	deployAPIMEnabledConst     = "deployAPIToAPIManager"
 	deployAPIToMGWEnabledConst = "deployAPIToMicrogateway"
+
+	finalizerName = "wso2.microgateway/api.finalizer"
 )

@@ -82,6 +82,12 @@ func DeployAPItoMgw (client *client.Client, api *wso2v1alpha2.API) error {
 
 	resourcePath := mgBasePath + mgDeployResourcePath
 	mgwEndpoint := envoyMgwConfig.Data[mgwAdapterHostConst]+resourcePath
+
+	if api.Spec.UpdateTimeStamp != "" {
+		logDeploy.Info("Updating the API in Envoy MGW Adapter")
+		mgwEndpoint += "?override=" + strconv.FormatBool(true)
+	}
+
 	var errInsecureDeploy error
 	insecureDeploy, errInsecureDeploy = strconv.ParseBool(envoyMgwConfig.Data[mgwInsecureSkipVerifyConst])
 	if errInsecureDeploy != nil {

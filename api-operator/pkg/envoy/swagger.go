@@ -41,6 +41,7 @@ func getAPIData(def *apim.APIDTODefinition, swaggerDoc *loads.Document) error {
 	def.Description = swaggerDoc.Spec().Info.Description
 	def.Context = fmt.Sprintf("/%s/%s", def.Name, def.Version)
 	def.Tags = swaggerTags(swaggerDoc)
+	def.Type = "HTTP"
 
 	// fill basepath from swagger
 	if swaggerDoc.BasePath() != "" {

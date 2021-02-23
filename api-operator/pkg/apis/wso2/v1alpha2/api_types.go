@@ -24,7 +24,6 @@ import (
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 // APISpec defines the desired state of API
-// +k8s:openapi-gen=true
 type APISpec struct {
 	// Mode of the API. The mode from the swagger definition will be overridden by this value.
 	// Supports "privateJet", "sidecar", "<empty>".
@@ -37,9 +36,9 @@ type APISpec struct {
 	// +optional
 	UpdateTimeStamp string `json:"updateTimeStamp,omitempty"`
 	// Replica count of the API.
+	// Default value "<empty>".
+	// +optional
 	Replicas int `json:"replicas,omitempty"`
-	// Definition of the API.
-	Definition Definition `json:"definition,omitempty"`
 	// Override the exiting API docker image.
 	// Default value "false".
 	// +optional
@@ -64,30 +63,34 @@ type APISpec struct {
 	IngressHostname string `json:"ingressHostname,omitempty"`
 	//Config map name of which the project zip or swagger file is included
 	SwaggerConfigMapName string `json:"swaggerConfigMapName"`
+	// Config map name of the param values of the API project
+	// Default value "<empty>".
+	// +optional
+	ParamsValues string `json:"paramsValues,omitempty"`
+	// Config map name of the certs values of the API project
+	// Default value "<empty>".
+	// +optional
+	CertsValues string `json:"certsValues,omitempty"`
 }
 
 // APIStatus defines the observed state of API
-// +k8s:openapi-gen=true
 type APIStatus struct {
 	// replicas field in the status sub-resource will define the initial replica count allocated to the API.This will be the minimum replica count for a single API
-	Replicas int `json:"replicas"`
+	// Default value "<empty>".
+	// +optional
+	Replicas int `json:"replicas,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // API is the Schema for the apis API
-// +k8s:openapi-gen=true
 // +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="INITIAL-REPLICAS",type=integer,JSONPath=`.spec.replicas`
-// +kubebuilder:printcolumn:name="Mode",type=string,JSONPath=`.spec.mode`
-// +kubebuilder:printcolumn:name="ENDPOINT",type=string,JSONPath=`.spec.apiEndPoint`
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 type API struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec   APISpec   `json:"spec,omitempty"`
-	Status APIStatus `json:"status,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -97,28 +100,6 @@ type APIList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []API `json:"items"`
-}
-
-//Definition contains api definition related values
-type Definition struct {
-	// Array of config map names of swagger definitions for the API.
-	SwaggerConfigmapNames []string `json:"swaggerConfigmapNames"`
-	Type                  string   `json:"type,omitempty"`
-	// Interceptors for API.
-	// Default value "<empty>".
-	// +optional
-	Interceptors Interceptors `json:"interceptors,omitempty"`
-}
-
-type Interceptors struct {
-	// Ballerina interceptors.
-	// Default value "<empty>".
-	// +optional
-	Ballerina []string `json:"ballerina,omitempty"`
-	// Java interceptors.
-	// Default value "<empty>".
-	// +optional
-	Java []string `json:"java,omitempty"`
 }
 
 type Mode string

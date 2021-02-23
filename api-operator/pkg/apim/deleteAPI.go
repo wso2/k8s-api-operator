@@ -99,21 +99,21 @@ func deleteAPIFromProject(config *corev1.ConfigMap, token string, endpoint strin
 	}
 	zippedData := config.BinaryData[zipFileName]
 
-	tmpPath, err := getTempPathOfExtractedArchive(zippedData)
+	tmpPath, err := GetTempPathOfExtractedArchive(zippedData)
 	if err != nil {
 		logDelete.Error(err, "Error while getting extracted temporary directory")
 		return err
 	}
 
 	// Get API info
-	apiInfo, err := getAPIDefinition(tmpPath)
+	apiInfo, err := GetAPIDefinition(tmpPath)
 	if err != nil {
 		logDelete.Error(err, "Error while getting API definition")
 		return err
 	}
 
 	// checks whether the API exists in APIM
-	apiId, err := getAPIId(token, endpoint+"/"+defaultApiListEndpointSuffix, apiInfo.ID.APIName, apiInfo.ID.Version)
+	apiId, err := getAPIId(token, endpoint+"/"+defaultApiListEndpointSuffix, apiInfo.Data.Name, apiInfo.Data.Version)
 	if err != nil {
 		return err
 	}
@@ -134,7 +134,7 @@ func deleteAPIFromSwagger(config *corev1.ConfigMap, token string, endpoint strin
 	}
 	swaggerData := config.Data[swaggerFileName]
 
-	_, name, version, err := getAdditionalProperties(swaggerData)
+	_, name, version, err := GetAdditionalProperties(swaggerData)
 	if err != nil {
 		logImport.Error(err, "Error getting additional data")
 		return err
