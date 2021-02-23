@@ -14,32 +14,25 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package str
+package config
 
 import (
-	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	"os"
+	"testing"
 )
 
-var logger = log.Log.WithName("str.utils")
+func TestSetSystemNamespaceFromEnv(t *testing.T) {
 
-// ContainsString checks whether the given slice of strings has the given string
-func ContainsString(slice []string, val string) bool {
-	for _, item := range slice {
-		if item == val {
-			return true
-		}
-	}
-	return false
-}
+	var found bool
 
-// RemoveString removes the given string from the given slice
-func RemoveString(slice []string, val string) []string {
-	result := make([]string, 0, len(slice))
-	for _, item := range slice {
-		if item == val {
-			continue
-		}
-		result = append(result, item)
+	found = SetSystemNamespaceFromEnv()
+	if found == true {
+		t.Error("expected false as the system namespace has not been set.")
 	}
-	return result
+
+	os.Setenv(SystemNamespaceEnv, "wso2")
+	found = SetSystemNamespaceFromEnv()
+	if found == false {
+		t.Error("expected true as the system namespace has been set.")
+	}
 }

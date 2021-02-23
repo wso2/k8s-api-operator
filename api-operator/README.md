@@ -75,3 +75,17 @@
 
 [Operator-sdk v0.18.2]: https://github.com/operator-framework/operator-sdk/releases/tag/v0.18.2
 [operator_sdk_quick_start]: https://v0-18-x.sdk.operatorframework.io/docs/golang/quickstart/
+
+### Running Unit Tests
+
+- Execute the following command to run unit tests
+
+   ```sh
+   >> gotest -v -covermode=count -coverprofile=coverage.out ./pkg/...
+   ```
+  
+- Check coverage locally
+
+   ```sh
+   >> go tool cover -html=coverage.out
+   ```

@@ -17,7 +17,6 @@
 package swagger
 
 import (
-	"bytes"
 	"encoding/json"
 	"github.com/getkin/kin-openapi/openapi2"
 	"github.com/getkin/kin-openapi/openapi2conv"
@@ -59,17 +58,4 @@ func GetSwaggerV2(swaggerStr *string) (*openapi3.Swagger, error) {
 
 	swaggerV3, err2 := openapi2conv.ToV3Swagger(&swagger2)
 	return swaggerV3, err2
-}
-
-func PrettyString(swagger *openapi3.Swagger) string {
-	var prettyJSON bytes.Buffer
-	final, err := swagger.MarshalJSON()
-	if err != nil {
-		logger.Error(err, "Error marshalling swagger")
-	}
-	errIndent := json.Indent(&prettyJSON, final, "", "  ")
-	if errIndent != nil {
-		logger.Error(errIndent, "Error prettifying JSON")
-	}
-	return string(prettyJSON.Bytes())
 }
