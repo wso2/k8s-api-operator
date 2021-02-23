@@ -38,6 +38,7 @@ func (r *ReconcileAPI) finalizeDeletion(api *wso2v1alpha2.API) error {
 	}
 
 	controlConfigData := controlConf.Data
+	// Delete the API from API Manager
 	deployAPIMEnabled, err := strconv.ParseBool(controlConfigData[deployAPIMEnabledConst])
 	if err != nil {
 		logFinalize.Error(err, "Invalid boolean value for deployAPIMEnabled",
@@ -52,7 +53,7 @@ func (r *ReconcileAPI) finalizeDeletion(api *wso2v1alpha2.API) error {
 		logFinalize.Info("Successfully deleted the API from APIM", "api_name", api.Name)
 	}
 
-	// Deploy the API to MGW Adapter
+	// Delete the API from MGW Adapter
 	deployMgwEnabled, err := strconv.ParseBool(controlConfigData[deployAPIToMGWEnabledConst])
 	if err != nil {
 		logFinalize.Error(err, "Invalid boolean value for deployAPIToMGWEnabled",

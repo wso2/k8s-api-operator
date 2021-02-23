@@ -19,7 +19,7 @@ package envoy
 const (
 	mgBasePath                 = "/api/mgw/adapter/0.1"
 	mgDeployResourcePath       = "/apis"
-	mgDeleteAPIResourcePath    = "/apis/delete"
+	mgDeleteAPIResourcePath    = "/apis"
 	envoyMgwConfName           = "envoy-mgw-configs"
 	envoyMgwSecretName         = "envoymgw-adapter-secret"
 	mgwAdapterHostConst        = "mgwAdapterHost"

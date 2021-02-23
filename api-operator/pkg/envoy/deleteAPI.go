@@ -23,6 +23,7 @@ import (
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/maps"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/swagger"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -37,8 +38,6 @@ var insecureDelete = true
 
 // DeleteAPIFromMgw deletes the API from the MGW Adapter
 func DeleteAPIFromMgw(client *client.Client, api *wso2v1alpha2.API) error {
-
-	logDelete.Info("Jayanie: DELETED")
 	envoyMgwConfig := k8s.NewConfMap()
 	errEnvoyMgw := k8s.Get(client, types.NamespacedName{Namespace: config.SystemNamespace, Name: envoyMgwConfName},
 		envoyMgwConfig)
@@ -92,22 +91,23 @@ func DeleteAPIFromMgw(client *client.Client, api *wso2v1alpha2.API) error {
 	logDelete.Info("Deleting API from Envoy MGW Adapter")
 	return deleteAPI(inputConf, authToken, mgwEndpoint)
 }
+
 func deleteAPI(config *corev1.ConfigMap, token string, endpoint string) error {
 	if config.BinaryData != nil {
-		logDeploy.Info("Deleting API from mgw using project zip")
+		logDelete.Info("Deleting API from mgw using project zip")
 		errDeployZip := deleteAPIZip(config, token, endpoint)
 		if errDeployZip != nil {
-			logDeploy.Error(errDeployZip,
+			logDelete.Error(errDeployZip,
 				"Error when deleting API from mgw using Project zip")
 			return errDeployZip
 		}
 		return nil
 
 	} else {
-		logDeploy.Info("Deleting API to mgw using swagger")
+		logDelete.Info("Deleting API from mgw using swagger")
 		errDeploySwagger := deleteAPISwagger(config, token, endpoint)
 		if errDeploySwagger != nil {
-			logDeploy.Error(errDeploySwagger,
+			logDelete.Error(errDeploySwagger,
 				"Error when deleting API from mgw using Swagger")
 			return errDeploySwagger
 		}
@@ -160,11 +160,14 @@ func deleteAPISwagger(config *corev1.ConfigMap, token string, endpoint string) e
 	}
 	swaggerData := config.Data[swaggerFileName]
 
-	_, apiName, apiVersion, err := apim.GetAdditionalProperties(swaggerData)
+	swaggerDoc, err := swagger.GetSwaggerV3(&swaggerData)
 	if err != nil {
-		logDelete.Error(err, "Error getting additional data")
 		return err
 	}
+
+	apiName := swaggerDoc.Info.Title
+	apiVersion := swaggerDoc.Info.Version
+
 	queryParams := make(map[string]string)
 	queryParams["apiName"] = apiName
 	queryParams["version"] = apiVersion
