@@ -14,12 +14,25 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package ratelimiting
+package config
 
-const (
-	policyFileConst        = "policies.yaml"
-	policyConfMapNameConst = "policy-configmap"
-	resourceConst          = "Resource"
-	subscriptionConst      = "Subscription"
-	applicationConst       = "Application"
+import (
+	"os"
+	"testing"
 )
+
+func TestSetSystemNamespaceFromEnv(t *testing.T) {
+
+	var found bool
+
+	found = SetSystemNamespaceFromEnv()
+	if found == true {
+		t.Error("expected false as the system namespace has not been set.")
+	}
+
+	os.Setenv(SystemNamespaceEnv, "wso2")
+	found = SetSystemNamespaceFromEnv()
+	if found == false {
+		t.Error("expected true as the system namespace has been set.")
+	}
+}

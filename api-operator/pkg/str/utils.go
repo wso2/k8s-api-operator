@@ -17,47 +17,10 @@
 package str
 
 import (
-	"fmt"
-	"math/rand"
-	"regexp"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
-	"strings"
-	"text/template"
 )
 
 var logger = log.Log.WithName("str.utils")
-
-// RemoveVersionTag removes version number in a url provided
-func RemoveVersionTag(url string) string {
-	regExpString := `\/v[\d.-]*\/?$`
-	regExp := regexp.MustCompile(regExpString)
-	return regExp.ReplaceAllString(url, "")
-}
-
-// GetRandFileName returns a file name with suffixing a random number
-func GetRandFileName(filename string) string {
-	fileSplits := strings.SplitN(filename, ".", 2)
-	return fmt.Sprintf("%v-%v.%v", fileSplits[0], rand.Intn(10000), fileSplits[:2][1])
-}
-
-// renderedDockerFile returns the rendered docker file using the properties in DocFileProp
-func RenderTemplate(templateText string, configs interface{}) (string, error) {
-	docFileTemplate, err := template.New("").Parse(templateText)
-	if err != nil {
-		logger.Error(err, "Error generating template")
-		return "", err
-	}
-
-	strBuilder := &strings.Builder{}
-	err = docFileTemplate.Execute(strBuilder, configs)
-	if err != nil {
-		logger.Error(err, "Error rendering file from template", "template", templateText, "properties", configs)
-		return "", err
-	}
-
-	return strBuilder.String(), nil
-}
-
 
 // ContainsString checks whether the given slice of strings has the given string
 func ContainsString(slice []string, val string) bool {

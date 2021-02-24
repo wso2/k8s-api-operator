@@ -23,9 +23,6 @@ ENV OPERATOR=/usr/local/bin/api-operator \
 # install operator binary
 COPY build/_output/bin/api-operator ${OPERATOR}
 
-COPY build/controller_resources/Dockerfile /usr/local/bin
-COPY build/controller_resources/dockerFile.gotmpl /usr/local/bin
-
 COPY build/bin /usr/local/bin
 RUN  /usr/local/bin/user_setup
 
