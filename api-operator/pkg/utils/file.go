@@ -39,9 +39,6 @@ func ExtractArchive(src string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if len(files) == 0 {
-		return "", fmt.Errorf("invalid API archive")
-	}
 	r := strings.TrimPrefix(files[0], src)
 	return filepath.Join(dest, strings.Split(filepath.Clean(r), string(os.PathSeparator))[0]), nil
 }

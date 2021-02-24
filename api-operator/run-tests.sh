@@ -17,4 +17,5 @@
 # under the License.
 
 # Modules to be tested
-go test ./pkg/maps
+gotest -v -covermode=count -coverprofile=coverage.out ./pkg/...
+go tool cover -html=coverage.out
