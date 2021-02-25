@@ -62,11 +62,11 @@ func TestGetSwaggerV3ForInvalidOpenAPIV3(t *testing.T) {
 	openapiV3Result, err = GetSwaggerV3(&openapiV3)
 
 	if err != nil  {
-		t.Error("getting the openapi v3 for valid openapi v3 should not return an error")
+		t.Error("getting the openapi v3 for invalid openapi v3 should not return an error")
 	}
 
 	if openapiV3Result == nil {
-		t.Error("getting the openapi v3 for valid openapi v3 should not return nil")
+		t.Error("getting the openapi v3 for invalid openapi v3 should not return nil")
 	}
 
 	openapiV3 = "Invalid OpenAPI"
