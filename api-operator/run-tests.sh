@@ -17,4 +17,4 @@
 # under the License.
 
 # Modules to be tested
-go test ./pkg/maps
+go test ./...
