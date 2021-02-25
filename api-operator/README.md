@@ -51,14 +51,14 @@
 
 1.  Build the api-operator image (Optional: Use mvn clean install)
     ```sh
-    >> operator-sdk build wso2/k8s-api-operator:v2.0.0-m3
+    >> operator-sdk build wso2/k8s-api-operator:2.0.0-alpha
     ```
 
 1.  Replace the image name in deploy/controller-artifacts/operator.yaml#L36
 
 1.  Push it to a registry:
     ```sh
-    >> docker push wso2/k8s-api-operator:v2.0.0-m3
+    >> docker push wso2/k8s-api-operator:2.0.0-alpha
     ```
 
 ### Add new API and controller

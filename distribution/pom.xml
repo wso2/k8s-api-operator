@@ -23,14 +23,14 @@
     <parent>
         <groupId>org.wso2.apim</groupId>
         <artifactId>k8s-api-operator</artifactId>
-        <version>2.0.0-m3</version>
+        <version>2.0.0-alpha</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.wso2.apim</groupId>
     <artifactId>k8s-api-operator-distribution</artifactId>
-    <version>2.0.0-m3</version>
+    <version>2.0.0-alpha</version>
     <name>API Operator For K8s Distribution</name>
 
     <build>
@@ -50,7 +50,7 @@
                             <workingDirectory>${basedir}/../api-operator</workingDirectory>
                             <arguments>
                                 <argument>build</argument>
-                                <argument>${docker.repository}:v${project.version}</argument>
+                                <argument>${docker.repository}:${project.version}</argument>
                             </arguments>
                         </configuration>
                     </execution>

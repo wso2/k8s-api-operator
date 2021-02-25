@@ -32,7 +32,7 @@ spec:
       containers:
         - name: api-operator
           # Replace this with the built image name
-          image: jayanieb/envoy-k8s-api-operator:v2.6.0
+          image: wso2/k8s-api-operator:2.0.0-alpha
           volumeMounts:
             - mountPath: /home/wso2/security/
               name: operator-vol

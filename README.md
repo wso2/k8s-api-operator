@@ -23,5 +23,5 @@ Use the following command to install API Operator
 
 ```sh
 >> kubectl create ns wso2-system;
-   kubectl apply -n wso2-system -f https://github.com/wso2/k8s-api-operator/releases/download/v2.0.0-m3/api-operator-configs.yaml
+   kubectl apply -n wso2-system -f https://github.com/wso2/k8s-api-operator/releases/download/v2.0.0-alpha/api-operator-configs.yaml
 ```
