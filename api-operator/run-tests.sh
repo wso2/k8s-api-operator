@@ -17,5 +17,4 @@
 # under the License.
 
 # Modules to be tested
-gotest -v -covermode=count -coverprofile=coverage.out ./pkg/...
-go tool cover -html=coverage.out
+go test ./...
