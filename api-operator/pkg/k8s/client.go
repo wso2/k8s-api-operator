@@ -71,17 +71,6 @@ func CreateIfNotExists(client *client.Client, obj runtime.Object) error {
 	return err
 }
 
-// Update updates the given k8s object in the k8s cluster
-func Update(client *client.Client, obj runtime.Object) error {
-	kind := obj.GetObjectKind().GroupVersionKind().Kind
-	updateErr := (*client).Update(context.TODO(), obj)
-	if updateErr != nil {
-		logCnt.Error(updateErr, "Error updating k8s object", "object", obj)
-	}
-	logCnt.Info("Updating k8s object is success", "kind", kind, "object", obj)
-	return updateErr
-}
-
 // Apply creates k8s object if not found and updates if found
 func Apply(client *client.Client, obj runtime.Object) error {
 	// get k8s object
@@ -96,14 +85,3 @@ func Apply(client *client.Client, obj runtime.Object) error {
 	return err
 }
 
-// UpdateOwner updates the k8s object with the owner reference
-func UpdateOwner(client *client.Client, owner *[]metav1.OwnerReference, obj runtime.Object) error {
-	obj.(metav1.Object).SetOwnerReferences(*owner)
-	kind := obj.GetObjectKind().GroupVersionKind().Kind
-
-	err := (*client).Update(context.TODO(), obj)
-	if err != nil {
-		logCnt.Error(err, "Error updating owner reference of k8s object", "kind", kind, "object", obj)
-	}
-	return err
-}
