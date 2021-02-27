@@ -28,6 +28,7 @@ import (
 func HandleDeletion(api *wso2v1alpha2.API, ctx context.Context, requestInfo *common.RequestInfo, finalizer string,
 	handle func(*wso2v1alpha2.API) error) (deleted, finalizerUpdated bool,
 	err error) {
+
 	meta := requestInfo.Object.(v1.ObjectMetaAccessor).GetObjectMeta()
 	if meta.GetDeletionTimestamp().IsZero() {
 		// object is not being deleted
@@ -45,7 +46,8 @@ func HandleDeletion(api *wso2v1alpha2.API, ctx context.Context, requestInfo *com
 		// object is being deleted
 		if str.ContainsString(meta.GetFinalizers(), finalizer) {
 			// handle finalizer
-			requestInfo.Log.V(1).Info("Run finalizer handler before removing the specified finalizer", "finalizer", finalizer, "pending_finalizers", meta.GetFinalizers())
+			requestInfo.Log.V(1).Info("Run finalizer handler before removing the specified finalizer",
+				"finalizer", finalizer, "pending_finalizers", meta.GetFinalizers())
 			if err := handle(api); err != nil {
 				return false, false, err
 			}

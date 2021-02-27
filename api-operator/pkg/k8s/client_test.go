@@ -47,7 +47,6 @@ func getFakeClient(obj *wso2v1alpha2.API) *client.Client {
 	s := scheme.Scheme
 	s.AddKnownTypes(wso2v1alpha2.SchemeGroupVersion, obj)
 	cl := fake.NewFakeClientWithScheme(s, objs...)
-
 	return &cl
 }
 
@@ -56,7 +55,6 @@ func TestGet(t *testing.T) {
 	apiObject := getAPIObject()
 	cl := getFakeClient(apiObject)
 	namespacedName := types.NamespacedName{Namespace: apiObject.Namespace, Name: apiObject.Name}
-
 	err := Get(cl, namespacedName, apiObject)
 
 	if err != nil {
@@ -69,7 +67,6 @@ func TestGetForNotFound(t *testing.T) {
 	apiObject := getAPIObject()
 	cl := getFakeClient(apiObject)
 	namespacedName := types.NamespacedName{Namespace: apiObject.Namespace, Name: "invalid"}
-
 	err := Get(cl, namespacedName, apiObject)
 
 	if err == nil {
@@ -85,7 +82,6 @@ func TestGetForInvalid(t *testing.T) {
 	}
 	cl := getFakeClient(apiObject)
 	namespacedName := types.NamespacedName{Namespace: "", Name: ""}
-
 	err := Get(cl, namespacedName, apiObject)
 
 	if err != nil {
