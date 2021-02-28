@@ -19,8 +19,6 @@ package envoy
 import (
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"io/ioutil"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"os"
@@ -34,8 +32,6 @@ func getFakeClient(obj runtime.Object) *client.Client {
 
 	objs := []runtime.Object{obj}
 	s := scheme.Scheme
-	//s.AddKnownTypes(corev1.Secret.Gr, obj)
-	//cl := fake.NewFakeClientWithScheme(s, objs...)
 	cl := fake.NewFakeClientWithScheme(s, objs...)
 	return &cl
 }
@@ -48,20 +44,6 @@ func readFileContent(t *testing.T, path string) string {
 		t.Error("error while reading the openapi file")
 	}
 	return string(data)
-}
-
-func createConfigMapWithOutData() *corev1.ConfigMap {
-
-	return &corev1.ConfigMap{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "ConfigMap",
-			APIVersion: "v1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "game-data",
-			Namespace: "game",
-		},
-	}
 }
 
 func TestCreateDirectories(t *testing.T) {
@@ -113,7 +95,8 @@ func TestGetSwaggerData(t *testing.T) {
 	openapiV3 := readFileContent(t, "../../test/envoy/openapi_v3.yaml")
 	configMapData["swagger.yaml"] = openapiV3
 
-	config := createConfigMapWithOutData()
+	config := k8s.NewConfMap()
+	config.Name = "test-cm"
 	config.Data = configMapData
 
 	zipFile, cleanupFunc, err := getSwaggerData(config)
@@ -130,7 +113,8 @@ func TestGetSwaggerData(t *testing.T) {
 
 func TestGetSwaggerDataForInvalidConfigMap(t *testing.T) {
 
-	config := createConfigMapWithOutData()
+	config := k8s.NewConfMap()
+	config.Name = "test-cm"
 
 	zipFile, _, err := getSwaggerData(config)
 	if err == nil {
@@ -206,4 +190,38 @@ func TestGetCertForEmptyData(t *testing.T) {
 		t.Error("getting mgw cert for empty data should return an error")
 	}
 
+}
+
+func TestGetZipData(t *testing.T) {
+
+	config := k8s.NewConfMap()
+	config.Name = "test-cm"
+	cmData := make(map[string][]byte, 0)
+	cmData["api"] = []byte("sample-value")
+	config.BinaryData = cmData
+
+	fileName, err := getZipData(config)
+
+	if err != nil {
+		t.Error("getting zip data for valid config map should not return an error")
+	}
+
+	if fileName == "" {
+		t.Error("getting zip data for valid config map should return an empty value")
+	}
+}
+
+func TestGetZipDataInvalidConfigMap(t *testing.T) {
+
+	config := k8s.NewConfMap()
+	config.Name = "test-cm"
+	fileName, err := getZipData(config)
+
+	if err == nil {
+		t.Error("getting zip data for invalid config map should return an error")
+	}
+
+	if fileName != "" {
+		t.Error("getting zip data for invalid config map should not return an empty value")
+	}
 }
