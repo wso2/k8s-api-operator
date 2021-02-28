@@ -17,7 +17,6 @@
 package k8s
 
 import (
-	"fmt"
 	wso2v1alpha2 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -180,7 +179,6 @@ func TestApplyForAlreadyAvailableObject(t *testing.T) {
 	cl := getFakeClient(apiObject)
 
 	err := Apply(cl, apiObject)
-	fmt.Print(err)
 	if err != nil {
 		t.Error("applying an object that is already exist should not return an error")
 	}
