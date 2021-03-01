@@ -40,6 +40,19 @@
                 <groupId>org.codehaus.mojo</groupId>
                 <executions>
                     <execution>
+                        <!-- Run Unit Tests -->
+                        <id>Unit Tests</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>bash</executable>
+                            <workingDirectory>${basedir}/../api-operator</workingDirectory>
+                            <commandlineArgs>run-tests.sh</commandlineArgs>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>Build API Operator Docker Image</id>
                         <phase>package</phase>
                         <goals>

@@ -17,7 +17,6 @@
 package k8s
 
 import (
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -30,26 +29,6 @@ func NewConfMap() *corev1.ConfigMap {
 			APIVersion: "v1",
 		},
 	}
-}
-
-// NewConfMapWith returns a new configmap object with given namespacedName and data map
-func NewConfMapWith(namespacedName types.NamespacedName, dataMap *map[string]string, binaryData *map[string][]byte, owner *[]metav1.OwnerReference) *corev1.ConfigMap {
-	confMap := NewConfMap()
-	confMap.ObjectMeta = metav1.ObjectMeta{
-		Name:      namespacedName.Name,
-		Namespace: namespacedName.Namespace,
-	}
-	if owner != nil {
-		confMap.OwnerReferences = *owner
-	}
-	if dataMap != nil {
-		confMap.Data = *dataMap
-	}
-	if binaryData != nil {
-		confMap.BinaryData = *binaryData
-	}
-
-	return confMap
 }
 
 func NewSecret() *corev1.Secret {
@@ -79,28 +58,4 @@ func NewSecretWith(namespacedName types.NamespacedName, data *map[string][]byte,
 	}
 
 	return secret
-}
-
-func NewDeployment() *appsv1.Deployment {
-	return &appsv1.Deployment{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Deployment",
-			APIVersion: "apps/v1",
-		},
-	}
-}
-
-// NewOwnerRef returns an array with a new owner reference object of given meta data
-func NewOwnerRef(typeMeta metav1.TypeMeta, objectMeta metav1.ObjectMeta) *[]metav1.OwnerReference {
-	setOwner := true
-	return &[]metav1.OwnerReference{
-		{
-			APIVersion:         typeMeta.APIVersion,
-			Kind:               typeMeta.Kind,
-			Name:               objectMeta.Name,
-			UID:                objectMeta.UID,
-			Controller:         &setOwner,
-			BlockOwnerDeletion: &setOwner,
-		},
-	}
 }
