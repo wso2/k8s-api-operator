@@ -85,7 +85,7 @@ func TestGetTempFileForSwagger(t *testing.T) {
 	_, err1 := getTempFileForSwagger("Test String", "file.json")
 
 	if err1 != nil {
-		t.Error("getting temp file for Swagger (yaml) should not return an error")
+		t.Error("getting temp file for Swagger (Json) should not return an error")
 	}
 }
 
