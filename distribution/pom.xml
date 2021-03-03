@@ -40,6 +40,39 @@
                 <groupId>org.codehaus.mojo</groupId>
                 <executions>
                     <execution>
+                        <!-- Validate the source -->
+                        <id>Validate Source</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>go</executable>
+                            <workingDirectory>${basedir}/../api-operator</workingDirectory>
+                            <arguments>
+                                <argument>vet</argument>
+                                <argument>./...</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <!-- Build the source -->
+                        <id>Build Source</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>go</executable>
+                            <workingDirectory>${basedir}/../api-operator</workingDirectory>
+                            <arguments>
+                                <argument>build</argument>
+                                <argument>-v</argument>
+                                <argument>cmd/manager/main.go</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <!-- Run Unit Tests -->
                         <id>Unit Tests</id>
                         <phase>test</phase>
@@ -47,9 +80,15 @@
                             <goal>exec</goal>
                         </goals>
                         <configuration>
-                            <executable>bash</executable>
+                            <executable>go</executable>
                             <workingDirectory>${basedir}/../api-operator</workingDirectory>
-                            <commandlineArgs>run-tests.sh</commandlineArgs>
+                            <arguments>
+                                <argument>test</argument>
+                                <argument>-race</argument>
+                                <argument>-coverprofile=coverage.txt</argument>
+                                <argument>-covermode=atomic</argument>
+                                <argument>./pkg/...</argument>
+                            </arguments>
                         </configuration>
                     </execution>
                     <execution>

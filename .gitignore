@@ -32,3 +32,5 @@ target
 *~
 .idea
 *.DS_Store
+api-operator/coverage.txt
+api-operator/main
