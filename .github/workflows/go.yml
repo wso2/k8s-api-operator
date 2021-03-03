@@ -21,6 +21,8 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
+  workflow_dispatch:
+    branches: [ master ]
 
 jobs:
 
@@ -56,3 +58,8 @@ jobs:
         run: |
           cd api-operator/
           go test -race -coverprofile=coverage.txt -covermode=atomic ./pkg/...
+
+      - name: Upload unit test coverage to Codecov
+        uses: codecov/codecov-action@v1.2.1
+        with:
+          flags: unit_tests
