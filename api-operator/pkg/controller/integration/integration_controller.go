@@ -23,6 +23,7 @@ import (
 	wso2v1alpha2 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -203,9 +204,40 @@ func (r *ReconcileIntegration) createOrUpdateHPA(config EIConfigNew) error {
 
 // createOrUpdateService Creates or updates k8s service for the deployment
 func (r *ReconcileIntegration) createOrUpdateService(config EIConfigNew) error {
-	service := r.serviceForIntegration(config)
-	err := k8s.CreateIfNotExists(&r.client, service)
-	return err
+	service := &corev1.Service{}
+	var integration = config.integration
+	namespace := types.NamespacedName{Name: nameForService(&integration), Namespace: integration.Namespace}
+	err := k8s.Get(&r.client, namespace, service)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			//service not found, create it
+			serviceFromConfig := r.serviceForIntegration(config)
+			err := k8s.Create(&r.client,serviceFromConfig)
+			if err != nil {
+				log.Error(err, "Error creating k8s service", "object", serviceFromConfig)
+				return err
+			}
+			log.Info("Creating k8s service is success", "kind",
+				serviceFromConfig.Kind, "object", serviceFromConfig)
+		} else {
+			log.Error(err, "Failed to get Service for integration")
+			return err
+		}
+	} else {
+		//service exists, update it
+		//workaround for https://github.com/kubernetes/kubernetes/issues/36072
+		serviceFromConfig := r.serviceForIntegration(config)
+		serviceFromConfig.ObjectMeta.ResourceVersion = service.ObjectMeta.ResourceVersion
+		serviceFromConfig.Spec.ClusterIP = service.Spec.ClusterIP
+		err := k8s.Apply(&r.client,serviceFromConfig)
+		if err != nil {
+			log.Error(err, "Failed to update Service for integration " ,
+				"serviceName", serviceFromConfig.Name)
+			return err
+		}
+	}
+
+	return nil
 }
 
 // createOrUpdateIngress check if the ingress already exists, if not create a new one, if yes update it

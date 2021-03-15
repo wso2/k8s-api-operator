@@ -40,7 +40,6 @@ func Get(client *client.Client, namespacedName types.NamespacedName, obj runtime
 		logCnt.Error(err, "Error getting k8s object", "kind", kind, "key", namespacedName)
 		return err
 	}
-	logCnt.Info("Getting k8s object is success", "object", obj)
 	return nil
 }
 
