@@ -21,6 +21,7 @@ package integration
 import (
     "context"
 	wso2v1alpha2 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 	corev1 "k8s.io/api/core/v1"
 	v1beta1 "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -132,7 +133,7 @@ func GenerateIngressPaths(m *wso2v1alpha2.Integration) []v1beta1.HTTPIngressPath
 // Get configmap by the given name
 func (r *ReconcileIntegration) GetConfigMap(integration *wso2v1alpha2.Integration, configMapName string) (*corev1.ConfigMap, error) {
 	configMap := &corev1.ConfigMap{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: configMapName, Namespace: integration.Namespace}, configMap)
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: configMapName, Namespace: config.SystemNamespace}, configMap)
 	if err != nil {
 		log.Error(err, "Error getting the ConfigMap " + configMapName)
 	}
