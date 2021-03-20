@@ -19,7 +19,7 @@ kind: Integration
 metadata:
   name: test-integration
 spec:
-  image: sajithaliyanage/k8s-samples:helloservice
+  image: sajithagimash/test:1.0.0
   deploySpec:
     minReplicas: 1
     requestCPU: "500m"

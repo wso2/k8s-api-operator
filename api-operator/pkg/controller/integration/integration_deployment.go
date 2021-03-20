@@ -19,6 +19,7 @@
 package integration
 
 import (
+	"errors"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/api/autoscaling/v2beta2"
 	corev1 "k8s.io/api/core/v1"
@@ -82,6 +83,9 @@ func (r *ReconcileIntegration) deploymentForIntegration(config EIConfigNew) *app
 		limit[corev1.ResourceMemory] = resource.MustParse(m.Spec.DeploySpec.MemoryLimit)
 	}
 
+	livenessProbe, _ := getLivenessProbe(config)
+	readinessProbe, _ := getReadinessProbe(config)
+
 	deployment := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: deploymentAPIVersion,
@@ -105,10 +109,14 @@ func (r *ReconcileIntegration) deploymentForIntegration(config EIConfigNew) *app
 						Image:           m.Spec.Image,
 						Name:            eiContainerName,
 						Ports:           exposePorts,
+						LivenessProbe:   &livenessProbe,
+						ReadinessProbe:  &readinessProbe,
+
 						Resources: corev1.ResourceRequirements{
 							Limits:   limit,
 							Requests: request,
 						},
+
 						Env:             m.Spec.Env,
 						EnvFrom: 	 m.Spec.EnvFrom,
 						ImagePullPolicy: corev1.PullAlways,
@@ -180,4 +188,43 @@ func getHPAMetrics(config EIConfigNew) []v2beta2.MetricSpec {
 		return hpaMetrics
 	}
 	return nil
+}
+
+// Get livenessProbe defined in deployment file or at configmap
+func getLivenessProbe(config EIConfigNew) (corev1.Probe, error) {
+	if (config.integration.Spec.DeploySpec.LivenessProbe != corev1.Probe{}) {
+		return config.integration.Spec.DeploySpec.LivenessProbe, nil
+	} else {
+		var livenessProbeVal = config.integrationConfigMap.Data[livenessProbeConfigKey]
+		var livenessProbe corev1.Probe
+		if livenessProbeVal != "" {
+			yamlErr := yaml.Unmarshal([]byte(livenessProbeVal), &livenessProbe)
+			if yamlErr != nil {
+				log.Error(yamlErr, "Error while reading livenessProbe data from config")
+				return corev1.Probe{}, yamlErr
+			}
+			return livenessProbe, nil
+		}
+		return corev1.Probe{}, errors.New("probe: no liveness probe defined")
+	}
+
+}
+
+// Get readinessProbe defined in deployment file or at configmap
+func getReadinessProbe(config EIConfigNew) (corev1.Probe, error) {
+	if (config.integration.Spec.DeploySpec.ReadinessProbe != corev1.Probe{}) {
+		return config.integration.Spec.DeploySpec.ReadinessProbe, nil
+	} else {
+		var readinessProbeVal = config.integrationConfigMap.Data[readinessProbeConfigKey]
+		var readinessProbe corev1.Probe
+		if readinessProbeVal != "" {
+			yamlErr := yaml.Unmarshal([]byte(readinessProbeVal), &readinessProbe)
+			if yamlErr != nil {
+				log.Error(yamlErr, "Error while reading readinessProbe data from config")
+				return corev1.Probe{}, yamlErr
+			}
+			return readinessProbe, nil
+		}
+		return corev1.Probe{}, errors.New("probe: no readiness probe defined in configmap")
+	}
 }

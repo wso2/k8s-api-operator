@@ -66,6 +66,14 @@ type DeploySpec struct {
 	// Default value "<empty>".
 	// +optional
 	MemoryLimit string `json:"memoryLimit,omitempty"`
+	// LivenessProbe for containers in the pod
+	// Default value "<empty>".
+	// +optional
+	LivenessProbe corev1.Probe `json:"livenessProbe,omitempty"`
+	// ReadinessProbe for containers in the pod
+	// Default value "<empty>".
+	// +optional
+	ReadinessProbe corev1.Probe `json:"readinessProbe,omitempty"`
 }
 
 // AutoScale defines the properties related to Auto scaling of pods

@@ -51,4 +51,8 @@ const (
 	enableAutoScaleKey = "enableAutoScale"
 	minReplicasKey = "minReplicas"
 	maxReplicasKey = "maxReplicas"
+
+	livenessProbeConfigKey = "livenessProbe"
+	readinessProbeConfigKey = "readinessProbe"
+
 )
