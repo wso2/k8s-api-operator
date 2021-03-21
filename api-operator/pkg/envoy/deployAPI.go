@@ -129,11 +129,15 @@ func deployAPI(config *corev1.ConfigMap, token string, endpoint string, extraPar
 func deployAPIZip(config *corev1.ConfigMap, token string, endpoint string, extraParams map[string]string) error {
 	fileName, err := getZipData(config)
 	if err != nil {
+		fmt.Println("#### Err 1")
+		fmt.Println(err)
 		return err
 	}
 	resp, errResp := executeNewFileUploadRequest(endpoint, extraParams, "file",
 		fileName, token)
 	if errResp != nil {
+		fmt.Println("#### Err 1")
+		fmt.Println(errResp)
 		return errResp
 	}
 	if resp.StatusCode() == http.StatusCreated || resp.StatusCode() == http.StatusOK {

@@ -17,6 +17,7 @@
 package config
 
 import (
+	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	"os"
 	"testing"
 )
@@ -35,4 +36,35 @@ func TestSetSystemNamespaceFromEnv(t *testing.T) {
 	if found == false {
 		t.Error("expected true as the system namespace has been set.")
 	}
+}
+
+func TestGetWatchNamespaces(t *testing.T) {
+
+	var watchNamespaces string
+
+	watchNamespaces = GetWatchNamespaces()
+	if watchNamespaces != OperatorNamespace {
+		t.Error("expected operator namespace as the watch cluster level has not been set.")
+	}
+
+	os.Setenv(WatchClusterLevel, "true")
+	watchNamespaces = GetWatchNamespaces()
+	if watchNamespaces != "" {
+		t.Error("expected empty string as the namespace as the watch cluster level has been set to true")
+	}
+
+	os.Setenv(WatchClusterLevel, "true")
+	os.Setenv(k8sutil.WatchNamespaceEnvVar, "test123")
+	watchNamespaces = GetWatchNamespaces()
+	if watchNamespaces != "test123" {
+		t.Error("expected default namespace as the watch cluster level has been set to true and watch namespace" +
+			"is set to test123")
+	}
+
+	os.Setenv(WatchClusterLevel, "false")
+	watchNamespaces = GetWatchNamespaces()
+	if watchNamespaces != OperatorNamespace {
+		t.Error("expected operator namespace as the watch cluster level has been set to false")
+	}
+
 }

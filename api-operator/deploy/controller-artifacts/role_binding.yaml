@@ -14,16 +14,14 @@
 # specific language governing permissions and limitations
 # under the License.
 
-kind: ClusterRoleBinding
+kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: api-operator
 subjects:
-- kind: ServiceAccount
-  name: api-operator
-  # Replace this with the namespace the operator is deployed in.
-  namespace: wso2-system
+  - kind: ServiceAccount
+    name: api-operator
 roleRef:
-  kind: ClusterRole
+  kind: Role
   name: api-operator
   apiGroup: rbac.authorization.k8s.io

@@ -106,13 +106,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	//setMapper, err := util.NewDynamicRESTMapper(cfg)
-
 	// Create a new Cmd to provide shared dependencies and start components
 	mgr, err := manager.New(cfg, manager.Options{
-		Namespace:          "",
+		Namespace:          operatorConfig.GetWatchNamespaces(),
 		MetricsBindAddress: fmt.Sprintf("%s:%d", metricsHost, metricsPort),
 	})
+
 	if err != nil {
 		log.Error(err, "")
 		os.Exit(1)
