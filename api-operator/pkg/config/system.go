@@ -53,8 +53,8 @@ func getWatchClusterLevel() (watchClusterLevel bool) {
 	return watchClusterLevel
 }
 
-// GetWatchNamespaces If cluster wide is enabled, return empty list or comma separated namespaces. If cluster wide is disabled,
-// used the operator deployed namespace.
+// GetWatchNamespaces If cluster wide is enabled, return empty list or comma separated namespaces. If cluster wide
+// is disabled, used the operator deployed namespace.
 func GetWatchNamespaces() (watchNamespaces string) {
 
 	watchClusterLevel := getWatchClusterLevel()
@@ -68,7 +68,11 @@ func GetWatchNamespaces() (watchNamespaces string) {
 		}
 
 	} else {
-		watchNamespaces = OperatorNamespace
+		if OperatorNamespace == SystemNamespace {
+			watchNamespaces = OperatorNamespace
+		} else {
+			panic("WatchClusterLevel is disabled and Operator/ Configs should be deployed in the same namespace")
+		}
 	}
 
 	return watchNamespaces

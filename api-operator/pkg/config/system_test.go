@@ -42,6 +42,8 @@ func TestGetWatchNamespaces(t *testing.T) {
 
 	var watchNamespaces string
 
+	os.Setenv(SystemNamespaceEnv, DefaultSystemNamespace)
+	SetSystemNamespaceFromEnv()
 	watchNamespaces = GetWatchNamespaces()
 	if watchNamespaces != OperatorNamespace {
 		t.Error("expected operator namespace as the watch cluster level has not been set.")
@@ -62,9 +64,10 @@ func TestGetWatchNamespaces(t *testing.T) {
 	}
 
 	os.Setenv(WatchClusterLevel, "false")
-	watchNamespaces = GetWatchNamespaces()
-	if watchNamespaces != OperatorNamespace {
-		t.Error("expected operator namespace as the watch cluster level has been set to false")
-	}
+	os.Setenv(SystemNamespaceEnv, "test-ns")
+	SetSystemNamespaceFromEnv()
+	defer func() { recover() }()
+	GetWatchNamespaces()
+	t.Errorf("expected panic as system namespace is different from operator namespace")
 
 }
