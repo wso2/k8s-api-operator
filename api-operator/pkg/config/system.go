@@ -46,14 +46,14 @@ func SetOperatorNamespace() {
 	}
 }
 
-// Checks whether operator is used cluster wide or namespace wide.
+// getWatchClusterLevel Checks whether operator is used cluster wide or namespace wide.
 func getWatchClusterLevel() (watchClusterLevel bool) {
 	watchClusterLevelValue, _ := os.LookupEnv(WatchClusterLevel)
 	watchClusterLevel, _ = strconv.ParseBool(watchClusterLevelValue)
 	return watchClusterLevel
 }
 
-// If cluster wide is enabled, return empty list or comma separated namespaces. If cluster wide is disabled,
+// GetWatchNamespaces If cluster wide is enabled, return empty list or comma separated namespaces. If cluster wide is disabled,
 // used the operator deployed namespace.
 func GetWatchNamespaces() (watchNamespaces string) {
 
