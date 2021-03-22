@@ -84,7 +84,7 @@ kind: ConfigMap
 metadata:
   name: envoy-mgw-configs
 data:
-  mgwAdapterHost: "https://adapter.default:9843"
+  mgwAdapterHost: "https://adapter-service:9843"
   # Skip verification for Microgateway Adapter endpoint call. If "false", you need to provide the cert
   mgwInsecureSkipVerify: "true"
 
