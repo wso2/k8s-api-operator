@@ -117,6 +117,10 @@ func (r *ReconcileIntegration) deploymentForIntegration(config EIConfigNew) *app
 							Requests: request,
 						},
 
+						Lifecycle: &corev1.Lifecycle{
+							PreStop: getShutdownHandler(),
+						},
+
 						Env:             m.Spec.Env,
 						EnvFrom: 	 m.Spec.EnvFrom,
 						ImagePullPolicy: corev1.PullAlways,
@@ -227,4 +231,14 @@ func getReadinessProbe(config EIConfigNew) (corev1.Probe, error) {
 		}
 		return corev1.Probe{}, errors.New("probe: no readiness probe defined in configmap")
 	}
+}
+
+// Get shutdown handler specific to MI containers that handles graceful shutdown upon pod termination
+func getShutdownHandler() *corev1.Handler {
+	shutDownHandler := corev1.Handler{
+		Exec: &corev1.ExecAction{
+			Command: []string{"sh", "-c", shutdownScriptPath},
+		},
+	}
+	return &shutDownHandler
 }

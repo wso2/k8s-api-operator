@@ -55,4 +55,6 @@ const (
 	livenessProbeConfigKey = "livenessProbe"
 	readinessProbeConfigKey = "readinessProbe"
 
+	shutdownScriptPath = "${WSO2_SERVER_HOME}/bin/micro-integrator.sh stop"
+
 )
