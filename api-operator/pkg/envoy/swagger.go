@@ -17,14 +17,10 @@
 package envoy
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/Jeffail/gabs"
 	"github.com/go-openapi/loads"
 	"github.com/mitchellh/mapstructure"
-	"github.com/wso2/k8s-api-operator/api-operator/pkg/apim"
-	"path"
-	"strings"
 )
 
 const (
@@ -33,100 +29,8 @@ const (
 	EpFailover    = "failover"
 )
 
-// generateFieldsFromSwagger3 using swagger
-func getAPIData(def *apim.APIDTODefinition, swaggerDoc *loads.Document) error {
-	def.Name = swaggerDoc.Spec().Info.Title
-	def.Version = swaggerDoc.Spec().Info.Version
-	def.Provider = "admin"
-	def.Description = swaggerDoc.Spec().Info.Description
-	def.Context = fmt.Sprintf("/%s/%s", def.Name, def.Version)
-	def.Tags = swaggerTags(swaggerDoc)
-	def.Type = "HTTP"
-
-	// fill basepath from swagger
-	if swaggerDoc.BasePath() != "" {
-		def.Context = path.Clean(fmt.Sprintf("/%s/%s", swaggerDoc.BasePath(), def.Version))
-	}
-
-	// override basepath if wso2 extension provided
-	if basepath, ok := swaggerXWO2BasePath(swaggerDoc); ok {
-		def.Context = path.Clean(basepath)
-		if !strings.Contains(basepath, "{version}") {
-			def.Context = path.Clean(basepath + "/" + def.Version)
-			def.IsDefaultVersion = true
-		} else {
-			def.Context = path.Clean(strings.ReplaceAll(basepath, "{version}", def.Version))
-		}
-	}
-
-	// trim spaces if available
-	def.Name = strings.ReplaceAll(def.Name, " ", "")
-	def.Version = strings.ReplaceAll(def.Version, " ", "")
-	def.Context = strings.ReplaceAll(def.Context, " ", "")
-
-	cors, ok, err := swagger2XWSO2Cors(swaggerDoc)
-	if err != nil && ok {
-		return err
-	}
-	if ok {
-		def.CorsConfiguration = cors
-	}
-
-	prodEp, foundProdEp, err := swaggerXWSO2ProductionEndpoints(swaggerDoc)
-	if err != nil && foundProdEp {
-		return err
-	}
-	sandboxEp, foundSandboxEp, err := swaggerXWSO2SandboxEndpoints(swaggerDoc)
-	if err != nil && foundSandboxEp {
-		return err
-	}
-
-	if foundProdEp || foundSandboxEp {
-		ep, err := BuildAPIMEndpoints(prodEp, sandboxEp)
-		if err != nil {
-			return err
-		}
-		var endpointConfig map[string]interface{}
-		err = json.Unmarshal([]byte(ep), &endpointConfig)
-		if err != nil {
-			return err
-		}
-		def.EndpointConfig = &endpointConfig
-	}
-	return nil
-}
-
 type Tag struct {
 	Name string `json:"name"`
-}
-
-func swagger2XWSO2Cors(document *loads.Document) (*apim.CorsConfiguration, bool, error) {
-	if v, ok := document.Spec().Extensions["x-wso2-cors"]; ok {
-		var cors apim.CorsConfiguration
-		err := mapstructure.Decode(v, &cors)
-		if err != nil {
-			return nil, true, err
-		}
-		cors.CorsConfigurationEnabled = true
-		return &cors, true, nil
-	}
-	return nil, false, nil
-}
-
-func swaggerTags(document *loads.Document) []string {
-	tags := make([]string, len(document.Spec().Tags))
-	for i, v := range document.Spec().Tags {
-		tags[i] = v.Name
-	}
-	return tags
-}
-
-func swaggerXWO2BasePath(document *loads.Document) (string, bool) {
-	if v, ok := document.Spec().Extensions["x-wso2-basePath"]; ok {
-		str, ok := v.(string)
-		return str, ok
-	}
-	return "", false
 }
 
 type Endpoints struct {

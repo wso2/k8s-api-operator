@@ -18,7 +18,6 @@ package envoy
 
 import (
 	"bytes"
-	"encoding/base64"
 	"fmt"
 	wso2v1alpha2 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
@@ -69,16 +68,13 @@ func DeployAPItoMgw (client *client.Client, api *wso2v1alpha2.API) error {
 		}
 	}
 
-	envoyMgwSecret := k8s.NewSecret()
-	errEnvoyMgwSecret := k8s.Get(client, types.NamespacedName{Namespace: config.SystemNamespace,
-		Name: envoyMgwSecretName}, envoyMgwSecret)
+	envoyMgwSecret , errEnvoyMgwSecret := getMgAdapterSecret(client, envoyMgwSecretName)
 	if errEnvoyMgwSecret != nil {
 		return errEnvoyMgwSecret
 	}
-	username := string(envoyMgwSecret.Data["username"])
-	password := string(envoyMgwSecret.Data["password"])
-	mgwCertSecret := string(envoyMgwSecret.Data["mgwCertSecretName"])
-	authToken := base64.StdEncoding.EncodeToString([]byte(username + ":" + password))
+
+	mgwCertSecret := string(envoyMgwSecret.Data[mgwCertSecretName])
+	authToken := getAuthToken(envoyMgwSecret)
 
 	resourcePath := mgBasePath + mgDeployResourcePath
 	mgwEndpoint := envoyMgwConfig.Data[mgwAdapterHostConst]+resourcePath
@@ -129,15 +125,11 @@ func deployAPI(config *corev1.ConfigMap, token string, endpoint string, extraPar
 func deployAPIZip(config *corev1.ConfigMap, token string, endpoint string, extraParams map[string]string) error {
 	fileName, err := getZipData(config)
 	if err != nil {
-		fmt.Println("#### Err 1")
-		fmt.Println(err)
 		return err
 	}
 	resp, errResp := executeNewFileUploadRequest(endpoint, extraParams, "file",
 		fileName, token)
 	if errResp != nil {
-		fmt.Println("#### Err 1")
-		fmt.Println(errResp)
 		return errResp
 	}
 	if resp.StatusCode() == http.StatusCreated || resp.StatusCode() == http.StatusOK {

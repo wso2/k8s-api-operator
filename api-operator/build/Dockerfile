@@ -22,6 +22,7 @@ ENV OPERATOR=/usr/local/bin/api-operator \
 
 # install operator binary
 COPY build/_output/bin/api-operator ${OPERATOR}
+COPY build/controller_resources/default_api.yaml /usr/local/bin
 
 COPY build/bin /usr/local/bin
 RUN  /usr/local/bin/user_setup

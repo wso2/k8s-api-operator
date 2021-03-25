@@ -19,13 +19,14 @@ package envoy
 import (
 	"archive/zip"
 	"crypto/x509"
+	"encoding/base64"
 	"github.com/ghodss/yaml"
 	"github.com/go-openapi/loads"
-	"github.com/wso2/k8s-api-operator/api-operator/pkg/apim"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/maps"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/utils"
+	v2 "github.com/wso2/product-apim-tooling/import-export-cli/specs/v2"
 	yaml2 "gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
@@ -34,8 +35,11 @@ import (
 	"os"
 	"path/filepath"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"strings"
 )
+
+var logUtil = log.Log.WithName("mgw.envoy.util")
 
 // directories to be created
 var dirs = []string{
@@ -83,7 +87,7 @@ func getTempFileForSwagger(swaggerData string, swaggerFileName string) (*os.File
 		return nil, err
 	}
 	if _, err := swaggerFile.Write([]byte(swaggerData)); err != nil {
-		logDeploy.Error(err, "Error while writing to temp swagger file")
+		logUtil.Error(err, "Error while writing to temp swagger file")
 		return nil, err
 	}
 	swaggerFile.Close()
@@ -95,6 +99,23 @@ func getTempFileForSwagger(swaggerData string, swaggerFileName string) (*os.File
 // swagger2.0/OpenAPI3.0 specs are supported
 func loadSwagger(swaggerDoc string) (*loads.Document, error) {
 	return loads.Spec(swaggerDoc)
+}
+
+// loadDefaultSpec loads the API definition
+func loadDefaultSpec() (*v2.APIDefinitionFile, error) {
+	//pwd, _ := os.Getwd()
+	defaultData, err := ioutil.ReadFile("/usr/local/bin/default_api.yaml")
+	if err != nil {
+		return nil, err
+	}
+
+	def := &v2.APIDefinitionFile{}
+	marshalErr := yaml.Unmarshal(defaultData, &def)
+
+	if marshalErr != nil {
+		return nil, err
+	}
+	return def, nil
 }
 
 // getCert gets the public cert of Envoy MGW Adapter when skip verification is false
@@ -138,10 +159,32 @@ func getZipData(config *corev1.ConfigMap) (string, error) {
 	return file.Name(), nil
 }
 
+// getMgAdapterSecret Gets the envoymgw-adapter-secret
+func getMgAdapterSecret(client *client.Client, secretName string) (*corev1.Secret, error) {
+
+	envoyMgwSecret := k8s.NewSecret()
+	errEnvoyMgwSecret := k8s.Get(client, types.NamespacedName{Namespace: config.SystemNamespace,
+		Name: secretName}, envoyMgwSecret)
+
+	if errEnvoyMgwSecret != nil {
+		return nil, errEnvoyMgwSecret
+	}
+
+	return envoyMgwSecret, nil
+}
+
+// getAuthToken Get auth token from the secret
+func getAuthToken(secret *corev1.Secret) string {
+
+	username := string(secret.Data[usernameProperty])
+	password := string(secret.Data[passwordProperty])
+	return base64.StdEncoding.EncodeToString([]byte(username + ":" + password))
+}
+
 func getSwaggerData(config *corev1.ConfigMap) (string, func(), error) {
 	swaggerFileName, errSwagger := maps.OneKey(config.Data)
 	if errSwagger != nil {
-		logDeploy.Error(errSwagger, "Error in the swagger configMap data", "data", config.Data)
+		logUtil.Error(errSwagger, "Error in the swagger configMap data", "data", config.Data)
 		return "", nil, errSwagger
 	}
 	swaggerData := config.Data[swaggerFileName]
@@ -154,15 +197,20 @@ func getSwaggerData(config *corev1.ConfigMap) (string, func(), error) {
 	if err != nil {
 		return "", nil, err
 	}
-	definitionFile := &apim.APIDefinitionFile{}
-	def := &definitionFile.Data
 
-	err = getAPIData(def, doc)
+	definitionFile, err := loadDefaultSpec()
 	if err != nil {
 		return "", nil, err
 	}
 
-	apiData, err := yaml2.Marshal(def)
+	def := &definitionFile.Data
+
+	err = v2.Swagger2Populate(def, doc)
+	if err != nil {
+		return "", nil, err
+	}
+
+	apiData, err := yaml2.Marshal(definitionFile)
 	if err != nil {
 		return "", nil, err
 	}
@@ -187,7 +235,7 @@ func getSwaggerData(config *corev1.ConfigMap) (string, func(), error) {
 	if err != nil {
 		return "", nil, err
 	}
-	swaggerZipFile, err, cleanupFunc := utils.CreateZipFileFromProject(swaggerDirectory, true)
+	swaggerZipFile, err, cleanupFunc := utils.CreateZipFileFromProject(swaggerDirectory, false)
 	if err != nil {
 		return "", nil, err
 	}

@@ -31,4 +31,9 @@ const (
 	HeaderValueAuthBasicPrefix = "Basic"
 	HeaderValueKeepAlive       = "keep-alive"
 	DefaultHttpRequestTimeout  = 10000
+	mgwCertSecretName          = "mgwCertSecretName"
+	usernameProperty           = "username"
+	passwordProperty           = "password"
+	apiNameProperty            = "apiName"
+	versionProperty            = "version"
 )
