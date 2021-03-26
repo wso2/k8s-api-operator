@@ -17,7 +17,6 @@
 package envoy
 
 import (
-	"encoding/base64"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/apim"
 	wso2v1alpha2 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
@@ -31,6 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"strconv"
+	"strings"
 )
 
 var logDelete = log.Log.WithName("mgw.envoy.delete")
@@ -64,16 +64,13 @@ func DeleteAPIFromMgw(client *client.Client, api *wso2v1alpha2.API) error {
 		}
 	}
 
-	envoyMgwSecret := k8s.NewSecret()
-	errEnvoyMgwSecret := k8s.Get(client, types.NamespacedName{Namespace: config.SystemNamespace,
-		Name: envoyMgwSecretName}, envoyMgwSecret)
+	envoyMgwSecret, errEnvoyMgwSecret := getMgAdapterSecret(client, envoyMgwSecretName)
 	if errEnvoyMgwSecret != nil {
 		return errEnvoyMgwSecret
 	}
-	username := string(envoyMgwSecret.Data["username"])
-	password := string(envoyMgwSecret.Data["password"])
-	mgwCertSecret := string(envoyMgwSecret.Data["mgwCertSecretName"])
-	authToken := base64.StdEncoding.EncodeToString([]byte(username + ":" + password))
+
+	mgwCertSecret := string(envoyMgwSecret.Data[mgwCertSecretName])
+	authToken := getAuthToken(envoyMgwSecret)
 
 	resourcePath := mgBasePath + mgDeleteAPIResourcePath
 	mgwEndpoint := envoyMgwConfig.Data[mgwAdapterHostConst] + resourcePath
@@ -134,8 +131,8 @@ func deleteAPIZip(config *corev1.ConfigMap, token string, endpoint string) error
 		return err
 	}
 	queryParams := make(map[string]string)
-	queryParams["apiName"] = apiInfo.Data.Name
-	queryParams["version"] = apiInfo.Data.Version
+	queryParams[apiNameProperty] = apiInfo.Data.Name
+	queryParams[versionProperty] = apiInfo.Data.Version
 
 	headers := make(map[string]string)
 	headers[HeaderAuthorization] = HeaderValueAuthBasicPrefix + " " + token
@@ -147,7 +144,11 @@ func deleteAPIZip(config *corev1.ConfigMap, token string, endpoint string) error
 	if resp.StatusCode() == http.StatusOK {
 		return nil
 	} else if resp.StatusCode() == http.StatusNotFound {
-		logDelete.Info("API does not exist")
+		logDelete.Error(nil, "API does not exist", "api name", apiInfo.Data.Name,
+			"api version", apiInfo.Data.Version)
+	} else {
+		logDelete.Error(nil, "Error while deleting the API", "api name", apiInfo.Data.Name,
+			"api version", apiInfo.Data.Version)
 	}
 	return nil
 }
@@ -167,10 +168,11 @@ func deleteAPISwagger(config *corev1.ConfigMap, token string, endpoint string) e
 
 	apiName := swaggerDoc.Info.Title
 	apiVersion := swaggerDoc.Info.Version
+	apiName = strings.ReplaceAll(apiName, " ", "")
 
 	queryParams := make(map[string]string)
-	queryParams["apiName"] = apiName
-	queryParams["version"] = apiVersion
+	queryParams[apiNameProperty] = apiName
+	queryParams[versionProperty] = apiVersion
 
 	headers := make(map[string]string)
 	headers[HeaderAuthorization] = HeaderValueAuthBasicPrefix + " " + token
@@ -182,7 +184,9 @@ func deleteAPISwagger(config *corev1.ConfigMap, token string, endpoint string) e
 	if resp.StatusCode() == http.StatusOK {
 		return nil
 	} else if resp.StatusCode() == http.StatusNotFound {
-		logDelete.Info("API does not exist")
+		logDelete.Error(nil, "API does not exist", "api name", apiName, "api version", apiVersion)
+	} else {
+		logDelete.Error(nil, "Error while deleting the API", "api name", apiName, "api version", apiVersion)
 	}
 	return nil
 }

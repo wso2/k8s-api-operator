@@ -25,6 +25,7 @@ import (
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/maps"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/swagger"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/utils"
+	v2 "github.com/wso2/product-apim-tooling/import-export-cli/specs/v2"
 	"io/ioutil"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -108,8 +109,8 @@ func getCert(client *client.Client, certConf string) error {
 	return nil
 }
 
-// GetAPIDefinition scans filePath and returns APIDefinition or an error
-func GetAPIDefinition(filePath string) (*APIDefinitionFile, error) {
+// GetAPIDefinition scans filePath and returns v2.APIDefinitionFile or an error
+func GetAPIDefinition(filePath string) (*v2.APIDefinitionFile, error) {
 	info, err := os.Stat(filePath)
 	if err != nil {
 		return nil, err
@@ -169,14 +170,15 @@ func resolveYamlOrJSON(filename string) (string, []byte, error) {
 }
 
 // extractAPIDefinition extracts API information from jsonContent
-func extractAPIDefinition(jsonContent []byte) (*APIDefinitionFile, error) {
-	api := &APIDefinitionFile{}
-	err := json.Unmarshal(jsonContent, &api)
+func extractAPIDefinition(jsonContent []byte) (*v2.APIDefinitionFile, error) {
+
+	def := &v2.APIDefinitionFile{}
+	err := json.Unmarshal(jsonContent, &def)
 	if err != nil {
 		return nil, err
 	}
 
-	return api, nil
+	return def, nil
 }
 
 // getAdditionalProperties returns additional data required by REST API when adding an API using swagger definition
