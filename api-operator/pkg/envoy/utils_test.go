@@ -89,27 +89,28 @@ func TestGetTempFileForSwagger(t *testing.T) {
 	}
 }
 
-//func TestGetSwaggerData(t *testing.T) {
-//
-//	configMapData := make(map[string]string, 0)
-//	openapiV3 := readFileContent(t, "../../test/envoy/openapi_v3.yaml")
-//	configMapData["swagger.yaml"] = openapiV3
-//
-//	config := k8s.NewConfMap()
-//	config.Name = "test-cm"
-//	config.Data = configMapData
-//
-//	zipFile, cleanupFunc, err := getSwaggerData(config)
-//	defer cleanupFunc()
-//	if err != nil {
-//		t.Error("getting swagger data file should not return an error")
-//	}
-//
-//	if zipFile == "" {
-//		t.Error("getting swagger data file should return a proper file name")
-//	}
-//
-//}
+func TestGetSwaggerData(t *testing.T) {
+
+	configMapData := make(map[string]string, 0)
+	openapiV3 := readFileContent(t, "../../test/envoy/openapi_v3.yaml")
+	configMapData["swagger.yaml"] = openapiV3
+
+	config := k8s.NewConfMap()
+	config.Name = "test-cm"
+	config.Data = configMapData
+
+	os.Setenv(apiOperatorConfigHome, "../../build/controller_resources")
+	zipFile, cleanupFunc, err := getSwaggerData(config)
+	defer cleanupFunc()
+	if err != nil {
+		t.Error("getting swagger data file should not return an error")
+	}
+
+	if zipFile == "" {
+		t.Error("getting swagger data file should return a proper file name")
+	}
+
+}
 
 func TestGetSwaggerDataForInvalidConfigMap(t *testing.T) {
 

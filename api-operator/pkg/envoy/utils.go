@@ -103,8 +103,18 @@ func loadSwagger(swaggerDoc string) (*loads.Document, error) {
 
 // loadDefaultSpec loads the API definition
 func loadDefaultSpec() (*v2.APIDefinitionFile, error) {
-	//pwd, _ := os.Getwd()
-	defaultData, err := ioutil.ReadFile("/usr/local/bin/default_api.yaml")
+
+	var apiOperatorConfigHomeDir string
+	apiOperatorConfigHomeDir = os.Getenv(apiOperatorConfigHome)
+
+	if apiOperatorConfigHomeDir == "" {
+		apiOperatorConfigHomeDir = apiOperatorDefaultConfigHome
+	}
+
+	configFileName := "default_api.yaml"
+	configFilePath := apiOperatorConfigHomeDir + string(os.PathSeparator) + configFileName
+
+	defaultData, err := ioutil.ReadFile(configFilePath)
 	if err != nil {
 		return nil, err
 	}
