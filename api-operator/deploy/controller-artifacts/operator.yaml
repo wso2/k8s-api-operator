@@ -40,7 +40,7 @@ spec:
             - containerPort: 9445
           command:
             - api-operator
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           resources:
             requests:
               memory: "250Mi"
