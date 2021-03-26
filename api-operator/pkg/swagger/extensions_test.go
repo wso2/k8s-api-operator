@@ -36,10 +36,6 @@ func TestApiBasePath(t *testing.T) {
 	}
 	apiBasePath = ApiBasePath(openapiV3Result)
 
-	if err != nil  {
-		t.Error("getting the api base path for valid openapi should not return an error")
-	}
-
 	if apiBasePath == "" {
 		t.Error("getting the api base path for valid openapi should not return empty")
 	}
@@ -52,11 +48,19 @@ func TestApiBasePath(t *testing.T) {
 	}
 	apiBasePath = ApiBasePath(openapiV3Result)
 
-	if err != nil  {
-		t.Error("getting the api base path for valid openapi should not return an error")
-	}
-
 	if apiBasePath == "" {
 		t.Error("getting the api base path for valid openapi should not return empty")
+	}
+
+	openapiV3 = readFileContent(t, "../../test/swagger/openapi_v3_invalid.yaml")
+	openapiV3Result, err = GetSwaggerV3(&openapiV3)
+
+	if err != nil {
+		t.Error("error while reading the swagger file")
+	}
+	apiBasePath = ApiBasePath(openapiV3Result)
+
+	if apiBasePath != "" {
+		t.Error("getting the api base path for invalid openapi should return empty")
 	}
 }

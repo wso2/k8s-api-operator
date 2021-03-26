@@ -64,7 +64,7 @@ func DeleteAPIFromMgw(client *client.Client, api *wso2v1alpha2.API) error {
 		}
 	}
 
-	envoyMgwSecret , errEnvoyMgwSecret := getMgAdapterSecret(client, envoyMgwSecretName)
+	envoyMgwSecret, errEnvoyMgwSecret := getMgAdapterSecret(client, envoyMgwSecretName)
 	if errEnvoyMgwSecret != nil {
 		return errEnvoyMgwSecret
 	}
@@ -144,9 +144,11 @@ func deleteAPIZip(config *corev1.ConfigMap, token string, endpoint string) error
 	if resp.StatusCode() == http.StatusOK {
 		return nil
 	} else if resp.StatusCode() == http.StatusNotFound {
-		logDelete.Error(nil, "API does not exist" + apiInfo.Data.Name + " - " + apiInfo.Data.Version)
+		logDelete.Error(nil, "API does not exist", "api name", apiInfo.Data.Name,
+			"api version", apiInfo.Data.Version)
 	} else {
-		logDelete.Error(nil, "Error while deleting the API" + apiInfo.Data.Name + " - " + apiInfo.Data.Version)
+		logDelete.Error(nil, "Error while deleting the API", "api name", apiInfo.Data.Name,
+			"api version", apiInfo.Data.Version)
 	}
 	return nil
 }
@@ -182,9 +184,9 @@ func deleteAPISwagger(config *corev1.ConfigMap, token string, endpoint string) e
 	if resp.StatusCode() == http.StatusOK {
 		return nil
 	} else if resp.StatusCode() == http.StatusNotFound {
-		logDelete.Error(nil, "API does not exist - " + apiName + " - " + apiVersion)
+		logDelete.Error(nil, "API does not exist", "api name", apiName, "api version", apiVersion)
 	} else {
-		logDelete.Error(nil, "Error while deleting the API - "+ apiName + " - " + apiVersion)
+		logDelete.Error(nil, "Error while deleting the API", "api name", apiName, "api version", apiVersion)
 	}
 	return nil
 }

@@ -226,3 +226,40 @@ func TestGetZipDataInvalidConfigMap(t *testing.T) {
 		t.Error("getting zip data for invalid config map should not return an empty value")
 	}
 }
+
+func TestGetAuthToken(t *testing.T) {
+
+	secret := k8s.NewSecret()
+	secret.Name = "mgw-secret"
+	secretData := make(map[string][]byte, 0)
+	secretData["username"] = []byte("admin")
+	secretData["password"] = []byte("admin")
+	secret.Data = secretData
+
+	authToken := getAuthToken(secret)
+
+	if authToken == "" {
+		t.Error("getting auth token for a secret should not return an empty value")
+	}
+}
+
+func TestGetMgAdapterSecret(t *testing.T) {
+
+	mgwSecret := k8s.NewSecret()
+	secretName := "envoymgw-cert-secret"
+	mgwSecret.Name = secretName
+	mgwSecret.Namespace = "wso2-system"
+	cl := getFakeClient(mgwSecret)
+
+	secret, _ := getMgAdapterSecret(cl, secretName)
+
+	if secret == nil {
+		t.Error("getting mg adapter secret for valid secret name should return a valid secret")
+	}
+
+	_, err := getMgAdapterSecret(cl, "invalid")
+
+	if err == nil {
+		t.Error("getting mg adapter secret for invalid secret name should return an error")
+	}
+}
