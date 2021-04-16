@@ -40,3 +40,27 @@ func TestOneKey(t *testing.T) {
 		t.Error("map with multiple keys should return error")
 	}
 }
+
+func TestManyKeys(t *testing.T) {
+	var keys []string
+	var err error
+
+	keys, err = ManyKeys("string")
+	if err == nil {
+		t.Error("string argument should return an error")
+	}
+
+	keys, err = ManyKeys(map[string]int{"one": 1})
+	if err != nil {
+		t.Error("map with one key should not return an error")
+	}
+
+	keys, err = ManyKeys(map[string]int{"one": 1, "two": 2})
+	if err != nil {
+		t.Error("map with multiple keys should not return error")
+	}
+
+	if len(keys) != 2 {
+		t.Error("map with 2 keys should return 2 key values")
+	}
+}
