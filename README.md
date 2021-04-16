@@ -25,7 +25,7 @@ to work with K8s API Operator.
 Use the following command to install API Operator
 
 ```sh
->> kubectl apply -f https://github.com/wso2/k8s-api-operator/releases/download/v2.0.0-beta/api-operator-configs.yaml
+>> kubectl apply -f https://github.com/wso2/k8s-api-operator/releases/download/v2.0.0-rc1/api-operator-configs.yaml
 ```
 
 ## Documentation 
