@@ -37,6 +37,8 @@ const (
 	HeaderValueKeepAlive          = "keep-alive"
 	HeaderValueXWWWFormUrlEncoded = "application/x-www-form-urlencoded"
 	DefaultHttpRequestTimeout     = 10000
+	Deployment                    = "Deployment"
+	Certificates                  = "certificates"
 
 	publisherAPIImportEndpoint              = "api/am/publisher/v2/apis/import?overwrite=true"
 	defaultClientRegistrationEndpointSuffix = "client-registration/v0.17/register"

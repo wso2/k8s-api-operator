@@ -119,19 +119,13 @@ func (r *ReconcileTargetEndpoint) Reconcile(request reconcile.Request) (reconcil
 		return reconcile.Result{}, err
 	}
 
-	depFound := &appsv1.Deployment{}
-	errDeploy := k8s.Get(&r.client, types.NamespacedName{Name: "api-operator", Namespace: config.OperatorNamespace}, depFound)
-	if errDeploy != nil {
-		reqLogger.Error(errDeploy, "Cannot find the operator deployment!")
-	}
-
 	//getting owner reference to create HPA for TargetEndPoint
 	owner := getOwnerDetails(instance)
 	if owner == nil {
 		reqLogger.Info("Operator was not found in the " + instance.Namespace + " namespace. No owner will be set for the artifacts")
 	}
 	//get configurations file for the controller
-	controlConf, err := getConfigmap(r, "controller-config", config.SystemNamespace)
+	controlConf, err := getConfigmap(r, targetEPControllerConfig, config.SystemNamespace)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Controller configmap is not found, could have been deleted after reconcile request.
