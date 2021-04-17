@@ -266,15 +266,13 @@ func handleDeploymentValues(zippedData []byte, paramsCM *corev1.ConfigMap, certs
 			return "", err
 		}
 
-		certsFileNames, err := maps.ManyKeys(certsCM.Data)
+		_, err := maps.ManyKeys(certsCM.Data)
 		if err != nil {
 			logImport.Error(err, "Error in the certs configmap ", "certs cm", certsCM.Data)
 			return "", err
 		}
 
-		for i := 0; i < len(certsFileNames); i++ {
-			fileName := certsFileNames[i]
-			certData := certsCM.Data[fileName]
+		for fileName, certData := range certsCM.Data {
 
 			certFilePath := filepath.Join(swaggerDirectory, filepath.FromSlash(Deployment+"/"+Certificates+
 				"/"+fileName))
