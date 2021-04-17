@@ -19,11 +19,12 @@ const (
 	privateJet = "privateJet"
 	serverless = "serverless"
 
-	hpaConfigMapName        = "hpa-configs"
-	maxReplicasConfigKey    = "targetEndpointMaxReplicas"
-	metricsConfigKey        = "targetEndpointMetrics"
-	metricsConfigKeyV2beta1 = "targetEndpointMetricsV2beta1"
-	hpaVersionConst         = "hpaVersion"
+	hpaConfigMapName         = "target-endpoint-hpa-config"
+	targetEPControllerConfig = "target-endpoint-controller-config"
+	maxReplicasConfigKey     = "targetEndpointMaxReplicas"
+	metricsConfigKey         = "targetEndpointMetrics"
+	metricsConfigKeyV2beta1  = "targetEndpointMetricsV2beta1"
+	hpaVersionConst          = "hpaVersion"
 
 	resourceRequestCPUTarget    = "resourceRequestCPUTarget"
 	resourceRequestMemoryTarget = "resourceRequestMemoryTarget"

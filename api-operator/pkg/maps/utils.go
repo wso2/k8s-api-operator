@@ -36,3 +36,18 @@ func OneKey(m interface{}) (string, error) {
 
 	return keys[0].String(), nil
 }
+
+func ManyKeys(m interface{}) ([]string, error) {
+	if reflect.TypeOf(m).Kind().String() != "map" {
+		err := errors.New("type of the argument is not a map")
+		return nil, err
+	}
+	value := reflect.ValueOf(m)
+	keys := value.MapKeys()
+
+	valueList := make([]string, len(keys))
+	for i := 0; i < len(keys); i++ {
+		valueList[i] = keys[i].String()
+	}
+	return valueList, nil
+}
