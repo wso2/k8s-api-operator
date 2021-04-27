@@ -136,11 +136,11 @@ metadata:
 data:
   # The following 3 endpoints are related to importing API to API Manager
     # API Manager Keymanager/DCR endpoint
-  apimKeymanagerEndpoint: "https://localhost:9443"
+  apimKeymanagerEndpoint: "https://apim.wso2.com"
     # API Manager Publisher endpoint
-  apimPublisherEndpoint: "https://localhost:9443"
+  apimPublisherEndpoint: "https://apim.wso2.com"
     # API Manager token endpoint
-  apimTokenEndpoint: "https://localhost:9443/oauth2/token"
+  apimTokenEndpoint: "https://apim.wso2.com/oauth2/token"
 
   # Skip verification for the REST API invocations. If "false", you need to provide the cert
   insecureSkipVerify: "true"
