@@ -1,4 +1,4 @@
-#Copyright (c)  WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+# Copyright (c) WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
 #
 # WSO2 Inc. licenses this file to you under the Apache License,
 # Version 2.0 (the "License"); you may not use this file except
@@ -14,10 +14,10 @@
 # specific language governing permissions and limitations
 # under the License.
 
-packageName: api-operator
-channels:
-  - name: stable
-    currentCSV: api-operator.v1.2.2
-  - name: 2.0.0-stable
-    currentCSV: api-operator.v2.0.0
-defaultChannel: 2.0.0-stable
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  # Controller Artifacts
+  - ../api-operator/deploy/controller-artifacts
+  # Controller Configs
+  - ../api-operator/deploy/controller-configs

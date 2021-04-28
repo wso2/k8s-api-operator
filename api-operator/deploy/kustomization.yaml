@@ -22,11 +22,10 @@ resources:
   - crds/wso2.com_targetendpoints_crd.yaml
   - crds/wso2.com_integrations_crd.yaml
   # Controller Artifacts
+  - controller-artifacts
   - controller-artifacts/operator.yaml
-  - controller-artifacts/operator-secret.yaml
   - controller-artifacts/role.yaml
   - controller-artifacts/role_binding.yaml
   - controller-artifacts/service_account.yaml
   # Controller Configs
-  - controller-configs/api_controller_conf.yaml
-  - controller-configs/integration_controller_conf.yaml
+  - controller-configs

@@ -32,7 +32,7 @@ spec:
       containers:
         - name: api-operator
           # Replace this with the built image name
-          image: wso2/k8s-api-operator:2.0.0-rc1
+          image: wso2/k8s-api-operator:2.0.0
           volumeMounts:
             - mountPath: /home/wso2/security/
               name: operator-vol
@@ -72,21 +72,3 @@ spec:
                 path: tls.key
               - key: tls.crt
                 path: tls.crt
-# Expose a service in port 9445 for Rest server to send APIs to adapter
----
-apiVersion: v1
-kind: Service
-metadata:
-  labels:
-    name: api-operator
-  name: operator-service
-spec:
-  type: NodePort
-  selector:
-    name: api-operator
-  ports:
-    - name: "https-operator"
-      port: 9445
-      targetPort: 9445
-      protocol: TCP
-      nodePort: 30445
