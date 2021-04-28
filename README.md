@@ -15,10 +15,14 @@ project (exported from WSO2 Integration Studio) and deploys the integration in y
 
 ![Alt text](images/K8s-API-Operator.png?raw=true "K8s API Operator")
 
-## Quick Start Guide with API Microgateway
+## Quick Start Guide with Choreo Connect
 
-Follow the [Quick Start with Kubernetes](https://apim.docs.wso2.com/en/4.0.0/deploy-and-publish/deploy-on-gateway/choreo-connect/getting-started/quick-start-guide/quick-start-guide-kubernetes/)
-to work with K8s API Operator.
+Deploy your first API to Choreo Connect using K8s API Operator, see [Quick Start Guide - Kubernetes](https://apim.docs.wso2.com/en/4.0.0/deploy-and-publish/deploy-on-gateway/choreo-connect/getting-started/quick-start-guide/quick-start-guide-kubernetes/)
+
+
+## Deploying Integrations
+
+Deploy integrations using K8s API Operator, see [Deploying Integrations using the Operator](https://apim.docs.wso2.com/en/4.0.0/install-and-setup/setup/kubernetes-operators/k8s-api-operator/manage-integrations/integration-deployments/)
 
 ## Standalone Installation
 
@@ -30,4 +34,4 @@ Use the following command to install API Operator
 
 ## Documentation 
 
-You can find the documentation [here](https://apim.docs.wso2.com/en/4.0.0/install-and-setup/setup/kubernetes-operators/k8s-api-operator/overview/).
+You can find the documentation [here](https://apim.docs.wso2.com/en/4.0.0/reference/k8s-operators/k8s-api-operator/).
