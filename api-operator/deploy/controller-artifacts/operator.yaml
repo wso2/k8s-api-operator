@@ -72,21 +72,3 @@ spec:
                 path: tls.key
               - key: tls.crt
                 path: tls.crt
-# Expose a service in port 9445 for Rest server to send APIs to adapter
----
-apiVersion: v1
-kind: Service
-metadata:
-  labels:
-    name: api-operator
-  name: operator-service
-spec:
-  type: NodePort
-  selector:
-    name: api-operator
-  ports:
-    - name: "https-operator"
-      port: 9445
-      targetPort: 9445
-      protocol: TCP
-      nodePort: 30445

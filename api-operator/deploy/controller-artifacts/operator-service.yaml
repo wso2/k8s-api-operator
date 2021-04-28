@@ -1,4 +1,4 @@
-# Copyright (c) WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+#Copyright (c) WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
 #
 # WSO2 Inc. licenses this file to you under the Apache License,
 # Version 2.0 (the "License"); you may not use this file except
@@ -14,18 +14,20 @@
 # specific language governing permissions and limitations
 # under the License.
 
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-resources:
-  # CRDs
-  - crds/wso2.com_apis_crd.yaml
-  - crds/wso2.com_targetendpoints_crd.yaml
-  - crds/wso2.com_integrations_crd.yaml
-  # Controller Artifacts
-  - controller-artifacts
-  - controller-artifacts/operator.yaml
-  - controller-artifacts/role.yaml
-  - controller-artifacts/role_binding.yaml
-  - controller-artifacts/service_account.yaml
-  # Controller Configs
-  - controller-configs
+# Expose a service in port 9445 for Rest server to send APIs to adapter
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    name: api-operator
+  name: operator-service
+spec:
+  type: NodePort
+  selector:
+    name: api-operator
+  ports:
+    - name: "https-operator"
+      port: 9445
+      targetPort: 9445
+      protocol: TCP
+      nodePort: 30445

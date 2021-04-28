@@ -17,15 +17,6 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  # CRDs
-  - crds/wso2.com_apis_crd.yaml
-  - crds/wso2.com_targetendpoints_crd.yaml
-  - crds/wso2.com_integrations_crd.yaml
-  # Controller Artifacts
-  - controller-artifacts
-  - controller-artifacts/operator.yaml
-  - controller-artifacts/role.yaml
-  - controller-artifacts/role_binding.yaml
-  - controller-artifacts/service_account.yaml
-  # Controller Configs
-  - controller-configs
+  # Controller Configs for Operator Hub Installation
+  - api_controller_conf.yaml
+  - integration_controller_conf.yaml
