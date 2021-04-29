@@ -19,4 +19,3 @@ kind: Kustomization
 resources:
   # Controller Artifacts for Operator Hub Installation
   - operator-service.yaml
-  - operator-secret.yaml

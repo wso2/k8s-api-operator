@@ -18,6 +18,6 @@ packageName: api-operator
 channels:
   - name: stable
     currentCSV: api-operator.v1.2.2
-  - name: 2.0.0-stable
+  - name: 2.x-stable
     currentCSV: api-operator.v2.0.0
-defaultChannel: 2.0.0-stable
+defaultChannel: 2.x-stable

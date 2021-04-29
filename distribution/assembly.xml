@@ -50,6 +50,9 @@
             <directory>../api-operator/deploy/controller-artifacts</directory>
             <outputDirectory>/controller-artifacts/</outputDirectory>
             <useDefaultExcludes>true</useDefaultExcludes>
+            <excludes>
+                <exclude>kustomization.yaml</exclude>
+            </excludes>
         </fileSet>
         <fileSet>
             <directory>../api-operator/deploy/crds</directory>
@@ -60,6 +63,9 @@
             <directory>../api-operator/deploy/controller-configs</directory>
             <outputDirectory>/controller-artifacts/</outputDirectory>
             <useDefaultExcludes>true</useDefaultExcludes>
+            <excludes>
+                <exclude>kustomization.yaml</exclude>
+            </excludes>
         </fileSet>
     </fileSets>
 </assembly>
