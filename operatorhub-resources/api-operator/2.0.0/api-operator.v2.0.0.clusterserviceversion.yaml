@@ -340,7 +340,7 @@ spec:
   maintainers:
   - email: announce@wso2.org
     name: WSO2 product releases
-  maturity: 2.0.0-stable
+  maturity: 2.x-stable
   provider:
     name: WSO2
   version: 2.0.0
