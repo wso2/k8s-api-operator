@@ -24,6 +24,10 @@ ENV OPERATOR=/usr/local/bin/api-operator \
 COPY build/_output/bin/api-operator ${OPERATOR}
 COPY build/controller_resources/default_api.yaml /usr/local/bin
 
+# add certs to habdle TLS RestAPI
+COPY build/security/tls.crt /home/wso2/security/tls.crt
+COPY build/security/tls.key /home/wso2/security/tls.key
+
 COPY build/bin /usr/local/bin
 RUN  /usr/local/bin/user_setup
 
