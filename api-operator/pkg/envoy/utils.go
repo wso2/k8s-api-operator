@@ -231,8 +231,9 @@ func getSwaggerData(config *corev1.ConfigMap) (string, func(), error) {
 	}
 
 	swaggerDirectory, _ := ioutil.TempDir("", "api-swagger-dir*")
-	apiYamlPath := filepath.Join(swaggerDirectory, filepath.FromSlash("api.yaml"))
-	swaggerSavePath := filepath.Join(swaggerDirectory, filepath.FromSlash("Definitions/swagger.yaml"))
+	apiYamlPath := filepath.Join(swaggerDirectory, filepath.FromSlash(apiYamlFile))
+	swaggerSavePath := filepath.Join(swaggerDirectory, filepath.FromSlash(swaggerDefinitionFile))
+	deploymentEnvPath := filepath.Join(swaggerDirectory, filepath.FromSlash(deploymentEnvFile))
 	errCreateDirectory := createDirectories(swaggerDirectory)
 	if errCreateDirectory != nil {
 		return "", nil, errCreateDirectory
@@ -242,6 +243,10 @@ func getSwaggerData(config *corev1.ConfigMap) (string, func(), error) {
 		return "", nil, errWrite
 	}
 	err = ioutil.WriteFile(apiYamlPath, apiData, os.ModePerm)
+	if err != nil {
+		return "", nil, err
+	}
+	err = ioutil.WriteFile(deploymentEnvPath, []byte(deploymentEnvFileData), os.ModePerm)
 	if err != nil {
 		return "", nil, err
 	}

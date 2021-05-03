@@ -39,3 +39,19 @@ const (
 	apiOperatorConfigHome        = "API_OPERATOR_CONFIG_HOME"
 	apiOperatorDefaultConfigHome = "/usr/local/bin"
 )
+
+// constants related to API-CTL project
+// TODO: use API-CTL code to init project
+const (
+	apiYamlFile           = "api.yaml"
+	swaggerDefinitionFile = "Definitions/swagger.yaml"
+	deploymentEnvFile     = "deployment_environments.yaml"
+	// TODO: use API-CTL code to init project
+	deploymentEnvFileData = `type: deployment_environments
+version: v4.0.0
+data:
+ -
+   displayOnDevportal: true
+   deploymentEnvironment: Default
+`
+)

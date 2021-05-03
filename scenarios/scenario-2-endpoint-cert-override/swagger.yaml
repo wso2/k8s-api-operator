@@ -1,0 +1,184 @@
+# Copyright (c) 2021 WSO2 Inc. (http:www.wso2.org) All Rights Reserved.
+#
+# WSO2 Inc. licenses this file to you under the Apache License,
+# Version 2.0 (the "License"); you may not use this file except
+# in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http:www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+openapi: 3.0.0
+servers:
+  - description: Localhost
+    url: http://localhost:8443
+info:
+  description: This is a sample backend - products
+  version: v1
+  title: Cert-Products
+  contact:
+    email: renukapiyumal@gmail.com
+tags:
+  - name: product
+    description: Products of store
+x-wso2-production-endpoints:
+  urls:
+    - https://products
+  type: http
+x-wso2-sandbox-endpoints:
+  urls:
+    - https://products
+  type: http
+x-wso2-basePath: /cert-products-api/v1
+paths:
+  /products:
+    get:
+      tags:
+        - product
+      summary: All Products
+      description: All products of the store
+      responses:
+        200:
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+    post:
+      tags:
+        - product
+      summary: Add Product
+      description: Add new products to the store
+      requestBody:
+        content:
+          applicatoin/json:
+            schema:
+              $ref: "#/components/schemas/Product"
+
+      responses:
+        200:
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        400:
+          description: Invalid Product
+  /products/{id}:
+    get:
+      tags:
+        - product
+      summary: Find product by ID
+      description: Returns a single product
+      parameters:
+        - name: id
+          in: path
+          description: ID of product to return
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 3
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        400:
+          description: Invalid ID supplied
+        404:
+          description: Product not found
+    put:
+      tags:
+        - product
+      summary: Update product by ID
+      description: Update a product
+      parameters:
+        - name: id
+          in: path
+          description: ID of product to update
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 3
+      requestBody:
+        content:
+          applicatoin/json:
+            schema:
+              $ref: "#/components/schemas/Product"
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        400:
+          description: Invalid ID supplied
+        404:
+          description: Product not found
+    delete:
+      tags:
+        - product
+      summary: Delete product by ID
+      description: Delete a product
+      parameters:
+        - name: id
+          in: path
+          description: ID of product to delete
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 3
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Result"
+        400:
+          description: Invalid ID supplied
+        404:
+          description: Product not found
+components:
+  schemas:
+    Product:
+      type: object
+      required:
+        - name
+        - category
+        - price
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 3
+        name:
+          type: string
+          example: ABC Smart TV
+        category:
+          type: string
+          example: Electronics
+        price:
+          type: integer
+          format: int64
+          example: 39999
+    Result:
+      type: object
+      properties:
+        result:
+          type: string
+          example: success

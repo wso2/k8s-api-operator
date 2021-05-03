@@ -14,25 +14,21 @@
 # specific language governing permissions and limitations
 # under the License.
 
-apiVersion: wso2.com/v1alpha2
-kind: TargetEndpoint
+apiVersion: v1
+kind: ConfigMap
 metadata:
-  name: products
-  labels:
-    app: products-backend
-spec:
-  applicationProtocol: http
-  ports:
-    - name: prod-ep
-      port: 80
-      targetPort: 8080
-  deploy:
-    name: products
-    dockerImage: cakebakery/products:v1
-    minReplicas: 2
-    maxReplicas: 3
-    requestCPU: "2m"
-    reqMemory: "10Mi"
-    cpuLimit: "5m"
-    memoryLimit: "20Mi"
-  mode: privateJet
+  name: cert-products-params
+data:
+  params.yaml: |
+    environments:
+        - name: production
+          configs:
+              endpoints:
+                  production:
+                    url: https://products-certs
+                  sandbox:
+                    url: https://products-certs
+              certs:
+                  - hostName: products-certs
+                    alias: products-certs
+                    path: products-certs.crt
