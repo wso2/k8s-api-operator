@@ -17,11 +17,11 @@
 openapi: 3.0.0
 servers:
   - description: Localhost
-    url: http://localhost:8080
+    url: http://localhost:8443
 info:
   description: This is a sample backend - products
   version: v1
-  title: Products
+  title: Cert-Products
   contact:
     email: renukapiyumal@gmail.com
 tags:
@@ -29,13 +29,13 @@ tags:
     description: Products of store
 x-wso2-production-endpoints:
   urls:
-    - http://products
+    - https://products
   type: http
 x-wso2-sandbox-endpoints:
   urls:
-    - http://products
+    - https://products
   type: http
-x-wso2-basePath: /products-api/v1
+x-wso2-basePath: /cert-products-api/v1
 paths:
   /products:
     get:
