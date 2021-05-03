@@ -192,19 +192,7 @@ spec:
                   requests:
                     cpu: 250m
                     memory: 250Mi
-                volumeMounts:
-                - mountPath: /home/wso2/security/
-                  name: operator-vol
               serviceAccountName: api-operator
-              volumes:
-              - name: operator-vol
-                secret:
-                  items:
-                  - key: tls.key
-                    path: tls.key
-                  - key: tls.crt
-                    path: tls.crt
-                  secretName: operator-secret
       permissions:
       - rules:
         - apiGroups:
@@ -340,7 +328,7 @@ spec:
   maintainers:
   - email: announce@wso2.org
     name: WSO2 product releases
-  maturity: 2.x-stable
+  maturity: stable
   provider:
     name: WSO2
   version: 2.0.0
