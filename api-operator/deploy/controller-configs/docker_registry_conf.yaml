@@ -24,5 +24,5 @@ data:
   registryType: DOCKER_HUB
   #docker repository name which the mgw image to be pushed.  eg->  repositoryName: docker.io/{USER_NAME of Docker Hub account}
   repositoryName: benura123
-  #pull secret array
-  imagePullSecretNames: #docker-my-secret-pull, docker-my-secret-1
+  #pull secret array eg -> docker-my-secret-pull, docker-my-secret-1
+  imagePullSecretNames: ''

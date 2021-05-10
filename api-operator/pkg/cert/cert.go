@@ -22,23 +22,38 @@ import (
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/kaniko"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/maps"
 	corev1 "k8s.io/api/core/v1"
+	"path/filepath"
+	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
 const (
-	path = "/usr/wso2/certs/"
+	Path = "/usr/wso2/certs/"
 )
 
-func Add(certSecret *corev1.Secret, aliasPrefix string) string {
+var loggerCert = log.Log.WithName("cert")
+
+// AddFromOneKeySecret add the cert to kaniko pod from a secret with only one key
+func AddFromOneKeySecret(certSecret *corev1.Secret, aliasPrefix string) string {
 	// add to cert list
 	alias := fmt.Sprintf("%s-%s", certSecret.Name, aliasPrefix)
-	fileName, _ := maps.OneKey(certSecret.Data)
-	fileDir := path + certSecret.Name
-	filePath := fileDir + "/" + fileName
+	fileName, err := maps.OneKey(certSecret.Data)
+	if err != nil {
+		loggerCert.Error(err, "Error reading one key secret. Ignore importing certificate", "secret", certSecret)
+		return ""
+	}
+	Add(alias, certSecret.Name, fileName)
+	return alias
+}
+
+func Add(alias, secretName, certKey string) {
+	// append secret name to the path, so files are not overridden if used same key in the cert
+	fileDir := filepath.Join(Path + secretName)
+	filePath := filepath.Join(fileDir, certKey)
+
 	(*kaniko.DocFileProp).Certs[alias] = filePath
 	(*kaniko.DocFileProp).CertFound = true
 
 	// add volumes
-	vol, mount := k8s.SecretVolumeMount(certSecret.Name, fileDir)
+	vol, mount := k8s.SecretVolumeMount(secretName, fileDir, "")
 	kaniko.AddVolume(vol, mount)
-	return alias
 }

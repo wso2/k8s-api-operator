@@ -69,7 +69,7 @@ func Default(client *client.Client, apiNamespace string, owner *[]metav1.OwnerRe
 					return nil, errCreateSec
 				} else {
 					//mount certs
-					alias := cert.Add(newDefaultSecret, "security")
+					alias := cert.AddFromOneKeySecret(newDefaultSecret, "security")
 					defaultSecConf.CertificateAlias = alias
 				}
 			} else if err != nil {
@@ -77,7 +77,7 @@ func Default(client *client.Client, apiNamespace string, owner *[]metav1.OwnerRe
 				return nil, err
 			} else {
 				//mount certs
-				alias := cert.Add(defaultCert, "security")
+				alias := cert.AddFromOneKeySecret(defaultCert, "security")
 				defaultSecConf.CertificateAlias = alias
 			}
 			if defaultSecurityConf.Issuer != "" {
@@ -114,7 +114,7 @@ func Default(client *client.Client, apiNamespace string, owner *[]metav1.OwnerRe
 				return nil, err
 			} else {
 				//mount certs
-				alias := cert.Add(defaultCertUsrNs, "security")
+				alias := cert.AddFromOneKeySecret(defaultCertUsrNs, "security")
 				defaultSecConf.CertificateAlias = alias
 				defaultSecConf.ValidateSubscription = securityDefaultConf.ValidateSubscription
 			}

@@ -73,7 +73,7 @@ func Handle(client *client.Client, securityMap map[string][]string, userNameSpac
 					logSec.Info("defined certificate successfully retrieved")
 				}
 				//mount certs
-				_ = cert.Add(certificateSecret, "security")
+				_ = cert.AddFromOneKeySecret(certificateSecret, "security")
 
 				//get the keymanager server URL from the security kind
 				mgw.Configs.KeyManagerServerUrl = securityConf.Endpoint
@@ -121,7 +121,7 @@ func Handle(client *client.Client, securityMap map[string][]string, userNameSpac
 					} else {
 						logSec.Info("defined certificate successfully retrieved")
 					}
-					alias := cert.Add(certificateSecret, "security")
+					alias := cert.AddFromOneKeySecret(certificateSecret, "security")
 					jwtConf.CertificateAlias = alias
 				}
 				jwtConf.ValidateSubscription = securityConf.ValidateSubscription
