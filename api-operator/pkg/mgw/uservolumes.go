@@ -39,18 +39,34 @@ const (
 	mgwSecrets                 = "mgwSecrets"
 )
 
+type Context string
+
+func (c Context) isEqual(str string) bool {
+	if str == "" {
+		return c == DefaultContext
+	}
+	return strings.EqualFold(string(c), str)
+}
+
+const (
+	DefaultContext Context = "default"
+	KanikoContext  Context = "kaniko"
+)
+
 type DeploymentConfig struct {
 	Name          string `yaml:"name"`
 	MountLocation string `yaml:"mountLocation"`
 	SubPath       string `yaml:"subPath"`
 	Namespace     string `yaml:"namespace,omitempty"`
 	AsEnvVar      bool   `yaml:"asEnvVar,omitempty"`
+	Context       string `yaml:"context,omitempty"`
 }
 
 var logDeploy = log.Log.WithName("mgw.userDeploymentVolume")
 
 // UserDeploymentVolume returns the deploy volumes and volume mounts with user defined config maps and secrets
-func UserDeploymentVolume(client *client.Client, api *wso2v1alpha1.API) ([]corev1.Volume, []corev1.VolumeMount, []corev1.EnvFromSource,
+// user volumes are returned base on the volume context, if not defined use the default context
+func UserDeploymentVolume(client *client.Client, api *wso2v1alpha1.API, volCtx Context) ([]corev1.Volume, []corev1.VolumeMount, []corev1.EnvFromSource,
 	error) {
 	var deployVolume []corev1.Volume
 	var deployVolumeMount []corev1.VolumeMount
@@ -90,6 +106,11 @@ func UserDeploymentVolume(client *client.Client, api *wso2v1alpha1.API) ([]corev
 	}
 	// mount the MGW config maps to volume
 	for _, deploymentConfigMap := range deploymentConfigMaps {
+		// if volume context is different then ignore deploymentConfigMap
+		if !volCtx.isEqual(deploymentConfigMap.Context) {
+			continue
+		}
+
 		if deploymentConfigMap.Namespace == "" {
 			mgwConfigMap := k8s.NewConfMap()
 			mgwConfigMapErr := k8s.Get(client, types.NamespacedName{Namespace: mgwDeploymentConfMap.Namespace,
@@ -129,6 +150,11 @@ func UserDeploymentVolume(client *client.Client, api *wso2v1alpha1.API) ([]corev
 	}
 	// mount MGW secrets to volume
 	for _, deploymentSecret := range deploymentSecrets {
+		// if volume context is different then ignore deploymentSecret
+		if !volCtx.isEqual(deploymentSecret.Context) {
+			continue
+		}
+
 		if deploymentSecret.Namespace == "" {
 			mgwSecret := k8s.NewSecret()
 			mgwSecretErr := k8s.Get(client, types.NamespacedName{Namespace: mgwDeploymentConfMap.Namespace,

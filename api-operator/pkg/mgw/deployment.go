@@ -68,7 +68,7 @@ func Deployment(client *client.Client, api *wso2v1alpha1.API, controlConfigData 
 	resLimitMemory := controlConfigData[resourceLimitMemory]
 
 	// Mount the user specified Config maps and secrets to mgw deploy volume
-	deployVolume, deployVolumeMount, envFromSources, errDeploy := UserDeploymentVolume(client, api)
+	deployVolume, deployVolumeMount, envFromSources, errDeploy := UserDeploymentVolume(client, api, DefaultContext)
 
 	if Configs.AnalyticsEnabled {
 		// mounts an empty dir volume to be used when analytics is enabled
