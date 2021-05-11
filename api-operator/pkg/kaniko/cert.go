@@ -14,12 +14,11 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package cert
+package kaniko
 
 import (
 	"fmt"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
-	"github.com/wso2/k8s-api-operator/api-operator/pkg/kaniko"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/maps"
 	corev1 "k8s.io/api/core/v1"
 	"path/filepath"
@@ -31,9 +30,10 @@ const (
 )
 
 var loggerCert = log.Log.WithName("cert")
+var void = struct{}{}
 
-// AddFromOneKeySecret add the cert to kaniko pod from a secret with only one key
-func AddFromOneKeySecret(kanikoProps *kaniko.JobProperties, certSecret *corev1.Secret, aliasPrefix string) string {
+// AddCertFromOneKeySecret add the cert to kaniko pod from a secret with only one key
+func AddCertFromOneKeySecret(kanikoProps *JobProperties, certSecret *corev1.Secret, aliasPrefix string) string {
 	// add to cert list
 	alias := fmt.Sprintf("%s-%s", certSecret.Name, aliasPrefix)
 	fileName, err := maps.OneKey(certSecret.Data)
@@ -41,11 +41,19 @@ func AddFromOneKeySecret(kanikoProps *kaniko.JobProperties, certSecret *corev1.S
 		loggerCert.Error(err, "Error reading one key secret. Ignore importing certificate", "secret", certSecret)
 		return ""
 	}
-	Add(kanikoProps, alias, certSecret.Name, fileName)
+	AddCert(kanikoProps, alias, certSecret.Name, fileName)
 	return alias
 }
 
-func Add(kanikoProps *kaniko.JobProperties, alias, secretName, certKey string) {
+// AddCert add the cert to kaniko pod to be added to the MG TrustStore
+func AddCert(kanikoProps *JobProperties, alias, secretName, certKey string) {
+	// skip adding cert if alias already exists
+	if _, ok := kanikoProps.certAliases[alias]; ok {
+		loggerCert.Info("Alias of endpoint certificate already exists. Skip importing certificate.",
+			"alias", alias, "secret", secretName)
+	}
+	kanikoProps.certAliases[alias] = void
+
 	// append secret name to the path, so files are not overridden if used same key in the cert
 	fileDir := filepath.Join(Path + secretName)
 	filePath := filepath.Join(fileDir, certKey)

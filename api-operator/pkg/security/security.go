@@ -21,7 +21,6 @@ import (
 	"strings"
 
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
-	"github.com/wso2/k8s-api-operator/api-operator/pkg/cert"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/mgw"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -74,7 +73,7 @@ func Handle(client *client.Client, kanikoProps *kaniko.JobProperties, securityMa
 					logSec.Info("defined certificate successfully retrieved")
 				}
 				//mount certs
-				_ = cert.AddFromOneKeySecret(kanikoProps, certificateSecret, "security")
+				_ = kaniko.AddCertFromOneKeySecret(kanikoProps, certificateSecret, "security")
 
 				//get the keymanager server URL from the security kind
 				mgw.Configs.KeyManagerServerUrl = securityConf.Endpoint
@@ -122,7 +121,7 @@ func Handle(client *client.Client, kanikoProps *kaniko.JobProperties, securityMa
 					} else {
 						logSec.Info("defined certificate successfully retrieved")
 					}
-					alias := cert.AddFromOneKeySecret(kanikoProps, certificateSecret, "security")
+					alias := kaniko.AddCertFromOneKeySecret(kanikoProps, certificateSecret, "security")
 					jwtConf.CertificateAlias = alias
 				}
 				jwtConf.ValidateSubscription = securityConf.ValidateSubscription

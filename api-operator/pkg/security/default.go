@@ -18,7 +18,6 @@ package security
 
 import (
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
-	"github.com/wso2/k8s-api-operator/api-operator/pkg/cert"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/kaniko"
@@ -70,7 +69,7 @@ func Default(client *client.Client, apiNamespace string, kanikoProps *kaniko.Job
 					return nil, errCreateSec
 				} else {
 					//mount certs
-					alias := cert.AddFromOneKeySecret(kanikoProps, newDefaultSecret, "security")
+					alias := kaniko.AddCertFromOneKeySecret(kanikoProps, newDefaultSecret, "security")
 					defaultSecConf.CertificateAlias = alias
 				}
 			} else if err != nil {
@@ -78,7 +77,7 @@ func Default(client *client.Client, apiNamespace string, kanikoProps *kaniko.Job
 				return nil, err
 			} else {
 				//mount certs
-				alias := cert.AddFromOneKeySecret(kanikoProps, defaultCert, "security")
+				alias := kaniko.AddCertFromOneKeySecret(kanikoProps, defaultCert, "security")
 				defaultSecConf.CertificateAlias = alias
 			}
 			if defaultSecurityConf.Issuer != "" {
@@ -115,7 +114,7 @@ func Default(client *client.Client, apiNamespace string, kanikoProps *kaniko.Job
 				return nil, err
 			} else {
 				//mount certs
-				alias := cert.AddFromOneKeySecret(kanikoProps, defaultCertUsrNs, "security")
+				alias := kaniko.AddCertFromOneKeySecret(kanikoProps, defaultCertUsrNs, "security")
 				defaultSecConf.CertificateAlias = alias
 				defaultSecConf.ValidateSubscription = securityDefaultConf.ValidateSubscription
 			}

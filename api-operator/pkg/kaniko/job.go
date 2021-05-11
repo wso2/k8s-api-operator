@@ -43,6 +43,7 @@ const (
 
 type JobProperties struct {
 	DockerFileProps *DockerFileProperties
+	certAliases     map[string]struct{}
 	Volumes         []corev1.Volume
 	VolumeMounts    []corev1.VolumeMount
 }

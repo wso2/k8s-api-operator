@@ -18,7 +18,6 @@ package analytics
 
 import (
 	"errors"
-	"github.com/wso2/k8s-api-operator/api-operator/pkg/cert"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/kaniko"
@@ -88,7 +87,7 @@ func Handle(client *client.Client, kanikoProps *kaniko.JobProperties, userNamesp
 				}
 				// Configure MGW and add cert
 				setMgwConfigs(analyticsConf, analyticsSecret)
-				cert.AddFromOneKeySecret(kanikoProps, analyticsCertSecret, "analytics")
+				kaniko.AddCertFromOneKeySecret(kanikoProps, analyticsCertSecret, "analytics")
 			} else {
 				if errSecret == nil {
 					errSecret = errors.New("required field in the secret is missing the secret: " + analyticsConf.Data[analyticsSecretConst])
