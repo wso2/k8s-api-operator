@@ -229,6 +229,11 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		return reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 	}
 
+	// handle certs of the project
+	if err := endpoints.HandleCerts(&r.client, instance); err != nil {
+		return reconcile.Result{}, err
+	}
+
 	// if operator mode is "Istio", validate istio configs
 	var istioConfigs *mgw.IstioConfigs
 	if strings.EqualFold(operatorMode, istioMode) {
@@ -491,7 +496,11 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			var kanikoJob *batchv1.Job
 			reqLogger.Info("Deploying the Kaniko job in cluster")
 			r.recorder.Event(instance, corev1.EventTypeNormal, "KanikoJob", "Deploying kaniko job.")
-			kanikoJob = kaniko.Job(instance, controlConfigData, kanikoArgs.Data[kanikoArguments], ownerRef, mgwDockerImage)
+			kanikoJob, err = kaniko.Job(&r.client, instance, controlConfigData, kanikoArgs.Data[kanikoArguments], ownerRef, mgwDockerImage)
+			if err := controllerutil.SetControllerReference(instance, kanikoJob, r.scheme); err != nil {
+				return reconcile.Result{}, err
+			}
+
 			if err := controllerutil.SetControllerReference(instance, kanikoJob, r.scheme); err != nil {
 				return reconcile.Result{}, err
 			}
@@ -696,6 +705,20 @@ func setApiDependent(client *client.Client, api *wso2v1alpha1.API, ownerRef *[]m
 		// set owner ref
 		if err := k8s.UpdateOwner(client, ownerRef, confMap); err != nil {
 			log.Error(err, "Error updating api owner reference of dependent configmap", "configmap", confMap)
+			return err
+		}
+	}
+
+	secret := &corev1.Secret{}
+	secretNames := api.Spec.Definition.EndpointCertificates
+	for _, secretName := range secretNames {
+		// get secret
+		err := k8s.Get(client, types.NamespacedName{
+			Namespace: api.Namespace,
+			Name:      secretName,
+		}, secret)
+		if err != nil {
+			log.Error(err, "Error retrieving api dependent secret", "secret", secretName)
 			return err
 		}
 	}

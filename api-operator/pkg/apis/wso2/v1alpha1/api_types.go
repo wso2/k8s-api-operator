@@ -106,6 +106,10 @@ type Definition struct {
 	// Default value "<empty>".
 	// +optional
 	Interceptors Interceptors `json:"interceptors,omitempty"`
+	// EndpointCertificates represents an array of secrets with backend certificates.
+	// Default value "<empty>".
+	// +optional
+	EndpointCertificates []string `json:"endpointCertificates,omitempty"`
 }
 
 type Interceptors struct {

@@ -14,7 +14,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package mgw
+package vol
 
 import (
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
@@ -34,9 +34,23 @@ import (
 
 // mgw-deployment-configs
 const (
-	mgwDeploymentConfigMapName = "mgw-deployment-configs"
+	MgwDeploymentConfigMapName = "mgw-deployment-configs"
 	mgwConfigMaps              = "mgwConfigMaps"
 	mgwSecrets                 = "mgwSecrets"
+)
+
+type Context string
+
+func (c Context) isEqual(str string) bool {
+	if str == "" {
+		return c == DefaultContext
+	}
+	return strings.EqualFold(string(c), str)
+}
+
+const (
+	DefaultContext Context = "default"
+	KanikoContext  Context = "kaniko"
 )
 
 type DeploymentConfig struct {
@@ -45,12 +59,14 @@ type DeploymentConfig struct {
 	SubPath       string `yaml:"subPath"`
 	Namespace     string `yaml:"namespace,omitempty"`
 	AsEnvVar      bool   `yaml:"asEnvVar,omitempty"`
+	Context       string `yaml:"context,omitempty"`
 }
 
-var logDeploy = log.Log.WithName("mgw.userDeploymentVolume")
+var logVol = log.Log.WithName("vol.userDeploymentVolume")
 
 // UserDeploymentVolume returns the deploy volumes and volume mounts with user defined config maps and secrets
-func UserDeploymentVolume(client *client.Client, api *wso2v1alpha1.API) ([]corev1.Volume, []corev1.VolumeMount, []corev1.EnvFromSource,
+// user volumes are returned base on the volume context, if not defined use the default context
+func UserDeploymentVolume(client *client.Client, api *wso2v1alpha1.API, volCtx Context) ([]corev1.Volume, []corev1.VolumeMount, []corev1.EnvFromSource,
 	error) {
 	var deployVolume []corev1.Volume
 	var deployVolumeMount []corev1.VolumeMount
@@ -58,51 +74,56 @@ func UserDeploymentVolume(client *client.Client, api *wso2v1alpha1.API) ([]corev
 	var mgwDeployVol *v1.Volume
 	var mgwDeployMount *v1.VolumeMount
 	mgwDeploymentConfMap := k8s.NewConfMap()
-	errGetDeploy := k8s.Get(client, types.NamespacedName{Name: mgwDeploymentConfigMapName, Namespace: api.Namespace},
+	errGetDeploy := k8s.Get(client, types.NamespacedName{Name: MgwDeploymentConfigMapName, Namespace: api.Namespace},
 		mgwDeploymentConfMap)
 	if errGetDeploy != nil && errors.IsNotFound(errGetDeploy) {
-		logDeploy.Info("Get mgw deployment configs", "from_namespace", config.SystemNamespace)
+		logVol.Info("Get mgw deployment configs", "from_namespace", config.SystemNamespace)
 		//retrieve mgw deployment configs from wso2-system namespace
-		err := k8s.Get(client, types.NamespacedName{Namespace: config.SystemNamespace, Name: mgwDeploymentConfigMapName},
+		err := k8s.Get(client, types.NamespacedName{Namespace: config.SystemNamespace, Name: MgwDeploymentConfigMapName},
 			mgwDeploymentConfMap)
 		if err != nil && !errors.IsNotFound(err) {
-			logDeploy.Error(err, "Error while reading user volumes config")
+			logVol.Error(err, "Error while reading user volumes config")
 			return nil, nil, nil, err
 		}
 	} else if errGetDeploy != nil {
-		logDeploy.Error(errGetDeploy, "Error getting mgw deployment configs from user namespace")
+		logVol.Error(errGetDeploy, "Error getting mgw deployment configs from user namespace")
 		return nil, nil, nil, errGetDeploy
 	}
 
 	var deploymentConfigMaps []DeploymentConfig
 	yamlErrDeploymentConfigMaps := yaml.Unmarshal([]byte(mgwDeploymentConfMap.Data[mgwConfigMaps]), &deploymentConfigMaps)
 	if yamlErrDeploymentConfigMaps != nil {
-		logDeploy.Error(yamlErrDeploymentConfigMaps, "Error marshalling mgw config maps yaml",
+		logVol.Error(yamlErrDeploymentConfigMaps, "Error marshalling mgw config maps yaml",
 			"configmap", mgwDeploymentConfMap)
 		return nil, nil, nil, yamlErrDeploymentConfigMaps
 	}
 	var deploymentSecrets []DeploymentConfig
 	yamlErrDeploymentSecrets := yaml.Unmarshal([]byte(mgwDeploymentConfMap.Data[mgwSecrets]), &deploymentSecrets)
 	if yamlErrDeploymentSecrets != nil {
-		logDeploy.Error(yamlErrDeploymentSecrets, "Error marshalling mgw secrets yaml", "configmap",
+		logVol.Error(yamlErrDeploymentSecrets, "Error marshalling mgw secrets yaml", "configmap",
 			mgwDeploymentConfMap)
 		return nil, nil, nil, yamlErrDeploymentSecrets
 	}
 	// mount the MGW config maps to volume
 	for _, deploymentConfigMap := range deploymentConfigMaps {
+		// if volume context is different then ignore deploymentConfigMap
+		if !volCtx.isEqual(deploymentConfigMap.Context) {
+			continue
+		}
+
 		if deploymentConfigMap.Namespace == "" {
 			mgwConfigMap := k8s.NewConfMap()
 			mgwConfigMapErr := k8s.Get(client, types.NamespacedName{Namespace: mgwDeploymentConfMap.Namespace,
 				Name: deploymentConfigMap.Name}, mgwConfigMap)
 			if mgwConfigMapErr != nil {
-				logDeploy.Error(mgwConfigMapErr, "Error Getting the mgw Config map")
+				logVol.Error(mgwConfigMapErr, "Error Getting the mgw Config map")
 				return nil, nil, nil, mgwConfigMapErr
 			}
 			newMgwConfigMap := CopyMgwConfigMap(types.NamespacedName{Namespace: api.Namespace,
 				Name: deploymentConfigMap.Name}, mgwConfigMap)
 			createConfigMapErr := k8s.Apply(client, newMgwConfigMap)
 			if createConfigMapErr != nil {
-				logDeploy.Error(createConfigMapErr, "Error Copying mgw config map to user namespace")
+				logVol.Error(createConfigMapErr, "Error Copying mgw config map to user namespace")
 				return nil, nil, nil, createConfigMapErr
 			}
 
@@ -129,19 +150,24 @@ func UserDeploymentVolume(client *client.Client, api *wso2v1alpha1.API) ([]corev
 	}
 	// mount MGW secrets to volume
 	for _, deploymentSecret := range deploymentSecrets {
+		// if volume context is different then ignore deploymentSecret
+		if !volCtx.isEqual(deploymentSecret.Context) {
+			continue
+		}
+
 		if deploymentSecret.Namespace == "" {
 			mgwSecret := k8s.NewSecret()
 			mgwSecretErr := k8s.Get(client, types.NamespacedName{Namespace: mgwDeploymentConfMap.Namespace,
 				Name: deploymentSecret.Name}, mgwSecret)
 			if mgwSecretErr != nil {
-				logDeploy.Error(mgwSecretErr, "Error Getting the mgw Secret")
+				logVol.Error(mgwSecretErr, "Error Getting the mgw Secret")
 				return nil, nil, nil, mgwSecretErr
 			}
 			newMgwSecret := CopyMgwSecret(types.NamespacedName{Namespace: api.Namespace,
 				Name: deploymentSecret.Name}, mgwSecret)
 			createSecretErr := k8s.Apply(client, newMgwSecret)
 			if createSecretErr != nil {
-				logDeploy.Error(createSecretErr, "Error Copying mgw secret to user namespace")
+				logVol.Error(createSecretErr, "Error Copying mgw secret to user namespace")
 				return nil, nil, nil, createSecretErr
 			}
 			if deploymentSecret.AsEnvVar {

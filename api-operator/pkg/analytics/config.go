@@ -87,7 +87,7 @@ func Handle(client *client.Client, userNamespace string) error {
 				}
 				// Configure MGW and add cert
 				setMgwConfigs(analyticsConf, analyticsSecret)
-				cert.Add(analyticsCertSecret, "analytics")
+				cert.AddFromOneKeySecret(analyticsCertSecret, "analytics")
 			} else {
 				if errSecret == nil {
 					errSecret = errors.New("required field in the secret is missing the secret: " + analyticsConf.Data[analyticsSecretConst])

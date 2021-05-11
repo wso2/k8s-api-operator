@@ -9,7 +9,7 @@ You can use an HTTP, insecure registry or HTTPS, secure registry to push the bui
     >> mkdir auth
     >> docker run \
       --entrypoint htpasswd \
-      registry:2 -Bbn TEST_USER TEST_PASSWORD > auth/htpasswd
+      httpd:2 -Bbn TEST_USER TEST_PASSWORD > auth/htpasswd
     ```
 1. Add following to your hosts file (Linux/Mac: `/etc/hosts`, Windows: `c:\windows\system32\drivers\etc\hosts`).
     ```sh
@@ -28,7 +28,7 @@ You can use an HTTP, insecure registry or HTTPS, secure registry to push the bui
       -e "REGISTRY_AUTH=htpasswd" \
       -e "REGISTRY_AUTH_HTPASSWD_REALM=Registry Realm" \
       -e REGISTRY_AUTH_HTPASSWD_PATH=/auth/htpasswd \
-      registry:2
+      registry:2.7.1
     ```
    
 1. Add an insecure registry.
@@ -68,7 +68,7 @@ You can use an HTTP, insecure registry or HTTPS, secure registry to push the bui
       -v "$(pwd)"/certs:/certs \
       -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/domain.crt \
       -e REGISTRY_HTTP_TLS_KEY=/certs/domain.key \
-      registry:2
+      registry:2.7.1
     ```
 1. Instruct every Docker daemon to trust that certificate. The way to do this depends on your OS.
    
@@ -145,8 +145,68 @@ namespace/wso2-system created
 ```
 
 ### HTTPS registry example
+
+#### Secrets with Public Cert
+Create a secret with the public cert (i.e. `certs/domain.crt` we created in above step) of the HTTPS registry.
+
+The file `certs/domain.crt` mentioned in following script is the path to the cert we created.
 ```sh
->> apictl install api-operator
+kubectl create secret generic registry-cert \
+    --from-file=ca-bundle.crt=certs/domain.crt
+    -n wso2-system
+```
+
+Create another secret to be use by the Kaniko job (which compiles and push the Microgateway image to registry).
+```sh
+kubectl create secret generic registry-cert-kaniko \
+    --from-file=ca-certificates.crt=certs/domain.crt
+```
+
+#### Mount Public Cert Secret
+Let's mount the above created volumes to operator and Kaniko.
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mgw-deployment-configs
+  namespace: wso2-system
+data:
+  hostAliases: ''
+  mgwConfigMaps: ''
+  mgwSecrets: |
+    - name: registry-cert-kaniko
+      mountLocation: /kaniko/ssl/certs/
+      namespace: default
+      context: kaniko
+```
+Follow [here](../../../scenarios/scenario-23) for more info to mount volumes to kaniko.
+
+Update `<K8S_API_OPERATOR_DIST_HOME>/api-operator/controller-artifacts/operator.yaml` with following volume and volume mount.
+`<K8S_API_OPERATOR_DIST_HOME>` is the path to downloaded and unzipped path to the API Operator release distribution.
+
+```yaml
+spec:
+  ...
+  template:
+    spec:
+      containers:
+        - name: api-operator
+          ...
+          volumeMounts:
+            - name: certs
+              mountPath: /etc/ssl/certs/ca-bundle.crt
+              subPath: ca-bundle.crt
+      volumes:
+        - name: certs
+          configMap:
+            name: certs
+```
+
+#### Install Operator with HTTPS Registry Configs
+Install API Operator with following command.
+```sh
+>> apictl install api-operator -f <K8S_API_OPERATOR_DIST_HOME>/api-operator/controller-artifacts`
 Choose registry type:
 1: Docker Hub
 2: Amazon ECR
@@ -178,6 +238,8 @@ namespace/wso2-system created
 
 [Setting to K8s Mode]
 ```
+
+
 
 ## Try out
 Try out [sample scenarios](../../GettingStarted/quick-start-guide.md#sample-scenarios) in the quick start guide.

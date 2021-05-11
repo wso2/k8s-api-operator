@@ -18,7 +18,7 @@ package k8s
 
 import corev1 "k8s.io/api/core/v1"
 
-func SecretVolumeMount(secretName string, mountPath string) (*corev1.Volume, *corev1.VolumeMount) {
+func SecretVolumeMount(secretName string, mountPath, subPath string) (*corev1.Volume, *corev1.VolumeMount) {
 	volName := secretName + "-vol"
 	vol := corev1.Volume{
 		Name: volName,
@@ -31,6 +31,7 @@ func SecretVolumeMount(secretName string, mountPath string) (*corev1.Volume, *co
 	mount := corev1.VolumeMount{
 		Name:      volName,
 		MountPath: mountPath,
+		SubPath:   subPath,
 		ReadOnly:  true,
 	}
 

@@ -487,6 +487,6 @@ func ApplyConfFile(client *client.Client, userNamespace, apiName string, owner *
 	}
 
 	// add volumes to Kaniko job
-	kaniko.AddVolume(k8s.SecretVolumeMount(confNsName.Name, mgwConfLocation))
+	kaniko.AddVolume(k8s.SecretVolumeMount(confNsName.Name, mgwConfLocation, ""))
 	return nil
 }

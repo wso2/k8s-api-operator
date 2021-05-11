@@ -65,6 +65,12 @@ spec:
             definition:
               description: Definition of the API.
               properties:
+                endpointCertificates:
+                  description: EndpointCertificates represents an array of secrets
+                    with backend certificates. Default value "<empty>".
+                  items:
+                    type: string
+                  type: array
                 interceptors:
                   description: Interceptors for API. Default value "<empty>".
                   properties:

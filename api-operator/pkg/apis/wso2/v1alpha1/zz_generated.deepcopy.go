@@ -261,6 +261,11 @@ func (in *Definition) DeepCopyInto(out *Definition) {
 		copy(*out, *in)
 	}
 	in.Interceptors.DeepCopyInto(&out.Interceptors)
+	if in.EndpointCertificates != nil {
+		in, out := &in.EndpointCertificates, &out.EndpointCertificates
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	return
 }
 
