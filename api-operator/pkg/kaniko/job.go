@@ -18,6 +18,8 @@ package kaniko
 
 import (
 	"context"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/vol"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
 
 	"github.com/golang/glog"
@@ -40,7 +42,7 @@ const (
 )
 
 // Job returns a kaniko job with mounted volumes
-func Job(api *wso2v1alpha1.API, controlConfigData map[string]string, kanikoArgs string, owner *[]metav1.OwnerReference, image registry.Image) *batchv1.Job {
+func Job(client *client.Client, api *wso2v1alpha1.API, controlConfigData map[string]string, kanikoArgs string, owner *[]metav1.OwnerReference, image registry.Image) (*batchv1.Job, error) {
 	rootUserVal := int64(0)
 	jobName := api.Name + "-kaniko"
 	if api.Spec.UpdateTimeStamp != "" {
@@ -68,6 +70,14 @@ func Job(api *wso2v1alpha1.API, controlConfigData map[string]string, kanikoArgs 
 		args = append(args, kanikoArguments...)
 	}
 
+	// Mount the user specified Config maps and secrets to mgw deploy volume
+	userVol, userVolMount, envFromSources, err := vol.UserDeploymentVolume(client, api, vol.KanikoContext)
+	if err != nil {
+		return nil, err
+	}
+	*JobVolume = append(*JobVolume, userVol...)
+	*JobVolumeMount = append(*JobVolumeMount, userVolMount...)
+
 	var secretArray []corev1.LocalObjectReference
 	secretArray = append(secretArray, regConfig.ImagePullSecrets...)
 
@@ -94,6 +104,7 @@ func Job(api *wso2v1alpha1.API, controlConfigData map[string]string, kanikoArgs 
 							VolumeMounts: *JobVolumeMount,
 							Args:         args,
 							Env:          regConfig.Env,
+							EnvFrom:      envFromSources,
 						},
 					},
 					SecurityContext: &corev1.PodSecurityContext{
@@ -105,7 +116,7 @@ func Job(api *wso2v1alpha1.API, controlConfigData map[string]string, kanikoArgs 
 				},
 			},
 		},
-	}
+	}, nil
 }
 
 // DeleteCompletedJob deletes completed kaniko jobs

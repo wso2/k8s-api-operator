@@ -496,7 +496,11 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			var kanikoJob *batchv1.Job
 			reqLogger.Info("Deploying the Kaniko job in cluster")
 			r.recorder.Event(instance, corev1.EventTypeNormal, "KanikoJob", "Deploying kaniko job.")
-			kanikoJob = kaniko.Job(instance, controlConfigData, kanikoArgs.Data[kanikoArguments], ownerRef, mgwDockerImage)
+			kanikoJob, err = kaniko.Job(&r.client, instance, controlConfigData, kanikoArgs.Data[kanikoArguments], ownerRef, mgwDockerImage)
+			if err := controllerutil.SetControllerReference(instance, kanikoJob, r.scheme); err != nil {
+				return reconcile.Result{}, err
+			}
+
 			if err := controllerutil.SetControllerReference(instance, kanikoJob, r.scheme); err != nil {
 				return reconcile.Result{}, err
 			}

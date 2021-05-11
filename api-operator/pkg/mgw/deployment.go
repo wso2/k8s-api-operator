@@ -17,6 +17,7 @@
 package mgw
 
 import (
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/vol"
 	"strconv"
 	"strings"
 
@@ -68,7 +69,7 @@ func Deployment(client *client.Client, api *wso2v1alpha1.API, controlConfigData 
 	resLimitMemory := controlConfigData[resourceLimitMemory]
 
 	// Mount the user specified Config maps and secrets to mgw deploy volume
-	deployVolume, deployVolumeMount, envFromSources, errDeploy := UserDeploymentVolume(client, api, DefaultContext)
+	deployVolume, deployVolumeMount, envFromSources, errDeploy := vol.UserDeploymentVolume(client, api, vol.DefaultContext)
 
 	if Configs.AnalyticsEnabled {
 		// mounts an empty dir volume to be used when analytics is enabled
