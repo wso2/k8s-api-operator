@@ -50,7 +50,7 @@ type scopeSet struct {
 	Scopes           map[string]string `json:"scopes,omitempty"`
 }
 
-func Handle(client *client.Client, dockerFileProp *kaniko.DockerFileProperties, securityMap map[string][]string, userNameSpace string, secSchemeDefined bool) (map[string]securitySchemeStruct, *[]mgw.JwtTokenConfig, *[]mgw.APIKeyTokenConfig, error) {
+func Handle(client *client.Client, kanikoProps *kaniko.JobProperties, securityMap map[string][]string, userNameSpace string, secSchemeDefined bool) (map[string]securitySchemeStruct, *[]mgw.JwtTokenConfig, *[]mgw.APIKeyTokenConfig, error) {
 	var securityDefinition = make(map[string]securitySchemeStruct)
 	//to add multiple certs with alias
 
@@ -74,7 +74,7 @@ func Handle(client *client.Client, dockerFileProp *kaniko.DockerFileProperties, 
 					logSec.Info("defined certificate successfully retrieved")
 				}
 				//mount certs
-				_ = cert.AddFromOneKeySecret(dockerFileProp, certificateSecret, "security")
+				_ = cert.AddFromOneKeySecret(kanikoProps, certificateSecret, "security")
 
 				//get the keymanager server URL from the security kind
 				mgw.Configs.KeyManagerServerUrl = securityConf.Endpoint
@@ -122,7 +122,7 @@ func Handle(client *client.Client, dockerFileProp *kaniko.DockerFileProperties, 
 					} else {
 						logSec.Info("defined certificate successfully retrieved")
 					}
-					alias := cert.AddFromOneKeySecret(dockerFileProp, certificateSecret, "security")
+					alias := cert.AddFromOneKeySecret(kanikoProps, certificateSecret, "security")
 					jwtConf.CertificateAlias = alias
 				}
 				jwtConf.ValidateSubscription = securityConf.ValidateSubscription

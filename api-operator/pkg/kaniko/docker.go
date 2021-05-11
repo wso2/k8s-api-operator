@@ -53,20 +53,8 @@ type DockerFileProperties struct {
 	JavaInterceptorsFound bool
 }
 
-func InitDockerFileProp() *DockerFileProperties {
-	return &DockerFileProperties{
-		CertFound:             false,
-		TruststorePassword:    "",
-		Certs:                 map[string]string{},
-		ToolkitImage:          "",
-		RuntimeImage:          "",
-		BalInterceptorsFound:  false,
-		JavaInterceptorsFound: false,
-	}
-}
-
 // HandleDockerFile render the docker file for Kaniko job and add volumes to the Kaniko job
-func HandleDockerFile(client *client.Client, dockerFileProp *DockerFileProperties, userNamespace, apiName string, owner *[]metav1.OwnerReference) error {
+func HandleDockerFile(client *client.Client, kanikoProps *JobProperties, userNamespace, apiName string, owner *[]metav1.OwnerReference) error {
 	// get docker file template from system namespace
 	dockerFileConfMap := k8s.NewConfMap()
 	err := k8s.Get(client, types.NamespacedName{Namespace: config.SystemNamespace, Name: dockerFileTemplate}, dockerFileConfMap)
@@ -85,12 +73,12 @@ func HandleDockerFile(client *client.Client, dockerFileProp *DockerFilePropertie
 	}
 
 	// set truststore password
-	if err := setTruststorePassword(client, dockerFileProp); err != nil {
+	if err := setTruststorePassword(client, kanikoProps.DockerFileProps); err != nil {
 		return err
 	}
 
 	// get rendered docker file
-	renderedDocFile, err := str.RenderTemplate(dockerFileConfMap.Data[fileName], dockerFileProp)
+	renderedDocFile, err := str.RenderTemplate(dockerFileConfMap.Data[fileName], kanikoProps.DockerFileProps)
 	if err != nil {
 		return err
 	}
@@ -106,7 +94,7 @@ func HandleDockerFile(client *client.Client, dockerFileProp *DockerFilePropertie
 
 	// add to job volumes
 	vol, mount := k8s.ConfigMapVolumeMount(apiName+"-"+dockerFile, dockerFileLocation)
-	AddVolume(vol, mount)
+	kanikoProps.AddVolume(vol, mount)
 
 	return nil
 }

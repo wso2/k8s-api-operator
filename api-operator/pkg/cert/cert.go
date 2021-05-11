@@ -33,7 +33,7 @@ const (
 var loggerCert = log.Log.WithName("cert")
 
 // AddFromOneKeySecret add the cert to kaniko pod from a secret with only one key
-func AddFromOneKeySecret(dockerFileProp *kaniko.DockerFileProperties, certSecret *corev1.Secret, aliasPrefix string) string {
+func AddFromOneKeySecret(kanikoProps *kaniko.JobProperties, certSecret *corev1.Secret, aliasPrefix string) string {
 	// add to cert list
 	alias := fmt.Sprintf("%s-%s", certSecret.Name, aliasPrefix)
 	fileName, err := maps.OneKey(certSecret.Data)
@@ -41,19 +41,19 @@ func AddFromOneKeySecret(dockerFileProp *kaniko.DockerFileProperties, certSecret
 		loggerCert.Error(err, "Error reading one key secret. Ignore importing certificate", "secret", certSecret)
 		return ""
 	}
-	Add(dockerFileProp, alias, certSecret.Name, fileName)
+	Add(kanikoProps, alias, certSecret.Name, fileName)
 	return alias
 }
 
-func Add(dockerFileProp *kaniko.DockerFileProperties, alias, secretName, certKey string) {
+func Add(kanikoProps *kaniko.JobProperties, alias, secretName, certKey string) {
 	// append secret name to the path, so files are not overridden if used same key in the cert
 	fileDir := filepath.Join(Path + secretName)
 	filePath := filepath.Join(fileDir, certKey)
 
-	dockerFileProp.Certs[alias] = filePath
-	dockerFileProp.CertFound = true
+	kanikoProps.DockerFileProps.Certs[alias] = filePath
+	kanikoProps.DockerFileProps.CertFound = true
 
 	// add volumes
 	vol, mount := k8s.SecretVolumeMount(secretName, fileDir, "")
-	kaniko.AddVolume(vol, mount)
+	kanikoProps.AddVolume(vol, mount)
 }

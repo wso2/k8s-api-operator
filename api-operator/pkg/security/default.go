@@ -32,7 +32,7 @@ import (
 
 var logDef = log.Log.WithName("security.default")
 
-func Default(client *client.Client, apiNamespace string, dockerFileProp *kaniko.DockerFileProperties, owner *[]metav1.OwnerReference) (*[]mgw.JwtTokenConfig, error) {
+func Default(client *client.Client, apiNamespace string, kanikoProps *kaniko.JobProperties, owner *[]metav1.OwnerReference) (*[]mgw.JwtTokenConfig, error) {
 	var defaultSecConfArray []mgw.JwtTokenConfig
 	//copy default sec in wso2-system to user namespace
 	securityDefault := &wso2v1alpha1.Security{}
@@ -70,7 +70,7 @@ func Default(client *client.Client, apiNamespace string, dockerFileProp *kaniko.
 					return nil, errCreateSec
 				} else {
 					//mount certs
-					alias := cert.AddFromOneKeySecret(dockerFileProp, newDefaultSecret, "security")
+					alias := cert.AddFromOneKeySecret(kanikoProps, newDefaultSecret, "security")
 					defaultSecConf.CertificateAlias = alias
 				}
 			} else if err != nil {
@@ -78,7 +78,7 @@ func Default(client *client.Client, apiNamespace string, dockerFileProp *kaniko.
 				return nil, err
 			} else {
 				//mount certs
-				alias := cert.AddFromOneKeySecret(dockerFileProp, defaultCert, "security")
+				alias := cert.AddFromOneKeySecret(kanikoProps, defaultCert, "security")
 				defaultSecConf.CertificateAlias = alias
 			}
 			if defaultSecurityConf.Issuer != "" {
@@ -115,7 +115,7 @@ func Default(client *client.Client, apiNamespace string, dockerFileProp *kaniko.
 				return nil, err
 			} else {
 				//mount certs
-				alias := cert.AddFromOneKeySecret(dockerFileProp, defaultCertUsrNs, "security")
+				alias := cert.AddFromOneKeySecret(kanikoProps, defaultCertUsrNs, "security")
 				defaultSecConf.CertificateAlias = alias
 				defaultSecConf.ValidateSubscription = securityDefaultConf.ValidateSubscription
 			}

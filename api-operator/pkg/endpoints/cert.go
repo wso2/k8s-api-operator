@@ -41,14 +41,14 @@ var (
 )
 
 // HandleCerts handles the endpoint certificates defined with the API-CTL (API Controller) project
-func HandleCerts(client *client.Client, dockerFileProp *kaniko.DockerFileProperties, api *wso2v1alpha1.API) error {
+func HandleCerts(client *client.Client, kanikoProps *kaniko.JobProperties, api *wso2v1alpha1.API) error {
 	for _, certSecretName := range api.Spec.Definition.EndpointCertificates {
 		secret := &corev1.Secret{}
 		if err := k8s.Get(client, types.NamespacedName{Namespace: api.Namespace, Name: certSecretName}, secret); err != nil {
 			loggerCert.Error(err, "Error reading endpoint certificate")
 			return err
 		}
-		if err := addCert(dockerFileProp, secret); err != nil {
+		if err := addCert(kanikoProps, secret); err != nil {
 			loggerCert.Error(err, "Error adding endpoint certificate")
 			return err
 		}
@@ -57,7 +57,7 @@ func HandleCerts(client *client.Client, dockerFileProp *kaniko.DockerFilePropert
 	return nil
 }
 
-func addCert(dockerFileProp *kaniko.DockerFileProperties, certSecret *corev1.Secret) error {
+func addCert(kanikoProps *kaniko.JobProperties, certSecret *corev1.Secret) error {
 	if err := validateSecret(certSecret); err != nil {
 		loggerCert.Error(err, "Invalid endpoint secret", "secret", certSecret,
 			"namespace", certSecret.Namespace)
@@ -73,7 +73,7 @@ func addCert(dockerFileProp *kaniko.DockerFileProperties, certSecret *corev1.Sec
 	}
 
 	allAlias[alias] = void
-	cert.Add(dockerFileProp, alias, certSecret.Name, certificateSecretKey)
+	cert.Add(kanikoProps, alias, certSecret.Name, certificateSecretKey)
 	return nil
 }
 

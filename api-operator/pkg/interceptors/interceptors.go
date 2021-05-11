@@ -34,28 +34,28 @@ const (
 var logger = log.Log.WithName("interceptors")
 
 // Handle handles ballerina and java interceptors
-func Handle(client *client.Client, instance *wso2v1alpha1.API, dockerFileProp *kaniko.DockerFileProperties) error {
+func Handle(client *client.Client, instance *wso2v1alpha1.API, kanikoProps *kaniko.JobProperties) error {
 	// handle ballerina interceptors
-	balFound, err := handle(client, &instance.Spec.Definition.Interceptors.Ballerina, instance.Namespace, balIntPath)
+	balFound, err := handle(client, kanikoProps, &instance.Spec.Definition.Interceptors.Ballerina, instance.Namespace, balIntPath)
 	if err != nil {
 		logger.Error(err, "Error handling Ballerina interceptors", "namespace", instance.Namespace, "apiName", instance.Name)
 		return err
 	}
-	dockerFileProp.BalInterceptorsFound = balFound
+	kanikoProps.DockerFileProps.BalInterceptorsFound = balFound
 
 	// handle java interceptors
-	javaFound, err := handle(client, &instance.Spec.Definition.Interceptors.Java, instance.Namespace, javaIntPath)
+	javaFound, err := handle(client, kanikoProps, &instance.Spec.Definition.Interceptors.Java, instance.Namespace, javaIntPath)
 	if err != nil {
 		logger.Error(err, "Error handling Java interceptors", "namespace", instance.Namespace, "apiName", instance.Name)
 		return err
 	}
-	dockerFileProp.JavaInterceptorsFound = javaFound
+	kanikoProps.DockerFileProps.JavaInterceptorsFound = javaFound
 
 	return nil
 }
 
 // handle handles interceptors and returns existence of interceptors and error occurred
-func handle(client *client.Client, configs *[]string, ns, mountPath string) (bool, error) {
+func handle(client *client.Client, kanikoProps *kaniko.JobProperties, configs *[]string, ns, mountPath string) (bool, error) {
 	for i, configName := range *configs {
 		// validate configmap existence
 		confMap := k8s.NewConfMap()
@@ -68,7 +68,7 @@ func handle(client *client.Client, configs *[]string, ns, mountPath string) (boo
 		// mount interceptors configmap to the volume
 		logger.Info("Mounting interceptor configmap to volume")
 		vol, mount := k8s.ConfigMapVolumeMount(configName, fmt.Sprintf(mountPath, i))
-		kaniko.AddVolume(vol, mount)
+		kanikoProps.AddVolume(vol, mount)
 		return true, nil
 	}
 

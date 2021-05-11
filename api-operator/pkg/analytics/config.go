@@ -51,7 +51,7 @@ const (
 	portConst                      = "port"
 )
 
-func Handle(client *client.Client, dockerFileProp *kaniko.DockerFileProperties, userNamespace string) error {
+func Handle(client *client.Client, kanikoProps *kaniko.JobProperties, userNamespace string) error {
 	analyticsConf := k8s.NewConfMap()
 	errConf := k8s.Get(client, types.NamespacedName{Namespace: config.SystemNamespace, Name: analyticsConfName}, analyticsConf)
 	if errConf != nil {
@@ -88,7 +88,7 @@ func Handle(client *client.Client, dockerFileProp *kaniko.DockerFileProperties, 
 				}
 				// Configure MGW and add cert
 				setMgwConfigs(analyticsConf, analyticsSecret)
-				cert.AddFromOneKeySecret(dockerFileProp, analyticsCertSecret, "analytics")
+				cert.AddFromOneKeySecret(kanikoProps, analyticsCertSecret, "analytics")
 			} else {
 				if errSecret == nil {
 					errSecret = errors.New("required field in the secret is missing the secret: " + analyticsConf.Data[analyticsSecretConst])
