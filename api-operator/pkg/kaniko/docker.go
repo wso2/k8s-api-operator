@@ -42,8 +42,8 @@ const (
 	SwaggerLocation           = "/usr/wso2/swagger/project-%v/"
 )
 
-// DockerfileProperties represents the type for properties of docker file
-type DockerfileProperties struct {
+// DockerFileProperties represents the type for properties of docker file
+type DockerFileProperties struct {
 	CertFound             bool
 	TruststorePassword    string
 	Certs                 map[string]string
@@ -53,11 +53,8 @@ type DockerfileProperties struct {
 	JavaInterceptorsFound bool
 }
 
-// DocFileProp represents the properties of docker file
-var DocFileProp *DockerfileProperties
-
-func InitDocFileProp() {
-	initDocFileProp := &DockerfileProperties{
+func InitDockerFileProp() *DockerFileProperties {
+	return &DockerFileProperties{
 		CertFound:             false,
 		TruststorePassword:    "",
 		Certs:                 map[string]string{},
@@ -66,11 +63,10 @@ func InitDocFileProp() {
 		BalInterceptorsFound:  false,
 		JavaInterceptorsFound: false,
 	}
-	DocFileProp = initDocFileProp
 }
 
 // HandleDockerFile render the docker file for Kaniko job and add volumes to the Kaniko job
-func HandleDockerFile(client *client.Client, userNamespace, apiName string, owner *[]metav1.OwnerReference) error {
+func HandleDockerFile(client *client.Client, dockerFileProp *DockerFileProperties, userNamespace, apiName string, owner *[]metav1.OwnerReference) error {
 	// get docker file template from system namespace
 	dockerFileConfMap := k8s.NewConfMap()
 	err := k8s.Get(client, types.NamespacedName{Namespace: config.SystemNamespace, Name: dockerFileTemplate}, dockerFileConfMap)
@@ -89,12 +85,12 @@ func HandleDockerFile(client *client.Client, userNamespace, apiName string, owne
 	}
 
 	// set truststore password
-	if err := setTruststorePassword(client); err != nil {
+	if err := setTruststorePassword(client, dockerFileProp); err != nil {
 		return err
 	}
 
 	// get rendered docker file
-	renderedDocFile, err := str.RenderTemplate(dockerFileConfMap.Data[fileName], DocFileProp)
+	renderedDocFile, err := str.RenderTemplate(dockerFileConfMap.Data[fileName], dockerFileProp)
 	if err != nil {
 		return err
 	}
@@ -116,7 +112,7 @@ func HandleDockerFile(client *client.Client, userNamespace, apiName string, owne
 }
 
 // setTruststorePassword sets the truststore password in docker file properties DocFileProp
-func setTruststorePassword(client *client.Client) error {
+func setTruststorePassword(client *client.Client, dockerFileProp *DockerFileProperties) error {
 	// get secret if available
 	secret := k8s.NewSecret()
 	err := k8s.Get(client, types.NamespacedName{Name: truststoreSecretName, Namespace: config.SystemNamespace}, secret)
@@ -140,7 +136,7 @@ func setTruststorePassword(client *client.Client) error {
 		errSecret := k8s.Create(client, trustStoreSecret)
 		logDocker.Info("Error in creating truststore password and ignore it", "error", errSecret)
 
-		DocFileProp.TruststorePassword = password
+		dockerFileProp.TruststorePassword = password
 		return nil
 	}
 	//get password from the secret
@@ -150,6 +146,6 @@ func setTruststorePassword(client *client.Client) error {
 		logDocker.Error(err, "Error decoding truststore password")
 	}
 
-	DocFileProp.TruststorePassword = string(decodedPw)
+	dockerFileProp.TruststorePassword = string(decodedPw)
 	return nil
 }

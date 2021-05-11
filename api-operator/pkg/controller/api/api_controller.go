@@ -117,7 +117,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	reqLogger.Info("Reconciling API")
 
 	// initialize volumes
-	kaniko.InitDocFileProp()
+	dockerFileProp := kaniko.InitDockerFileProp()
 	kaniko.InitJobVolumes()
 
 	var sidecarContainers []corev1.Container
@@ -187,8 +187,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	controlConfigData := controlConf.Data
 	controlIngressData := ingressConf.Data
 	controlOpenshiftConf := OpenshiftConf.Data
-	kaniko.DocFileProp.ToolkitImage = controlConfigData[mgwToolkitImgConst]
-	kaniko.DocFileProp.RuntimeImage = controlConfigData[mgwRuntimeImgConst]
+	dockerFileProp.ToolkitImage = controlConfigData[mgwToolkitImgConst]
+	dockerFileProp.RuntimeImage = controlConfigData[mgwRuntimeImgConst]
 
 	mgwDockerImage := registry.Image{}
 	registryTypeStr := dockerRegistryConf.Data[registryTypeConst]
@@ -208,8 +208,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	// log controller configurations
 	reqLogger.Info(
 		"Controller configurations",
-		"mgw_toolkit_image", kaniko.DocFileProp.ToolkitImage,
-		"mgw_runtime_image", kaniko.DocFileProp.RuntimeImage,
+		"mgw_toolkit_image", dockerFileProp.ToolkitImage,
+		"mgw_runtime_image", dockerFileProp.RuntimeImage,
 		"gateway_observability", controlConfigData[observabilityEnabledConfigKey],
 		"user_nameSpace", userNamespace, "operator_mode", operatorMode,
 	)
@@ -230,7 +230,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	// handle certs of the project
-	if err := endpoints.HandleCerts(&r.client, instance); err != nil {
+	if err := endpoints.HandleCerts(&r.client, dockerFileProp, instance); err != nil {
 		return reconcile.Result{}, err
 	}
 
@@ -319,7 +319,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			return reconcile.Result{}, securityErr
 		}
 
-		securityDefinition, jwtConfArray, apiKeyConfArray, errSec := security.Handle(&r.client, securityMap,
+		securityDefinition, jwtConfArray, apiKeyConfArray, errSec := security.Handle(&r.client, dockerFileProp, securityMap,
 			userNamespace, secSchemeDefined)
 		if errSec != nil {
 			return reconcile.Result{}, errSec
@@ -384,7 +384,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		// Default security
 		if !isDefinedSecurity && resourceLevelSec != pathCount {
 			reqLogger.Info("Use default security")
-			defaultJwtConfArray, err := security.Default(&r.client, userNamespace, ownerRef)
+			defaultJwtConfArray, err := security.Default(&r.client, userNamespace, dockerFileProp, ownerRef)
 			for _, secConf := range *defaultJwtConfArray {
 				isJwtExist := false
 				for _, jwtIssuers := range apiSecurityConfigs {
@@ -450,7 +450,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 				"Handling analytics & interceptors, rendering dockerfile & mgw configs, and creating the Kaniko job.")
 			// handling analytics
 			reqLogger.Info("Handling analytics")
-			if err := analytics.Handle(&r.client, userNamespace); err != nil {
+			if err := analytics.Handle(&r.client, dockerFileProp, userNamespace); err != nil {
 				reqLogger.Error(err, "Error handling analytics")
 				r.recorder.Event(instance, eventTypeError, "Configs", "Error while handling analytics.")
 				return reconcile.Result{}, err
@@ -458,7 +458,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 			// handling interceptors
 			reqLogger.Info("Handling interceptors")
-			if err := interceptors.Handle(&r.client, instance); err != nil {
+			if err := interceptors.Handle(&r.client, instance, dockerFileProp); err != nil {
 				reqLogger.Error(err, "Error handling interceptors")
 				r.recorder.Event(instance, eventTypeError, "Configs", "Error while handling interceptors.")
 				return reconcile.Result{}, err
@@ -466,7 +466,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 			// handling Kaniko docker file
 			reqLogger.Info("Rendering the dockerfile for Kaniko job and adding volumes to the Kaniko job")
-			if err := kaniko.HandleDockerFile(&r.client, userNamespace, instance.Name, ownerRef); err != nil {
+			if err := kaniko.HandleDockerFile(&r.client, dockerFileProp, userNamespace, instance.Name, ownerRef); err != nil {
 				reqLogger.Error(err, "Error rendering the docker file for Kaniko job and adding volumes to the Kaniko job")
 				r.recorder.Event(instance, eventTypeError, "KanikoJob",
 					"Error rendering the dockerfile for kaniko job.")

@@ -21,6 +21,7 @@ import (
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/cert"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/kaniko"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/mgw"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -50,7 +51,7 @@ const (
 	portConst                      = "port"
 )
 
-func Handle(client *client.Client, userNamespace string) error {
+func Handle(client *client.Client, dockerFileProp *kaniko.DockerFileProperties, userNamespace string) error {
 	analyticsConf := k8s.NewConfMap()
 	errConf := k8s.Get(client, types.NamespacedName{Namespace: config.SystemNamespace, Name: analyticsConfName}, analyticsConf)
 	if errConf != nil {
@@ -87,7 +88,7 @@ func Handle(client *client.Client, userNamespace string) error {
 				}
 				// Configure MGW and add cert
 				setMgwConfigs(analyticsConf, analyticsSecret)
-				cert.AddFromOneKeySecret(analyticsCertSecret, "analytics")
+				cert.AddFromOneKeySecret(dockerFileProp, analyticsCertSecret, "analytics")
 			} else {
 				if errSecret == nil {
 					errSecret = errors.New("required field in the secret is missing the secret: " + analyticsConf.Data[analyticsSecretConst])
