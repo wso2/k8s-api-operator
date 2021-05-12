@@ -57,7 +57,7 @@ type tlsRoutesConfigs struct {
 var logVsc = log.Log.WithName("mgw.virtualservice")
 
 func ApplyIstioVirtualService(client *client.Client, istioConfigs *IstioConfigs, api *wso2v1alpha1.API, apiBasePathMap map[string]string,
-	owner []metav1.OwnerReference) (*istioclient.VirtualService, error) {
+	mgConfigs *Configuration, owner []metav1.OwnerReference) (*istioclient.VirtualService, error) {
 	// labels
 	labels := map[string]string{
 		"app": api.Name,
@@ -83,9 +83,9 @@ func ApplyIstioVirtualService(client *client.Client, istioConfigs *IstioConfigs,
 
 	// select route mode TLS/HTTP
 	if istioConfigs.Tls.Enabled { // TLS mode
-		tlsRoutes = getTlsRoutes(istioConfigs, api)
+		tlsRoutes = getTlsRoutes(istioConfigs, api, mgConfigs)
 	} else { // HTTP mode
-		httpRoutes = getHttpRoutes(istioConfigs, api, apiBasePathMap)
+		httpRoutes = getHttpRoutes(istioConfigs, api, mgConfigs, apiBasePathMap)
 	}
 
 	// Istio virtual service
@@ -101,7 +101,7 @@ func ApplyIstioVirtualService(client *client.Client, istioConfigs *IstioConfigs,
 	return virtualService, err
 }
 
-func getHttpRoutes(istioConfigs *IstioConfigs, api *wso2v1alpha1.API, apiBasePathMap map[string]string) []*istioapi.HTTPRoute {
+func getHttpRoutes(istioConfigs *IstioConfigs, api *wso2v1alpha1.API, mgConfigs *Configuration, apiBasePathMap map[string]string) []*istioapi.HTTPRoute {
 	// http route matches
 	var httpRouteMatches []*istioapi.HTTPMatchRequest
 	for basePath, version := range apiBasePathMap {
@@ -124,7 +124,7 @@ func getHttpRoutes(istioConfigs *IstioConfigs, api *wso2v1alpha1.API, apiBasePat
 			Destination: &istioapi.Destination{
 				Host: api.Name, // MGW service name
 				Port: &istioapi.PortSelector{
-					Number: uint32(Configs.HttpPort),
+					Number: uint32(mgConfigs.HttpPort),
 				},
 			},
 		}},
@@ -135,7 +135,7 @@ func getHttpRoutes(istioConfigs *IstioConfigs, api *wso2v1alpha1.API, apiBasePat
 	return httpRoutes
 }
 
-func getTlsRoutes(istioConfigs *IstioConfigs, api *wso2v1alpha1.API) []*istioapi.TLSRoute {
+func getTlsRoutes(istioConfigs *IstioConfigs, api *wso2v1alpha1.API, mgConfigs *Configuration) []*istioapi.TLSRoute {
 	tlsRoutes := []*istioapi.TLSRoute{
 		{
 			Match: []*istioapi.TLSMatchAttributes{{
@@ -146,7 +146,7 @@ func getTlsRoutes(istioConfigs *IstioConfigs, api *wso2v1alpha1.API) []*istioapi
 				Destination: &istioapi.Destination{
 					Host: api.Name, // MGW service name
 					Port: &istioapi.PortSelector{
-						Number: uint32(Configs.HttpsPort),
+						Number: uint32(mgConfigs.HttpsPort),
 					},
 				},
 			}},

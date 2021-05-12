@@ -52,7 +52,7 @@ const (
 )
 
 // Deployment returns a MGW deployment for the given API definition
-func Deployment(client *client.Client, api *wso2v1alpha1.API, controlConfigData map[string]string,
+func Deployment(client *client.Client, api *wso2v1alpha1.API, mgConfigs *Configuration, controlConfigData map[string]string,
 	owner *[]metav1.OwnerReference, sidecarContainers []corev1.Container, img registry.Image) (*appsv1.Deployment, error) {
 	regConfig := registry.GetImageConfig(img)
 	labels := map[string]string{"app": api.Name}
@@ -71,7 +71,7 @@ func Deployment(client *client.Client, api *wso2v1alpha1.API, controlConfigData 
 	// Mount the user specified Config maps and secrets to mgw deploy volume
 	deployVolume, deployVolumeMount, envFromSources, errDeploy := vol.UserDeploymentVolume(client, api, vol.DefaultContext)
 
-	if Configs.AnalyticsEnabled {
+	if mgConfigs.AnalyticsEnabled {
 		// mounts an empty dir volume to be used when analytics is enabled
 		analVol, analMount := k8s.EmptyDirVolumeMount("analytics", analyticsLocation)
 		deployVolume = append(deployVolume, *analVol)
@@ -89,14 +89,14 @@ func Deployment(client *client.Client, api *wso2v1alpha1.API, controlConfigData 
 	// container ports
 	containerPorts := []corev1.ContainerPort{
 		{
-			ContainerPort: Configs.HttpPort,
+			ContainerPort: mgConfigs.HttpPort,
 		},
 		{
-			ContainerPort: Configs.HttpsPort,
+			ContainerPort: mgConfigs.HttpsPort,
 		},
 	}
 	// setting observability port
-	if Configs.ObservabilityEnabled {
+	if mgConfigs.ObservabilityEnabled {
 		containerPorts = append(containerPorts, corev1.ContainerPort{
 			ContainerPort: observabilityPrometheusPort,
 		})
@@ -141,7 +141,7 @@ func Deployment(client *client.Client, api *wso2v1alpha1.API, controlConfigData 
 			Handler: corev1.Handler{
 				HTTPGet: &corev1.HTTPGetAction{
 					Path:   "/health",
-					Port:   intstr.IntOrString{Type: intstr.Int, IntVal: Configs.HttpsPort},
+					Port:   intstr.IntOrString{Type: intstr.Int, IntVal: mgConfigs.HttpsPort},
 					Scheme: "HTTPS",
 				},
 			},
@@ -153,7 +153,7 @@ func Deployment(client *client.Client, api *wso2v1alpha1.API, controlConfigData 
 			Handler: corev1.Handler{
 				HTTPGet: &corev1.HTTPGetAction{
 					Path:   "/health",
-					Port:   intstr.IntOrString{Type: intstr.Int, IntVal: Configs.HttpsPort},
+					Port:   intstr.IntOrString{Type: intstr.Int, IntVal: mgConfigs.HttpsPort},
 					Scheme: "HTTPS",
 				},
 			},

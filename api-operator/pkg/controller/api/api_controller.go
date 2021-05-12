@@ -118,6 +118,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 	// get newly initialize kaniko properties
 	kanikoProps := kaniko.NewProperties()
+	mgConfigs := mgw.InitConfig()
 
 	var sidecarContainers []corev1.Container
 
@@ -221,7 +222,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	// validate HPA configs and setting configs
 	// this is to verify HPA configs prior running kaniko job and creating MGW image
 	// otherwise user may have to wait long time to know the error in configs
-	mgw.Configs.ObservabilityEnabled = strings.EqualFold(controlConfigData[observabilityEnabledConfigKey], "true")
+	mgConfigs.ObservabilityEnabled = strings.EqualFold(controlConfigData[observabilityEnabledConfigKey], "true")
 	hpaProps := &mgw.HpaProps{}
 	if err := mgw.ValidateHpaConfigs(&r.client, hpaProps); err != nil {
 		reqLogger.Error(err, "Invalid HPA configs. Requeue request after 10 seconds")
@@ -319,7 +320,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			return reconcile.Result{}, securityErr
 		}
 
-		securityDefinition, jwtConfArray, apiKeyConfArray, errSec := security.Handle(&r.client, kanikoProps, securityMap,
+		securityDefinition, jwtConfArray, apiKeyConfArray, errSec := security.Handle(&r.client, kanikoProps, mgConfigs, securityMap,
 			userNamespace, secSchemeDefined)
 		if errSec != nil {
 			return reconcile.Result{}, errSec
@@ -336,7 +337,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 				apiSecurityConfigs = append(apiSecurityConfigs, jwtConf)
 			}
 		}
-		mgw.Configs.APIKeyConfigs = apiKeyConfArray
+		mgConfigs.APIKeyConfigs = apiKeyConfArray
 
 		//adding security scheme to swagger
 		if len(securityDefinition) > 0 {
@@ -403,7 +404,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		}
 	}
 	//setting the JWT configs for API
-	mgw.Configs.JwtConfigs = &apiSecurityConfigs
+	mgConfigs.JwtConfigs = &apiSecurityConfigs
 
 	// micro-gateway image to be build
 	mgwDockerImage.Name = strings.ToLower(strings.ReplaceAll(instance.Name, " ", ""))
@@ -450,7 +451,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 				"Handling analytics & interceptors, rendering dockerfile & mgw configs, and creating the Kaniko job.")
 			// handling analytics
 			reqLogger.Info("Handling analytics")
-			if err := analytics.Handle(&r.client, kanikoProps, userNamespace); err != nil {
+			if err := analytics.Handle(&r.client, kanikoProps, mgConfigs, userNamespace); err != nil {
 				reqLogger.Error(err, "Error handling analytics")
 				r.recorder.Event(instance, eventTypeError, "Configs", "Error while handling analytics.")
 				return reconcile.Result{}, err
@@ -475,14 +476,14 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 			// setting the MGW configs from APIM configmap
 			reqLogger.Info("Setting the MGW configs from APIM configmap")
-			if err := mgw.SetApimConfigs(&r.client); err != nil {
+			if err := mgw.SetApimConfigs(&r.client, mgConfigs); err != nil {
 				reqLogger.Error(err, "Error Setting the MGW configs from APIM configmap")
 				return reconcile.Result{}, err
 			}
 
 			// rendering MGW config file
 			reqLogger.Info("Rendering and adding the MGW configuration file to cluster")
-			if err := mgw.ApplyConfFile(&r.client, userNamespace, instance.Name, kanikoProps, ownerRef); err != nil {
+			if err := mgw.ApplyConfFile(&r.client, userNamespace, instance.Name, kanikoProps, mgConfigs, ownerRef); err != nil {
 				reqLogger.Error(err, "Error rendering and adding the MGW configuration file to cluster")
 				return reconcile.Result{}, err
 			}
@@ -557,7 +558,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	if deployMgwRuntime {
 		reqLogger.Info("Deploying MGW runtime image")
 		// create MGW deployment in k8s cluster
-		mgwDeployment, errDeploy := mgw.Deployment(&r.client, instance, controlConfigData, ownerRef, sidecarContainers, mgwDockerImage)
+		mgwDeployment, errDeploy := mgw.Deployment(&r.client, instance, mgConfigs, controlConfigData, ownerRef, sidecarContainers, mgwDockerImage)
 		r.recorder.Event(instance, corev1.EventTypeNormal, "MGWRuntime",
 			fmt.Sprintf("Deploying MGW runtime: %s.", mgwDeployment.Name))
 		if errDeploy != nil {
@@ -575,7 +576,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		reqLogger.Info("Updated the MGW deployment", "deploy_name", mgwDeployment.Name)
 
 		// create MGW service
-		mgwSvc := mgw.Service(instance, operatorMode, *ownerRef)
+		mgwSvc := mgw.Service(instance, mgConfigs, operatorMode, *ownerRef)
 		r.recorder.Event(instance, corev1.EventTypeNormal, "MGWService",
 			fmt.Sprintf("Creating MGW service: %s.", mgwSvc.Name))
 		// controllerutil.SetControllerReference(instance, mgwSvc, r.scheme) <- check with commenting this, if work delete this.
@@ -603,7 +604,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 		reqLogger.Info("Operator mode", "mode", operatorMode)
 		if strings.EqualFold(operatorMode, ingressMode) || instance.Spec.IngressHostname != "" {
-			errIng := mgw.ApplyIngressResource(&r.client, instance, apiBasePathMap, ownerRef)
+			errIng := mgw.ApplyIngressResource(&r.client, instance, mgConfigs, apiBasePathMap, ownerRef)
 			r.recorder.Event(instance, corev1.EventTypeNormal, "Ingress", "Applying Ingress resources.")
 			if errIng != nil {
 				reqLogger.Error(errIng, "Error creating the ingress resource")
@@ -612,7 +613,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			}
 		}
 		if strings.EqualFold(operatorMode, routeMode) {
-			rutErr := mgw.ApplyRouteResource(&r.client, instance, apiBasePathMap, ownerRef)
+			rutErr := mgw.ApplyRouteResource(&r.client, instance, mgConfigs, apiBasePathMap, ownerRef)
 			r.recorder.Event(instance, corev1.EventTypeNormal, "Route", "Applying Route resources.")
 			if rutErr != nil {
 				r.recorder.Event(instance, eventTypeError, "Route", "Error creating Route resources.")
@@ -622,7 +623,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 		// creating Istio virtual service
 		if strings.EqualFold(operatorMode, istioMode) {
-			vtlSvc, errVtlSvc := mgw.ApplyIstioVirtualService(&r.client, istioConfigs, instance, apiBasePathMap, *ownerRef)
+			vtlSvc, errVtlSvc := mgw.ApplyIstioVirtualService(&r.client, istioConfigs, instance, apiBasePathMap, mgConfigs, *ownerRef)
 			if errVtlSvc != nil {
 				reqLogger.Error(errVtlSvc, "Error creating the Istio virtual service2",
 					"virtual_service", vtlSvc)

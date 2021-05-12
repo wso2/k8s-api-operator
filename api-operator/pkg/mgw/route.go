@@ -48,7 +48,7 @@ const (
 
 // ApplyRouteResource creates or updates a route resource to expose MGW
 // Supports for multiple apiBasePaths when there are multiple swaggers for one API CRD
-func ApplyRouteResource(client *client.Client, api *wso2v1alpha1.API,
+func ApplyRouteResource(client *client.Client, api *wso2v1alpha1.API, mgConfigs *Configuration,
 	apiBasePathMap map[string]string, owner *[]metav1.OwnerReference) error {
 	logRoute := loggerRoute.WithValues("namespace", api.Namespace, "apiName", api.Name)
 	routeConfMap := k8s.NewConfMap()
@@ -83,9 +83,9 @@ func ApplyRouteResource(client *client.Client, api *wso2v1alpha1.API,
 
 	var port int32
 	if httpConst == transportMode {
-		port = Configs.HttpPort
+		port = mgConfigs.HttpPort
 	} else {
-		port = Configs.HttpsPort
+		port = mgConfigs.HttpsPort
 	}
 
 	annotationsList := routeConfMap.Data[routeProperties]
