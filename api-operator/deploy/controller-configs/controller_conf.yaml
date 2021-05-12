@@ -25,7 +25,7 @@ data:
   #mgw runtime image to use in the mgw executable
   mgwRuntimeImg: wso2/wso2micro-gw:3.2.0
   #kaniko image for the kaniko pod which builds the mgw api runtime and pushes to the registry
-  kanikoImg: gcr.io/kaniko-project/executor:v0.24.0
+  kanikoImg: gcr.io/kaniko-project/executor:v1.6.0
   #Required CPU usage for pods.   Default-> resourceRequestCPU: "1000m"
   resourceRequestCPU: "1000m"
   #Required Memory usage pods can use.   Default->  resourceRequestMemory: "512Mi"
