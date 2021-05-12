@@ -222,7 +222,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	// this is to verify HPA configs prior running kaniko job and creating MGW image
 	// otherwise user may have to wait long time to know the error in configs
 	mgw.Configs.ObservabilityEnabled = strings.EqualFold(controlConfigData[observabilityEnabledConfigKey], "true")
-	if err := mgw.ValidateHpaConfigs(&r.client); err != nil {
+	hpaProps := &mgw.HpaProps{}
+	if err := mgw.ValidateHpaConfigs(&r.client, hpaProps); err != nil {
 		reqLogger.Error(err, "Invalid HPA configs. Requeue request after 10 seconds")
 		// Return and requeue request since config mismatch. User should reconfigure configs to proceed.
 		return reconcile.Result{RequeueAfter: 10 * time.Second}, nil
@@ -586,7 +587,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		}
 
 		// create horizontal pod auto-scalar
-		hpaV2beta1, hpaV2beta2 := mgw.HPA(&r.client, instance, mgwDeployment, ownerRef)
+		hpaV2beta1, hpaV2beta2 := mgw.HPA(&r.client, instance, mgwDeployment, hpaProps, ownerRef)
 		if hpaV2beta1 != nil && hpaV2beta2 == nil {
 			if errHpaV2beta1 := k8s.CreateIfNotExists(&r.client, hpaV2beta1); errHpaV2beta1 != nil {
 				reqLogger.Error(errHpaV2beta1, "Error creating the horizontal pod auto-scalar with HPA version v2beta1", "hpa_name", hpaV2beta1.Name)
