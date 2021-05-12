@@ -37,7 +37,7 @@ const (
 )
 
 //Creating a LB balancer service to expose mgw
-func Service(api *wso2v1alpha1.API, operatorMode string, owner []metav1.OwnerReference) *corev1.Service {
+func Service(api *wso2v1alpha1.API, mgConfigs *Configuration, operatorMode string, owner []metav1.OwnerReference) *corev1.Service {
 	var serviceType corev1.ServiceType
 	serviceType = corev1.ServiceTypeLoadBalancer
 
@@ -54,15 +54,15 @@ func Service(api *wso2v1alpha1.API, operatorMode string, owner []metav1.OwnerRef
 	// service ports
 	servicePorts := []corev1.ServicePort{{
 		Name:       httpsConst,
-		Port:       Configs.HttpsPort,
-		TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: Configs.HttpsPort},
+		Port:       mgConfigs.HttpsPort,
+		TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: mgConfigs.HttpsPort},
 	}, {
 		Name:       httpConst,
-		Port:       Configs.HttpPort,
-		TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: Configs.HttpPort},
+		Port:       mgConfigs.HttpPort,
+		TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: mgConfigs.HttpPort},
 	}}
 	// setting observability port
-	if Configs.ObservabilityEnabled {
+	if mgConfigs.ObservabilityEnabled {
 		servicePorts = append(servicePorts, corev1.ServicePort{
 			Name:       metricsPrometheusConst,
 			Port:       observabilityPrometheusPort,

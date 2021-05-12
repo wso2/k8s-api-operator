@@ -50,12 +50,12 @@ const (
 	portConst                      = "port"
 )
 
-func Handle(client *client.Client, kanikoProps *kaniko.JobProperties, userNamespace string) error {
+func Handle(client *client.Client, kanikoProps *kaniko.JobProperties, mgConfigs *mgw.Configuration, userNamespace string) error {
 	analyticsConf := k8s.NewConfMap()
 	errConf := k8s.Get(client, types.NamespacedName{Namespace: config.SystemNamespace, Name: analyticsConfName}, analyticsConf)
 	if errConf != nil {
 		logger.Info("Disabling analytics since the analytics configuration related config map not found")
-		mgw.Configs.AnalyticsEnabled = false
+		mgConfigs.AnalyticsEnabled = false
 	} else {
 		if analyticsConf.Data[analyticsEnabledConst] == "true" {
 			// gets the data from analytics secret
@@ -86,7 +86,7 @@ func Handle(client *client.Client, kanikoProps *kaniko.JobProperties, userNamesp
 					}
 				}
 				// Configure MGW and add cert
-				setMgwConfigs(analyticsConf, analyticsSecret)
+				setMgwConfigs(mgConfigs, analyticsConf, analyticsSecret)
 				kaniko.AddCertFromOneKeySecret(kanikoProps, analyticsCertSecret, "analytics")
 			} else {
 				if errSecret == nil {
@@ -109,14 +109,14 @@ func isValidSecret(secret *corev1.Secret) bool {
 }
 
 // setMgwConfigs enable analytics and set MGW configs
-func setMgwConfigs(confMap *corev1.ConfigMap, secret *corev1.Secret) {
-	mgw.Configs.AnalyticsEnabled = true
+func setMgwConfigs(mgConfigs *mgw.Configuration, confMap *corev1.ConfigMap, secret *corev1.Secret) {
+	mgConfigs.AnalyticsEnabled = true
 
-	mgw.Configs.UploadingTimeSpanInMillis = confMap.Data[uploadingTimeSpanInMillisConst]
-	mgw.Configs.RotatingPeriod = confMap.Data[rotatingPeriodConst]
-	mgw.Configs.UploadFiles = confMap.Data[uploadFilesConst]
-	mgw.Configs.AnalyticsHostname = confMap.Data[hostnameConst]
-	mgw.Configs.AnalyticsPort = confMap.Data[portConst]
-	mgw.Configs.AnalyticsUsername = string(secret.Data[usernameConst])
-	mgw.Configs.AnalyticsPassword = string(secret.Data[passwordConst])
+	mgConfigs.UploadingTimeSpanInMillis = confMap.Data[uploadingTimeSpanInMillisConst]
+	mgConfigs.RotatingPeriod = confMap.Data[rotatingPeriodConst]
+	mgConfigs.UploadFiles = confMap.Data[uploadFilesConst]
+	mgConfigs.AnalyticsHostname = confMap.Data[hostnameConst]
+	mgConfigs.AnalyticsPort = confMap.Data[portConst]
+	mgConfigs.AnalyticsUsername = string(secret.Data[usernameConst])
+	mgConfigs.AnalyticsPassword = string(secret.Data[passwordConst])
 }

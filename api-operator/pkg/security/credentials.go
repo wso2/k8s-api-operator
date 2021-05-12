@@ -30,7 +30,7 @@ import (
 
 var logCred = log.Log.WithName("security.credentials")
 
-func SetCredentials(client *client.Client, securityType string, namespacedName types.NamespacedName) error {
+func SetCredentials(client *client.Client, securityType string, namespacedName types.NamespacedName, mgConfigs *mgw.Configuration) error {
 	sha1Hash := sha1.New()
 	var userName string
 	var password []byte
@@ -54,18 +54,18 @@ func SetCredentials(client *client.Client, securityType string, namespacedName t
 	}
 	if securityType == "Basic" {
 
-		mgw.Configs.BasicUsername = userName
+		mgConfigs.BasicUsername = userName
 		_, err := sha1Hash.Write(password)
 		if err != nil {
 			logCred.Info("error in encoding password")
 			return err
 		}
 		//convert encoded password to a hex string
-		mgw.Configs.BasicPassword = hex.EncodeToString(sha1Hash.Sum(nil))
+		mgConfigs.BasicPassword = hex.EncodeToString(sha1Hash.Sum(nil))
 	}
 	if securityType == "Oauth" {
-		mgw.Configs.KeyManagerUsername = userName
-		mgw.Configs.KeyManagerPassword = string(password)
+		mgConfigs.KeyManagerUsername = userName
+		mgConfigs.KeyManagerPassword = string(password)
 	}
 	return nil
 }

@@ -49,7 +49,7 @@ type scopeSet struct {
 	Scopes           map[string]string `json:"scopes,omitempty"`
 }
 
-func Handle(client *client.Client, kanikoProps *kaniko.JobProperties, securityMap map[string][]string, userNameSpace string, secSchemeDefined bool) (map[string]securitySchemeStruct, *[]mgw.JwtTokenConfig, *[]mgw.APIKeyTokenConfig, error) {
+func Handle(client *client.Client, kanikoProps *kaniko.JobProperties, mgConfigs *mgw.Configuration, securityMap map[string][]string, userNameSpace string, secSchemeDefined bool) (map[string]securitySchemeStruct, *[]mgw.JwtTokenConfig, *[]mgw.APIKeyTokenConfig, error) {
 	var securityDefinition = make(map[string]securitySchemeStruct)
 	//to add multiple certs with alias
 
@@ -76,9 +76,9 @@ func Handle(client *client.Client, kanikoProps *kaniko.JobProperties, securityMa
 				_ = kaniko.AddCertFromOneKeySecret(kanikoProps, certificateSecret, "security")
 
 				//get the keymanager server URL from the security kind
-				mgw.Configs.KeyManagerServerUrl = securityConf.Endpoint
+				mgConfigs.KeyManagerServerUrl = securityConf.Endpoint
 				//fetch credentials from the secret created
-				errGetCredentials := SetCredentials(client, oauthConst, types.NamespacedName{Namespace: userNameSpace, Name: securityConf.Credentials})
+				errGetCredentials := SetCredentials(client, oauthConst, types.NamespacedName{Namespace: userNameSpace, Name: securityConf.Credentials}, mgConfigs)
 				if errGetCredentials != nil {
 					logSec.Error(errGetCredentials, "Error occurred when retrieving credentials for Oauth")
 				} else {
@@ -169,7 +169,7 @@ func Handle(client *client.Client, kanikoProps *kaniko.JobProperties, securityMa
 
 			//fetch credentials from the secret created
 			errGetCredentials := SetCredentials(client, "Basic",
-				types.NamespacedName{Namespace: userNameSpace, Name: securityInstance.Spec.SecurityConfig[0].Credentials})
+				types.NamespacedName{Namespace: userNameSpace, Name: securityInstance.Spec.SecurityConfig[0].Credentials}, mgConfigs)
 			if errGetCredentials != nil {
 				logSec.Error(errGetCredentials, "Error occurred when retrieving credentials for Basic")
 			} else {
