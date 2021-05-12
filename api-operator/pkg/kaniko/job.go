@@ -60,6 +60,7 @@ func NewProperties() *JobProperties {
 			BalInterceptorsFound:  false,
 			JavaInterceptorsFound: false,
 		},
+		certAliases:  make(map[string]struct{}),
 		Volumes:      make([]corev1.Volume, 0, 8),
 		VolumeMounts: make([]corev1.VolumeMount, 0, 8),
 	}
@@ -67,6 +68,14 @@ func NewProperties() *JobProperties {
 
 // AddVolume adds volume and volume mounts to the JobProperties
 func (j *JobProperties) AddVolume(vol *corev1.Volume, volMount *corev1.VolumeMount) {
+	// skip adding volume if the name already exists
+	for _, volume := range j.Volumes {
+		if volume.Name == vol.Name {
+			logJob.Info("Volume name of kaniko job is already exists. Skip adding the volume.",
+				"volume_name", volume.Name, "volume", volume, "volume_mount", volMount)
+			return
+		}
+	}
 	j.Volumes = append(j.Volumes, *vol)
 	j.VolumeMounts = append(j.VolumeMounts, *volMount)
 }

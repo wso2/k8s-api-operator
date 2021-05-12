@@ -51,6 +51,7 @@ func AddCert(kanikoProps *JobProperties, alias, secretName, certKey string) {
 	if _, ok := kanikoProps.certAliases[alias]; ok {
 		loggerCert.Info("Alias of endpoint certificate already exists. Skip importing certificate.",
 			"alias", alias, "secret", secretName)
+		return
 	}
 	kanikoProps.certAliases[alias] = void
 
