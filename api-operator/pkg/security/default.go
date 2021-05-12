@@ -18,9 +18,9 @@ package security
 
 import (
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
-	"github.com/wso2/k8s-api-operator/api-operator/pkg/cert"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/kaniko"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/mgw"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -31,7 +31,7 @@ import (
 
 var logDef = log.Log.WithName("security.default")
 
-func Default(client *client.Client, apiNamespace string, owner *[]metav1.OwnerReference) (*[]mgw.JwtTokenConfig, error) {
+func Default(client *client.Client, apiNamespace string, kanikoProps *kaniko.JobProperties, owner *[]metav1.OwnerReference) (*[]mgw.JwtTokenConfig, error) {
 	var defaultSecConfArray []mgw.JwtTokenConfig
 	//copy default sec in wso2-system to user namespace
 	securityDefault := &wso2v1alpha1.Security{}
@@ -69,7 +69,7 @@ func Default(client *client.Client, apiNamespace string, owner *[]metav1.OwnerRe
 					return nil, errCreateSec
 				} else {
 					//mount certs
-					alias := cert.AddFromOneKeySecret(newDefaultSecret, "security")
+					alias := kaniko.AddCertFromOneKeySecret(kanikoProps, newDefaultSecret, "security")
 					defaultSecConf.CertificateAlias = alias
 				}
 			} else if err != nil {
@@ -77,7 +77,7 @@ func Default(client *client.Client, apiNamespace string, owner *[]metav1.OwnerRe
 				return nil, err
 			} else {
 				//mount certs
-				alias := cert.AddFromOneKeySecret(defaultCert, "security")
+				alias := kaniko.AddCertFromOneKeySecret(kanikoProps, defaultCert, "security")
 				defaultSecConf.CertificateAlias = alias
 			}
 			if defaultSecurityConf.Issuer != "" {
@@ -114,7 +114,7 @@ func Default(client *client.Client, apiNamespace string, owner *[]metav1.OwnerRe
 				return nil, err
 			} else {
 				//mount certs
-				alias := cert.AddFromOneKeySecret(defaultCertUsrNs, "security")
+				alias := kaniko.AddCertFromOneKeySecret(kanikoProps, defaultCertUsrNs, "security")
 				defaultSecConf.CertificateAlias = alias
 				defaultSecConf.ValidateSubscription = securityDefaultConf.ValidateSubscription
 			}

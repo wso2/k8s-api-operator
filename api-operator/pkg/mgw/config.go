@@ -461,7 +461,7 @@ func SetApimConfigs(client *client.Client) error {
 }
 
 // ApplyConfFile render and add the MGW configuration file to cluster
-func ApplyConfFile(client *client.Client, userNamespace, apiName string, owner *[]metav1.OwnerReference) error {
+func ApplyConfFile(client *client.Client, userNamespace, apiName string, kanikoProps *kaniko.JobProperties, owner *[]metav1.OwnerReference) error {
 	// retrieving the MGW template configmap
 	templateConfMap := k8s.NewConfMap()
 	errConf := k8s.Get(client, types.NamespacedName{Namespace: config.SystemNamespace, Name: mgwConfMustache}, templateConfMap)
@@ -487,6 +487,6 @@ func ApplyConfFile(client *client.Client, userNamespace, apiName string, owner *
 	}
 
 	// add volumes to Kaniko job
-	kaniko.AddVolume(k8s.SecretVolumeMount(confNsName.Name, mgwConfLocation, ""))
+	kanikoProps.AddVolume(k8s.SecretVolumeMount(confNsName.Name, mgwConfLocation, ""))
 	return nil
 }

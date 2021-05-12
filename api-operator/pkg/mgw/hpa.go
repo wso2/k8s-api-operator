@@ -34,9 +34,12 @@ import (
 )
 
 var logHpa = log.Log.WithName("mgw.hpa")
-var metricsHpaV2beta1 []v2beta1.MetricSpec
-var metricsHpaV2beta2 *[]v2beta2.MetricSpec
-var hpaMaxReplicas int32
+
+type HpaProps struct {
+	MetricsHpaV2beta1 []v2beta1.MetricSpec
+	MetricsHpaV2beta2 []v2beta2.MetricSpec
+	HpaMaxReplicas    int32
+}
 
 const (
 	hpaConfigMapName        = "hpa-configs"
@@ -47,7 +50,7 @@ const (
 )
 
 // HPA checks whether the HPA version is v2beta1 or v2beta2
-func HPA(client *client.Client, api *wso2v1alpha1.API, dep *appsv1.Deployment, owner *[]metav1.OwnerReference) (*v2beta1.HorizontalPodAutoscaler,
+func HPA(client *client.Client, api *wso2v1alpha1.API, dep *appsv1.Deployment, hpaProps *HpaProps, owner *[]metav1.OwnerReference) (*v2beta1.HorizontalPodAutoscaler,
 	*v2beta2.HorizontalPodAutoscaler) {
 	// get global hpa configs, return error if not found (required config map)
 	hpaConfMap := k8s.NewConfMap()
@@ -57,18 +60,18 @@ func HPA(client *client.Client, api *wso2v1alpha1.API, dep *appsv1.Deployment, o
 		return nil, nil
 	}
 	if hpaConfMap.Data[hpaVersionConst] == "v2beta1" {
-		hpaV2beta1 := HPAv2beta1(api, dep, owner)
+		hpaV2beta1 := HPAv2beta1(api, dep, hpaProps, owner)
 		return hpaV2beta1, nil
 	}
 	if hpaConfMap.Data[hpaVersionConst] == "v2beta2" {
-		hpaV2beta2 := HPAv2beta2(api, dep, owner)
+		hpaV2beta2 := HPAv2beta2(api, dep, hpaProps, owner)
 		return nil, hpaV2beta2
 	}
 	return nil, nil
 }
 
 // HPA returns a HPA instance with specified config values for HPA version v2beta1
-func HPAv2beta1(api *wso2v1alpha1.API, dep *appsv1.Deployment, owner *[]metav1.OwnerReference) *v2beta1.HorizontalPodAutoscaler {
+func HPAv2beta1(api *wso2v1alpha1.API, dep *appsv1.Deployment, hpaProps *HpaProps, owner *[]metav1.OwnerReference) *v2beta1.HorizontalPodAutoscaler {
 	// target resource
 	targetResource := v2beta1.CrossVersionObjectReference{
 		Kind:       "Deployment",
@@ -88,15 +91,15 @@ func HPAv2beta1(api *wso2v1alpha1.API, dep *appsv1.Deployment, owner *[]metav1.O
 		},
 		Spec: v2beta1.HorizontalPodAutoscalerSpec{
 			MinReplicas:    &minReplicas,
-			MaxReplicas:    hpaMaxReplicas,
+			MaxReplicas:    hpaProps.HpaMaxReplicas,
 			ScaleTargetRef: targetResource,
-			Metrics:        metricsHpaV2beta1,
+			Metrics:        hpaProps.MetricsHpaV2beta1,
 		},
 	}
 }
 
 // HPA returns a HPA instance with specified config values for HPA version v2beta2
-func HPAv2beta2(api *wso2v1alpha1.API, dep *appsv1.Deployment, owner *[]metav1.OwnerReference) *v2beta2.HorizontalPodAutoscaler {
+func HPAv2beta2(api *wso2v1alpha1.API, dep *appsv1.Deployment, hpaProps *HpaProps, owner *[]metav1.OwnerReference) *v2beta2.HorizontalPodAutoscaler {
 	// target resource
 	targetResource := v2beta2.CrossVersionObjectReference{
 		Kind:       "Deployment",
@@ -116,16 +119,16 @@ func HPAv2beta2(api *wso2v1alpha1.API, dep *appsv1.Deployment, owner *[]metav1.O
 		},
 		Spec: v2beta2.HorizontalPodAutoscalerSpec{
 			MinReplicas:    &minReplicas,
-			MaxReplicas:    hpaMaxReplicas,
+			MaxReplicas:    hpaProps.HpaMaxReplicas,
 			ScaleTargetRef: targetResource,
-			Metrics:        *metricsHpaV2beta2,
+			Metrics:        hpaProps.MetricsHpaV2beta2,
 		},
 	}
 }
 
 // ValidateHpaConfigs validate the HPA yaml config read from config map "hpa-configs"
 // and setting values
-func ValidateHpaConfigs(client *client.Client) error {
+func ValidateHpaConfigs(client *client.Client, hpaProps *HpaProps) error {
 	// get global hpa configs, return error if not found (required config map)
 	hpaConfMap := k8s.NewConfMap()
 	err := k8s.Get(client, types.NamespacedName{Namespace: config.SystemNamespace, Name: hpaConfigMapName}, hpaConfMap)
@@ -140,19 +143,19 @@ func ValidateHpaConfigs(client *client.Client) error {
 			"value", hpaConfMap.Data[maxReplicasConfigKey])
 		return err
 	}
-	hpaMaxReplicas = int32(maxReplicasInt64)
+	hpaProps.HpaMaxReplicas = int32(maxReplicasInt64)
 	if strings.EqualFold("v2beta1", hpaConfMap.Data[hpaVersionConst]) {
 		// parse hpa config yaml
-		metricsHpaV2beta1 = []v2beta1.MetricSpec{}
-		yamlErr := yaml.Unmarshal([]byte(hpaConfMap.Data[metricsConfigKeyV2beta1]), metricsHpaV2beta1)
+		hpaProps.MetricsHpaV2beta1 = []v2beta1.MetricSpec{}
+		yamlErr := yaml.Unmarshal([]byte(hpaConfMap.Data[metricsConfigKeyV2beta1]), hpaProps.MetricsHpaV2beta1)
 		if yamlErr != nil {
 			logHpa.Error(err, "Error marshalling HPA config yaml", "configmap", hpaConfMap)
 			return yamlErr
 		}
 	} else if strings.EqualFold("v2beta2", hpaConfMap.Data[hpaVersionConst]) {
 		// parse hpa config yaml
-		metricsHpaV2beta2 = &[]v2beta2.MetricSpec{}
-		yamlErr := yaml.Unmarshal([]byte(hpaConfMap.Data[metricsConfigKey]), metricsHpaV2beta2)
+		hpaProps.MetricsHpaV2beta2 = []v2beta2.MetricSpec{}
+		yamlErr := yaml.Unmarshal([]byte(hpaConfMap.Data[metricsConfigKey]), hpaProps.MetricsHpaV2beta2)
 		if yamlErr != nil {
 			logHpa.Error(err, "Error marshalling HPA config yaml", "configmap", hpaConfMap)
 			return yamlErr

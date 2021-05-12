@@ -116,9 +116,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	reqLogger := log.WithValues("request_namespace", request.Namespace, "request_name", request.Name)
 	reqLogger.Info("Reconciling API")
 
-	// initialize volumes
-	kaniko.InitDocFileProp()
-	kaniko.InitJobVolumes()
+	// get newly initialize kaniko properties
+	kanikoProps := kaniko.NewProperties()
 
 	var sidecarContainers []corev1.Container
 
@@ -187,8 +186,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	controlConfigData := controlConf.Data
 	controlIngressData := ingressConf.Data
 	controlOpenshiftConf := OpenshiftConf.Data
-	kaniko.DocFileProp.ToolkitImage = controlConfigData[mgwToolkitImgConst]
-	kaniko.DocFileProp.RuntimeImage = controlConfigData[mgwRuntimeImgConst]
+	kanikoProps.DockerFileProps.ToolkitImage = controlConfigData[mgwToolkitImgConst]
+	kanikoProps.DockerFileProps.RuntimeImage = controlConfigData[mgwRuntimeImgConst]
 
 	mgwDockerImage := registry.Image{}
 	registryTypeStr := dockerRegistryConf.Data[registryTypeConst]
@@ -208,8 +207,8 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	// log controller configurations
 	reqLogger.Info(
 		"Controller configurations",
-		"mgw_toolkit_image", kaniko.DocFileProp.ToolkitImage,
-		"mgw_runtime_image", kaniko.DocFileProp.RuntimeImage,
+		"mgw_toolkit_image", kanikoProps.DockerFileProps.ToolkitImage,
+		"mgw_runtime_image", kanikoProps.DockerFileProps.RuntimeImage,
 		"gateway_observability", controlConfigData[observabilityEnabledConfigKey],
 		"user_nameSpace", userNamespace, "operator_mode", operatorMode,
 	)
@@ -223,14 +222,15 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	// this is to verify HPA configs prior running kaniko job and creating MGW image
 	// otherwise user may have to wait long time to know the error in configs
 	mgw.Configs.ObservabilityEnabled = strings.EqualFold(controlConfigData[observabilityEnabledConfigKey], "true")
-	if err := mgw.ValidateHpaConfigs(&r.client); err != nil {
+	hpaProps := &mgw.HpaProps{}
+	if err := mgw.ValidateHpaConfigs(&r.client, hpaProps); err != nil {
 		reqLogger.Error(err, "Invalid HPA configs. Requeue request after 10 seconds")
 		// Return and requeue request since config mismatch. User should reconfigure configs to proceed.
 		return reconcile.Result{RequeueAfter: 10 * time.Second}, nil
 	}
 
 	// handle certs of the project
-	if err := endpoints.HandleCerts(&r.client, instance); err != nil {
+	if err := endpoints.HandleCerts(&r.client, kanikoProps, instance); err != nil {
 		return reconcile.Result{}, err
 	}
 
@@ -247,7 +247,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 	}
 
 	// if there aren't any ratelimiting objects deployed, new policy.yaml configmap will be created with default policies
-	if err := ratelimit.Handle(&r.client, userNamespace, operatorOwner); err != nil {
+	if err := ratelimit.Handle(&r.client, userNamespace, kanikoProps, operatorOwner); err != nil {
 		reqLogger.Error(err, "Error in creating default policy configmap")
 	}
 
@@ -319,7 +319,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			return reconcile.Result{}, securityErr
 		}
 
-		securityDefinition, jwtConfArray, apiKeyConfArray, errSec := security.Handle(&r.client, securityMap,
+		securityDefinition, jwtConfArray, apiKeyConfArray, errSec := security.Handle(&r.client, kanikoProps, securityMap,
 			userNamespace, secSchemeDefined)
 		if errSec != nil {
 			return reconcile.Result{}, errSec
@@ -379,12 +379,12 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 				return reconcile.Result{}, err
 			}
 		}
-		kaniko.AddVolume(k8s.ConfigMapVolumeMount(swaggerConfMapMgw.Name, fmt.Sprintf(kaniko.SwaggerLocation, i+1)))
+		kanikoProps.AddVolume(k8s.ConfigMapVolumeMount(swaggerConfMapMgw.Name, fmt.Sprintf(kaniko.SwaggerLocation, i+1)))
 
 		// Default security
 		if !isDefinedSecurity && resourceLevelSec != pathCount {
 			reqLogger.Info("Use default security")
-			defaultJwtConfArray, err := security.Default(&r.client, userNamespace, ownerRef)
+			defaultJwtConfArray, err := security.Default(&r.client, userNamespace, kanikoProps, ownerRef)
 			for _, secConf := range *defaultJwtConfArray {
 				isJwtExist := false
 				for _, jwtIssuers := range apiSecurityConfigs {
@@ -450,7 +450,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 				"Handling analytics & interceptors, rendering dockerfile & mgw configs, and creating the Kaniko job.")
 			// handling analytics
 			reqLogger.Info("Handling analytics")
-			if err := analytics.Handle(&r.client, userNamespace); err != nil {
+			if err := analytics.Handle(&r.client, kanikoProps, userNamespace); err != nil {
 				reqLogger.Error(err, "Error handling analytics")
 				r.recorder.Event(instance, eventTypeError, "Configs", "Error while handling analytics.")
 				return reconcile.Result{}, err
@@ -458,7 +458,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 			// handling interceptors
 			reqLogger.Info("Handling interceptors")
-			if err := interceptors.Handle(&r.client, instance); err != nil {
+			if err := interceptors.Handle(&r.client, instance, kanikoProps); err != nil {
 				reqLogger.Error(err, "Error handling interceptors")
 				r.recorder.Event(instance, eventTypeError, "Configs", "Error while handling interceptors.")
 				return reconcile.Result{}, err
@@ -466,7 +466,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 			// handling Kaniko docker file
 			reqLogger.Info("Rendering the dockerfile for Kaniko job and adding volumes to the Kaniko job")
-			if err := kaniko.HandleDockerFile(&r.client, userNamespace, instance.Name, ownerRef); err != nil {
+			if err := kaniko.HandleDockerFile(&r.client, kanikoProps, userNamespace, instance.Name, ownerRef); err != nil {
 				reqLogger.Error(err, "Error rendering the docker file for Kaniko job and adding volumes to the Kaniko job")
 				r.recorder.Event(instance, eventTypeError, "KanikoJob",
 					"Error rendering the dockerfile for kaniko job.")
@@ -482,7 +482,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 
 			// rendering MGW config file
 			reqLogger.Info("Rendering and adding the MGW configuration file to cluster")
-			if err := mgw.ApplyConfFile(&r.client, userNamespace, instance.Name, ownerRef); err != nil {
+			if err := mgw.ApplyConfFile(&r.client, userNamespace, instance.Name, kanikoProps, ownerRef); err != nil {
 				reqLogger.Error(err, "Error rendering and adding the MGW configuration file to cluster")
 				return reconcile.Result{}, err
 			}
@@ -496,7 +496,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 			var kanikoJob *batchv1.Job
 			reqLogger.Info("Deploying the Kaniko job in cluster")
 			r.recorder.Event(instance, corev1.EventTypeNormal, "KanikoJob", "Deploying kaniko job.")
-			kanikoJob, err = kaniko.Job(&r.client, instance, controlConfigData, kanikoArgs.Data[kanikoArguments], ownerRef, mgwDockerImage)
+			kanikoJob, err = kanikoProps.Job(&r.client, instance, controlConfigData, kanikoArgs.Data[kanikoArguments], ownerRef, mgwDockerImage)
 			if err := controllerutil.SetControllerReference(instance, kanikoJob, r.scheme); err != nil {
 				return reconcile.Result{}, err
 			}
@@ -587,7 +587,7 @@ func (r *ReconcileAPI) Reconcile(request reconcile.Request) (reconcile.Result, e
 		}
 
 		// create horizontal pod auto-scalar
-		hpaV2beta1, hpaV2beta2 := mgw.HPA(&r.client, instance, mgwDeployment, ownerRef)
+		hpaV2beta1, hpaV2beta2 := mgw.HPA(&r.client, instance, mgwDeployment, hpaProps, ownerRef)
 		if hpaV2beta1 != nil && hpaV2beta2 == nil {
 			if errHpaV2beta1 := k8s.CreateIfNotExists(&r.client, hpaV2beta1); errHpaV2beta1 != nil {
 				reqLogger.Error(errHpaV2beta1, "Error creating the horizontal pod auto-scalar with HPA version v2beta1", "hpa_name", hpaV2beta1.Name)

@@ -36,7 +36,7 @@ const (
 )
 
 // Handle handles rate limit with adding volumes to the Kaniko job
-func Handle(client *client.Client, userNameSpace string, operatorOwner *[]metav1.OwnerReference) error {
+func Handle(client *client.Client, userNameSpace string, kanikoProps *kaniko.JobProperties, operatorOwner *[]metav1.OwnerReference) error {
 	//Check if policy configmap is available
 	policyConfMap := k8s.NewConfMap()
 	err := k8s.Get(client, types.NamespacedName{Name: policyConfigmap, Namespace: userNameSpace}, policyConfMap)
@@ -57,6 +57,6 @@ func Handle(client *client.Client, userNameSpace string, operatorOwner *[]metav1
 		return err
 	}
 
-	kaniko.AddVolume(k8s.ConfigMapVolumeMount(policyConfigmap, policyYamlLocation))
+	kanikoProps.AddVolume(k8s.ConfigMapVolumeMount(policyConfigmap, policyYamlLocation))
 	return nil
 }

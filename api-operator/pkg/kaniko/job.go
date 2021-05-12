@@ -41,8 +41,47 @@ const (
 	dockerRegCredVolumeName  = "reg-secret-volume"
 )
 
-// Job returns a kaniko job with mounted volumes
-func Job(client *client.Client, api *wso2v1alpha1.API, controlConfigData map[string]string, kanikoArgs string, owner *[]metav1.OwnerReference, image registry.Image) (*batchv1.Job, error) {
+type JobProperties struct {
+	DockerFileProps *DockerFileProperties
+	certAliases     map[string]struct{}
+	Volumes         []corev1.Volume
+	VolumeMounts    []corev1.VolumeMount
+}
+
+// NewProperties returns a new JobProperties with default values
+func NewProperties() *JobProperties {
+	return &JobProperties{
+		DockerFileProps: &DockerFileProperties{
+			CertFound:             false,
+			TruststorePassword:    "",
+			Certs:                 map[string]string{},
+			ToolkitImage:          "",
+			RuntimeImage:          "",
+			BalInterceptorsFound:  false,
+			JavaInterceptorsFound: false,
+		},
+		certAliases:  make(map[string]struct{}),
+		Volumes:      make([]corev1.Volume, 0, 8),
+		VolumeMounts: make([]corev1.VolumeMount, 0, 8),
+	}
+}
+
+// AddVolume adds volume and volume mounts to the JobProperties
+func (j *JobProperties) AddVolume(vol *corev1.Volume, volMount *corev1.VolumeMount) {
+	// skip adding volume if the name already exists
+	for _, volume := range j.Volumes {
+		if volume.Name == vol.Name {
+			logJob.Info("Volume name of kaniko job is already exists. Skip adding the volume.",
+				"volume_name", volume.Name, "volume", volume, "volume_mount", volMount)
+			return
+		}
+	}
+	j.Volumes = append(j.Volumes, *vol)
+	j.VolumeMounts = append(j.VolumeMounts, *volMount)
+}
+
+// Job returns a kaniko job from the current JobProperties
+func (j *JobProperties) Job(client *client.Client, api *wso2v1alpha1.API, controlConfigData map[string]string, kanikoArgs string, owner *[]metav1.OwnerReference, image registry.Image) (*batchv1.Job, error) {
 	rootUserVal := int64(0)
 	jobName := api.Name + "-kaniko"
 	if api.Spec.UpdateTimeStamp != "" {
@@ -54,7 +93,8 @@ func Job(client *client.Client, api *wso2v1alpha1.API, controlConfigData map[str
 	if pushSecret != "" {
 		regConfig.Volumes[0].VolumeSource.Secret.SecretName = pushSecret
 	}
-	AddVolumes(&regConfig.Volumes, &regConfig.VolumeMounts)
+	j.Volumes = append(j.Volumes, regConfig.Volumes...)
+	j.VolumeMounts = append(j.VolumeMounts, regConfig.VolumeMounts...)
 
 	kanikoImg := controlConfigData[kanikoImgConst]
 	args := append([]string{
@@ -75,8 +115,8 @@ func Job(client *client.Client, api *wso2v1alpha1.API, controlConfigData map[str
 	if err != nil {
 		return nil, err
 	}
-	*JobVolume = append(*JobVolume, userVol...)
-	*JobVolumeMount = append(*JobVolumeMount, userVolMount...)
+	j.Volumes = append(j.Volumes, userVol...)
+	j.VolumeMounts = append(j.VolumeMounts, userVolMount...)
 
 	var secretArray []corev1.LocalObjectReference
 	secretArray = append(secretArray, regConfig.ImagePullSecrets...)
@@ -101,7 +141,7 @@ func Job(client *client.Client, api *wso2v1alpha1.API, controlConfigData map[str
 						{
 							Name:         api.Name + "gen-container",
 							Image:        kanikoImg,
-							VolumeMounts: *JobVolumeMount,
+							VolumeMounts: j.VolumeMounts,
 							Args:         args,
 							Env:          regConfig.Env,
 							EnvFrom:      envFromSources,
@@ -111,7 +151,7 @@ func Job(client *client.Client, api *wso2v1alpha1.API, controlConfigData map[str
 						RunAsUser: &rootUserVal,
 					},
 					RestartPolicy:    "Never",
-					Volumes:          *JobVolume,
+					Volumes:          j.Volumes,
 					ImagePullSecrets: secretArray,
 				},
 			},

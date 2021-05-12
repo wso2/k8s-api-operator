@@ -19,8 +19,8 @@ package endpoints
 import (
 	"fmt"
 	wso2v1alpha1 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha1"
-	"github.com/wso2/k8s-api-operator/api-operator/pkg/cert"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
+	"github.com/wso2/k8s-api-operator/api-operator/pkg/kaniko"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -34,20 +34,15 @@ const (
 
 var loggerCert = log.Log.WithName("endpoints.cert")
 
-var (
-	allAlias = make(map[string]struct{})
-	void     = struct{}{}
-)
-
 // HandleCerts handles the endpoint certificates defined with the API-CTL (API Controller) project
-func HandleCerts(client *client.Client, api *wso2v1alpha1.API) error {
+func HandleCerts(client *client.Client, kanikoProps *kaniko.JobProperties, api *wso2v1alpha1.API) error {
 	for _, certSecretName := range api.Spec.Definition.EndpointCertificates {
 		secret := &corev1.Secret{}
 		if err := k8s.Get(client, types.NamespacedName{Namespace: api.Namespace, Name: certSecretName}, secret); err != nil {
 			loggerCert.Error(err, "Error reading endpoint certificate")
 			return err
 		}
-		if err := addCert(secret); err != nil {
+		if err := addCert(kanikoProps, secret); err != nil {
 			loggerCert.Error(err, "Error adding endpoint certificate")
 			return err
 		}
@@ -56,7 +51,7 @@ func HandleCerts(client *client.Client, api *wso2v1alpha1.API) error {
 	return nil
 }
 
-func addCert(certSecret *corev1.Secret) error {
+func addCert(kanikoProps *kaniko.JobProperties, certSecret *corev1.Secret) error {
 	if err := validateSecret(certSecret); err != nil {
 		loggerCert.Error(err, "Invalid endpoint secret", "secret", certSecret,
 			"namespace", certSecret.Namespace)
@@ -64,15 +59,7 @@ func addCert(certSecret *corev1.Secret) error {
 	}
 
 	alias := string(certSecret.Data[aliasSecretKey])
-
-	// skip adding cert if alias already exists
-	if _, ok := allAlias[alias]; ok {
-		loggerCert.Info("Alias of endpoint certificate already exists. Skip importing certificate.",
-			"alias", alias, "secret", certSecret.Name, "namespace", certSecret.Namespace)
-	}
-
-	allAlias[alias] = void
-	cert.Add(alias, certSecret.Name, certificateSecretKey)
+	kaniko.AddCert(kanikoProps, alias, certSecret.Name, certificateSecretKey)
 	return nil
 }
 
