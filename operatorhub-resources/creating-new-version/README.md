@@ -19,7 +19,7 @@
 This can also be done using the operator-sdk commands using command line. Navigate into the `api-operator` directory and execute the following command.
 
 ```shell script
->> operator-sdk generate bundle --version 1.2.2
+>> operator-sdk generate bundle --version 1.2.3
 ```
 This is the basic command to create a bundle.
 For more information regarding additional commands and flags visit [here](https://sdk.operatorframework.io/docs/olm-integration/legacy/generating-a-csv/). 
