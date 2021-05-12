@@ -170,3 +170,40 @@ without altering the mgw-deployment-configs in `controller-configs/controller_co
     namespace "micro" deleted
     configmap "test1cm" deleted
     ```
+
+#### Context of Volumes
+
+You can use the field `context` to define the context of the volume. By default, its value is `default`.
+
+- Default Context
+    When `context` is `default` (or not defined) the volume is mounted to the Microgateway deployment.
+    Example:
+    ```yaml
+    mgwConfigMaps: |
+    - name: test1cm
+      mountLocation: /home/ballerina/test1cm
+      subPath: test1cm
+    mgwSecrets: |
+    - name: test1secret
+      mountLocation: /home/ballerina/test1secret
+      subPath: test1secret
+      namespace: micro
+    ```
+
+- Kaniko Context
+    When `context` is `kaniko` the volume is mounted to the Kaniko deployment
+    (which compiles and pushes the build docker image of Microgateway).
+    Example:
+    ```yaml
+    mgwConfigMaps: |
+      - name: test1cm
+        mountLocation: /home/ballerina/test1cm
+        subPath: test1cm
+        context: kaniko
+    mgwSecrets: |
+      - name: test1secret
+        mountLocation: /home/ballerina/test1secret
+        subPath: test1secret
+        namespace: micro
+        context: kaniko
+    ```
