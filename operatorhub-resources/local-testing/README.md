@@ -9,7 +9,7 @@
 
 - An account in DockerHub or private docker registry
 
-- Download [k8s-api-operator-1.2.3.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.2.2/k8s-api-operator-1.2.3.zip) and extract the zip
+- Download [k8s-api-operator-1.2.3.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.2.3/k8s-api-operator-1.2.3.zip) and extract the zip
 
     1. This zip contains the artifacts that required to deploy in Kubernetes.
     2. Extract k8s-api-operator-1.2.3.zip
@@ -58,7 +58,7 @@ wso2am-operators   api-operator
  
 >> kubectl get clusterserviceversion -n marketplace
 NAME                   DISPLAY                       VERSION   REPLACES   PHASE
-api-operator.v1.2.2   API Operator for Kubernetes     1.1.0              Succeeded
+api-operator.v1.2.3   API Operator for Kubernetes     1.1.0              Succeeded
 
 >> kubectl get deployment -n marketplace
 NAME                           READY   UP-TO-DATE   AVAILABLE   AGE

@@ -8,7 +8,7 @@ Here, we will see how we can deploy a simple API which calls the petstore servic
 
 First, install the API Operator.
 
-- Download [k8s-api-operator-1.2.3.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.2.2/k8s-api-operator-1.2.3.zip)
+- Download [k8s-api-operator-1.2.3.zip](https://github.com/wso2/k8s-api-operator/releases/download/v1.2.3/k8s-api-operator-1.2.3.zip)
 and extract the zip
 
     1. This zip contains the artifacts that required to deploy in Kubernetes.
