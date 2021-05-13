@@ -42,6 +42,7 @@
             <useDefaultExcludes>true</useDefaultExcludes>
             <excludes>
                 <exclude>crds/**</exclude>
+                <exclude>kustomization.yaml</exclude>
                 <exclude>controller-configs/**</exclude>
             </excludes>
         </fileSet>
