@@ -22,7 +22,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.wso2.apim</groupId>
     <artifactId>k8s-api-operator</artifactId>
-    <version>2.0.0</version>
+    <version>2.0.1</version>
     <name>API Operator For K8s</name>
     <packaging>pom</packaging>
 

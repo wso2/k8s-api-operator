@@ -29,7 +29,7 @@ Deploy integrations using K8s API Operator, see [Deploying Integrations using th
 Use the following command to install API Operator
 
 ```sh
->> kubectl apply -f https://github.com/wso2/k8s-api-operator/releases/download/v2.0.0/api-operator-configs.yaml
+>> kubectl apply -f https://github.com/wso2/k8s-api-operator/releases/download/v2.0.1/api-operator-configs.yaml
 ```
 
 ## Documentation 

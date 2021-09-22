@@ -32,7 +32,7 @@ spec:
       containers:
         - name: api-operator
           # Replace this with the built image name
-          image: wso2/k8s-api-operator:2.0.0
+          image: wso2/k8s-api-operator:2.0.1
           ports:
             - containerPort: 9445
           command:
