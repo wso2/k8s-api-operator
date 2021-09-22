@@ -98,8 +98,10 @@ func GenerateIngressPaths(m *wso2v1alpha2.Integration) []v1beta1.HTTPIngressPath
 
 	//Set HTTP ingress path
 	httpPath := "/" + nameForService(m) + "(/|$)(.*)"
+	pathType := v1beta1.PathTypeImplementationSpecific
 	httpIngressPath := v1beta1.HTTPIngressPath{
-		Path: httpPath,
+		Path:     httpPath,
+		PathType: &pathType,
 		Backend: v1beta1.IngressBackend{
 			ServiceName: nameForService(m),
 			ServicePort: intstr.IntOrString{
