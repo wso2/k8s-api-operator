@@ -80,9 +80,11 @@ rules:
       - '*'
   - apiGroups:
       - extensions
+      - networking.k8s.io
     resources:
       - ingresses
       - ingress
+      - ingressclasses
     verbs:
       - '*'
   - apiGroups:
