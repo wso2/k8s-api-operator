@@ -23,10 +23,9 @@ import (
 	wso2v1alpha2 "github.com/wso2/k8s-api-operator/api-operator/pkg/apis/wso2/v1alpha2"
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/config"
 	corev1 "k8s.io/api/core/v1"
-	v1beta1 "k8s.io/api/extensions/v1beta1"
+	networking "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"reflect"
 	"strconv"
 )
@@ -63,15 +62,15 @@ func nameForIngress() string {
 }
 
 // CheckIngressRulesExist checks the ingress rules are exist in current ingress
-func CheckIngressRulesExist(config *EIConfigNew, currentIngress *v1beta1.Ingress) ([]v1beta1.IngressRule, bool) {
+func CheckIngressRulesExist(config *EIConfigNew, currentIngress *networking.Ingress) ([]networking.IngressRule, bool) {
 	var integration = config.integration
 	ingressPaths := GenerateIngressPaths(&integration)
 
 	currentRules := currentIngress.Spec.Rules
-	newRule := v1beta1.IngressRule{
+	newRule := networking.IngressRule{
 		Host: config.ingressConfigMap.Data[ingressHostNameKey],
-		IngressRuleValue: v1beta1.IngressRuleValue{
-			HTTP: &v1beta1.HTTPIngressRuleValue{
+		IngressRuleValue: networking.IngressRuleValue{
+			HTTP: &networking.HTTPIngressRuleValue{
 				Paths: ingressPaths,
 			},
 		},
@@ -93,20 +92,21 @@ func CheckIngressRulesExist(config *EIConfigNew, currentIngress *v1beta1.Ingress
 }
 
 // GenerateIngressPaths generates the ingress paths
-func GenerateIngressPaths(m *wso2v1alpha2.Integration) []v1beta1.HTTPIngressPath {
-	var ingressPaths []v1beta1.HTTPIngressPath
+func GenerateIngressPaths(m *wso2v1alpha2.Integration) []networking.HTTPIngressPath {
+	var ingressPaths []networking.HTTPIngressPath
 
 	//Set HTTP ingress path
 	httpPath := "/" + nameForService(m) + "(/|$)(.*)"
-	pathType := v1beta1.PathTypeImplementationSpecific
-	httpIngressPath := v1beta1.HTTPIngressPath{
+	pathType := networking.PathTypeImplementationSpecific
+	httpIngressPath := networking.HTTPIngressPath{
 		Path:     httpPath,
 		PathType: &pathType,
-		Backend: v1beta1.IngressBackend{
-			ServiceName: nameForService(m),
-			ServicePort: intstr.IntOrString{
-				Type:   Int,
-				IntVal: m.Spec.Expose.PassthroPort,
+		Backend: networking.IngressBackend{
+			Service: &networking.IngressServiceBackend{
+				Name: nameForService(m),
+				Port: networking.ServiceBackendPort{
+					Number: m.Spec.Expose.PassthroPort,
+				},
 			},
 		},
 	}
@@ -116,13 +116,15 @@ func GenerateIngressPaths(m *wso2v1alpha2.Integration) []v1beta1.HTTPIngressPath
 	for _, port := range m.Spec.Expose.InboundPorts {
 		inboundPath := "/" + nameForInboundService(m) +
 			"/" + strconv.Itoa(int(port)) + "(/|$)(.*)"
-		inboundIngressPath := v1beta1.HTTPIngressPath{
+		inboundIngressPath := networking.HTTPIngressPath{
 			Path: inboundPath,
-			Backend: v1beta1.IngressBackend{
-				ServiceName: nameForService(m),
-				ServicePort: intstr.IntOrString{
-					Type:   Int,
-					IntVal: port,
+			PathType: &pathType,
+			Backend: networking.IngressBackend{
+				Service: &networking.IngressServiceBackend{
+					Name: nameForService(m),
+					Port: networking.ServiceBackendPort{
+						Number: port,
+					},
 				},
 			},
 		}

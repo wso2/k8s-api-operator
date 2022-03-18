@@ -19,33 +19,33 @@
 package integration
 
 import (
-	"k8s.io/api/extensions/v1beta1"
+	networking "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"strings"
 )
 
 // ingressForIntegration returns a ingress object
-func (r *ReconcileIntegration) ingressForIntegration(config *EIConfigNew) *v1beta1.Ingress {
+func (r *ReconcileIntegration) ingressForIntegration(config *EIConfigNew) *networking.Ingress {
 	var m = config.integration
 	var ingressConfig = config.ingressConfigMap
 	var tlsSecretName = ingressConfig.Data[tlsSecretNameKey]
 	var ingressHostName = ingressConfig.Data[ingressHostNameKey]
 	ingressPaths := GenerateIngressPaths(&m)
 
-	var ingressSpec v1beta1.IngressSpec
+	var ingressSpec networking.IngressSpec
 	if tlsSecretName != "" {
-		ingressSpec = v1beta1.IngressSpec{
-			TLS: []v1beta1.IngressTLS{
+		ingressSpec = networking.IngressSpec{
+			TLS: []networking.IngressTLS{
 				{
 					Hosts:      []string{ingressHostName},
 					SecretName: tlsSecretName,
 				},
 			},
-			Rules: []v1beta1.IngressRule{
+			Rules: []networking.IngressRule{
 				{
 					Host: ingressHostName,
-					IngressRuleValue: v1beta1.IngressRuleValue{
-						HTTP: &v1beta1.HTTPIngressRuleValue{
+					IngressRuleValue: networking.IngressRuleValue{
+						HTTP: &networking.HTTPIngressRuleValue{
 							Paths: ingressPaths,
 						},
 					},
@@ -53,12 +53,12 @@ func (r *ReconcileIntegration) ingressForIntegration(config *EIConfigNew) *v1bet
 			},
 		}
 	} else {
-		ingressSpec = v1beta1.IngressSpec{
-			Rules: []v1beta1.IngressRule{
+		ingressSpec = networking.IngressSpec{
+			Rules: []networking.IngressRule{
 				{
 					Host: ingressHostName,
-					IngressRuleValue: v1beta1.IngressRuleValue{
-						HTTP: &v1beta1.HTTPIngressRuleValue{
+					IngressRuleValue: networking.IngressRuleValue{
+						HTTP: &networking.HTTPIngressRuleValue{
 							Paths: ingressPaths,
 						},
 					},
@@ -78,9 +78,9 @@ func (r *ReconcileIntegration) ingressForIntegration(config *EIConfigNew) *v1bet
 	}
 
 	// create ingress object using provided or default values
-	ingress := &v1beta1.Ingress{
+	ingress := &networking.Ingress{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "extensions/v1beta1",
+			APIVersion: "networking.k8s.io/v1",
 			Kind:       "Ingress",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -93,15 +93,15 @@ func (r *ReconcileIntegration) ingressForIntegration(config *EIConfigNew) *v1bet
 	return ingress
 }
 
-func (r *ReconcileIntegration) updateIngressForIntegration(config *EIConfigNew, currentIngress *v1beta1.Ingress) *v1beta1.Ingress {
+func (r *ReconcileIntegration) updateIngressForIntegration(config *EIConfigNew, currentIngress *networking.Ingress) *networking.Ingress {
 	currentRules, _ := CheckIngressRulesExist(config, currentIngress)
 
-	var ingressSpec v1beta1.IngressSpec
+	var ingressSpec networking.IngressSpec
 	var tlsSecretName = config.ingressConfigMap.Data[tlsSecretNameKey]
 	var ingressHostName = config.ingressConfigMap.Data[ingressHostNameKey]
 	if tlsSecretName != "" {
-		ingressSpec = v1beta1.IngressSpec{
-			TLS: []v1beta1.IngressTLS{
+		ingressSpec = networking.IngressSpec{
+			TLS: []networking.IngressTLS{
 				{
 					Hosts:      []string{ingressHostName},
 					SecretName: tlsSecretName,
@@ -110,7 +110,7 @@ func (r *ReconcileIntegration) updateIngressForIntegration(config *EIConfigNew, 
 			Rules: currentRules,
 		}
 	} else {
-		ingressSpec = v1beta1.IngressSpec{
+		ingressSpec = networking.IngressSpec{
 			Rules: currentRules,
 		}
 	}

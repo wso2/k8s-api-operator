@@ -24,7 +24,7 @@ import (
 	"github.com/wso2/k8s-api-operator/api-operator/pkg/k8s"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/api/extensions/v1beta1"
+	networking "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -250,7 +250,7 @@ func (r *ReconcileIntegration) createOrUpdateIngress(config *EIConfigNew) error 
 	}
 
 	if autoCreateIngress {
-		ingress := &v1beta1.Ingress{}
+		ingress := &networking.Ingress{}
 		var integration = config.integration
 		namespace := types.NamespacedName{Name: nameForIngress(), Namespace: integration.Namespace}
 		err := k8s.Get(&r.client, namespace, ingress)
