@@ -1,19 +1,3 @@
-# Copyright (c)  WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
-#
-# WSO2 Inc. licenses this file to you under the Apache License,
-# Version 2.0 (the "License"); you may not use this file except
-# in compliance with the License.
-# You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
-
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
@@ -73,6 +57,17 @@ spec:
               deploySpec:
                 description: Specification related to deployment
                 properties:
+                  configmapDetails:
+                    items:
+                      properties:
+                        fileName:
+                          type: string
+                        mountPath:
+                          type: string
+                        name:
+                          type: string
+                      type: object
+                    type: array
                   cpuLimit:
                     description: CPU limit of containers in the pod Default value
                       "<empty>".
@@ -201,6 +196,8 @@ spec:
                       Default value "<empty>".
                     format: int32
                     type: integer
+                  pullPolicy:
+                    type: string
                   readinessProbe:
                     description: ReadinessProbe for containers in the pod Default
                       value "<empty>".
@@ -366,7 +363,7 @@ spec:
                           type: object
                         fieldRef:
                           description: 'Selects a field of the pod: supports metadata.name,
-                            metadata.namespace, metadata.labels, metadata.annotations,
+                            metadata.namespace, `metadata.labels[''<KEY>'']`, `metadata.annotations[''<KEY>'']`,
                             spec.nodeName, spec.serviceAccountName, status.hostIP,
                             status.podIP, status.podIPs.'
                           properties:

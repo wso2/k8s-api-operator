@@ -67,7 +67,7 @@ func (r *ReconcileIntegration) deploymentForIntegration(config EIConfigNew) *app
 
 	replicas := m.Spec.DeploySpec.MinReplicas
 
-	request :=  corev1.ResourceList{}
+	request := corev1.ResourceList{}
 	if m.Spec.DeploySpec.ReqCpu != "" {
 		request[corev1.ResourceCPU] = resource.MustParse(m.Spec.DeploySpec.ReqCpu)
 	}
@@ -79,12 +79,49 @@ func (r *ReconcileIntegration) deploymentForIntegration(config EIConfigNew) *app
 	if m.Spec.DeploySpec.LimitCpu != "" {
 		limit[corev1.ResourceCPU] = resource.MustParse(m.Spec.DeploySpec.LimitCpu)
 	}
-	if m.Spec.DeploySpec.MemoryLimit !="" {
+	if m.Spec.DeploySpec.MemoryLimit != "" {
 		limit[corev1.ResourceMemory] = resource.MustParse(m.Spec.DeploySpec.MemoryLimit)
 	}
 
 	livenessProbe, _ := getLivenessProbe(config)
 	readinessProbe, _ := getReadinessProbe(config)
+
+	volMounts := make([]corev1.VolumeMount, 0)
+	volumes := make([]corev1.Volume, 0)
+	for _, configMapDetail := range m.Spec.DeploySpec.ConfigMapDetails {
+		volumes = append(
+			volumes,
+			corev1.Volume{
+				Name: "volume-" + configMapDetail.Name,
+				VolumeSource: corev1.VolumeSource{
+					ConfigMap: &corev1.ConfigMapVolumeSource{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: configMapDetail.Name,
+						},
+					},
+				},
+			},
+		)
+
+		volMounts = append(
+			volMounts,
+			corev1.VolumeMount{
+				Name:      "volume-" + configMapDetail.Name,
+				MountPath: configMapDetail.MountPath + "/" + configMapDetail.FileName,
+				SubPath:   configMapDetail.FileName,
+			},
+		)
+	}
+	pullPolicy := m.Spec.DeploySpec.PullPolicy
+	imagePullPolicy := corev1.PullAlways
+	switch {
+	case pullPolicy == "Always":
+		imagePullPolicy = corev1.PullAlways
+	case pullPolicy == "Never":
+		imagePullPolicy = corev1.PullNever
+	case pullPolicy == "IfNotPresent":
+		imagePullPolicy = corev1.PullIfNotPresent
+	}
 
 	deployment := &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
@@ -106,11 +143,12 @@ func (r *ReconcileIntegration) deploymentForIntegration(config EIConfigNew) *app
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{{
-						Image:           m.Spec.Image,
-						Name:            eiContainerName,
-						Ports:           exposePorts,
-						LivenessProbe:   &livenessProbe,
-						ReadinessProbe:  &readinessProbe,
+						Image:          m.Spec.Image,
+						Name:           eiContainerName,
+						Ports:          exposePorts,
+						LivenessProbe:  &livenessProbe,
+						ReadinessProbe: &readinessProbe,
+						VolumeMounts:   volMounts,
 
 						Resources: corev1.ResourceRequirements{
 							Limits:   limit,
@@ -120,11 +158,11 @@ func (r *ReconcileIntegration) deploymentForIntegration(config EIConfigNew) *app
 						Lifecycle: &corev1.Lifecycle{
 							PreStop: getShutdownHandler(),
 						},
-
 						Env:             m.Spec.Env,
-						EnvFrom: 	 m.Spec.EnvFrom,
-						ImagePullPolicy: corev1.PullAlways,
+						EnvFrom:         m.Spec.EnvFrom,
+						ImagePullPolicy: imagePullPolicy,
 					}},
+					Volumes:          volumes,
 					ImagePullSecrets: imageSecrets,
 				},
 			},

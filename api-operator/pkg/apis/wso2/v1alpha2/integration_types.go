@@ -35,7 +35,7 @@ type IntegrationSpec struct {
 	// Auto scale spec
 	AutoScale AutoScale `json:"autoScale,omitempty"`
 	// Ports to expose
-	Expose Expose  `json:"expose,omitempty"`
+	Expose Expose `json:"expose,omitempty"`
 	// Docker image credentials if the Image is in private registry
 	ImagePullSecret string `json:"imagePullSecret,omitempty"`
 	// List of environment variables to set for the integration.
@@ -50,6 +50,9 @@ type DeploySpec struct {
 	// Default value "<empty>".
 	// +optional
 	MinReplicas int32 `json:"minReplicas,omitempty"`
+
+	ConfigMapDetails []ConfigMapDetails `json:"configmapDetails,omitempty"`
+
 	// Cpu request of containers in the pod
 	// Default value "<empty>".
 	// +optional
@@ -74,6 +77,8 @@ type DeploySpec struct {
 	// Default value "<empty>".
 	// +optional
 	ReadinessProbe corev1.Probe `json:"readinessProbe,omitempty"`
+
+	PullPolicy PullPolicy `json:"pullPolicy,omitempty"`
 }
 
 // AutoScale defines the properties related to Auto scaling of pods
@@ -86,6 +91,22 @@ type AutoScale struct {
 	// Default value "<empty>".
 	// +optional
 	MaxReplicas int32 `json:"maxReplicas,omitempty"`
+}
+type PullPolicy string
+
+const (
+	// PullAlways means that kubelet always attempts to pull the latest image. Container will fail If the pull fails.
+	PullAlways PullPolicy = "Always"
+	// PullNever means that kubelet never pulls an image, but only uses a local image. Container will fail if the image isn't present
+	PullNever PullPolicy = "Never"
+	// PullIfNotPresent means that kubelet pulls if the image isn't present on disk. Container will fail if the image isn't present and the pull fails.
+	PullIfNotPresent PullPolicy = "IfNotPresent"
+)
+
+type ConfigMapDetails struct {
+	Name      string `json:"name,omitempty"`
+	MountPath string `json:"mountPath,omitempty"`
+	FileName  string `json:"fileName,omitempty"`
 }
 
 // Expose defines the ports needs to be exposed
@@ -104,7 +125,7 @@ type IntegrationStatus struct {
 	// Name of the created service in the Integration deployment
 	ServiceName string `json:"serviceName"`
 	// Status of the Integration deployment
-	Readiness   string `json:"readiness"`
+	Readiness string `json:"readiness"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
