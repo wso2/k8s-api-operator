@@ -22,7 +22,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.wso2.apim</groupId>
     <artifactId>k8s-api-operator</artifactId>
-    <version>2.0.2</version>
+    <version>2.0.3</version>
     <name>API Operator For K8s</name>
     <packaging>pom</packaging>
 
@@ -52,7 +52,7 @@
                     </executions>
                     <configuration>
                         <repository>${docker.repository}</repository>
-                        <tag>v${project.version}</tag>
+                        <tag>${project.version}</tag>
                         <useMavenSettingsForAuth>true</useMavenSettingsForAuth>
                         <skip>false</skip>
                     </configuration>
