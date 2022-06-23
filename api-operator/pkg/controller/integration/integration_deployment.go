@@ -112,15 +112,15 @@ func (r *ReconcileIntegration) deploymentForIntegration(config EIConfigNew) *app
 			},
 		)
 	}
-	pullPolicy := m.Spec.DeploySpec.PullPolicy
-	imagePullPolicy := corev1.PullAlways
-	switch {
-	case pullPolicy == "Always":
-		imagePullPolicy = corev1.PullAlways
-	case pullPolicy == "Never":
+	var imagePullPolicy corev1.PullPolicy
+
+	switch pullPolicy := m.Spec.DeploySpec.PullPolicy; pullPolicy {
+	case "Never":
 		imagePullPolicy = corev1.PullNever
-	case pullPolicy == "IfNotPresent":
+	case "IfNotPresent":
 		imagePullPolicy = corev1.PullIfNotPresent
+	default:
+		imagePullPolicy = corev1.PullAlways
 	}
 
 	deployment := &appsv1.Deployment{
