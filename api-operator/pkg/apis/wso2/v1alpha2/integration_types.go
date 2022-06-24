@@ -78,6 +78,8 @@ type DeploySpec struct {
 	// +optional
 	ReadinessProbe corev1.Probe `json:"readinessProbe,omitempty"`
 
+	Affinity corev1.Affinity `json:"affinity,omitempty"`
+
 	PullPolicy PullPolicy `json:"pullPolicy,omitempty"`
 }
 

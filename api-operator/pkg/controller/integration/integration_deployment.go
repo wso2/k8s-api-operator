@@ -142,6 +142,7 @@ func (r *ReconcileIntegration) deploymentForIntegration(config EIConfigNew) *app
 					Labels: labels,
 				},
 				Spec: corev1.PodSpec{
+					Affinity: &m.Spec.DeploySpec.Affinity,
 					Containers: []corev1.Container{{
 						Image:          m.Spec.Image,
 						Name:           eiContainerName,
